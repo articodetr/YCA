@@ -1,0 +1,298 @@
+import { useState } from 'react';
+import { MapPin, Phone, Mail, Clock, Send } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { supabase } from '../lib/supabase';
+import PageHeader from '../components/PageHeader';
+import { fadeInUp, fadeInLeft, fadeInRight, staggerContainer, staggerItem, scaleIn } from '../lib/animations';
+
+export default function Contact() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    subject: '',
+    message: '',
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitMessage('');
+
+    try {
+      const { error } = await supabase
+        .from('contact_submissions')
+        .insert([formData]);
+
+      if (error) throw error;
+
+      setSubmitMessage('Thank you for your message! We will get back to you soon.');
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        subject: '',
+        message: '',
+      });
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      setSubmitMessage('There was an error sending your message. Please try again or contact us directly.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  return (
+    <div>
+      <PageHeader
+        title="Contact Us"
+        description=""
+        breadcrumbs={[{ label: 'Contact' }]}
+        image="https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=1920"
+      />
+
+      <div className="pt-20">
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
+            <motion.div
+              variants={fadeInLeft}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+            >
+              <h2 className="text-3xl font-bold text-primary mb-6">Get In Touch With Us</h2>
+              <p className="text-lg text-muted mb-8 leading-relaxed">
+                If you have got a question or general query, you can contact us and we will get in touch with you as soon as possible.
+              </p>
+
+              <motion.div
+                className="space-y-6 mb-8"
+                variants={staggerContainer}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+              >
+                <motion.div className="flex items-start gap-4" variants={staggerItem}>
+                  <motion.div
+                    className="w-14 h-14 bg-accent rounded-lg flex items-center justify-center flex-shrink-0"
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <MapPin size={24} className="text-primary" />
+                  </motion.div>
+                  <div>
+                    <h3 className="font-bold text-lg text-primary mb-2">Address</h3>
+                    <p className="text-muted">
+                      YCA GreenCoat House<br />
+                      261-271 Stratford Road<br />
+                      Birmingham, B11 1QS
+                    </p>
+                  </div>
+                </motion.div>
+
+                <motion.div className="flex items-start gap-4" variants={staggerItem}>
+                  <motion.div
+                    className="w-14 h-14 bg-accent rounded-lg flex items-center justify-center flex-shrink-0"
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Phone size={24} className="text-primary" />
+                  </motion.div>
+                  <div>
+                    <h3 className="font-bold text-lg text-primary mb-2">Phone</h3>
+                    <a href="tel:01214395280" className="text-muted hover:text-accent transition-colors">
+                      0121 439 5280
+                    </a>
+                  </div>
+                </motion.div>
+
+                <motion.div className="flex items-start gap-4" variants={staggerItem}>
+                  <motion.div
+                    className="w-14 h-14 bg-accent rounded-lg flex items-center justify-center flex-shrink-0"
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Mail size={24} className="text-primary" />
+                  </motion.div>
+                  <div>
+                    <h3 className="font-bold text-lg text-primary mb-2">Email</h3>
+                    <a href="mailto:INFO@yca-birmingham.org.uk" className="text-muted hover:text-accent transition-colors">
+                      INFO@yca-birmingham.org.uk
+                    </a>
+                  </div>
+                </motion.div>
+
+                <motion.div className="flex items-start gap-4" variants={staggerItem}>
+                  <motion.div
+                    className="w-14 h-14 bg-accent rounded-lg flex items-center justify-center flex-shrink-0"
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Clock size={24} className="text-primary" />
+                  </motion.div>
+                  <div>
+                    <h3 className="font-bold text-lg text-primary mb-2">Opening Times</h3>
+                    <p className="text-muted">
+                      Monday - Friday<br />
+                      10:00 AM - 3:00 PM
+                    </p>
+                  </div>
+                </motion.div>
+              </motion.div>
+
+              <motion.div
+                className="bg-sand p-6 rounded-lg"
+                variants={scaleIn}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+              >
+                <h3 className="font-bold text-xl text-primary mb-3">Need Advice or Support?</h3>
+                <p className="text-muted mb-4">
+                  Our bilingual team provides confidential advice and guidance on welfare benefits, housing, immigration, and more.
+                </p>
+                <p className="text-primary font-semibold">
+                  Call us today to book your one-to-one appointment
+                </p>
+              </motion.div>
+            </motion.div>
+
+            <motion.div
+              variants={fadeInRight}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+            >
+              <div className="bg-sand p-8 rounded-lg">
+                <h2 className="text-3xl font-bold text-primary mb-6">Send Us a Message</h2>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label htmlFor="name" className="block text-primary font-semibold mb-2">
+                      Your Name *
+                    </label>
+                    <input
+                      type="text"
+                      id="name"
+                      name="name"
+                      required
+                      value={formData.name}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border-2 border-border rounded-lg focus:outline-none focus:border-accent transition-colors"
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="email" className="block text-primary font-semibold mb-2">
+                      Email *
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      required
+                      value={formData.email}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border-2 border-border rounded-lg focus:outline-none focus:border-accent transition-colors"
+                      placeholder="your.email@example.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="phone" className="block text-primary font-semibold mb-2">
+                      Phone
+                    </label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border-2 border-border rounded-lg focus:outline-none focus:border-accent transition-colors"
+                      placeholder="Your phone number"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="subject" className="block text-primary font-semibold mb-2">
+                      Subject *
+                    </label>
+                    <input
+                      type="text"
+                      id="subject"
+                      name="subject"
+                      required
+                      value={formData.subject}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border-2 border-border rounded-lg focus:outline-none focus:border-accent transition-colors"
+                      placeholder="What is your message about?"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="message" className="block text-primary font-semibold mb-2">
+                      Message *
+                    </label>
+                    <textarea
+                      id="message"
+                      name="message"
+                      required
+                      rows={6}
+                      value={formData.message}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border-2 border-border rounded-lg focus:outline-none focus:border-accent transition-colors resize-none"
+                      placeholder="Write your message here..."
+                    ></textarea>
+                  </div>
+
+                  {submitMessage && (
+                    <div className={`p-4 rounded-lg ${submitMessage.includes('error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                      {submitMessage}
+                    </div>
+                  )}
+
+                  <motion.button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full bg-primary text-white px-8 py-4 rounded-lg hover:bg-secondary transition-colors font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Send size={20} />
+                    {isSubmitting ? 'Sending...' : 'Send Message'}
+                  </motion.button>
+                </form>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-0 bg-white">
+        <div className="w-full h-96">
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2432.8869579425586!2d-1.873!3d52.457!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNTLCsDI3JzI1LjIiTiAxwrA1MicyMi44Ilc!5e0!3m2!1sen!2suk!4v1234567890"
+            width="100%"
+            height="100%"
+            style={{ border: 0 }}
+            allowFullScreen
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            title="YCA Birmingham Location"
+          ></iframe>
+        </div>
+      </section>
+      </div>
+    </div>
+  );
+}

@@ -230,12 +230,13 @@ export default function Header() {
         <AnimatePresence>
           {isOpen && (
             <motion.nav
-              className="xl:hidden pb-6 space-y-2"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-            >
+  className="xl:hidden pb-6 space-y-2 bg-[#0b1424]/90 backdrop-blur-md rounded-b-2xl px-4 pt-4"
+  initial={{ height: 0, opacity: 0 }}
+  animate={{ height: 'auto', opacity: 1 }}
+  exit={{ height: 0, opacity: 0 }}
+  transition={{ duration: 0.3 }}
+>
+
               <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
                 <Link to="/" onClick={() => setIsOpen(false)} className="block py-2 hover:text-accent transition-colors">
                   Home

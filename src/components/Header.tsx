@@ -48,6 +48,17 @@ export default function Header() {
     return () => window.removeEventListener('scroll', controlHeader);
   }, [lastScrollY, isOpen]);
 
+useEffect(() => {
+  if (isOpen) {
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = '';
+  }
+
+  return () => {
+    document.body.style.overflow = '';
+  };
+}, [isOpen]);
 
   return (
     <motion.header

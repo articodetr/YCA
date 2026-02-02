@@ -67,6 +67,15 @@ export default function Header() {
               />
             </div>
           </Link>
+          {/* Mobile Center Text Logo */}
+<div className="absolute left-1/2 -translate-x-1/2 xl:hidden flex items-center justify-center pointer-events-none">
+  <img
+    src="/logo_text.png"
+    alt="الجالية اليمنية"
+    className="h-7 sm:h-8 w-auto opacity-95"
+  />
+</div>
+
 
           {/* Mobile Controls (Join Now + Hamburger) */}
           <div className="flex items-center gap-3 xl:hidden flex-shrink-0">

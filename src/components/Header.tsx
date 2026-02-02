@@ -46,7 +46,8 @@ export default function Header() {
 
     window.addEventListener('scroll', controlHeader);
     return () => window.removeEventListener('scroll', controlHeader);
-  }, [lastScrollY]);
+  }, [lastScrollY, isOpen]);
+
 
   return (
     <motion.header

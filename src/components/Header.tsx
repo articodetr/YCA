@@ -53,7 +53,6 @@ export default function Header() {
     >
       <div className="container mx-auto px-4">
         <div className="relative flex items-center justify-between h-20 md:h-24">
-
           <Link to="/" className="flex items-center gap-3 group flex-shrink-0">
             <div className="flex items-center gap-3">
               <img

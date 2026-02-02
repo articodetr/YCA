@@ -24,18 +24,25 @@ export default function Header() {
 
   useEffect(() => {
     const controlHeader = () => {
-      const currentScrollY = window.scrollY;
+  // Important: keep header visible while mobile menu is open
+  if (isOpen) {
+    setIsVisible(true);
+    return;
+  }
 
-      if (currentScrollY < 10) {
-        setIsVisible(true);
-      } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        setIsVisible(false);
-      } else if (currentScrollY < lastScrollY) {
-        setIsVisible(true);
-      }
+  const currentScrollY = window.scrollY;
 
-      setLastScrollY(currentScrollY);
-    };
+  if (currentScrollY < 10) {
+    setIsVisible(true);
+  } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+    setIsVisible(false);
+  } else if (currentScrollY < lastScrollY) {
+    setIsVisible(true);
+  }
+
+  setLastScrollY(currentScrollY);
+};
+
 
     window.addEventListener('scroll', controlHeader);
     return () => window.removeEventListener('scroll', controlHeader);

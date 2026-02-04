@@ -120,10 +120,11 @@ export default function Header() {
               className="h-10 sm:h-12 md:h-14 w-auto"
             />
             <img
-              src="/logo_text.png"
-              alt="Yemeni Community Association Birmingham"
-              className="h-7 sm:h-8 md:h-10 w-auto opacity-95"
-            />
+  src="/logo_text.png"
+  alt="Yemeni Community Association"
+  className="h-8 sm:h-10 md:h-12 w-auto transition-opacity group-hover:opacity-80 duration-300 hidden xl:block"
+/>
+
           </Link>
 
           {/* Mobile Controls (Right) */}

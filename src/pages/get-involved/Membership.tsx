@@ -255,7 +255,7 @@ export default function Membership() {
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
-                  to={`/get-involved/membership/apply?type=${selectedType}`}
+                  to={`/member/membership/apply?type=${selectedType}`}
                   className="flex-1 bg-accent hover:bg-hover text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors text-center"
                 >
                   {language === 'ar' ? 'قدم الآن' : t('membership.applyNow')}

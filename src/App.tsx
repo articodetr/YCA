@@ -27,10 +27,16 @@ import Partnerships from './pages/get-involved/Partnerships';
 import Resources from './pages/Resources';
 
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
+import { MemberAuthProvider } from './contexts/MemberAuthContext';
 import { ContentProvider } from './contexts/ContentContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import AdminLogin from './pages/admin/AdminLogin';
 import ProtectedRoute from './components/admin/ProtectedRoute';
+import ProtectedMemberRoute from './components/member/ProtectedMemberRoute';
+import MemberLogin from './pages/member/MemberLogin';
+import MemberDashboard from './pages/member/MemberDashboard';
+import MembershipApplication from './pages/member/MembershipApplication';
+import WakalaApplication from './pages/member/WakalaApplication';
 import AdminLayout from './components/admin/AdminLayout';
 import Dashboard from './pages/admin/Dashboard';
 import NewsManagement from './pages/admin/NewsManagement';
@@ -55,11 +61,13 @@ function App() {
   return (
     <LanguageProvider>
       <AdminAuthProvider>
-        <ContentProvider>
-          <Router>
-          <ScrollToTop />
-          <Routes>
-          <Route path="/admin/login" element={<AdminLogin />} />
+        <MemberAuthProvider>
+          <ContentProvider>
+            <Router>
+            <ScrollToTop />
+            <Routes>
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/member/login" element={<MemberLogin />} />
 
           <Route
             path="/admin/*"
@@ -88,6 +96,20 @@ function App() {
                   </Routes>
                 </AdminLayout>
               </ProtectedRoute>
+            }
+          />
+
+          <Route path="/member/membership/apply" element={<MembershipApplication />} />
+
+          <Route
+            path="/member/*"
+            element={
+              <ProtectedMemberRoute>
+                <Routes>
+                  <Route path="dashboard" element={<MemberDashboard />} />
+                  <Route path="wakala/apply" element={<WakalaApplication />} />
+                </Routes>
+              </ProtectedMemberRoute>
             }
           />
 
@@ -128,7 +150,8 @@ function App() {
           } />
           </Routes>
           </Router>
-        </ContentProvider>
+          </ContentProvider>
+        </MemberAuthProvider>
       </AdminAuthProvider>
     </LanguageProvider>
   );

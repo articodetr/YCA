@@ -97,8 +97,8 @@ export default function Footer() {
               </motion.li>
               <motion.li className="flex items-center gap-3" whileHover={{ x: 5 }}>
                 <Mail size={20} className="text-accent flex-shrink-0" />
-                <a href={`mailto:${getContent('footer', 'email', 'INFO@yca-birmingham.org.uk')}`} className="text-gray-300 hover:text-accent transition-colors">
-                  {getContent('footer', 'email', 'INFO@yca-birmingham.org.uk')}
+                <a href={`mailto:${getContent('footer', 'email', 'info@yca-birmingham.org.uk')}`} className="text-gray-300 hover:text-accent transition-colors">
+                  {getContent('footer', 'email', 'info@yca-birmingham.org.uk')}
                 </a>
               </motion.li>
             </ul>

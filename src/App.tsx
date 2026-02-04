@@ -37,6 +37,7 @@ import MemberLogin from './pages/member/MemberLogin';
 import MemberDashboard from './pages/member/MemberDashboard';
 import MembershipApplication from './pages/member/MembershipApplication';
 import WakalaApplication from './pages/member/WakalaApplication';
+import MemberPayment from './pages/member/MemberPayment';
 import AdminLayout from './components/admin/AdminLayout';
 import Dashboard from './pages/admin/Dashboard';
 import NewsManagement from './pages/admin/NewsManagement';
@@ -48,6 +49,7 @@ import PartnershipsManagement from './pages/admin/PartnershipsManagement';
 import ContactsManagement from './pages/admin/ContactsManagement';
 import DonationsManagement from './pages/admin/DonationsManagement';
 import SubscribersManagement from './pages/admin/SubscribersManagement';
+import WakalaManagement from './pages/admin/WakalaManagement';
 import Settings from './pages/admin/Settings';
 import HeroManagement from './pages/admin/HeroManagement';
 import TeamManagement from './pages/admin/TeamManagement';
@@ -81,6 +83,7 @@ function App() {
                     <Route path="event-galleries" element={<EventGalleriesManagement />} />
                     <Route path="registrations" element={<RegistrationsManagement />} />
                     <Route path="memberships" element={<MembershipsManagement />} />
+                    <Route path="wakala" element={<WakalaManagement />} />
                     <Route path="volunteers" element={<VolunteersManagement />} />
                     <Route path="partnerships" element={<PartnershipsManagement />} />
                     <Route path="contacts" element={<ContactsManagement />} />
@@ -108,6 +111,7 @@ function App() {
                 <Routes>
                   <Route path="dashboard" element={<MemberDashboard />} />
                   <Route path="wakala/apply" element={<WakalaApplication />} />
+                  <Route path="payment" element={<MemberPayment />} />
                 </Routes>
               </ProtectedMemberRoute>
             }

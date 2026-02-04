@@ -73,6 +73,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       items: [
         { icon: Users, label: 'Event Registrations', path: '/admin/registrations' },
         { icon: UserCheck, label: 'Membership Applications', path: '/admin/memberships' },
+        { icon: FileText, label: 'Wakala Applications', path: '/admin/wakala' },
         { icon: HandHeart, label: 'Volunteer Applications', path: '/admin/volunteers' },
         { icon: Briefcase, label: 'Partnership Requests', path: '/admin/partnerships' },
         { icon: MessageSquare, label: 'Contact Messages', path: '/admin/contacts' },

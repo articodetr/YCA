@@ -4,12 +4,18 @@ import { supabase } from '../../lib/supabase';
 
 interface Membership {
   id: string;
-  full_name: string;
+  full_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
   email: string;
   phone: string;
   address: string;
+  city: string | null;
+  postcode: string | null;
   membership_type: string;
   status: string;
+  payment_status: string | null;
+  organization_name: string | null;
   created_at: string;
 }
 
@@ -55,23 +61,33 @@ export default function MembershipsManagement() {
     }
   };
 
+  const getFullName = (mem: Membership): string => {
+    if (mem.full_name) return mem.full_name;
+    if (mem.first_name && mem.last_name) return `${mem.first_name} ${mem.last_name}`;
+    return mem.first_name || mem.last_name || 'N/A';
+  };
+
   const filteredMemberships = memberships.filter((mem) => {
+    const fullName = getFullName(mem);
     const matchesSearch =
-      mem.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       mem.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === 'all' || mem.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
 
   const exportToCSV = () => {
-    const headers = ['Name', 'Email', 'Phone', 'Address', 'Membership Type', 'Status', 'Date'];
+    const headers = ['Name', 'Email', 'Phone', 'Address', 'City', 'Postcode', 'Membership Type', 'Status', 'Payment Status', 'Date'];
     const rows = filteredMemberships.map((mem) => [
-      mem.full_name,
+      getFullName(mem),
       mem.email,
       mem.phone,
       mem.address,
+      mem.city || '',
+      mem.postcode || '',
       mem.membership_type,
       mem.status,
+      mem.payment_status || 'pending',
       new Date(mem.created_at).toLocaleDateString(),
     ]);
 
@@ -149,7 +165,7 @@ export default function MembershipsManagement() {
               <tbody className="divide-y divide-gray-200">
                 {filteredMemberships.map((mem) => (
                   <tr key={mem.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-4 font-medium text-gray-900">{mem.full_name}</td>
+                    <td className="px-4 py-4 font-medium text-gray-900">{getFullName(mem)}</td>
                     <td className="px-4 py-4 text-sm text-gray-600">{mem.email}</td>
                     <td className="px-4 py-4 text-sm text-gray-600">{mem.phone}</td>
                     <td className="px-4 py-4 text-sm text-gray-600 capitalize">{mem.membership_type}</td>

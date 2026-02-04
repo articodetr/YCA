@@ -164,20 +164,25 @@ export default function MembershipApplication() {
     setLoading(true);
 
     try {
-      const { error: signUpError } = await signUp(formData.email, formData.password, {
+      // Sign up the user
+      const { data: authData, error: signUpError } = await signUp(formData.email, formData.password, {
         full_name: `${formData.firstName} ${formData.lastName}`,
         phone: formData.phone,
       });
 
       if (signUpError) throw signUpError;
+      if (!authData?.user) throw new Error('User creation failed');
 
+      // Create application data with all required fields
       const applicationData = {
+        user_id: authData.user.id,
         membership_type: membershipType,
         first_name: formData.firstName,
         last_name: formData.lastName,
+        full_name: `${formData.firstName} ${formData.lastName}`,
         email: formData.email,
         phone: formData.phone,
-        date_of_birth: formData.dateOfBirth,
+        date_of_birth: formData.dateOfBirth || null,
         address: formData.address,
         city: formData.city,
         postcode: formData.postcode,
@@ -186,11 +191,11 @@ export default function MembershipApplication() {
         organization_name: membershipType === 'organization' ? formData.organizationName : null,
         organization_type: membershipType === 'organization' ? formData.organizationType : null,
         number_of_members: membershipType === 'organization' ? parseInt(formData.numberOfMembers) : null,
-        family_members: membershipType === 'family' ? formData.familyMembers : null,
         status: 'pending',
         payment_status: 'pending',
       };
 
+      // Insert the membership application
       const { data: application, error: appError } = await supabase
         .from('membership_applications')
         .insert([applicationData])
@@ -198,6 +203,26 @@ export default function MembershipApplication() {
         .maybeSingle();
 
       if (appError) throw appError;
+      if (!application) throw new Error('Application creation failed');
+
+      // If family membership, insert family members
+      if (membershipType === 'family' && formData.familyMembers.length > 0) {
+        const familyMembersData = formData.familyMembers.map(member => ({
+          application_id: application.id,
+          name: member.name,
+          relationship: member.relationship,
+          date_of_birth: member.dateOfBirth,
+        }));
+
+        const { error: familyError } = await supabase
+          .from('membership_application_family_members')
+          .insert(familyMembersData);
+
+        if (familyError) {
+          console.error('Family members insert error:', familyError);
+          // Continue anyway - the main application was successful
+        }
+      }
 
       setSuccess(true);
       setTimeout(() => {

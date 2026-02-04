@@ -28,6 +28,7 @@ import Resources from './pages/Resources';
 
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import { ContentProvider } from './contexts/ContentContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 import AdminLogin from './pages/admin/AdminLogin';
 import ProtectedRoute from './components/admin/ProtectedRoute';
 import AdminLayout from './components/admin/AdminLayout';
@@ -52,9 +53,10 @@ import ContentManagement from './pages/admin/ContentManagement';
 
 function App() {
   return (
-    <AdminAuthProvider>
-      <ContentProvider>
-        <Router>
+    <LanguageProvider>
+      <AdminAuthProvider>
+        <ContentProvider>
+          <Router>
           <ScrollToTop />
           <Routes>
           <Route path="/admin/login" element={<AdminLogin />} />
@@ -124,10 +126,11 @@ function App() {
               </Routes>
             </Layout>
           } />
-        </Routes>
-        </Router>
-      </ContentProvider>
-    </AdminAuthProvider>
+          </Routes>
+          </Router>
+        </ContentProvider>
+      </AdminAuthProvider>
+    </LanguageProvider>
   );
 }
 

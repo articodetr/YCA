@@ -1,8 +1,14 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
+import { useLanguage } from './LanguageContext';
+
+interface BilingualText {
+  en: string;
+  ar: string;
+}
 
 interface ContentData {
-  [key: string]: string;
+  [key: string]: BilingualText;
 }
 
 interface ImageData {
@@ -26,6 +32,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
   const [images, setImages] = useState<ImageData>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const languageContext = useLanguage();
 
   const fetchContent = async () => {
     try {
@@ -34,7 +41,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
 
       const { data, error: fetchError } = await supabase
         .from('content_sections')
-        .select('page, section_key, content')
+        .select('page, section_key, content, title_ar')
         .eq('is_active', true);
 
       if (fetchError) throw fetchError;
@@ -43,8 +50,13 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       const imageMap: ImageData = {};
       data?.forEach((item) => {
         const key = `${item.page}.${item.section_key}`;
-        const contentObj = item.content as { text?: string; image?: string };
-        contentMap[key] = contentObj?.text || '';
+        const contentObj = item.content as { text_en?: string; text_ar?: string; text?: string; image?: string };
+
+        const textEn = contentObj?.text_en || contentObj?.text || '';
+        const textAr = contentObj?.text_ar || '';
+
+        contentMap[key] = { en: textEn, ar: textAr };
+
         if (contentObj?.image) {
           imageMap[key] = contentObj.image;
         }
@@ -93,7 +105,14 @@ export function ContentProvider({ children }: { children: ReactNode }) {
 
   const getContent = (page: string, key: string, fallback: string = '') => {
     const fullKey = `${page}.${key}`;
-    return content[fullKey] || fallback;
+    const bilingualContent = content[fullKey];
+
+    if (!bilingualContent) return fallback;
+
+    const currentLang = languageContext.language;
+    const text = bilingualContent[currentLang];
+
+    return text || bilingualContent.en || fallback;
   };
 
   const getImage = (page: string, key: string, fallback: string = '') => {

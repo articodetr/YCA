@@ -3,9 +3,11 @@ import { Facebook, Instagram, Twitter, Mail, Phone, MapPin } from 'lucide-react'
 import { motion } from 'framer-motion';
 import { fadeInUp, staggerContainer, staggerItem } from '../lib/animations';
 import { useContent } from '../contexts/ContentContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function Footer() {
   const { getContent } = useContent();
+  const { t } = useLanguage();
   return (
     <footer className="bg-primary text-white">
       <div className="container mx-auto px-4 py-12">
@@ -56,25 +58,25 @@ export default function Footer() {
           </motion.div>
 
           <motion.div variants={staggerItem}>
-            <h3 className="text-xl font-bold mb-4 text-accent">{getContent('footer', 'quick_links_title', 'Quick Links')}</h3>
+            <h3 className="text-xl font-bold mb-4 text-accent">{t('footer.quickLinks')}</h3>
             <ul className="space-y-2">
-              <motion.li whileHover={{ x: 5 }}><Link to="/about/mission" className="text-gray-300 hover:text-accent transition-colors">Mission & Vision</Link></motion.li>
-              <motion.li whileHover={{ x: 5 }}><Link to="/services" className="text-gray-300 hover:text-accent transition-colors">Our Services</Link></motion.li>
-              <motion.li whileHover={{ x: 5 }}><Link to="/events" className="text-gray-300 hover:text-accent transition-colors">Upcoming Events</Link></motion.li>
-              <motion.li whileHover={{ x: 5 }}><Link to="/news" className="text-gray-300 hover:text-accent transition-colors">News & Blog</Link></motion.li>
-              <motion.li whileHover={{ x: 5 }}><Link to="/get-involved/volunteer" className="text-gray-300 hover:text-accent transition-colors">Volunteer</Link></motion.li>
-              <motion.li whileHover={{ x: 5 }}><Link to="/contact" className="text-gray-300 hover:text-accent transition-colors">Contact Us</Link></motion.li>
+              <motion.li whileHover={{ x: 5 }}><Link to="/about/mission" className="text-gray-300 hover:text-accent transition-colors">{t('nav.about.mission')}</Link></motion.li>
+              <motion.li whileHover={{ x: 5 }}><Link to="/services" className="text-gray-300 hover:text-accent transition-colors">{t('nav.services')}</Link></motion.li>
+              <motion.li whileHover={{ x: 5 }}><Link to="/events" className="text-gray-300 hover:text-accent transition-colors">{t('nav.events')}</Link></motion.li>
+              <motion.li whileHover={{ x: 5 }}><Link to="/news" className="text-gray-300 hover:text-accent transition-colors">{t('nav.news')}</Link></motion.li>
+              <motion.li whileHover={{ x: 5 }}><Link to="/get-involved/volunteer" className="text-gray-300 hover:text-accent transition-colors">{t('nav.getInvolved.volunteer')}</Link></motion.li>
+              <motion.li whileHover={{ x: 5 }}><Link to="/contact" className="text-gray-300 hover:text-accent transition-colors">{t('nav.contact')}</Link></motion.li>
             </ul>
           </motion.div>
 
           <motion.div variants={staggerItem}>
-            <h3 className="text-xl font-bold mb-4 text-accent">{getContent('footer', 'programmes_title', 'Programmes')}</h3>
+            <h3 className="text-xl font-bold mb-4 text-accent">{t('nav.programmes')}</h3>
             <ul className="space-y-2">
-              <motion.li whileHover={{ x: 5 }}><Link to="/programmes/women" className="text-gray-300 hover:text-accent transition-colors">Women's Programme</Link></motion.li>
-              <motion.li whileHover={{ x: 5 }}><Link to="/programmes/elderly" className="text-gray-300 hover:text-accent transition-colors">Elderly's Programme</Link></motion.li>
-              <motion.li whileHover={{ x: 5 }}><Link to="/programmes/youth" className="text-gray-300 hover:text-accent transition-colors">Youth Programme</Link></motion.li>
-              <motion.li whileHover={{ x: 5 }}><Link to="/programmes/children" className="text-gray-300 hover:text-accent transition-colors">Children's Programme</Link></motion.li>
-              <motion.li whileHover={{ x: 5 }}><Link to="/programmes/men" className="text-gray-300 hover:text-accent transition-colors">Men's Programme</Link></motion.li>
+              <motion.li whileHover={{ x: 5 }}><Link to="/programmes/women" className="text-gray-300 hover:text-accent transition-colors">{t('nav.programmes.women')}</Link></motion.li>
+              <motion.li whileHover={{ x: 5 }}><Link to="/programmes/elderly" className="text-gray-300 hover:text-accent transition-colors">{t('nav.programmes.elderly')}</Link></motion.li>
+              <motion.li whileHover={{ x: 5 }}><Link to="/programmes/youth" className="text-gray-300 hover:text-accent transition-colors">{t('nav.programmes.youth')}</Link></motion.li>
+              <motion.li whileHover={{ x: 5 }}><Link to="/programmes/children" className="text-gray-300 hover:text-accent transition-colors">{t('nav.programmes.children')}</Link></motion.li>
+              <motion.li whileHover={{ x: 5 }}><Link to="/programmes/men" className="text-gray-300 hover:text-accent transition-colors">{t('nav.programmes.men')}</Link></motion.li>
             </ul>
           </motion.div>
 

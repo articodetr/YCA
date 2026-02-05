@@ -39,8 +39,15 @@ Deno.serve(async (req: Request) => {
   try {
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
 
+    console.log('Stripe key exists:', !!stripeSecretKey);
+    console.log('Stripe key starts with sk_test_:', stripeSecretKey?.startsWith('sk_test_'));
+
     if (!stripeSecretKey) {
       throw new Error("STRIPE_SECRET_KEY not configured");
+    }
+
+    if (!stripeSecretKey.startsWith('sk_test_') && !stripeSecretKey.startsWith('sk_live_')) {
+      throw new Error("Invalid STRIPE_SECRET_KEY format. Please use a valid Stripe key from your Stripe Dashboard.");
     }
 
     const stripe = new Stripe(stripeSecretKey, {

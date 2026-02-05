@@ -195,6 +195,17 @@ export default function MemberPayment() {
 
   const createPaymentIntent = async () => {
     try {
+      console.log('Creating payment intent with:', {
+        amount: Math.round(amount * 100),
+        currency: 'gbp',
+        metadata: {
+          user_id: user?.id,
+          application_id: applicationId,
+          wakala_id: wakalaId,
+          type,
+        },
+      });
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`,
         {
@@ -216,15 +227,23 @@ export default function MemberPayment() {
         }
       );
 
-      if (!response.ok) {
-        throw new Error('Failed to create payment intent');
-      }
+      console.log('Response status:', response.status);
 
       const data = await response.json();
+      console.log('Response data:', data);
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create payment intent');
+      }
+
+      if (!data.clientSecret) {
+        throw new Error('No client secret returned from server');
+      }
+
       setClientSecret(data.clientSecret);
     } catch (err: any) {
       console.error('Payment intent error:', err);
-      setError(t.error);
+      setError(err.message || t.error);
     } finally {
       setLoading(false);
     }

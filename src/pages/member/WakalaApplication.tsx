@@ -208,6 +208,8 @@ export default function WakalaApplication() {
     setUploadingFiles(true);
 
     try {
+      const price = calculatePrice(formData.requestedDate);
+
       const applicationData = {
         user_id: user.id,
         full_name: formData.fullName,
@@ -219,6 +221,7 @@ export default function WakalaApplication() {
         requested_date: formData.requestedDate,
         service_type: formData.serviceType,
         special_requests: formData.specialRequests,
+        fee_amount: price,
         status: 'pending',
         payment_status: 'pending',
       };
@@ -239,8 +242,6 @@ export default function WakalaApplication() {
         .eq('id', application.id);
 
       if (updateError) throw updateError;
-
-      const price = calculatePrice(formData.requestedDate);
 
       setSuccess(true);
       setTimeout(() => {

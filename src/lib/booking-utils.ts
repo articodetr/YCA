@@ -24,6 +24,7 @@ export interface TimeSlot {
 
 export interface BookingData {
   slot_id: string;
+  service_id: string;
   booking_date: string;
   start_time: string;
   end_time: string;
@@ -141,7 +142,7 @@ export async function reserveSlots(
   bookingData: BookingData
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { slot_id, duration_minutes, booking_date, start_time } = bookingData;
+    const { slot_id, service_id, duration_minutes, booking_date, start_time } = bookingData;
 
     if (duration_minutes === 30) {
       const { error } = await supabase
@@ -153,7 +154,7 @@ export async function reserveSlots(
         return { success: false, error: error.message };
       }
     } else {
-      const allSlots = await getAvailableSlotsForDate('', booking_date);
+      const allSlots = await getAvailableSlotsForDate(service_id, booking_date);
       const currentSlotIndex = allSlots.findIndex(s => s.id === slot_id);
 
       if (currentSlotIndex === -1 || currentSlotIndex >= allSlots.length - 1) {
@@ -181,6 +182,7 @@ export async function reserveSlots(
 
 export async function releaseSlots(
   slotId: string,
+  serviceId: string,
   durationMinutes: 30 | 60,
   bookingDate: string,
   startTime: string
@@ -196,7 +198,7 @@ export async function releaseSlots(
         return { success: false, error: error.message };
       }
     } else {
-      const allSlots = await getAvailableSlotsForDate('', bookingDate);
+      const allSlots = await getAvailableSlotsForDate(serviceId, bookingDate);
       const currentSlotIndex = allSlots.findIndex(s => s.id === slotId);
 
       if (currentSlotIndex === -1 || currentSlotIndex >= allSlots.length - 1) {
@@ -273,6 +275,7 @@ export async function getUserBookings(memberId: string) {
 export async function cancelBooking(
   applicationId: string,
   slotId: string,
+  serviceId: string,
   durationMinutes: 30 | 60,
   bookingDate: string,
   startTime: string
@@ -280,6 +283,7 @@ export async function cancelBooking(
   try {
     const releaseResult = await releaseSlots(
       slotId,
+      serviceId,
       durationMinutes,
       bookingDate,
       startTime

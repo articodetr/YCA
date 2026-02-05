@@ -555,6 +555,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
 
       const reserveResult = await reserveSlots({
         slot_id: selectedSlot.id,
+        service_id: wakalaService.id,
         booking_date: dateStr,
         start_time: selectedSlot.startTime,
         end_time: selectedSlot.endTime,

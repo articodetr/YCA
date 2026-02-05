@@ -150,7 +150,7 @@ export default function MemberDashboard() {
 
       const { data: wakala } = await supabase
         .from('wakala_applications')
-        .select('*')
+        .select('*, availability_slots(service_id)')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -182,10 +182,17 @@ export default function MemberDashboard() {
       return;
     }
 
+    const serviceId = app.availability_slots?.service_id;
+    if (!serviceId) {
+      alert(t.cancelError);
+      return;
+    }
+
     try {
       const result = await cancelBooking(
         app.id,
         app.slot_id,
+        serviceId,
         app.duration_minutes,
         app.booking_date,
         app.start_time

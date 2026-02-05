@@ -74,6 +74,9 @@ export default function MembershipApplication() {
       passwordMismatch: 'Passwords do not match',
       errorMessage: 'Failed to submit application. Please try again.',
       required: 'This field is required',
+      userExists: 'An account with this email already exists. Please ',
+      loginHere: 'login here',
+      toAccess: ' to access your account.',
     },
     ar: {
       title: 'طلب عضوية',
@@ -110,6 +113,9 @@ export default function MembershipApplication() {
       passwordMismatch: 'كلمات المرور غير متطابقة',
       errorMessage: 'فشل إرسال الطلب. يرجى المحاولة مرة أخرى.',
       required: 'هذا الحقل مطلوب',
+      userExists: 'يوجد حساب بالفعل بهذا البريد الإلكتروني. يرجى ',
+      loginHere: 'تسجيل الدخول هنا',
+      toAccess: ' للوصول إلى حسابك.',
     },
   };
 
@@ -170,7 +176,15 @@ export default function MembershipApplication() {
         phone: formData.phone,
       });
 
-      if (signUpError) throw signUpError;
+      if (signUpError) {
+        if (signUpError.message.includes('User already registered') ||
+            signUpError.message.includes('user_already_exists')) {
+          setError('userExists');
+          setLoading(false);
+          return;
+        }
+        throw signUpError;
+      }
       if (!authData?.user) throw new Error('User creation failed');
 
       // Create application data with all required fields
@@ -265,7 +279,17 @@ export default function MembershipApplication() {
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-800">{error}</p>
+              {error === 'userExists' ? (
+                <p className="text-sm text-red-800">
+                  {t.userExists}
+                  <a href="/member/login" className="text-emerald-600 hover:text-emerald-700 font-medium underline">
+                    {t.loginHere}
+                  </a>
+                  {t.toAccess}
+                </p>
+              ) : (
+                <p className="text-sm text-red-800">{error}</p>
+              )}
             </div>
           )}
 

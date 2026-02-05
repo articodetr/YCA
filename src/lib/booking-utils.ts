@@ -508,10 +508,11 @@ export async function getBookingsForDateRange(
 ) {
   const { data, error } = await supabase
     .from('wakala_applications')
-    .select('*, members(first_name, last_name)')
+    .select('*, members(first_name, last_name), availability_slots!inner(service_id)')
     .gte('booking_date', startDate)
     .lte('booking_date', endDate)
     .not('booking_date', 'is', null)
+    .eq('availability_slots.service_id', serviceId)
     .order('booking_date')
     .order('start_time');
 

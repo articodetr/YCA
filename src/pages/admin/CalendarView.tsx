@@ -79,28 +79,28 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
         endDate = weekEnd.toISOString().split('T')[0];
       }
 
-      const { data: slots, error } = await supabase
-        .from('availability_slots')
+      const { data: bookingsData, error } = await supabase
+        .from('wakala_applications')
         .select(`
           id,
-          date,
+          full_name,
+          email,
+          phone,
+          booking_date,
           start_time,
           end_time,
-          wakala_applications!inner (
-            id,
-            applicant_name_en,
-            applicant_name_ar,
-            email,
-            phone,
-            status,
-            notes,
-            created_at
+          status,
+          additional_notes,
+          created_at,
+          availability_slots!inner (
+            service_id
           )
         `)
-        .eq('service_id', selectedServiceId)
-        .gte('date', startDate)
-        .lte('date', endDate)
-        .order('date', { ascending: true })
+        .eq('availability_slots.service_id', selectedServiceId)
+        .gte('booking_date', startDate)
+        .lte('booking_date', endDate)
+        .not('booking_date', 'is', null)
+        .order('booking_date', { ascending: true })
         .order('start_time', { ascending: true });
 
       if (error) throw error;
@@ -111,20 +111,20 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
         .eq('id', selectedServiceId)
         .single();
 
-      const formattedBookings: Booking[] = slots.map((slot: any) => ({
-        id: slot.wakala_applications.id,
-        applicant_name_en: slot.wakala_applications.applicant_name_en,
-        applicant_name_ar: slot.wakala_applications.applicant_name_ar,
-        email: slot.wakala_applications.email,
-        phone: slot.wakala_applications.phone,
-        date: slot.date,
-        start_time: slot.start_time,
-        end_time: slot.end_time,
-        status: slot.wakala_applications.status,
-        notes: slot.wakala_applications.notes,
+      const formattedBookings: Booking[] = (bookingsData || []).map((booking: any) => ({
+        id: booking.id,
+        applicant_name_en: booking.full_name,
+        applicant_name_ar: booking.full_name,
+        email: booking.email,
+        phone: booking.phone,
+        date: booking.booking_date,
+        start_time: booking.start_time,
+        end_time: booking.end_time,
+        status: booking.status,
+        notes: booking.additional_notes,
         service_name_en: service?.name_en,
         service_name_ar: service?.name_ar,
-        created_at: slot.wakala_applications.created_at,
+        created_at: booking.created_at,
       }));
 
       setBookings(formattedBookings);

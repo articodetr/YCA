@@ -9,7 +9,6 @@ import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import Calendar from '../booking/Calendar';
 import TimeSlotGrid from '../booking/TimeSlotGrid';
 import BookingSummaryCard from '../booking/BookingSummaryCard';
-import HelpCard from '../booking/HelpCard';
 import { getAvailableSlotsForDuration, reserveSlots } from '../../lib/booking-utils';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -986,8 +985,6 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
                 onSubmit={() => {}}
                 isSubmitting={loading}
               />
-
-              <HelpCard />
 
               <button
                 type="button"

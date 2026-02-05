@@ -253,18 +253,38 @@ export default function Membership() {
                 </ul>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Link
+                    to={`/member/membership/apply?type=${selectedType}`}
+                    className="flex-1 bg-accent hover:bg-hover text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors text-center"
+                  >
+                    {language === 'ar' ? 'قدم الآن' : t('membership.applyNow')}
+                  </Link>
+                  <Link
+                    to="/contact"
+                    className="flex-1 bg-white hover:bg-gray-50 text-primary border-2 border-primary px-8 py-4 rounded-lg font-semibold text-lg transition-colors text-center"
+                  >
+                    {t('nav.contact')}
+                  </Link>
+                </div>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-4 bg-white text-gray-500">
+                      {language === 'ar' ? 'أو' : 'OR'}
+                    </span>
+                  </div>
+                </div>
+
                 <Link
-                  to={`/member/membership/apply?type=${selectedType}`}
-                  className="flex-1 bg-accent hover:bg-hover text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors text-center"
+                  to="/member/login"
+                  className="w-full bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-lg font-semibold transition-colors text-center"
                 >
-                  {language === 'ar' ? 'قدم الآن' : t('membership.applyNow')}
-                </Link>
-                <Link
-                  to="/contact"
-                  className="flex-1 bg-white hover:bg-gray-50 text-primary border-2 border-primary px-8 py-4 rounded-lg font-semibold text-lg transition-colors text-center"
-                >
-                  {t('nav.contact')}
+                  {language === 'ar' ? 'تسجيل الدخول كعضو حالي' : 'Login as Existing Member'}
                 </Link>
               </div>
             </motion.div>

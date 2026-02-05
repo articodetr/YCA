@@ -308,3 +308,217 @@ export async function cancelBooking(
     return { success: false, error: 'Failed to cancel booking' };
   }
 }
+
+// Availability Management Functions
+
+export interface AvailabilityStats {
+  date: string;
+  day_name_en: string;
+  day_name_ar: string;
+  total_slots: number;
+  available_slots: number;
+  booked_slots: number;
+  blocked_slots: number;
+  is_blocked: boolean;
+  blocked_reason_en: string | null;
+  blocked_reason_ar: string | null;
+}
+
+export interface BlockedDate {
+  id: string;
+  date: string;
+  reason_en: string;
+  reason_ar: string;
+  created_at: string;
+  created_by: string;
+}
+
+export interface RegenerateResult {
+  slots_created: number;
+  slots_preserved: number;
+}
+
+export interface BulkRegenerateResult {
+  total_slots_created: number;
+  total_slots_preserved: number;
+  dates_processed: number;
+}
+
+export async function getAvailabilityStats(
+  serviceId: string,
+  startDate: string,
+  endDate: string
+): Promise<AvailabilityStats[]> {
+  try {
+    const { data, error } = await supabase.rpc('get_availability_stats', {
+      p_service_id: serviceId,
+      p_start_date: startDate,
+      p_end_date: endDate,
+    });
+
+    if (error) {
+      console.error('Error fetching availability stats:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error calling stats function:', error);
+    return [];
+  }
+}
+
+export async function regenerateSlotsForDate(
+  serviceId: string,
+  date: string
+): Promise<RegenerateResult | null> {
+  try {
+    const { data, error } = await supabase.rpc('regenerate_slots_for_date', {
+      p_service_id: serviceId,
+      p_date: date,
+    });
+
+    if (error) {
+      console.error('Error regenerating slots:', error);
+      return null;
+    }
+
+    return data?.[0] || { slots_created: 0, slots_preserved: 0 };
+  } catch (error) {
+    console.error('Error calling regenerate function:', error);
+    return null;
+  }
+}
+
+export async function regenerateSlotsBulk(
+  serviceId: string,
+  startDate: string,
+  endDate: string
+): Promise<BulkRegenerateResult | null> {
+  try {
+    const { data, error } = await supabase.rpc('regenerate_slots_bulk', {
+      p_service_id: serviceId,
+      p_start_date: startDate,
+      p_end_date: endDate,
+    });
+
+    if (error) {
+      console.error('Error bulk regenerating slots:', error);
+      return null;
+    }
+
+    return data?.[0] || { total_slots_created: 0, total_slots_preserved: 0, dates_processed: 0 };
+  } catch (error) {
+    console.error('Error calling bulk regenerate function:', error);
+    return null;
+  }
+}
+
+export async function getBlockedDates(): Promise<BlockedDate[]> {
+  const { data, error } = await supabase
+    .from('blocked_dates')
+    .select('*')
+    .order('date');
+
+  if (error) {
+    console.error('Error fetching blocked dates:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function addBlockedDate(
+  date: string,
+  reasonEn: string,
+  reasonAr: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+
+    if (!user.user) {
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    const { error } = await supabase
+      .from('blocked_dates')
+      .insert({
+        date,
+        reason_en: reasonEn,
+        reason_ar: reasonAr,
+        created_by: user.user.id,
+      });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error adding blocked date:', error);
+    return { success: false, error: 'Failed to block date' };
+  }
+}
+
+export async function removeBlockedDate(
+  dateId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase
+      .from('blocked_dates')
+      .delete()
+      .eq('id', dateId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error removing blocked date:', error);
+    return { success: false, error: 'Failed to unblock date' };
+  }
+}
+
+export async function toggleSlotBlock(
+  slotId: string,
+  isBlocked: boolean
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase
+      .from('availability_slots')
+      .update({ is_blocked_by_admin: isBlocked })
+      .eq('id', slotId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error toggling slot block:', error);
+    return { success: false, error: 'Failed to toggle slot' };
+  }
+}
+
+export async function getBookingsForDateRange(
+  serviceId: string,
+  startDate: string,
+  endDate: string
+) {
+  const { data, error } = await supabase
+    .from('wakala_applications')
+    .select('*, members(first_name, last_name)')
+    .gte('booking_date', startDate)
+    .lte('booking_date', endDate)
+    .not('booking_date', 'is', null)
+    .order('booking_date')
+    .order('start_time');
+
+  if (error) {
+    console.error('Error fetching bookings:', error);
+    return [];
+  }
+
+  return data || [];
+}

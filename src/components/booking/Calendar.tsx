@@ -17,11 +17,13 @@ export default function Calendar({ selectedDate, onDateSelect, maxDaysAhead, una
   const t = {
     en: {
       warning: "We don't accept bookings this far in advance",
-      notAvailable: "Not available"
+      notAvailable: "Not available",
+      closed: "Closed"
     },
     ar: {
       warning: "لا نقبل الحجوزات بهذا القدر من التقدم",
-      notAvailable: "غير متاح"
+      notAvailable: "غير متاح",
+      closed: "مغلق"
     }
   }[language];
 
@@ -52,6 +54,11 @@ export default function Calendar({ selectedDate, onDateSelect, maxDaysAhead, una
   const isDateUnavailable = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
     return unavailableDates.includes(dateStr);
+  };
+
+  const isWeekend = (date: Date) => {
+    const day = date.getDay();
+    return day === 0 || day === 6;
   };
 
   const getDaysInMonth = (date: Date) => {
@@ -96,7 +103,7 @@ export default function Calendar({ selectedDate, onDateSelect, maxDaysAhead, una
   const handleDateClick = (day: number) => {
     const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
 
-    if (isDatePast(date) || isDateTooFar(date) || isDateUnavailable(date)) {
+    if (isDatePast(date) || isDateTooFar(date) || isDateUnavailable(date) || isWeekend(date)) {
       return;
     }
 
@@ -121,9 +128,10 @@ export default function Calendar({ selectedDate, onDateSelect, maxDaysAhead, una
       const isPast = isDatePast(date);
       const isTooFar = isDateTooFar(date);
       const isUnavailable = isDateUnavailable(date);
+      const isWeekendDay = isWeekend(date);
       const isSelected = selectedDate?.toDateString() === date.toDateString();
       const isToday = today.toDateString() === date.toDateString();
-      const isDisabled = isPast || isTooFar || isUnavailable;
+      const isDisabled = isPast || isTooFar || isUnavailable || isWeekendDay;
 
       days.push(
         <button
@@ -131,12 +139,15 @@ export default function Calendar({ selectedDate, onDateSelect, maxDaysAhead, una
           type="button"
           onClick={() => handleDateClick(day)}
           disabled={isDisabled}
+          title={isWeekendDay ? t.closed : undefined}
           className={`
-            aspect-square flex items-center justify-center text-sm rounded-lg transition-all font-semibold
+            aspect-square flex items-center justify-center text-sm rounded-lg transition-all font-semibold relative
             ${isSelected ? 'bg-blue-600 text-white shadow-md scale-105' : ''}
             ${isToday && !isSelected ? 'bg-blue-50 text-blue-600 border-2 border-blue-200' : ''}
-            ${isDisabled ? 'text-gray-300 cursor-not-allowed bg-gray-50' : 'text-gray-700 hover:bg-gray-100 border border-gray-200'}
-            ${!isSelected && !isToday && !isDisabled ? 'hover:bg-blue-50 hover:border-blue-300' : ''}
+            ${isWeekendDay ? 'bg-red-50 border border-red-200 text-red-400 cursor-not-allowed' : ''}
+            ${isDisabled && !isWeekendDay ? 'text-gray-300 cursor-not-allowed bg-gray-50' : ''}
+            ${!isSelected && !isToday && !isDisabled ? 'text-gray-700 hover:bg-gray-100 border border-gray-200 hover:bg-blue-50 hover:border-blue-300' : ''}
+            ${isWeekendDay ? 'after:content-[""] after:absolute after:inset-0 after:bg-gradient-to-br after:from-transparent after:via-transparent after:to-red-200/30' : ''}
           `}
         >
           {day}

@@ -23,13 +23,19 @@ export default function TimeSlotGrid({ selectedDate, slots, selectedSlot, onSlot
       selectTime: 'Available Time Slots',
       noSlots: 'No available slots for this date',
       selectDate: 'Please select a date first',
-      availableFor: 'Available times for'
+      availableFor: 'Available times for',
+      mondayToThursday: 'Monday-Thursday hours: 10:00 AM - 2:15 PM',
+      fridayHours: 'Friday hours: 9:00 AM - 11:45 AM',
+      weekendClosed: 'Closed on weekends'
     },
     ar: {
       selectTime: 'الأوقات المتاحة',
       noSlots: 'لا توجد أوقات متاحة لهذا التاريخ',
       selectDate: 'الرجاء اختيار التاريخ أولاً',
-      availableFor: 'الأوقات المتاحة ليوم'
+      availableFor: 'الأوقات المتاحة ليوم',
+      mondayToThursday: 'الاثنين-الخميس: 10:00 صباحاً - 2:15 مساءً',
+      fridayHours: 'يوم الجمعة: 9:00 صباحاً - 11:45 صباحاً',
+      weekendClosed: 'مغلق في عطلة نهاية الأسبوع'
     }
   }[language];
 
@@ -58,8 +64,25 @@ export default function TimeSlotGrid({ selectedDate, slots, selectedSlot, onSlot
     return null;
   }
 
+  const dayOfWeek = selectedDate.getDay();
+  const isFriday = dayOfWeek === 5;
+  const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 4;
+
   return (
     <div>
+      {(isFriday || isWeekday) && (
+        <div className={`mb-4 p-3 rounded-lg border ${isFriday ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
+          <div className="flex items-center gap-2">
+            <svg className={`w-4 h-4 ${isFriday ? 'text-blue-600' : 'text-gray-600'}`} fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+            </svg>
+            <p className={`text-sm font-medium ${isFriday ? 'text-blue-800' : 'text-gray-700'}`}>
+              {isFriday ? t.fridayHours : t.mondayToThursday}
+            </p>
+          </div>
+        </div>
+      )}
+
       {slots.length === 0 ? (
         <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border border-gray-200">
           {t.noSlots}

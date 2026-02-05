@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   User,
   FileText,
@@ -19,16 +19,20 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import Layout from '../../components/Layout';
 import PageHeader from '../../components/PageHeader';
+import WakalaBookingModal from '../../components/modals/WakalaBookingModal';
 
 export default function MemberDashboard() {
   const { user, signOut } = useMemberAuth();
   const { language } = useLanguage();
+  const location = useLocation();
   const isRTL = language === 'ar';
 
   const [loading, setLoading] = useState(true);
   const [membershipApp, setMembershipApp] = useState<any>(null);
   const [wakalaApps, setWakalaApps] = useState<any[]>([]);
   const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
+  const [showWakalaModal, setShowWakalaModal] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
 
   const translations = {
     en: {
@@ -97,6 +101,13 @@ export default function MemberDashboard() {
     fetchData();
   }, [user]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('openWakala') === 'true') {
+      setShowWakalaModal(true);
+    }
+  }, [location]);
+
   const fetchData = async () => {
     if (!user) return;
 
@@ -111,6 +122,14 @@ export default function MemberDashboard() {
         .maybeSingle();
 
       setMembershipApp(membership);
+
+      const { data: memberData } = await supabase
+        .from('members')
+        .select('*')
+        .eq('email', user.email)
+        .maybeSingle();
+
+      setUserData(memberData || membership);
 
       const { data: wakala } = await supabase
         .from('wakala_applications')
@@ -212,13 +231,13 @@ export default function MemberDashboard() {
               </div>
 
               <div className="pt-6 border-t border-gray-200 space-y-3">
-                <Link
-                  to="/member/wakala/apply"
+                <button
+                  onClick={() => setShowWakalaModal(true)}
                   className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   <FileText className="w-5 h-5" />
                   {t.newWakalaApp}
-                </Link>
+                </button>
 
                 <button
                   onClick={handleSignOut}
@@ -321,6 +340,16 @@ export default function MemberDashboard() {
           </div>
         </div>
       </div>
+
+      <WakalaBookingModal
+        isOpen={showWakalaModal}
+        onClose={() => setShowWakalaModal(false)}
+        userData={userData}
+        onSuccess={() => {
+          setShowWakalaModal(false);
+          fetchData();
+        }}
+      />
     </Layout>
   );
 }

@@ -145,9 +145,6 @@ export default function Header() {
             <Link to="/services" className="text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
               {t('nav.services')}
             </Link>
-            <Link to="/booking" className="text-sm uppercase tracking-wider whitespace-nowrap bg-teal-600 hover:bg-teal-700 px-4 py-2 rounded-lg transition-colors">
-              {language === 'ar' ? 'احجز موعد' : 'Book Appointment'}
-            </Link>
             <Link to="/programmes" className="text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
               {t('nav.programmes')}
             </Link>
@@ -289,12 +286,6 @@ export default function Header() {
               <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.15 }}>
                 <Link to="/services" onClick={() => setIsOpen(false)} className="block py-2 hover:text-accent transition-colors">
                   {t('nav.services')}
-                </Link>
-              </motion.div>
-
-              <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.175 }}>
-                <Link to="/booking" onClick={() => setIsOpen(false)} className="block py-3 bg-teal-600 hover:bg-teal-700 rounded-lg text-center font-semibold transition-colors my-2">
-                  {language === 'ar' ? 'احجز موعد' : 'Book Appointment'}
                 </Link>
               </motion.div>
 

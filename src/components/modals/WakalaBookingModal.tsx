@@ -10,6 +10,7 @@ import Calendar from '../booking/Calendar';
 import TimeSlotGrid from '../booking/TimeSlotGrid';
 import BookingSummaryCard from '../booking/BookingSummaryCard';
 import HelpCard from '../booking/HelpCard';
+import { getAvailableSlotsForDuration, reserveSlots } from '../../lib/booking-utils';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
@@ -185,6 +186,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
 
   const [wakalaService, setWakalaService] = useState<Service | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDuration, setSelectedDuration] = useState<30 | 60 | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [maxDaysAhead, setMaxDaysAhead] = useState(30);
@@ -205,7 +207,12 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
       cancel: 'Cancel',
       selectSlot: 'Select Date & Time',
       selectDate: 'Select Date',
+      selectDuration: 'Select Duration',
       selectTime: 'Select Time',
+      duration30: 'Quick Appointment - 30 Minutes',
+      duration60: 'Extended Appointment - 1 Hour',
+      duration30Desc: 'Perfect for quick services and consultations',
+      duration60Desc: 'Ideal for comprehensive services requiring more time',
       personalInfo: 'Contact Details',
       contactDescription: 'Enter your contact information for this booking.',
       fullName: 'Full Name',
@@ -251,7 +258,12 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
       cancel: 'إلغاء',
       selectSlot: 'اختيار التاريخ والوقت',
       selectDate: 'اختر التاريخ',
+      selectDuration: 'اختر المدة',
       selectTime: 'اختر الوقت',
+      duration30: 'موعد سريع - 30 دقيقة',
+      duration60: 'موعد ممتد - ساعة كاملة',
+      duration30Desc: 'مثالي للخدمات السريعة والاستشارات',
+      duration60Desc: 'مناسب للخدمات الشاملة التي تتطلب وقتاً أطول',
       personalInfo: 'تفاصيل الاتصال',
       contactDescription: 'أدخل معلومات الاتصال الخاصة بك لهذا الحجز.',
       fullName: 'الاسم الكامل',
@@ -311,10 +323,10 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
   }, [isOpen]);
 
   useEffect(() => {
-    if (wakalaService && selectedDate) {
+    if (wakalaService && selectedDate && selectedDuration) {
       loadSlots();
     }
-  }, [wakalaService, selectedDate]);
+  }, [wakalaService, selectedDate, selectedDuration]);
 
   const loadUserData = async () => {
     if (!user) return;
@@ -398,7 +410,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
   };
 
   const loadSlots = async () => {
-    if (!wakalaService || !selectedDate) return;
+    if (!wakalaService || !selectedDate || !selectedDuration) return;
 
     const dayOfWeek = selectedDate.getDay();
     if (dayOfWeek === 0 || dayOfWeek === 6) {
@@ -411,18 +423,13 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
 
     try {
       const dateStr = selectedDate.toISOString().split('T')[0];
+      const availableSlots = await getAvailableSlotsForDuration(
+        wakalaService.id,
+        dateStr,
+        selectedDuration
+      );
 
-      const { data, error } = await supabase
-        .from('availability_slots')
-        .select('*')
-        .eq('service_id', wakalaService.id)
-        .eq('date', dateStr)
-        .eq('is_available', true)
-        .eq('is_blocked_by_admin', false);
-
-      if (error) throw error;
-
-      const formattedSlots: TimeSlot[] = (data || []).map(slot => ({
+      const formattedSlots: TimeSlot[] = availableSlots.map(slot => ({
         id: slot.id,
         startTime: slot.start_time,
         endTime: slot.end_time,
@@ -527,12 +534,14 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
         full_name: formData.fullName,
         phone: formData.phone,
         email: formData.email,
+        booking_date: dateStr,
         requested_date: dateStr,
         service_type: formData.serviceType,
         special_requests: formData.specialRequests,
         slot_id: selectedSlot.id,
         start_time: selectedSlot.startTime,
         end_time: selectedSlot.endTime,
+        duration_minutes: selectedDuration,
         fee_amount: price,
         payment_status: 'pending',
       };
@@ -545,10 +554,17 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
 
       if (appError) throw appError;
 
-      await supabase
-        .from('availability_slots')
-        .update({ is_available: false })
-        .eq('id', selectedSlot.id);
+      const reserveResult = await reserveSlots({
+        slot_id: selectedSlot.id,
+        booking_date: dateStr,
+        start_time: selectedSlot.startTime,
+        end_time: selectedSlot.endTime,
+        duration_minutes: selectedDuration!,
+      });
+
+      if (!reserveResult.success) {
+        throw new Error(reserveResult.error || 'Failed to reserve slot');
+      }
 
       setApplicationId(application.id);
       setPaymentAmount(price);
@@ -589,6 +605,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
       specialRequests: '',
     });
     setSelectedDate(null);
+    setSelectedDuration(null);
     setSelectedSlot(null);
     setError('');
     setStep('booking');
@@ -774,6 +791,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
                     selectedDate={selectedDate}
                     onDateSelect={(date) => {
                       setSelectedDate(date);
+                      setSelectedDuration(null);
                       setSelectedSlot(null);
                     }}
                     maxDaysAhead={maxDaysAhead}
@@ -781,6 +799,57 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
                 </div>
 
                 {selectedDate && (
+                  <div className="mb-6">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">
+                      {t.selectDuration}
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedDuration(30);
+                          setSelectedSlot(null);
+                        }}
+                        className={`p-4 rounded-lg border-2 transition-all text-left ${
+                          selectedDuration === 30
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-blue-300 bg-white'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-bold text-lg text-gray-900">{t.duration30}</span>
+                          {selectedDuration === 30 && (
+                            <CheckCircle className="w-6 h-6 text-blue-600" />
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">{t.duration30Desc}</p>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedDuration(60);
+                          setSelectedSlot(null);
+                        }}
+                        className={`p-4 rounded-lg border-2 transition-all text-left ${
+                          selectedDuration === 60
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-blue-300 bg-white'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-bold text-lg text-gray-900">{t.duration60}</span>
+                          {selectedDuration === 60 && (
+                            <CheckCircle className="w-6 h-6 text-blue-600" />
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">{t.duration60Desc}</p>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {selectedDate && selectedDuration && (
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 mb-3">
                       {t.selectTime}

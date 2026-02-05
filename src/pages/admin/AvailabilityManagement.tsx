@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Calendar as CalendarIcon, Clock, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Calendar as CalendarIcon, Clock, Loader2, Settings, RefreshCw, Save } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import AdminLayout from '../../components/admin/AdminLayout';
+import { getWorkingHoursConfig, updateWorkingHours, generateSlotsForDateRange, type WorkingHoursConfig } from '../../lib/booking-utils';
 
 interface Service {
   id: string;
@@ -28,6 +29,9 @@ export default function AvailabilityManagement() {
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [loading, setLoading] = useState(false);
   const [maxDaysAhead, setMaxDaysAhead] = useState(30);
+  const [workingHours, setWorkingHours] = useState<WorkingHoursConfig[]>([]);
+  const [showWorkingHours, setShowWorkingHours] = useState(false);
+  const [generatingSlots, setGeneratingSlots] = useState(false);
 
   const [newSlot, setNewSlot] = useState({
     start_time: '',
@@ -82,6 +86,7 @@ export default function AvailabilityManagement() {
   useEffect(() => {
     loadServices();
     loadSettings();
+    loadWorkingHours();
   }, []);
 
   useEffect(() => {
@@ -121,6 +126,76 @@ export default function AvailabilityManagement() {
       }
     } catch (error) {
       console.error('Error loading settings:', error);
+    }
+  };
+
+  const loadWorkingHours = async () => {
+    const hours = await getWorkingHoursConfig();
+    setWorkingHours(hours);
+  };
+
+  const handleUpdateWorkingHours = async (dayOfWeek: number, field: string, value: any) => {
+    const updatedHours = workingHours.map(wh =>
+      wh.day_of_week === dayOfWeek ? { ...wh, [field]: value } : wh
+    );
+    setWorkingHours(updatedHours);
+  };
+
+  const handleSaveWorkingHours = async () => {
+    try {
+      for (const wh of workingHours) {
+        await updateWorkingHours(wh.day_of_week, {
+          start_time: wh.start_time,
+          end_time: wh.end_time,
+          last_appointment_time: wh.last_appointment_time,
+          slot_interval_minutes: wh.slot_interval_minutes,
+          is_active: wh.is_active
+        });
+      }
+      alert(language === 'ar' ? 'تم حفظ ساعات العمل بنجاح!' : 'Working hours saved successfully!');
+      loadWorkingHours();
+    } catch (error) {
+      console.error('Error saving working hours:', error);
+      alert(t.error);
+    }
+  };
+
+  const handleGenerateAutoSlots = async () => {
+    if (!selectedService) {
+      alert(language === 'ar' ? 'الرجاء اختيار خدمة' : 'Please select a service');
+      return;
+    }
+
+    if (!confirm(language === 'ar'
+      ? `هل تريد توليد الأوقات تلقائياً للأيام ${maxDaysAhead} القادمة؟`
+      : `Generate slots automatically for the next ${maxDaysAhead} days?`)) {
+      return;
+    }
+
+    setGeneratingSlots(true);
+    try {
+      const today = new Date();
+      const endDate = new Date();
+      endDate.setDate(today.getDate() + maxDaysAhead);
+
+      const slotsCreated = await generateSlotsForDateRange(
+        selectedService.id,
+        today.toISOString().split('T')[0],
+        endDate.toISOString().split('T')[0]
+      );
+
+      alert(language === 'ar'
+        ? `تم توليد ${slotsCreated} موعد بنجاح!`
+        : `Successfully generated ${slotsCreated} slots!`);
+
+      if (selectedDate) {
+        loadSlots();
+      }
+    } catch (error) {
+      console.error('Error generating slots:', error);
+      alert(t.error);
+    } finally {
+      setGeneratingSlots(false);
     }
   };
 
@@ -268,6 +343,126 @@ export default function AvailabilityManagement() {
     <AdminLayout>
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">{t.title}</h1>
+
+        <div className="mb-6 bg-gradient-to-r from-teal-50 to-blue-50 rounded-xl p-6 border border-teal-200">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Settings className="w-6 h-6 text-teal-600" />
+              <h2 className="text-xl font-bold text-gray-900">
+                {language === 'ar' ? 'إعدادات ساعات العمل' : 'Working Hours Configuration'}
+              </h2>
+            </div>
+            <button
+              onClick={() => setShowWorkingHours(!showWorkingHours)}
+              className="px-4 py-2 bg-white text-teal-600 rounded-lg hover:bg-teal-50 transition-colors font-medium"
+            >
+              {showWorkingHours ? (language === 'ar' ? 'إخفاء' : 'Hide') : (language === 'ar' ? 'عرض' : 'Show')}
+            </button>
+          </div>
+
+          {showWorkingHours && (
+            <div className="space-y-4">
+              <div className="bg-white rounded-lg p-4">
+                <div className="grid grid-cols-7 gap-2 mb-2 text-xs font-semibold text-gray-600">
+                  <div>{language === 'ar' ? 'اليوم' : 'Day'}</div>
+                  <div>{language === 'ar' ? 'نشط' : 'Active'}</div>
+                  <div>{language === 'ar' ? 'بداية' : 'Start'}</div>
+                  <div>{language === 'ar' ? 'نهاية' : 'End'}</div>
+                  <div>{language === 'ar' ? 'آخر موعد' : 'Last Apt'}</div>
+                  <div>{language === 'ar' ? 'فاصل (دقيقة)' : 'Interval (min)'}</div>
+                  <div></div>
+                </div>
+
+                {workingHours.map((wh) => (
+                  <div key={wh.day_of_week} className="grid grid-cols-7 gap-2 items-center py-3 border-t border-gray-100">
+                    <div className="font-medium text-gray-900">
+                      {language === 'ar' ? wh.day_name_ar : wh.day_name_en}
+                    </div>
+                    <div>
+                      <input
+                        type="checkbox"
+                        checked={wh.is_active}
+                        onChange={(e) => handleUpdateWorkingHours(wh.day_of_week, 'is_active', e.target.checked)}
+                        className="w-5 h-5 text-teal-600 rounded focus:ring-teal-500"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="time"
+                        value={wh.start_time.substring(0, 5)}
+                        onChange={(e) => handleUpdateWorkingHours(wh.day_of_week, 'start_time', e.target.value + ':00')}
+                        disabled={!wh.is_active}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-teal-500 disabled:bg-gray-100"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="time"
+                        value={wh.end_time.substring(0, 5)}
+                        onChange={(e) => handleUpdateWorkingHours(wh.day_of_week, 'end_time', e.target.value + ':00')}
+                        disabled={!wh.is_active}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-teal-500 disabled:bg-gray-100"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="time"
+                        value={wh.last_appointment_time.substring(0, 5)}
+                        onChange={(e) => handleUpdateWorkingHours(wh.day_of_week, 'last_appointment_time', e.target.value + ':00')}
+                        disabled={!wh.is_active}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-teal-500 disabled:bg-gray-100"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="number"
+                        value={wh.slot_interval_minutes}
+                        onChange={(e) => handleUpdateWorkingHours(wh.day_of_week, 'slot_interval_minutes', parseInt(e.target.value))}
+                        disabled={!wh.is_active}
+                        min="15"
+                        max="60"
+                        step="15"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-teal-500 disabled:bg-gray-100"
+                      />
+                    </div>
+                    <div></div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleSaveWorkingHours}
+                  className="flex-1 bg-teal-600 text-white py-3 rounded-lg hover:bg-teal-700 transition-colors font-semibold flex items-center justify-center gap-2"
+                >
+                  <Save className="w-5 h-5" />
+                  {language === 'ar' ? 'حفظ ساعات العمل' : 'Save Working Hours'}
+                </button>
+                <button
+                  onClick={handleGenerateAutoSlots}
+                  disabled={generatingSlots || !selectedService}
+                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {generatingSlots ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-5 h-5" />
+                  )}
+                  {language === 'ar' ? 'توليد الأوقات تلقائياً' : 'Generate Slots Automatically'}
+                </button>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800">
+                  <strong>{language === 'ar' ? 'ملاحظة:' : 'Note:'}</strong>{' '}
+                  {language === 'ar'
+                    ? 'بعد حفظ ساعات العمل، اضغط على "توليد الأوقات تلقائياً" لإنشاء جميع الأوقات المتاحة للأيام القادمة حسب الإعدادات.'
+                    : 'After saving working hours, click "Generate Slots Automatically" to create all available time slots for upcoming days based on your settings.'}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">

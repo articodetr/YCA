@@ -20,6 +20,7 @@ import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import Layout from '../../components/Layout';
 import PageHeader from '../../components/PageHeader';
 import WakalaBookingModal from '../../components/modals/WakalaBookingModal';
+import { cancelBooking, formatTimeRange } from '../../lib/booking-utils';
 
 export default function MemberDashboard() {
   const { user, signOut } = useMemberAuth();
@@ -63,6 +64,14 @@ export default function MemberDashboard() {
       phone: 'Phone',
       address: 'Address',
       loading: 'Loading...',
+      cancelAppointment: 'Cancel Appointment',
+      confirmCancel: 'Are you sure you want to cancel this appointment?',
+      cancelSuccess: 'Appointment cancelled successfully',
+      cancelError: 'Failed to cancel appointment',
+      cancelled: 'Cancelled',
+      appointmentTime: 'Appointment Time',
+      duration: 'Duration',
+      minutes: 'minutes',
     },
     ar: {
       title: 'لوحة تحكم الأعضاء',
@@ -92,6 +101,14 @@ export default function MemberDashboard() {
       phone: 'الهاتف',
       address: 'العنوان',
       loading: 'جاري التحميل...',
+      cancelAppointment: 'إلغاء الموعد',
+      confirmCancel: 'هل أنت متأكد من إلغاء هذا الموعد؟',
+      cancelSuccess: 'تم إلغاء الموعد بنجاح',
+      cancelError: 'فشل إلغاء الموعد',
+      cancelled: 'ملغي',
+      appointmentTime: 'وقت الموعد',
+      duration: 'المدة',
+      minutes: 'دقيقة',
     },
   };
 
@@ -155,6 +172,35 @@ export default function MemberDashboard() {
 
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  const handleCancelAppointment = async (app: any) => {
+    if (!confirm(t.confirmCancel)) return;
+
+    if (!app.slot_id || !app.duration_minutes || !app.booking_date || !app.start_time) {
+      alert(t.cancelError);
+      return;
+    }
+
+    try {
+      const result = await cancelBooking(
+        app.id,
+        app.slot_id,
+        app.duration_minutes,
+        app.booking_date,
+        app.start_time
+      );
+
+      if (result.success) {
+        alert(t.cancelSuccess);
+        fetchData();
+      } else {
+        alert(result.error || t.cancelError);
+      }
+    } catch (error) {
+      console.error('Error cancelling appointment:', error);
+      alert(t.cancelError);
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -291,20 +337,59 @@ export default function MemberDashboard() {
               </h3>
               {wakalaApps.length > 0 ? (
                 <div className="space-y-4">
-                  {wakalaApps.map((app) => (
-                    <div key={app.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-gray-900">{app.service_type}</p>
-                        <p className="text-sm text-gray-600">
-                          {new Date(app.requested_date).toLocaleDateString()}
-                        </p>
+                  {wakalaApps.map((app) => {
+                    const isCancelled = app.status === 'cancelled' || app.cancelled_at;
+                    const isPastAppointment = app.booking_date && new Date(app.booking_date) < new Date();
+                    const canCancel = app.booking_date && !isCancelled && !isPastAppointment;
+
+                    return (
+                      <div key={app.id} className={`p-4 rounded-lg border-2 ${
+                        isCancelled ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'
+                      }`}>
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <p className="font-bold text-gray-900 mb-1">{app.service_type}</p>
+                            {app.booking_date && app.start_time && app.end_time && (
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2 text-sm text-gray-700">
+                                  <Calendar className="w-4 h-4" />
+                                  <span>{new Date(app.booking_date).toLocaleDateString()}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm text-gray-700">
+                                  <Clock className="w-4 h-4" />
+                                  <span>{formatTimeRange(app.start_time, app.end_time)}</span>
+                                  {app.duration_minutes && (
+                                    <span className="text-xs text-blue-600 font-medium">
+                                      ({app.duration_minutes} {t.minutes})
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            {isCancelled && app.cancelled_at && (
+                              <p className="text-xs text-red-600 mt-2">
+                                {t.cancelled} - {new Date(app.cancelled_at).toLocaleString()}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex flex-col items-end gap-2">
+                            <div className="flex items-center gap-2">
+                              {getStatusIcon(app.status)}
+                              <span className="text-sm font-medium">{getStatusText(app.status)}</span>
+                            </div>
+                            {canCancel && (
+                              <button
+                                onClick={() => handleCancelAppointment(app)}
+                                className="text-xs px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors font-medium"
+                              >
+                                {t.cancelAppointment}
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(app.status)}
-                        <span className="text-sm font-medium">{getStatusText(app.status)}</span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-center text-gray-600 py-8">{t.noWakala}</p>

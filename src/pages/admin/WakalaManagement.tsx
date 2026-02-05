@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import ManagementTable from './ManagementTable';
-import { FileText, Download, Eye, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { FileText, Download, Eye, CheckCircle, XCircle, Clock, Calendar } from 'lucide-react';
+import { formatTimeRange } from '../../lib/booking-utils';
 
 export default function WakalaManagement() {
   const [applications, setApplications] = useState<any[]>([]);
@@ -104,9 +105,25 @@ export default function WakalaManagement() {
       ),
     },
     {
-      key: 'requested_date',
+      key: 'booking_date',
       label: 'Appointment Date',
-      render: (value: string) => new Date(value).toLocaleDateString(),
+      render: (value: string, row: any) => {
+        if (!value) return '-';
+        const date = new Date(value).toLocaleDateString();
+        const time = row.start_time && row.end_time
+          ? formatTimeRange(row.start_time, row.end_time)
+          : '-';
+        const duration = row.duration_minutes ? `${row.duration_minutes} min` : '';
+        return (
+          <div className="space-y-1">
+            <div className="font-medium">{date}</div>
+            <div className="text-xs text-gray-600">{time}</div>
+            {duration && (
+              <div className="text-xs text-blue-600 font-medium">{duration}</div>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: 'status',
@@ -197,9 +214,49 @@ export default function WakalaManagement() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Requested Date</label>
-                  <p className="text-gray-900">{new Date(selectedApp.requested_date).toLocaleDateString()}</p>
+                  <p className="text-gray-900">{selectedApp.requested_date ? new Date(selectedApp.requested_date).toLocaleDateString() : '-'}</p>
                 </div>
               </div>
+
+              {selectedApp.booking_date && (
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Calendar className="w-5 h-5 text-blue-600" />
+                    <h4 className="font-semibold text-gray-900">Appointment Details</h4>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-xs font-medium text-gray-500">Date</label>
+                      <p className="text-sm font-medium text-gray-900">
+                        {new Date(selectedApp.booking_date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500">Time</label>
+                      <p className="text-sm font-medium text-gray-900">
+                        {selectedApp.start_time && selectedApp.end_time
+                          ? formatTimeRange(selectedApp.start_time, selectedApp.end_time)
+                          : '-'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500">Duration</label>
+                      <p className="text-sm font-medium text-gray-900">
+                        {selectedApp.duration_minutes ? `${selectedApp.duration_minutes} minutes` : '-'}
+                      </p>
+                    </div>
+                  </div>
+                  {selectedApp.cancelled_at && (
+                    <div className="mt-3 pt-3 border-t border-blue-200">
+                      <label className="text-xs font-medium text-red-600">Cancelled</label>
+                      <p className="text-sm text-gray-700">
+                        {new Date(selectedApp.cancelled_at).toLocaleString()}
+                        {selectedApp.cancelled_by_user && ' (by user)'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {selectedApp.special_requests && (
                 <div>

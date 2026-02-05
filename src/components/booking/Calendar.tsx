@@ -1,3 +1,4 @@
+import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -109,7 +110,7 @@ export default function Calendar({ selectedDate, onDateSelect, maxDaysAhead, una
     for (let i = 0; i < startingDayOfWeek; i++) {
       const prevMonthDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), -startingDayOfWeek + i + 1);
       days.push(
-        <div key={`prev-${i}`} className="aspect-square flex items-center justify-center text-gray-500 text-sm">
+        <div key={`prev-${i}`} className="aspect-square flex items-center justify-center text-gray-400 text-sm">
           {prevMonthDate.getDate()}
         </div>
       );
@@ -130,11 +131,11 @@ export default function Calendar({ selectedDate, onDateSelect, maxDaysAhead, una
           onClick={() => handleDateClick(day)}
           disabled={isDisabled}
           className={`
-            aspect-square flex items-center justify-center text-sm rounded-lg transition-all
-            ${isSelected ? 'bg-white text-gray-900 font-semibold' : ''}
-            ${isToday && !isSelected ? 'bg-gray-700 text-white' : ''}
-            ${isDisabled ? 'text-gray-600 cursor-not-allowed opacity-50' : 'text-white hover:bg-gray-700'}
-            ${!isSelected && !isToday && !isDisabled ? 'hover:bg-gray-700' : ''}
+            aspect-square flex items-center justify-center text-sm rounded-lg transition-all font-medium
+            ${isSelected ? 'bg-teal-500 text-white shadow-md' : ''}
+            ${isToday && !isSelected ? 'bg-gray-200 text-gray-900 border-2 border-teal-300' : ''}
+            ${isDisabled ? 'text-gray-300 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'}
+            ${!isSelected && !isToday && !isDisabled ? 'hover:bg-gray-100' : ''}
           `}
         >
           {day}
@@ -146,21 +147,21 @@ export default function Calendar({ selectedDate, onDateSelect, maxDaysAhead, una
   };
 
   return (
-    <div className="bg-gray-800 rounded-2xl p-6">
+    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-white text-lg font-medium">
+        <h3 className="text-gray-900 text-lg font-semibold">
           {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
         </h3>
         <div className="flex gap-2">
           <button
             onClick={handlePrevMonth}
-            className="p-2 text-white hover:bg-gray-700 rounded-lg transition-colors"
+            className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <button
             onClick={handleNextMonth}
-            className="p-2 text-white hover:bg-gray-700 rounded-lg transition-colors"
+            className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
@@ -169,7 +170,7 @@ export default function Calendar({ selectedDate, onDateSelect, maxDaysAhead, una
 
       <div className="grid grid-cols-7 gap-2 mb-2">
         {dayNames.map((day, index) => (
-          <div key={index} className="text-center text-gray-400 text-xs font-medium">
+          <div key={index} className="text-center text-gray-500 text-sm font-medium">
             {day}
           </div>
         ))}
@@ -180,17 +181,15 @@ export default function Calendar({ selectedDate, onDateSelect, maxDaysAhead, una
       </div>
 
       {showWarning && (
-        <div className="mt-4 bg-gray-700 rounded-lg p-4 flex items-start gap-3">
-          <div className="bg-gray-600 rounded-full p-1 flex-shrink-0">
-            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+        <div className="mt-4 bg-amber-50 border border-amber-300 rounded-lg p-4 flex items-start gap-3">
+          <div className="bg-amber-100 rounded-full p-1 flex-shrink-0">
+            <svg className="w-4 h-4 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
             </svg>
           </div>
-          <p className="text-white text-sm">{t.warning}</p>
+          <p className="text-amber-900 text-sm">{t.warning}</p>
         </div>
       )}
     </div>
   );
 }
-
-import React from 'react';

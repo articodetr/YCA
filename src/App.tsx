@@ -25,7 +25,6 @@ import Donate from './pages/get-involved/Donate';
 import Jobs from './pages/get-involved/Jobs';
 import Partnerships from './pages/get-involved/Partnerships';
 import Resources from './pages/Resources';
-import WakalaBooking from './pages/WakalaBooking';
 
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import { MemberAuthProvider } from './contexts/MemberAuthContext';
@@ -152,7 +151,6 @@ function App() {
                 <Route path="/get-involved/partnerships" element={<Partnerships />} />
 
                 <Route path="/resources" element={<Resources />} />
-                <Route path="/wakala-booking" element={<WakalaBooking />} />
               </Routes>
             </Layout>
           } />

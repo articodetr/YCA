@@ -180,6 +180,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
   const [error, setError] = useState('');
   const [step, setStep] = useState<'booking' | 'payment' | 'success'>('booking');
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [applicationId, setApplicationId] = useState<string | null>(null);
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
 
   const [wakalaService, setWakalaService] = useState<Service | null>(null);
@@ -570,7 +571,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
     }
 
     const hasData = formData.fullName || formData.phone || selectedDate || selectedSlot || step === 'payment';
-    if (hasData && !success) {
+    if (hasData && step !== 'success') {
       if (window.confirm(t.closeConfirm)) {
         onClose();
       }
@@ -590,7 +591,6 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
     setSelectedDate(null);
     setSelectedSlot(null);
     setError('');
-    setSuccess(false);
     setStep('booking');
     setClientSecret(null);
     setApplicationId(null);
@@ -606,7 +606,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
 
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [isOpen, formData, selectedDate, selectedSlot, success]);
+  }, [isOpen, formData, selectedDate, selectedSlot, step]);
 
   if (!isOpen) return null;
 

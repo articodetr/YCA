@@ -58,6 +58,8 @@ import ProgrammesManagement from './pages/admin/ProgrammesManagement';
 import ResourcesManagement from './pages/admin/ResourcesManagement';
 import EventGalleriesManagement from './pages/admin/EventGalleriesManagement';
 import ContentManagement from './pages/admin/ContentManagement';
+import AvailabilityManagement from './pages/admin/AvailabilityManagement';
+import Booking from './pages/Booking';
 
 function App() {
   return (
@@ -95,6 +97,7 @@ function App() {
                     <Route path="programmes" element={<ProgrammesManagement />} />
                     <Route path="resources" element={<ResourcesManagement />} />
                     <Route path="content" element={<ContentManagement />} />
+                    <Route path="availability" element={<AvailabilityManagement />} />
                     <Route path="settings" element={<Settings />} />
                   </Routes>
                 </AdminLayout>
@@ -122,6 +125,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/services" element={<Services />} />
+                <Route path="/booking" element={<Booking />} />
 
                 <Route path="/programmes" element={<Programmes />} />
                 <Route path="/programmes/women" element={<WomenProgramme />} />

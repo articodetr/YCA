@@ -222,7 +222,6 @@ export default function WakalaApplication() {
         service_type: formData.serviceType,
         special_requests: formData.specialRequests,
         fee_amount: price,
-        status: 'pending',
         payment_status: 'pending',
       };
 

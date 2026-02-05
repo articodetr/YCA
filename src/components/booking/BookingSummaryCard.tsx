@@ -1,20 +1,26 @@
-import { Calendar, Clock, MapPin } from 'lucide-react';
+import { Calendar, Clock, FileText } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface BookingSummaryCardProps {
-  service: { name_en: string; name_ar: string } | null;
+  serviceName: string;
   selectedDate: Date | null;
-  selectedSlot: { startTime: string; endTime: string } | null;
-  locationType: 'office' | 'online';
-  onContinue: () => void;
+  selectedTime: { startTime: string; endTime: string } | null;
+  totalPrice: number;
+  serviceType?: string;
+  isFormComplete: boolean;
+  onSubmit: () => void;
+  isSubmitting: boolean;
 }
 
 export default function BookingSummaryCard({
-  service,
+  serviceName,
   selectedDate,
-  selectedSlot,
-  locationType,
-  onContinue
+  selectedTime,
+  totalPrice,
+  serviceType,
+  isFormComplete,
+  onSubmit,
+  isSubmitting,
 }: BookingSummaryCardProps) {
   const { language } = useLanguage();
 
@@ -22,23 +28,37 @@ export default function BookingSummaryCard({
     en: {
       title: 'Booking Details',
       service: 'Service',
+      serviceType: 'Service Type',
       dateTime: 'Date & Time',
-      location: 'Location',
-      office: 'Birmingham Office',
-      online: 'Online',
-      continue: 'Continue',
-      selectAll: 'Please select date and time to continue'
+      totalAmount: 'Total Amount',
+      proceed: 'Proceed to Pay',
+      notSelected: 'Not selected',
+      fillForm: 'Please complete all required fields',
+      serviceTypes: {
+        passport_renewal: 'Passport Renewal',
+        visa_application: 'Visa Application',
+        document_authentication: 'Document Authentication',
+        power_of_attorney: 'Power of Attorney',
+        other: 'Other',
+      },
     },
     ar: {
       title: 'تفاصيل الحجز',
       service: 'الخدمة',
+      serviceType: 'نوع الخدمة',
       dateTime: 'التاريخ والوقت',
-      location: 'الموقع',
-      office: 'مكتب برمنجهام',
-      online: 'عبر الإنترنت',
-      continue: 'متابعة',
-      selectAll: 'الرجاء اختيار التاريخ والوقت للمتابعة'
-    }
+      totalAmount: 'المبلغ الإجمالي',
+      proceed: 'المتابعة للدفع',
+      notSelected: 'لم يتم الاختيار',
+      fillForm: 'يرجى إكمال جميع الحقول المطلوبة',
+      serviceTypes: {
+        passport_renewal: 'تجديد جواز السفر',
+        visa_application: 'طلب تأشيرة',
+        document_authentication: 'توثيق المستندات',
+        power_of_attorney: 'توكيل رسمي',
+        other: 'أخرى',
+      },
+    },
   }[language];
 
   const formatTime = (time: string) => {
@@ -49,12 +69,11 @@ export default function BookingSummaryCard({
     return `${hour12}:${minutes} ${ampm}`;
   };
 
-  const formatDate = (date: Date) => {
+  const formatDateDisplay = (date: Date) => {
     const options: Intl.DateTimeFormatOptions = {
-      weekday: 'short',
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     };
 
     if (language === 'ar') {
@@ -63,72 +82,81 @@ export default function BookingSummaryCard({
     return date.toLocaleDateString('en-GB', options);
   };
 
-  const isComplete = service && selectedDate && selectedSlot;
+  const getServiceTypeLabel = (type: string) => {
+    return t.serviceTypes[type as keyof typeof t.serviceTypes] || type;
+  };
+
+  const canProceed = selectedDate && selectedTime && isFormComplete;
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 sticky top-6">
-      <h3 className="text-xl font-semibold text-gray-900 mb-6">{t.title}</h3>
+    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200 h-fit sticky top-6">
+      <h3 className="text-xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">
+        {t.title}
+      </h3>
 
-      <div className="space-y-6">
-        <div>
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-            <div className="w-8 h-8 bg-teal-50 rounded-lg flex items-center justify-center">
-              <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
+      <div className="space-y-5 mb-6">
+        <div className="pb-4 border-b border-gray-100">
+          <div className="flex items-start gap-3 mb-1">
+            <div className="p-2 bg-blue-50 rounded-lg flex-shrink-0">
+              <FileText className="w-4 h-4 text-blue-600" />
             </div>
-            <span className="font-medium">{t.service}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-gray-500 mb-1">{t.service}</p>
+              <p className="font-semibold text-gray-900 text-sm">{serviceName}</p>
+            </div>
           </div>
-          <p className="text-gray-900 font-medium ps-10">
-            {service ? (language === 'ar' ? service.name_ar : service.name_en) : '-'}
-          </p>
+
+          {serviceType && (
+            <div className="mt-2 pl-11">
+              <p className="text-xs text-gray-500 mb-0.5">{t.serviceType}</p>
+              <p className="text-sm text-gray-700">{getServiceTypeLabel(serviceType)}</p>
+            </div>
+          )}
         </div>
 
-        <div>
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-            <div className="w-8 h-8 bg-teal-50 rounded-lg flex items-center justify-center">
-              <Calendar className="w-4 h-4 text-teal-600" />
+        <div className="pb-4 border-b border-gray-100">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-green-50 rounded-lg flex-shrink-0">
+              <Clock className="w-4 h-4 text-green-600" />
             </div>
-            <span className="font-medium">{t.dateTime}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-gray-500 mb-1">{t.dateTime}</p>
+              {selectedDate && selectedTime ? (
+                <>
+                  <p className="font-semibold text-gray-900 text-sm">
+                    {formatDateDisplay(selectedDate)}
+                  </p>
+                  <p className="text-xs text-gray-600 mt-1">
+                    {formatTime(selectedTime.startTime)} - {formatTime(selectedTime.endTime)}
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-gray-400 italic">{t.notSelected}</p>
+              )}
+            </div>
           </div>
-          <p className="text-gray-900 font-medium ps-10">
-            {selectedDate && selectedSlot
-              ? `${formatDate(selectedDate)}, ${formatTime(selectedSlot.startTime)}`
-              : '-'}
-          </p>
         </div>
 
-        <div>
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-            <div className="w-8 h-8 bg-teal-50 rounded-lg flex items-center justify-center">
-              <MapPin className="w-4 h-4 text-teal-600" />
-            </div>
-            <span className="font-medium">{t.location}</span>
+        <div className="pt-2">
+          <div className="flex justify-between items-baseline">
+            <span className="text-sm font-semibold text-gray-900">{t.totalAmount}</span>
+            <span className="text-2xl font-bold text-blue-600">
+              SEK {totalPrice > 0 ? totalPrice.toFixed(0) : 0}
+            </span>
           </div>
-          <p className="text-gray-900 font-medium ps-10">
-            {locationType === 'office' ? t.office : t.online}
-          </p>
         </div>
       </div>
 
       <button
-        onClick={onContinue}
-        disabled={!isComplete}
-        className={`
-          w-full mt-8 py-4 rounded-xl font-semibold text-base transition-all
-          ${isComplete
-            ? 'bg-teal-600 text-white hover:bg-teal-700'
-            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-          }
-        `}
+        onClick={onSubmit}
+        disabled={!canProceed || isSubmitting}
+        className="w-full py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md disabled:hover:bg-blue-600"
       >
-        {t.continue}
+        {t.proceed}
       </button>
 
-      {!isComplete && (
-        <p className="text-center text-sm text-gray-400 mt-3">
-          {t.selectAll}
-        </p>
+      {!canProceed && (
+        <p className="text-xs text-gray-500 text-center mt-3">{t.fillForm}</p>
       )}
     </div>
   );

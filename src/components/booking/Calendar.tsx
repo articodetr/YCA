@@ -128,14 +128,15 @@ export default function Calendar({ selectedDate, onDateSelect, maxDaysAhead, una
       days.push(
         <button
           key={day}
+          type="button"
           onClick={() => handleDateClick(day)}
           disabled={isDisabled}
           className={`
-            aspect-square flex items-center justify-center text-sm rounded-lg transition-all font-medium
-            ${isSelected ? 'bg-teal-500 text-white shadow-md' : ''}
-            ${isToday && !isSelected ? 'bg-gray-200 text-gray-900 border-2 border-teal-300' : ''}
-            ${isDisabled ? 'text-gray-300 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'}
-            ${!isSelected && !isToday && !isDisabled ? 'hover:bg-gray-100' : ''}
+            aspect-square flex items-center justify-center text-sm rounded-lg transition-all font-semibold
+            ${isSelected ? 'bg-blue-600 text-white shadow-md scale-105' : ''}
+            ${isToday && !isSelected ? 'bg-blue-50 text-blue-600 border-2 border-blue-200' : ''}
+            ${isDisabled ? 'text-gray-300 cursor-not-allowed bg-gray-50' : 'text-gray-700 hover:bg-gray-100 border border-gray-200'}
+            ${!isSelected && !isToday && !isDisabled ? 'hover:bg-blue-50 hover:border-blue-300' : ''}
           `}
         >
           {day}
@@ -147,30 +148,30 @@ export default function Calendar({ selectedDate, onDateSelect, maxDaysAhead, una
   };
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-gray-900 text-lg font-semibold">
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <button
+          type="button"
+          onClick={handlePrevMonth}
+          className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <h4 className="text-base font-semibold text-gray-900">
           {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-        </h3>
-        <div className="flex gap-2">
-          <button
-            onClick={handlePrevMonth}
-            className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <button
-            onClick={handleNextMonth}
-            className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
+        </h4>
+        <button
+          type="button"
+          onClick={handleNextMonth}
+          className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-2 mb-2">
+      <div className="grid grid-cols-7 gap-2 mb-3">
         {dayNames.map((day, index) => (
-          <div key={index} className="text-center text-gray-500 text-sm font-medium">
+          <div key={index} className="text-center text-gray-500 text-xs font-semibold uppercase">
             {day}
           </div>
         ))}
@@ -181,13 +182,13 @@ export default function Calendar({ selectedDate, onDateSelect, maxDaysAhead, una
       </div>
 
       {showWarning && (
-        <div className="mt-4 bg-amber-50 border border-amber-300 rounded-lg p-4 flex items-start gap-3">
+        <div className="mt-4 bg-amber-50 border border-amber-300 rounded-lg p-3 flex items-start gap-2">
           <div className="bg-amber-100 rounded-full p-1 flex-shrink-0">
             <svg className="w-4 h-4 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
             </svg>
           </div>
-          <p className="text-amber-900 text-sm">{t.warning}</p>
+          <p className="text-amber-900 text-xs">{t.warning}</p>
         </div>
       )}
     </div>

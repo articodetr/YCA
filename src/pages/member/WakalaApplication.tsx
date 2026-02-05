@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, CheckCircle, AlertCircle, User, Phone, Mail, FileText } from 'lucide-react';
+import { Loader2, CheckCircle, AlertCircle, User, Phone, Mail, FileText, ArrowLeft } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import Layout from '../../components/Layout';
 import Calendar from '../../components/booking/Calendar';
 import TimeSlotGrid from '../../components/booking/TimeSlotGrid';
+import BookingSummaryCard from '../../components/booking/BookingSummaryCard';
+import HelpCard from '../../components/booking/HelpCard';
 
 interface TimeSlot {
   id: string;
@@ -47,10 +49,14 @@ export default function WakalaApplication() {
 
   const translations = {
     en: {
-      title: 'Book Wakala Appointment',
+      title: 'Confirm Reservation',
       subtitle: 'Select a date, choose a time, and complete your booking',
-      selectDate: 'Select Appointment Date',
-      personalInfo: 'Your Information',
+      selectSlot: 'Select a Slot',
+      backToDate: 'Back to Date Selection',
+      selectDate: 'Select Date',
+      selectTime: 'Select Time',
+      personalInfo: 'Contact Details',
+      contactDescription: 'Enter the details on which you want to receive checkup information.',
       fullName: 'Full Name',
       phone: 'Phone Number',
       email: 'Email Address',
@@ -73,12 +79,18 @@ export default function WakalaApplication() {
       selectDateTime: 'Please select date and time',
       fillAllFields: 'Please fill all required fields',
       selectServiceType: 'Select service type',
+      agreeToTerms: 'I agree to the',
+      termsOfService: 'Terms of Service',
     },
     ar: {
-      title: 'حجز موعد وكالة',
+      title: 'تأكيد الحجز',
       subtitle: 'اختر التاريخ والوقت وأكمل حجزك',
-      selectDate: 'اختر تاريخ الموعد',
-      personalInfo: 'معلوماتك',
+      selectSlot: 'اختيار الموعد',
+      backToDate: 'العودة لاختيار التاريخ',
+      selectDate: 'اختر التاريخ',
+      selectTime: 'اختر الوقت',
+      personalInfo: 'تفاصيل الاتصال',
+      contactDescription: 'أدخل التفاصيل التي تريد استلام معلومات الموعد عليها.',
       fullName: 'الاسم الكامل',
       phone: 'رقم الهاتف',
       email: 'البريد الإلكتروني',
@@ -101,6 +113,8 @@ export default function WakalaApplication() {
       selectDateTime: 'الرجاء اختيار التاريخ والوقت',
       fillAllFields: 'الرجاء تعبئة جميع الحقول المطلوبة',
       selectServiceType: 'اختر نوع الخدمة',
+      agreeToTerms: 'أوافق على',
+      termsOfService: 'شروط الخدمة',
     },
   };
 
@@ -301,113 +315,153 @@ export default function WakalaApplication() {
     );
   }
 
+  const currentPrice = selectedDate ? calculatePrice(selectedDate) : 50;
+  const isFormComplete = formData.fullName && formData.phone && formData.email && formData.serviceType;
+
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12 px-4 sm:px-6 lg:px-8" dir={isRTL ? 'rtl' : 'ltr'}>
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">{t.title}</h1>
-            <p className="text-gray-600 text-lg">{t.subtitle}</p>
+      <div
+        className="min-h-screen py-8 px-4 sm:px-6 lg:px-8"
+        style={{
+          background: 'linear-gradient(to bottom, rgb(219, 234, 254), rgb(255, 255, 255))',
+        }}
+        dir={isRTL ? 'rtl' : 'ltr'}
+      >
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              #{selectedSlot ? 'XXX' : '---'} • {t.title}
+            </h1>
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3 max-w-6xl mx-auto">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-red-800">{error}</p>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <Calendar
-              selectedDate={selectedDate}
-              onDateSelect={(date) => {
-                setSelectedDate(date);
-                setSelectedSlot(null);
-              }}
-              maxDaysAhead={maxDaysAhead}
-            />
-
-            {selectedDate && (
-              <TimeSlotGrid
-                selectedDate={selectedDate}
-                slots={slots}
-                selectedSlot={selectedSlot}
-                onSlotSelect={setSelectedSlot}
-              />
-            )}
-
-            {selectedDate && selectedSlot && (
-              <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-200">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-teal-100 rounded-lg">
-                    <User className="w-5 h-5 text-teal-600" />
+          <form onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+              <div className="lg:col-span-2 space-y-6">
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+                  <div className="flex items-center gap-3 mb-6">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedDate(null);
+                        setSelectedSlot(null);
+                      }}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <ArrowLeft className="w-5 h-5 text-gray-700" />
+                    </button>
+                    <h3 className="text-xl font-bold text-gray-900">{t.selectSlot}</h3>
                   </div>
-                  <h3 className="text-2xl font-semibold text-gray-900">{t.personalInfo}</h3>
+
+                  <div className="mb-6">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">
+                      {t.selectDate}
+                      {selectedDate && (
+                        <span className="text-gray-500 font-normal">
+                          {' - '}
+                          {new Intl.DateTimeFormat(language === 'ar' ? 'ar-EG' : 'en-GB', {
+                            month: 'long',
+                            year: 'numeric'
+                          }).format(selectedDate)}
+                        </span>
+                      )}
+                    </h4>
+                    <Calendar
+                      selectedDate={selectedDate}
+                      onDateSelect={(date) => {
+                        setSelectedDate(date);
+                        setSelectedSlot(null);
+                      }}
+                      maxDaysAhead={maxDaysAhead}
+                    />
+                  </div>
+
+                  {selectedDate && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-700 mb-3">
+                        {t.selectTime} - 08:00 AM - 07:00 PM
+                      </h4>
+                      <TimeSlotGrid
+                        selectedDate={selectedDate}
+                        slots={slots}
+                        selectedSlot={selectedSlot}
+                        onSlotSelect={setSelectedSlot}
+                      />
+                    </div>
+                  )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t.fullName} *
-                    </label>
-                    <div className="relative">
-                      <User className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400`} />
-                      <input
-                        type="text"
-                        name="fullName"
-                        value={formData.fullName}
-                        onChange={handleInputChange}
-                        className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent`}
-                        required
-                      />
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+                  <div className="flex items-start gap-3 mb-6">
+                    <div className="p-2 bg-blue-50 rounded-lg">
+                      <User className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900">{t.personalInfo}</h3>
+                      <p className="text-sm text-gray-500 mt-1">{t.contactDescription}</p>
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t.phone} *
-                    </label>
-                    <div className="relative">
-                      <Phone className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400`} />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {t.phone} *
+                      </label>
                       <input
                         type="tel"
                         name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
-                        className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent`}
+                        placeholder="1234-567-890"
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         required
                       />
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t.email} *
-                    </label>
-                    <div className="relative">
-                      <Mail className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400`} />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {t.email} *
+                      </label>
                       <input
                         type="email"
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent`}
+                        placeholder="example@gmail.com"
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         required
                       />
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t.serviceType} *
-                    </label>
-                    <div className="relative">
-                      <FileText className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10`} />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {t.fullName} *
+                      </label>
+                      <input
+                        type="text"
+                        name="fullName"
+                        value={formData.fullName}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {t.serviceType} *
+                      </label>
                       <select
                         name="serviceType"
                         value={formData.serviceType}
                         onChange={handleInputChange}
-                        className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent appearance-none`}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
                         required
                       >
                         <option value="">{t.selectServiceType}</option>
@@ -416,40 +470,53 @@ export default function WakalaApplication() {
                         ))}
                       </select>
                     </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {t.specialRequests}
+                      </label>
+                      <textarea
+                        name="specialRequests"
+                        value={formData.specialRequests}
+                        onChange={handleInputChange}
+                        rows={3}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      id="terms"
+                      required
+                      className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <label htmlFor="terms" className="text-sm text-gray-700">
+                      {t.agreeToTerms}{' '}
+                      <a href="#" className="text-blue-600 hover:underline">
+                        {t.termsOfService}
+                      </a>
+                    </label>
                   </div>
                 </div>
-
-                <div className="mt-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t.specialRequests}
-                  </label>
-                  <textarea
-                    name="specialRequests"
-                    value={formData.specialRequests}
-                    onChange={handleInputChange}
-                    rows={4}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div className="mt-8">
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full py-4 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        {t.submitting}
-                      </>
-                    ) : (
-                      t.submit
-                    )}
-                  </button>
-                </div>
               </div>
-            )}
+
+              <div className="space-y-6">
+                <BookingSummaryCard
+                  serviceName={wakalaService ? (language === 'ar' ? wakalaService.name_ar : wakalaService.name_en) : 'Wakala Services'}
+                  selectedDate={selectedDate}
+                  selectedTime={selectedSlot}
+                  totalPrice={currentPrice}
+                  serviceType={formData.serviceType}
+                  isFormComplete={!!isFormComplete}
+                  onSubmit={handleSubmit}
+                  isSubmitting={loading}
+                />
+
+                <HelpCard />
+              </div>
+            </div>
           </form>
         </div>
       </div>

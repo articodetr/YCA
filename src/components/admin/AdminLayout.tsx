@@ -84,6 +84,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     {
       title: 'System',
       items: [
+        { icon: Calendar, label: 'Availability Management', path: '/admin/availability' },
         { icon: Settings, label: 'Settings', path: '/admin/settings' },
       ]
     },

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, CheckCircle, AlertCircle, User, X } from 'lucide-react';
+import { Loader2, CheckCircle, AlertCircle, User, X, CreditCard, ArrowLeft } from 'lucide-react';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
@@ -8,6 +10,134 @@ import Calendar from '../booking/Calendar';
 import TimeSlotGrid from '../booking/TimeSlotGrid';
 import BookingSummaryCard from '../booking/BookingSummaryCard';
 import HelpCard from '../booking/HelpCard';
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+
+interface CheckoutFormProps {
+  amount: number;
+  onSuccess: () => void;
+  onBack: () => void;
+}
+
+function CheckoutForm({ amount, onSuccess, onBack }: CheckoutFormProps) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const { language } = useLanguage();
+  const [error, setError] = useState<string | null>(null);
+  const [processing, setProcessing] = useState(false);
+
+  const translations = {
+    en: {
+      amount: 'Amount',
+      paymentType: 'Payment Type',
+      processing: 'Processing payment...',
+      payNow: 'Pay Now',
+      wakalaService: 'Wakala Service',
+      backToBooking: 'Back to Booking',
+    },
+    ar: {
+      amount: 'المبلغ',
+      paymentType: 'نوع الدفع',
+      processing: 'جاري معالجة الدفع...',
+      payNow: 'ادفع الآن',
+      wakalaService: 'خدمة الوكالة',
+      backToBooking: 'العودة للحجز',
+    },
+  };
+
+  const t = translations[language];
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!stripe || !elements) {
+      return;
+    }
+
+    setProcessing(true);
+    setError(null);
+
+    try {
+      const { error: submitError } = await elements.submit();
+      if (submitError) {
+        throw submitError;
+      }
+
+      const { error: confirmError } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/member/dashboard`,
+        },
+        redirect: 'if_required',
+      });
+
+      if (confirmError) {
+        throw confirmError;
+      }
+
+      onSuccess();
+    } catch (err: any) {
+      console.error('Payment error:', err);
+      setError(err.message || 'Payment failed. Please try again.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+        <div className="flex justify-between">
+          <span className="text-gray-600">{t.paymentType}:</span>
+          <span className="font-semibold text-gray-900">{t.wakalaService}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-600">{t.amount}:</span>
+          <span className="font-bold text-2xl text-emerald-600">£{amount}</span>
+        </div>
+      </div>
+
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-red-800">{error}</p>
+        </div>
+      )}
+
+      <PaymentElement />
+
+      <div className="flex gap-3">
+        <button
+          type="button"
+          onClick={onBack}
+          disabled={processing}
+          className="flex-1 border border-gray-300 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          {t.backToBooking}
+        </button>
+
+        <button
+          type="submit"
+          disabled={!stripe || processing}
+          className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          {processing ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              {t.processing}
+            </>
+          ) : (
+            <>
+              <CreditCard className="w-5 h-5" />
+              {t.payNow}
+            </>
+          )}
+        </button>
+      </div>
+    </form>
+  );
+}
 
 interface TimeSlot {
   id: string;
@@ -40,16 +170,17 @@ interface WakalaBookingModalProps {
   onSuccess?: () => void;
 }
 
-export default function WakalaBookingModal({ isOpen, onClose, userData, onSuccess }: WakalaBookingModalProps) {
+export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: WakalaBookingModalProps) {
   const { language } = useLanguage();
   const { user } = useMemberAuth();
-  const navigate = useNavigate();
   const isRTL = language === 'ar';
 
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [step, setStep] = useState<'booking' | 'payment' | 'success'>('booking');
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState<number>(0);
 
   const [wakalaService, setWakalaService] = useState<Service | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -68,6 +199,7 @@ export default function WakalaBookingModal({ isOpen, onClose, userData, onSucces
   const translations = {
     en: {
       title: 'New Wakala Booking',
+      subtitle: 'Select a date, choose a time, and complete your booking',
       closeModal: 'Close',
       cancel: 'Cancel',
       selectSlot: 'Select Date & Time',
@@ -100,9 +232,20 @@ export default function WakalaBookingModal({ isOpen, onClose, userData, onSucces
       loadingData: 'Loading your information...',
       weekendError: 'We are closed on weekends. Please select a weekday.',
       closeConfirm: 'Are you sure you want to close? Your changes will be lost.',
+      paymentTitle: 'Complete Payment',
+      paymentType: 'Payment Type',
+      wakalaService: 'Wakala Service',
+      amount: 'Amount',
+      processing: 'Processing payment...',
+      payNow: 'Pay Now',
+      paymentSuccess: 'Payment completed successfully!',
+      settingUpPayment: 'Setting up payment...',
+      paymentError: 'Failed to initialize payment. Please try again.',
+      backToBooking: 'Back to Booking',
     },
     ar: {
       title: 'حجز وكالة جديد',
+      subtitle: 'اختر التاريخ والوقت وأكمل حجزك',
       closeModal: 'إغلاق',
       cancel: 'إلغاء',
       selectSlot: 'اختيار التاريخ والوقت',
@@ -135,6 +278,16 @@ export default function WakalaBookingModal({ isOpen, onClose, userData, onSucces
       loadingData: 'جاري تحميل معلوماتك...',
       weekendError: 'نحن مغلقون في عطلة نهاية الأسبوع. الرجاء اختيار يوم من أيام الأسبوع.',
       closeConfirm: 'هل تريد الإغلاق؟ سيتم فقدان التغييرات.',
+      paymentTitle: 'إكمال الدفع',
+      paymentType: 'نوع الدفع',
+      wakalaService: 'خدمة الوكالة',
+      amount: 'المبلغ',
+      processing: 'جاري معالجة الدفع...',
+      payNow: 'ادفع الآن',
+      paymentSuccess: 'تم الدفع بنجاح!',
+      settingUpPayment: 'جاري تجهيز الدفع...',
+      paymentError: 'فشل في تهيئة الدفع. يرجى المحاولة مرة أخرى.',
+      backToBooking: 'العودة للحجز',
     },
   };
 
@@ -169,7 +322,7 @@ export default function WakalaBookingModal({ isOpen, onClose, userData, onSucces
     try {
       let fetchedData: UserData | null = null;
 
-      const { data: memberData, error: memberError } = await supabase
+      const { data: memberData } = await supabase
         .from('members')
         .select('*')
         .eq('email', user.email)
@@ -178,7 +331,7 @@ export default function WakalaBookingModal({ isOpen, onClose, userData, onSucces
       if (memberData) {
         fetchedData = memberData;
       } else {
-        const { data: appData, error: appError } = await supabase
+        const { data: appData } = await supabase
           .from('membership_applications')
           .select('*')
           .eq('user_id', user.id)
@@ -306,6 +459,46 @@ export default function WakalaBookingModal({ isOpen, onClose, userData, onSucces
     }
   };
 
+  const createPaymentIntent = async (wakalaId: string, amount: number) => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            amount: Math.round(amount * 100),
+            currency: 'gbp',
+            metadata: {
+              user_id: user?.id,
+              wakala_id: wakalaId,
+              type: 'wakala',
+            },
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || t.paymentError);
+      }
+
+      if (!data.clientSecret) {
+        throw new Error('No client secret returned from server');
+      }
+
+      setClientSecret(data.clientSecret);
+    } catch (err: any) {
+      console.error('Payment intent error:', err);
+      setError(err.message || t.paymentError);
+      setStep('booking');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -356,11 +549,11 @@ export default function WakalaBookingModal({ isOpen, onClose, userData, onSucces
         .update({ is_available: false })
         .eq('id', selectedSlot.id);
 
-      setSuccess(true);
-      setTimeout(() => {
-        onSuccess?.();
-        navigate(`/member/payment?wakala_id=${application.id}&amount=${price}`);
-      }, 2000);
+      setApplicationId(application.id);
+      setPaymentAmount(price);
+
+      await createPaymentIntent(application.id, price);
+      setStep('payment');
     } catch (err: any) {
       console.error('Application error:', err);
       setError(err.message || t.errorMessage);
@@ -370,7 +563,13 @@ export default function WakalaBookingModal({ isOpen, onClose, userData, onSucces
   };
 
   const handleClose = () => {
-    const hasData = formData.fullName || formData.phone || selectedDate || selectedSlot;
+    if (step === 'success') {
+      onSuccess?.();
+      onClose();
+      return;
+    }
+
+    const hasData = formData.fullName || formData.phone || selectedDate || selectedSlot || step === 'payment';
     if (hasData && !success) {
       if (window.confirm(t.closeConfirm)) {
         onClose();
@@ -392,6 +591,10 @@ export default function WakalaBookingModal({ isOpen, onClose, userData, onSucces
     setSelectedSlot(null);
     setError('');
     setSuccess(false);
+    setStep('booking');
+    setClientSecret(null);
+    setApplicationId(null);
+    setPaymentAmount(0);
   };
 
   useEffect(() => {
@@ -407,17 +610,85 @@ export default function WakalaBookingModal({ isOpen, onClose, userData, onSucces
 
   if (!isOpen) return null;
 
-  if (success) {
+  if (step === 'success') {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
         <div className="bg-white rounded-2xl p-8 max-w-md w-full" dir={isRTL ? 'rtl' : 'ltr'}>
           <div className="text-center">
-            <CheckCircle className="w-16 h-16 text-teal-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">{t.successMessage}</h2>
-            <p className="text-gray-600 flex items-center justify-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              {t.redirecting}
-            </p>
+            <CheckCircle className="w-16 h-16 text-emerald-600 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">{t.paymentSuccess}</h2>
+            <p className="text-gray-600 mb-6">{t.redirecting}</p>
+            <button
+              onClick={handleClose}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+            >
+              {t.closeModal}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === 'payment' && clientSecret) {
+    return (
+      <div
+        className="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            handleClose();
+          }
+        }}
+      >
+        <div
+          className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+          dir={isRTL ? 'rtl' : 'ltr'}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
+            <h2 className="text-2xl font-bold text-gray-900">{t.paymentTitle}</h2>
+            <button
+              type="button"
+              onClick={handleClose}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label={t.closeModal}
+            >
+              <X className="w-6 h-6 text-gray-600" />
+            </button>
+          </div>
+
+          <div className="p-6">
+            <Elements
+              stripe={stripePromise}
+              options={{
+                clientSecret,
+                appearance: {
+                  theme: 'stripe',
+                  variables: {
+                    colorPrimary: '#059669',
+                  },
+                },
+              }}
+            >
+              <CheckoutForm
+                amount={paymentAmount}
+                onSuccess={() => setStep('success')}
+                onBack={() => setStep('booking')}
+              />
+            </Elements>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === 'payment' && !clientSecret) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+        <div className="bg-white rounded-2xl p-8 max-w-md w-full" dir={isRTL ? 'rtl' : 'ltr'}>
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto mb-4" />
+            <p className="text-gray-600">{t.settingUpPayment}</p>
           </div>
         </div>
       </div>
@@ -442,7 +713,12 @@ export default function WakalaBookingModal({ isOpen, onClose, userData, onSucces
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
-          <h2 className="text-2xl font-bold text-gray-900">{t.title}</h2>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">{t.title}</h2>
+            {step === 'booking' && (
+              <p className="text-sm text-gray-500 mt-1">{t.subtitle}</p>
+            )}
+          </div>
           <button
             type="button"
             onClick={handleClose}
@@ -638,7 +914,7 @@ export default function WakalaBookingModal({ isOpen, onClose, userData, onSucces
                 totalPrice={currentPrice}
                 serviceType={formData.serviceType}
                 isFormComplete={!!isFormComplete}
-                onSubmit={handleSubmit}
+                onSubmit={() => {}}
                 isSubmitting={loading}
               />
 

@@ -16,104 +16,144 @@ export default function Membership() {
       icon: Users,
       nameEn: 'Individual Membership',
       nameAr: 'عضوية فردية',
-      price: '£15',
+      price: '£20',
       period: language === 'ar' ? 'سنوياً' : 'per year',
-      descriptionEn: 'For individuals who support YCA Birmingham\'s aims and values.',
-      descriptionAr: 'للأفراد الذين يدعمون أهداف وقيم جمعية الجالية اليمنية في برمنغهام.',
-      termsEn: [
-        'Available to individuals who support YCA Birmingham\'s aims and values',
-        'Access to member communications and community opportunities',
-        'Voting/eligibility rights apply in line with YCA Birmingham governance rules'
+      descriptionEn: 'Available to Yemenis living in Birmingham, aged 18+.',
+      descriptionAr: 'متاحة لليمنيين المقيمين في برمنغهام، من عمر 18 سنة فما فوق.',
+      eligibilityEn: [
+        'Available to Yemenis living in Birmingham, aged 18+',
+        'By joining, you agree to comply with YCA Birmingham\'s governing document, core policies, including Safeguarding and Data Protection (UK GDPR) requirements',
+        'Membership runs 1 January to 31 December (subscriptions made during the year still end on 31 December)'
       ],
-      termsAr: [
-        'متاحة للأفراد الذين يدعمون أهداف وقيم جمعية الجالية اليمنية',
-        'الوصول إلى اتصالات الأعضاء والفرص المجتمعية',
-        'تطبق حقوق التصويت والأهلية وفقاً لقواعد حوكمة الجمعية'
+      eligibilityAr: [
+        'متاحة لليمنيين المقيمين في برمنغهام، من عمر 18 سنة فما فوق',
+        'بالانضمام، فإنك توافق على الالتزام بوثيقة الحوكمة والسياسات الأساسية لجمعية الجالية اليمنية، بما في ذلك متطلبات حماية البيانات (UK GDPR)',
+        'تمتد العضوية من 1 يناير إلى 31 ديسمبر (الاشتراكات خلال السنة تنتهي في 31 ديسمبر)'
       ],
-      benefits: [
-        'Access to all community programmes',
-        'Voting rights in AGM',
-        'Regular newsletters and updates',
-        'Networking opportunities'
-      ]
+      benefitsEn: [
+        'Member rates on selected YCA services and administrative support',
+        'Priority booking for advisory/consultancy services and limited-capacity activities',
+        'Discounts on events, programmes, and courses where offered',
+        'Access to member communications (updates and announcements)',
+        'Access to partner discounts/offers provided by YCA Birmingham\'s contracted partners',
+        'Attendance at the General Meeting/AGM and open community meetings'
+      ],
+      benefitsAr: [
+        'أسعار خاصة للأعضاء على خدمات YCA المختارة والدعم الإداري',
+        'أولوية الحجز للخدمات الاستشارية والأنشطة محدودة السعة',
+        'خصومات على الفعاليات والبرامج والدورات حيث تُقدم',
+        'الوصول لاتصالات الأعضاء (التحديثات والإعلانات)',
+        'الوصول لخصومات/عروض الشركاء المقدمة من شركاء YCA المتعاقدين',
+        'حضور الاجتماع العام السنوي والاجتماعات المجتمعية المفتوحة'
+      ],
+      governanceEn: 'Voting and eligibility to stand for election apply only to eligible members of Yemeni origin, in accordance with YCA Birmingham\'s governing arrangements.',
+      governanceAr: 'حقوق التصويت والأهلية للترشح تنطبق فقط على الأعضاء المؤهلين من أصل يمني، وفقاً لترتيبات حوكمة جمعية الجالية اليمنية.'
     },
     {
       id: 'family',
       icon: Heart,
       nameEn: 'Family Membership',
       nameAr: 'عضوية عائلية',
-      price: '£25',
+      price: '£30',
       period: language === 'ar' ? 'سنوياً' : 'per year',
-      descriptionEn: 'Covers all family members living at the same address.',
-      descriptionAr: 'تشمل جميع أفراد الأسرة الذين يعيشون في نفس العنوان.',
-      termsEn: [
-        'Covers family members living at the same address',
-        'Includes membership access for listed family members',
-        'Governance rights (e.g., voting) apply only to eligible adults, in line with internal rules'
+      descriptionEn: 'Covers parents/guardians and all family members under 18 living at the same address.',
+      descriptionAr: 'تشمل الوالدين/الأوصياء وجميع أفراد الأسرة تحت 18 سنة المقيمين في نفس العنوان.',
+      eligibilityEn: [
+        'Covers parents/guardians and family members under 18 living at the same address',
+        'Family members must be listed at registration (basic details only) and kept up to date',
+        'By joining, you agree to comply with YCA Birmingham\'s governing document, core policies, including Safeguarding and Data Protection (UK GDPR) requirements',
+        'Membership runs 1 January to 31 December (subscriptions made during the year still end on 31 December)'
       ],
-      termsAr: [
-        'تشمل أفراد الأسرة الذين يعيشون في نفس العنوان',
-        'يتضمن حق الوصول للعضوية لأفراد الأسرة المدرجين',
-        'حقوق الحوكمة (مثل التصويت) تنطبق فقط على البالغين المؤهلين وفقاً للقواعد الداخلية'
+      eligibilityAr: [
+        'تشمل الوالدين/الأوصياء وأفراد الأسرة تحت 18 سنة المقيمين في نفس العنوان',
+        'يجب إدراج أفراد الأسرة عند التسجيل (تفاصيل أساسية فقط) وتحديثها بانتظام',
+        'بالانضمام، فإنك توافق على الالتزام بوثيقة الحوكمة والسياسات الأساسية لجمعية الجالية اليمنية',
+        'تمتد العضوية من 1 يناير إلى 31 ديسمبر (الاشتراكات خلال السنة تنتهي في 31 ديسمبر)'
       ],
-      benefits: [
-        'All individual benefits',
-        'Coverage for entire family',
-        'Shared access to events',
-        'Family-oriented programmes'
-      ]
+      benefitsEn: [
+        'Member rates on selected YCA services and administrative support for the household',
+        'Priority access to family-appropriate activities, programmes, and limited-capacity events',
+        'Access to member communications and updates for the registered parent/guardian',
+        'Access to partner discounts/offers provided by YCA Birmingham\'s contracted partners'
+      ],
+      benefitsAr: [
+        'أسعار خاصة للأعضاء على خدمات YCA والدعم الإداري للأسرة',
+        'أولوية الوصول للأنشطة المناسبة للعائلات والبرامج والفعاليات محدودة السعة',
+        'الوصول لاتصالات الأعضاء والتحديثات للولي المسجل',
+        'الوصول لخصومات/عروض الشركاء المقدمة من شركاء YCA المتعاقدين'
+      ],
+      governanceEn: 'Governance rights (e.g., voting and eligibility to stand for election) apply only to eligible adults and in accordance with YCA Birmingham\'s internal rules and governing arrangements.',
+      governanceAr: 'حقوق الحوكمة (مثل التصويت والأهلية للترشح) تنطبق فقط على البالغين المؤهلين ووفقاً للقواعد الداخلية وترتيبات حوكمة الجمعية.'
     },
     {
       id: 'associate',
       icon: Globe2,
-      nameEn: 'Associate Membership - منتسب',
+      nameEn: 'Associate Membership (منتسب)',
       nameAr: 'عضوية منتسب',
       price: '£20',
       period: language === 'ar' ? 'سنوياً' : 'per year',
-      descriptionEn: 'For non-Yemenis and Yemenis living outside Birmingham.',
-      descriptionAr: 'لغير اليمنيين واليمنيين المقيمين خارج برمنغهام.',
-      termsEn: [
-        'For non-Yemenis and Yemenis living outside Birmingham',
-        'Can participate in community activities and receive updates',
-        'No voting rights and not eligible to stand for election'
+      descriptionEn: 'Open to non-Yemenis and Yemenis living outside Birmingham.',
+      descriptionAr: 'مفتوحة لغير اليمنيين واليمنيين المقيمين خارج برمنغهام.',
+      eligibilityEn: [
+        'Open to non-Yemenis (living in or outside Birmingham) and Yemenis living outside Birmingham, aged 18+',
+        'By joining, you agree to comply with YCA Birmingham\'s governing document, core policies, including Safeguarding and Data Protection (UK GDPR) requirements',
+        'Membership must remain active and in date to access member rates and any priority booking where offered',
+        'Membership runs 1 January to 31 December (subscriptions made during the year still end on 31 December)'
       ],
-      termsAr: [
-        'لغير اليمنيين واليمنيين المقيمين خارج برمنغهام',
-        'يمكن المشاركة في الأنشطة المجتمعية وتلقي التحديثات',
-        'لا توجد حقوق تصويت وغير مؤهل للترشح للانتخابات'
+      eligibilityAr: [
+        'مفتوحة لغير اليمنيين (المقيمين داخل أو خارج برمنغهام) واليمنيين المقيمين خارج برمنغهام، من عمر 18 سنة فما فوق',
+        'بالانضمام، فإنك توافق على الالتزام بوثيقة الحوكمة والسياسات الأساسية لجمعية الجالية اليمنية',
+        'يجب أن تكون العضوية نشطة وسارية للوصول إلى أسعار الأعضاء وأولوية الحجز حيث تُقدم',
+        'تمتد العضوية من 1 يناير إلى 31 ديسمبر (الاشتراكات خلال السنة تنتهي في 31 ديسمبر)'
       ],
-      benefits: [
-        'Community activities access',
-        'Regular updates',
-        'No voting rights',
-        'Not eligible for elections'
-      ]
+      benefitsEn: [
+        'Member rates on selected YCA services and administrative support (where applicable)',
+        'Access to community activities, programmes, and events (subject to eligibility and capacity)',
+        'Access to member communications (updates and announcements)',
+        'Access to partner discounts/offers provided by YCA Birmingham\'s contracted partners'
+      ],
+      benefitsAr: [
+        'أسعار خاصة للأعضاء على خدمات YCA المختارة والدعم الإداري (حيثما ينطبق)',
+        'الوصول للأنشطة المجتمعية والبرامج والفعاليات (بناءً على الأهلية والسعة)',
+        'الوصول لاتصالات الأعضاء (التحديثات والإعلانات)',
+        'الوصول لخصومات/عروض الشركاء المقدمة من شركاء YCA المتعاقدين'
+      ],
+      governanceEn: 'No voting rights and not eligible to stand for election or hold governance roles within YCA Birmingham.',
+      governanceAr: 'لا حقوق تصويت ولا أهلية للترشح أو شغل أدوار حوكمة داخل جمعية الجالية اليمنية في برمنغهام.'
     },
     {
       id: 'business_support',
       icon: Building2,
       nameEn: 'Business Support Membership',
       nameAr: 'عضوية دعم الأعمال',
-      price: '£10+',
-      period: language === 'ar' ? 'شهرياً' : 'per month',
-      descriptionEn: 'For businesses/individuals wishing to support YCA Birmingham regularly.',
-      descriptionAr: 'للشركات/الأفراد الذين يرغبون في دعم الجمعية بشكل منتظم.',
-      termsEn: [
-        'For businesses/individuals wishing to support YCA Birmingham regularly',
-        'Monthly contribution from £10, with option to increase',
-        'Does not provide governance rights (no voting/standing)'
+      price: 'Flexible',
+      period: language === 'ar' ? 'دعم مرن' : 'Support',
+      descriptionEn: 'Support YCA Birmingham through annual packages, monthly support, or one-time contributions.',
+      descriptionAr: 'ادعم جمعية الجالية اليمنية من خلال باقات سنوية أو دعم شهري أو مساهمات لمرة واحدة.',
+      eligibilityEn: [
+        'Annual Packages: Bronze (£500/year), Silver (£1,500/year), Gold (£3,000/year)',
+        'Monthly Support (Flexible): Minimum £10/month. Suggested: £10 / £25 / £50 / £100 / £250 + Custom',
+        'One-Time Support: £10 / £25 / £50 / £100 / £250 + Custom amount'
       ],
-      termsAr: [
-        'للشركات/الأفراد الذين يرغبون في دعم الجمعية بشكل منتظم',
-        'مساهمة شهرية تبدأ من £10، مع خيار الزيادة',
-        'لا يوفر حقوق الحوكمة (لا تصويت/لا ترشح)'
+      eligibilityAr: [
+        'الباقات السنوية: برونز (£500/سنوياً)، فضي (£1,500/سنوياً)، ذهبي (£3,000/سنوياً)',
+        'الدعم الشهري (مرن): الحد الأدنى £10/شهرياً. مقترح: £10 / £25 / £50 / £100 / £250 + مبلغ مخصص',
+        'الدعم لمرة واحدة: £10 / £25 / £50 / £100 / £250 + مبلغ مخصص'
       ],
-      benefits: [
-        'Support community regularly',
-        'Flexible monthly amount',
-        'Business recognition',
-        'No governance rights'
-      ]
+      benefitsEn: [
+        'Support YCA Birmingham\'s community programmes and services',
+        'Business recognition opportunities (for annual package supporters)',
+        'Flexible contribution options to suit your budget',
+        'Regular updates on community impact'
+      ],
+      benefitsAr: [
+        'دعم برامج وخدمات جمعية الجالية اليمنية',
+        'فرص التقدير للشركات (لداعمي الباقات السنوية)',
+        'خيارات مساهمة مرنة تناسب ميزانيتك',
+        'تحديثات منتظمة حول الأثر المجتمعي'
+      ],
+      governanceEn: 'Business Support does not provide governance rights (no voting or standing for election).',
+      governanceAr: 'دعم الأعمال لا يوفر حقوق الحوكمة (لا تصويت ولا ترشح للانتخابات).'
     }
   ];
 
@@ -236,21 +276,49 @@ export default function Membership() {
                 </div>
               </div>
 
-              <div className="mb-8">
-                <div className="flex items-center gap-2 mb-4">
-                  <Info size={20} className="text-accent" />
-                  <h4 className="text-lg font-semibold text-primary">
-                    {language === 'ar' ? 'الشروط والأحكام' : 'Terms & Conditions'}
-                  </h4>
+              <div className="space-y-6 mb-8">
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Info size={20} className="text-accent" />
+                    <h4 className="text-lg font-semibold text-primary">
+                      {language === 'ar' ? 'الأهلية والشروط' : 'Eligibility & Conditions'}
+                    </h4>
+                  </div>
+                  <ul className="space-y-2">
+                    {(language === 'ar' ? selectedMembership.eligibilityAr : selectedMembership.eligibilityEn).map((item, idx) => (
+                      <li key={idx} className="flex items-start gap-3">
+                        <CheckCircle size={18} className="text-accent flex-shrink-0 mt-0.5" />
+                        <span className="text-gray-700 text-sm">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <ul className="space-y-2">
-                  {(language === 'ar' ? selectedMembership.termsAr : selectedMembership.termsEn).map((term, idx) => (
-                    <li key={idx} className="flex items-start gap-3">
-                      <CheckCircle size={20} className="text-accent flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-700">{term}</span>
-                    </li>
-                  ))}
-                </ul>
+
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <CheckCircle size={20} className="text-accent" />
+                    <h4 className="text-lg font-semibold text-primary">
+                      {language === 'ar' ? 'الفوائد' : 'Benefits'}
+                    </h4>
+                  </div>
+                  <ul className="space-y-2">
+                    {(language === 'ar' ? selectedMembership.benefitsAr : selectedMembership.benefitsEn).map((benefit, idx) => (
+                      <li key={idx} className="flex items-start gap-3">
+                        <CheckCircle size={18} className="text-accent flex-shrink-0 mt-0.5" />
+                        <span className="text-gray-700 text-sm">{benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="bg-sand/20 p-4 rounded-lg border border-primary/20">
+                  <h4 className="text-sm font-semibold text-primary mb-2">
+                    {language === 'ar' ? 'ملاحظة حوكمة' : 'Governance Note'}
+                  </h4>
+                  <p className="text-gray-700 text-sm">
+                    {language === 'ar' ? selectedMembership.governanceAr : selectedMembership.governanceEn}
+                  </p>
+                </div>
               </div>
 
               <div className="flex flex-col gap-4">

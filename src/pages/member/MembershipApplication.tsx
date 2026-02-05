@@ -6,6 +6,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import Layout from '../../components/Layout';
 import PageHeader from '../../components/PageHeader';
+import BusinessSupportSelector from '../../components/BusinessSupportSelector';
 
 export default function MembershipApplication() {
   const [searchParams] = useSearchParams();
@@ -37,6 +38,12 @@ export default function MembershipApplication() {
     numberOfMembers: '',
     familyMembers: [] as Array<{ name: string; relationship: string; dateOfBirth: string }>,
   });
+
+  const [businessSupport, setBusinessSupport] = useState<{
+    tier: string;
+    amount: number;
+    frequency: 'annual' | 'monthly' | 'one_time';
+  } | null>(null);
 
   const translations = {
     en: {
@@ -122,10 +129,10 @@ export default function MembershipApplication() {
   const t = translations[language];
 
   const membershipPrices: Record<string, number> = {
-    individual: 10,
-    family: 25,
-    organization: 100,
-    student: 5,
+    individual: 20,
+    family: 30,
+    associate: 20,
+    business_support: 0,
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -167,6 +174,11 @@ export default function MembershipApplication() {
       return;
     }
 
+    if (membershipType === 'business_support' && !businessSupport) {
+      setError(language === 'ar' ? 'يرجى اختيار نوع الدعم' : 'Please select a support type');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -187,6 +199,11 @@ export default function MembershipApplication() {
       }
       if (!authData?.user) throw new Error('User creation failed');
 
+      // Calculate final amount
+      const finalAmount = membershipType === 'business_support' && businessSupport
+        ? businessSupport.amount
+        : membershipPrices[membershipType];
+
       // Create application data with all required fields
       const applicationData = {
         user_id: authData.user.id,
@@ -205,6 +222,9 @@ export default function MembershipApplication() {
         organization_name: membershipType === 'organization' ? formData.organizationName : null,
         organization_type: membershipType === 'organization' ? formData.organizationType : null,
         number_of_members: membershipType === 'organization' ? parseInt(formData.numberOfMembers) : null,
+        business_support_tier: membershipType === 'business_support' && businessSupport ? businessSupport.tier : null,
+        custom_amount: membershipType === 'business_support' && businessSupport ? businessSupport.amount : null,
+        payment_frequency: membershipType === 'business_support' && businessSupport ? businessSupport.frequency : null,
         status: 'pending',
         payment_status: 'pending',
       };
@@ -240,7 +260,7 @@ export default function MembershipApplication() {
 
       setSuccess(true);
       setTimeout(() => {
-        navigate(`/member/payment?application_id=${application.id}&amount=${membershipPrices[membershipType]}`);
+        navigate(`/member/payment?application_id=${application.id}&amount=${finalAmount}`);
       }, 2000);
     } catch (err: any) {
       console.error('Application error:', err);
@@ -622,6 +642,26 @@ export default function MembershipApplication() {
                     + {t.addFamilyMember}
                   </button>
                 </div>
+              </div>
+            )}
+
+            {membershipType === 'business_support' && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  {language === 'ar' ? 'اختر نوع الدعم' : 'Choose Support Type'}
+                </h3>
+                <BusinessSupportSelector onSelect={setBusinessSupport} />
+                {businessSupport && (
+                  <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                    <p className="text-emerald-800 font-medium">
+                      {language === 'ar' ? 'المبلغ المختار:' : 'Selected Amount:'} £{businessSupport.amount}
+                      {' '}
+                      {businessSupport.frequency === 'annual' && (language === 'ar' ? '/سنوياً' : '/year')}
+                      {businessSupport.frequency === 'monthly' && (language === 'ar' ? '/شهرياً' : '/month')}
+                      {businessSupport.frequency === 'one_time' && (language === 'ar' ? 'لمرة واحدة' : 'one-time')}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 

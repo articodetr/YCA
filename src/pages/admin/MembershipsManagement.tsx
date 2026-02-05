@@ -16,6 +16,9 @@ interface Membership {
   status: string;
   payment_status: string | null;
   organization_name: string | null;
+  business_support_tier: string | null;
+  custom_amount: number | null;
+  payment_frequency: string | null;
   created_at: string;
 }
 
@@ -67,6 +70,19 @@ export default function MembershipsManagement() {
     return mem.first_name || mem.last_name || 'N/A';
   };
 
+  const getAmountDisplay = (mem: Membership): string => {
+    if (mem.membership_type === 'business_support' && mem.custom_amount) {
+      const frequency = mem.payment_frequency === 'annual' ? '/year' : mem.payment_frequency === 'monthly' ? '/month' : '';
+      return `£${mem.custom_amount}${frequency}`;
+    }
+    const prices: Record<string, number> = {
+      individual: 20,
+      family: 30,
+      associate: 20,
+    };
+    return mem.membership_type in prices ? `£${prices[mem.membership_type]}/year` : '-';
+  };
+
   const filteredMemberships = memberships.filter((mem) => {
     const fullName = getFullName(mem);
     const matchesSearch =
@@ -77,7 +93,7 @@ export default function MembershipsManagement() {
   });
 
   const exportToCSV = () => {
-    const headers = ['Name', 'Email', 'Phone', 'Address', 'City', 'Postcode', 'Membership Type', 'Status', 'Payment Status', 'Date'];
+    const headers = ['Name', 'Email', 'Phone', 'Address', 'City', 'Postcode', 'Membership Type', 'Support Tier', 'Amount', 'Frequency', 'Status', 'Payment Status', 'Date'];
     const rows = filteredMemberships.map((mem) => [
       getFullName(mem),
       mem.email,
@@ -86,6 +102,9 @@ export default function MembershipsManagement() {
       mem.city || '',
       mem.postcode || '',
       mem.membership_type,
+      mem.business_support_tier || '',
+      mem.custom_amount || '',
+      mem.payment_frequency || '',
       mem.status,
       mem.payment_status || 'pending',
       new Date(mem.created_at).toLocaleDateString(),
@@ -157,6 +176,7 @@ export default function MembershipsManagement() {
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Email</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Phone</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Type</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Amount</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Date</th>
                   <th className="px-4 py-3 text-right text-sm font-semibold text-gray-900">Actions</th>
@@ -168,7 +188,15 @@ export default function MembershipsManagement() {
                     <td className="px-4 py-4 font-medium text-gray-900">{getFullName(mem)}</td>
                     <td className="px-4 py-4 text-sm text-gray-600">{mem.email}</td>
                     <td className="px-4 py-4 text-sm text-gray-600">{mem.phone}</td>
-                    <td className="px-4 py-4 text-sm text-gray-600 capitalize">{mem.membership_type}</td>
+                    <td className="px-4 py-4 text-sm text-gray-600">
+                      <div className="capitalize">{mem.membership_type.replace('_', ' ')}</div>
+                      {mem.membership_type === 'business_support' && mem.business_support_tier && (
+                        <div className="text-xs text-gray-500 capitalize">{mem.business_support_tier}</div>
+                      )}
+                    </td>
+                    <td className="px-4 py-4 text-sm font-medium text-gray-900">
+                      {getAmountDisplay(mem)}
+                    </td>
                     <td className="px-4 py-4">
                       <span
                         className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${

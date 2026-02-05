@@ -141,7 +141,7 @@ export default function BookingSummaryCard({
           <div className="flex justify-between items-baseline">
             <span className="text-sm font-semibold text-gray-900">{t.totalAmount}</span>
             <span className="text-2xl font-bold text-blue-600">
-              SEK {totalPrice > 0 ? totalPrice.toFixed(0) : 0}
+              £{totalPrice > 0 ? totalPrice.toFixed(0) : 0}
             </span>
           </div>
         </div>

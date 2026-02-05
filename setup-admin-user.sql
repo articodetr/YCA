@@ -6,7 +6,7 @@
 -- admin user in Supabase Dashboard → Authentication → Users
 --
 -- Email: Info@yca-birmingham.org.uk
--- Password: Yca1233*
+-- Password: 123456
 --
 -- Then run this script to add the user to the admins table.
 -- ===================================================================
@@ -39,5 +39,5 @@ SELECT * FROM admins WHERE email = 'Info@yca-birmingham.org.uk';
 -- ===================================================================
 -- Success! You can now log in to /admin/login with:
 -- Email: Info@yca-birmingham.org.uk
--- Password: Yca1233*
+-- Password: 123456
 -- ===================================================================

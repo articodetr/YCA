@@ -97,8 +97,8 @@ export default function BookingsOverview({
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200">
-      <div className="p-3 border-b border-gray-200">
+    <div>
+      <div className="pb-3 border-b border-gray-200 mb-3">
         <h3 className="text-base font-semibold text-gray-900 mb-3">Upcoming Bookings</h3>
 
         <div className="flex flex-col sm:flex-row gap-2">

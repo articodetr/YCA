@@ -195,7 +195,7 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
 
   return (
     <div className="space-y-3">
-      <div className="bg-white rounded-lg border border-gray-200 p-3">
+      <div>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-3">
             <button

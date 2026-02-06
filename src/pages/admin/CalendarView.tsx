@@ -248,12 +248,12 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
         </div>
 
         {loading ? (
-          <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+          <div className="p-12 text-center">
             <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
             <p className="text-gray-600">{t.loading}</p>
           </div>
         ) : bookings.length === 0 ? (
-          <div className="bg-gray-50 rounded-lg border border-gray-200 p-12 text-center">
+          <div className="p-12 text-center">
             <CalendarIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-600">{t.noBookings}</p>
           </div>

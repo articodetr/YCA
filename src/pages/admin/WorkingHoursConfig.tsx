@@ -280,8 +280,8 @@ export default function WorkingHoursConfig({ maxDaysAhead, selectedServiceId, on
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <div className="lg:col-span-1">
-        <div className="bg-white rounded-lg border border-gray-200 p-3">
+      <div className="lg:col-span-1 lg:border-r border-gray-200">
+        <div className="p-3 lg:pr-4">
           <h3 className="text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
             <Calendar className="w-4 h-4 text-blue-600" />
             {t.availableDays}
@@ -296,7 +296,7 @@ export default function WorkingHoursConfig({ maxDaysAhead, selectedServiceId, on
                   className={`w-full text-left p-2 text-sm rounded-lg border-2 transition-all ${
                     isSelected
                       ? 'border-blue-500 bg-blue-50 text-blue-900'
-                      : 'border-gray-200 hover:border-gray-300 bg-white text-gray-900'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-900'
                   } ${isToday(date) ? 'ring-2 ring-green-500 ring-offset-1' : ''}`}
                 >
                   <div className="font-medium">{formatDate(date)}</div>
@@ -314,12 +314,12 @@ export default function WorkingHoursConfig({ maxDaysAhead, selectedServiceId, on
 
       <div className="lg:col-span-2">
         {loading ? (
-          <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+          <div className="p-4 lg:pl-4 text-center">
             <div className="animate-spin w-6 h-6 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-3"></div>
             <p className="text-sm text-gray-600">{language === 'ar' ? 'جاري التحميل...' : 'Loading...'}</p>
           </div>
         ) : selectedDate && dayConfig ? (
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="p-4 lg:pl-4">
             <h3 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
               <Clock className="w-4 h-4 text-blue-600" />
               {t.dateConfig}
@@ -521,7 +521,7 @@ export default function WorkingHoursConfig({ maxDaysAhead, selectedServiceId, on
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+          <div className="p-4 lg:pl-4 text-center">
             <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
             <p className="text-sm text-gray-600">{t.selectDatePrompt}</p>
           </div>

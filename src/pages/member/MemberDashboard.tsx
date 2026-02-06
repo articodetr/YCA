@@ -11,6 +11,7 @@ import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import Layout from '../../components/Layout';
 import PageHeader from '../../components/PageHeader';
 import WakalaBookingModal from '../../components/modals/WakalaBookingModal';
+import AdvisoryBookingModal from '../../components/modals/AdvisoryBookingModal';
 import { cancelBooking } from '../../lib/booking-utils';
 import OverviewTab from './dashboard/OverviewTab';
 import ApplicationsTab from './dashboard/ApplicationsTab';
@@ -71,6 +72,10 @@ const translations = {
     cancel: 'Cancel',
     city: 'City',
     postcode: 'Postcode',
+    submitted: 'Submitted',
+    pending_payment: 'Pending Payment',
+    in_progress: 'In Progress',
+    completed: 'Completed',
   },
   ar: {
     title: 'لوحة تحكم الأعضاء',
@@ -123,6 +128,10 @@ const translations = {
     cancel: 'إلغاء',
     city: 'المدينة',
     postcode: 'الرمز البريدي',
+    submitted: 'مُقدّم',
+    pending_payment: 'بانتظار الدفع',
+    in_progress: 'قيد المعالجة',
+    completed: 'مكتمل',
   },
 };
 
@@ -145,6 +154,7 @@ export default function MemberDashboard() {
   const [wakalaApps, setWakalaApps] = useState<any[]>([]);
   const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
   const [showWakalaModal, setShowWakalaModal] = useState(false);
+  const [showAdvisoryModal, setShowAdvisoryModal] = useState(false);
   const [userData, setUserData] = useState<any>(null);
   const [memberRecord, setMemberRecord] = useState<any>(null);
   const [editingProfile, setEditingProfile] = useState(false);
@@ -351,6 +361,7 @@ export default function MemberDashboard() {
                 wakalaApps={wakalaApps}
                 paymentHistory={paymentHistory}
                 onNewWakala={() => setShowWakalaModal(true)}
+                onNewAdvisory={() => setShowAdvisoryModal(true)}
                 t={t}
               />
             )}
@@ -406,6 +417,15 @@ export default function MemberDashboard() {
         userData={userData}
         onSuccess={() => {
           setShowWakalaModal(false);
+          fetchData();
+        }}
+      />
+
+      <AdvisoryBookingModal
+        isOpen={showAdvisoryModal}
+        onClose={() => setShowAdvisoryModal(false)}
+        onSuccess={() => {
+          setShowAdvisoryModal(false);
           fetchData();
         }}
       />

@@ -1,172 +1,19 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Loader2, CheckCircle, AlertCircle, User, X, CreditCard, ArrowLeft } from 'lucide-react';
-import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { Loader2, CheckCircle, AlertCircle, User, X, FileText, Send, Upload } from 'lucide-react';
+import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
-import Calendar from '../booking/Calendar';
-import TimeSlotGrid from '../booking/TimeSlotGrid';
-import BookingSummaryCard from '../booking/BookingSummaryCard';
-import { getAvailableSlotsForDuration, reserveSlots, getUnavailableDates, getEffectiveWorkingHours } from '../../lib/booking-utils';
+import FileUploadField from '../booking/FileUploadField';
+import WakalaCheckoutForm from './WakalaCheckoutForm';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
-
-interface CheckoutFormProps {
-  amount: number;
-  onSuccess: () => void;
-  onBack: () => void;
-}
-
-function CheckoutForm({ amount, onSuccess, onBack }: CheckoutFormProps) {
-  const stripe = useStripe();
-  const elements = useElements();
-  const { language } = useLanguage();
-  const [error, setError] = useState<string | null>(null);
-  const [processing, setProcessing] = useState(false);
-
-  const translations = {
-    en: {
-      amount: 'Amount',
-      paymentType: 'Payment Type',
-      processing: 'Processing payment...',
-      payNow: 'Pay Now',
-      wakalaService: 'Wakala Service',
-      backToBooking: 'Back to Booking',
-    },
-    ar: {
-      amount: 'المبلغ',
-      paymentType: 'نوع الدفع',
-      processing: 'جاري معالجة الدفع...',
-      payNow: 'ادفع الآن',
-      wakalaService: 'خدمة الوكالة',
-      backToBooking: 'العودة للحجز',
-    },
-  };
-
-  const t = translations[language];
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!stripe || !elements) {
-      return;
-    }
-
-    setProcessing(true);
-    setError(null);
-
-    try {
-      const { error: submitError } = await elements.submit();
-      if (submitError) {
-        throw submitError;
-      }
-
-      const { error: confirmError } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: `${window.location.origin}/member/dashboard`,
-        },
-        redirect: 'if_required',
-      });
-
-      if (confirmError) {
-        throw confirmError;
-      }
-
-      onSuccess();
-    } catch (err: any) {
-      console.error('Payment error:', err);
-      setError(err.message || 'Payment failed. Please try again.');
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-        <div className="flex justify-between">
-          <span className="text-gray-600">{t.paymentType}:</span>
-          <span className="font-semibold text-gray-900">{t.wakalaService}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-gray-600">{t.amount}:</span>
-          <span className="font-bold text-2xl text-emerald-600">£{amount}</span>
-        </div>
-      </div>
-
-      {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-red-800">{error}</p>
-        </div>
-      )}
-
-      <PaymentElement />
-
-      <div className="flex gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          disabled={processing}
-          className="flex-1 border border-gray-300 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          {t.backToBooking}
-        </button>
-
-        <button
-          type="submit"
-          disabled={!stripe || processing}
-          className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          {processing ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              {t.processing}
-            </>
-          ) : (
-            <>
-              <CreditCard className="w-5 h-5" />
-              {t.payNow}
-            </>
-          )}
-        </button>
-      </div>
-    </form>
-  );
-}
-
-interface TimeSlot {
-  id: string;
-  startTime: string;
-  endTime: string;
-  isAvailable: boolean;
-}
-
-interface Service {
-  id: string;
-  name_en: string;
-  name_ar: string;
-}
-
-interface UserData {
-  full_name?: string;
-  first_name?: string;
-  last_name?: string;
-  phone?: string;
-  email?: string;
-  address?: string;
-  postcode?: string;
-  city?: string;
-}
 
 interface WakalaBookingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  userData?: UserData | null;
+  userData?: any;
   onSuccess?: () => void;
 }
 
@@ -178,218 +25,165 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(false);
   const [error, setError] = useState('');
-  const [step, setStep] = useState<'booking' | 'payment' | 'success'>('booking');
+  const [step, setStep] = useState<'form' | 'payment' | 'success'>('form');
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [applicationId, setApplicationId] = useState<string | null>(null);
-  const [paymentAmount, setPaymentAmount] = useState<number>(0);
-
-  const [wakalaService, setWakalaService] = useState<Service | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedDuration, setSelectedDuration] = useState<30 | 60 | null>(null);
-  const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
-  const [slots, setSlots] = useState<TimeSlot[]>([]);
-  const [maxDaysAhead, setMaxDaysAhead] = useState(30);
-
-  const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
-  const [workingHours, setWorkingHours] = useState<{ startTime: string; endTime: string; breakTimes: { start: string; end: string }[] } | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState(0);
+  const [consent, setConsent] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
     email: user?.email || '',
-    serviceType: '',
-    specialRequests: '',
     applicantName: '',
     agentName: '',
     wakalaType: '',
     wakalaFormat: '',
+    specialRequests: '',
+    membershipNumber: '',
   });
 
-  const translations = {
-    en: {
-      title: 'New Wakala Booking',
-      subtitle: 'Select a date, choose a time, and complete your booking',
-      closeModal: 'Close',
-      cancel: 'Cancel',
-      selectSlot: 'Select Date & Time',
-      selectDate: 'Select Date',
-      selectDuration: 'Select Duration',
-      selectTime: 'Select Time',
-      duration30: 'Quick Appointment - 30 Minutes',
-      duration60: 'Extended Appointment - 1 Hour',
-      duration30Desc: 'Perfect for quick services and consultations',
-      duration60Desc: 'Ideal for comprehensive services requiring more time',
-      personalInfo: 'Contact Details',
-      contactDescription: 'Enter your contact information for this booking.',
-      fullName: 'Full Name',
-      phone: 'Phone Number',
-      email: 'Email Address',
-      serviceType: 'Service Type',
-      specialRequests: 'Special Requests (Optional)',
-      submit: 'Proceed to Payment',
-      submitting: 'Processing...',
-      successMessage: 'Booking submitted successfully!',
-      redirecting: 'Redirecting to payment...',
-      errorMessage: 'Failed to submit booking. Please try again.',
-      serviceTypes: {
-        passport_renewal: 'Passport Renewal',
-        visa_application: 'Visa Application',
-        document_authentication: 'Document Authentication',
-        power_of_attorney: 'Power of Attorney',
-        other: 'Other',
-      },
-      selectDateTime: 'Please select date and time',
-      fillAllFields: 'Please fill all required fields',
-      selectServiceType: 'Select service type',
-      agreeToTerms: 'I agree to the',
-      termsOfService: 'Terms of Service',
-      loadingData: 'Loading your information...',
-      closeConfirm: 'Are you sure you want to close? Your changes will be lost.',
-      paymentTitle: 'Complete Payment',
-      paymentType: 'Payment Type',
-      wakalaService: 'Wakala Service',
-      amount: 'Amount',
-      processing: 'Processing payment...',
-      payNow: 'Pay Now',
-      paymentSuccess: 'Payment completed successfully!',
-      settingUpPayment: 'Setting up payment...',
-      paymentError: 'Failed to initialize payment. Please try again.',
-      backToBooking: 'Back to Booking',
-      wakalaDetails: 'Wakala Details',
-      applicantName: 'Applicant Name (Al-Muwakkil)',
-      agentName: 'Agent Name (Al-Wakeel)',
-      wakalaType: 'Wakala Type',
-      wakalaFormat: 'Wakala Format',
-      selectWakalaType: 'Select wakala type',
-      selectWakalaFormat: 'Select wakala format',
-      wakalaTypes: {
-        general: 'General Power of Attorney',
-        specific: 'Specific Power of Attorney',
-        property: 'Property Power of Attorney',
-        legal: 'Legal Representation',
-        financial: 'Financial Power of Attorney',
-      },
-      wakalaFormats: {
-        standard: 'Standard Format',
-        notarized: 'Notarized Format',
-        apostille: 'With Apostille',
-      },
-      pricingInfo: 'Pricing Information',
-      priceFree: 'Free - First wakala for eligible members (10+ days membership)',
-      priceMember: '£20 - Additional wakala for eligible members',
-      priceNonMember: '£40 - Non-member rate',
-      yourPrice: 'Your Price',
-      consentLabel: 'I confirm that I agree to the use of my information in line with YCA Birmingham policies',
-    },
-    ar: {
-      title: 'حجز وكالة جديد',
-      subtitle: 'اختر التاريخ والوقت وأكمل حجزك',
-      closeModal: 'إغلاق',
-      cancel: 'إلغاء',
-      selectSlot: 'اختيار التاريخ والوقت',
-      selectDate: 'اختر التاريخ',
-      selectDuration: 'اختر المدة',
-      selectTime: 'اختر الوقت',
-      duration30: 'موعد سريع - 30 دقيقة',
-      duration60: 'موعد ممتد - ساعة كاملة',
-      duration30Desc: 'مثالي للخدمات السريعة والاستشارات',
-      duration60Desc: 'مناسب للخدمات الشاملة التي تتطلب وقتاً أطول',
-      personalInfo: 'تفاصيل الاتصال',
-      contactDescription: 'أدخل معلومات الاتصال الخاصة بك لهذا الحجز.',
-      fullName: 'الاسم الكامل',
-      phone: 'رقم الهاتف',
-      email: 'البريد الإلكتروني',
-      serviceType: 'نوع الخدمة',
-      specialRequests: 'طلبات خاصة (اختياري)',
-      submit: 'المتابعة للدفع',
-      submitting: 'جاري المعالجة...',
-      successMessage: 'تم إرسال الحجز بنجاح!',
-      redirecting: 'جاري التحويل للدفع...',
-      errorMessage: 'فشل إرسال الحجز. يرجى المحاولة مرة أخرى.',
-      serviceTypes: {
-        passport_renewal: 'تجديد جواز السفر',
-        visa_application: 'طلب تأشيرة',
-        document_authentication: 'توثيق المستندات',
-        power_of_attorney: 'توكيل رسمي',
-        other: 'أخرى',
-      },
-      selectDateTime: 'الرجاء اختيار التاريخ والوقت',
-      fillAllFields: 'الرجاء تعبئة جميع الحقول المطلوبة',
-      selectServiceType: 'اختر نوع الخدمة',
-      agreeToTerms: 'أوافق على',
-      termsOfService: 'شروط الخدمة',
-      loadingData: 'جاري تحميل معلوماتك...',
-      closeConfirm: 'هل تريد الإغلاق؟ سيتم فقدان التغييرات.',
-      paymentTitle: 'إكمال الدفع',
-      paymentType: 'نوع الدفع',
-      wakalaService: 'خدمة الوكالة',
-      amount: 'المبلغ',
-      processing: 'جاري معالجة الدفع...',
-      payNow: 'ادفع الآن',
-      paymentSuccess: 'تم الدفع بنجاح!',
-      settingUpPayment: 'جاري تجهيز الدفع...',
-      paymentError: 'فشل في تهيئة الدفع. يرجى المحاولة مرة أخرى.',
-      backToBooking: 'العودة للحجز',
-      wakalaDetails: 'تفاصيل الوكالة',
-      applicantName: 'اسم الموكل',
-      agentName: 'اسم الوكيل',
-      wakalaType: 'نوع الوكالة',
-      wakalaFormat: 'صيغة الوكالة',
-      selectWakalaType: 'اختر نوع الوكالة',
-      selectWakalaFormat: 'اختر صيغة الوكالة',
-      wakalaTypes: {
-        general: 'توكيل عام',
-        specific: 'توكيل خاص',
-        property: 'توكيل عقاري',
-        legal: 'توكيل قضائي',
-        financial: 'توكيل مالي',
-      },
-      wakalaFormats: {
-        standard: 'الصيغة العادية',
-        notarized: 'الصيغة الموثقة',
-        apostille: 'مع أبوستيل',
-      },
-      pricingInfo: 'معلومات التسعير',
-      priceFree: 'مجاناً - أول وكالة للأعضاء المؤهلين (عضوية 10 أيام فأكثر)',
-      priceMember: '20 جنيه - وكالة إضافية للأعضاء المؤهلين',
-      priceNonMember: '40 جنيه - سعر غير الأعضاء',
-      yourPrice: 'السعر الخاص بك',
-      consentLabel: 'أؤكد موافقتي على استخدام معلوماتي وفقاً لسياسات جمعية الجالية اليمنية في برمنغهام',
-    },
-  };
+  const [applicantPassportUrls, setApplicantPassportUrls] = useState<string[]>([]);
+  const [attorneyPassportUrls, setAttorneyPassportUrls] = useState<string[]>([]);
+  const [witnessPassportUrls, setWitnessPassportUrls] = useState<string[]>([]);
 
-  const t = translations[language];
+  const [membershipStatus, setMembershipStatus] = useState<'none' | 'active'>('none');
+  const [memberDaysSinceJoin, setMemberDaysSinceJoin] = useState(0);
+  const [previousWakalaCount, setPreviousWakalaCount] = useState(0);
+  const [memberNumber, setMemberNumber] = useState('');
+
+  const t = language === 'ar' ? {
+    title: 'طلب وكالة جديد',
+    subtitle: 'أكمل النموذج وارفق المستندات المطلوبة',
+    closeModal: 'إغلاق',
+    cancel: 'إلغاء',
+    personalInfo: 'بيانات الاتصال',
+    contactDescription: 'أدخل معلومات الاتصال الخاصة بك.',
+    fullName: 'الاسم الكامل',
+    phone: 'رقم الهاتف',
+    email: 'البريد الإلكتروني',
+    wakalaDetails: 'تفاصيل الوكالة',
+    applicantName: 'اسم الموكّل',
+    agentName: 'اسم الوكيل',
+    wakalaType: 'نوع الوكالة',
+    wakalaFormat: 'صيغة الوكالة',
+    selectWakalaType: 'اختر نوع الوكالة',
+    selectWakalaFormat: 'اختر صيغة الوكالة',
+    wakalaTypes: {
+      general: 'توكيل عام',
+      specific: 'توكيل خاص',
+      property: 'توكيل عقاري',
+      legal: 'توكيل قضائي',
+      financial: 'توكيل مالي',
+    },
+    wakalaFormats: {
+      standard: 'الصيغة العادية',
+      notarized: 'الصيغة الموثقة',
+      apostille: 'مع أبوستيل',
+    },
+    documents: 'المستندات المطلوبة',
+    applicantPassport: 'جواز سفر الموكّل',
+    attorneyPassport: 'جواز سفر الوكيل',
+    witnessPassports: 'جوازات الشهود (اختياري)',
+    pricingInfo: 'معلومات التسعير',
+    priceFree: 'مجاناً - أول وكالة للأعضاء المؤهلين (عضوية 10 أيام فأكثر)',
+    priceMember: '20 جنيه - وكالة إضافية للأعضاء المؤهلين',
+    priceNonMember: '40 جنيه - سعر غير الأعضاء',
+    yourPrice: 'السعر الخاص بك',
+    free: 'مجاناً',
+    specialRequests: 'ملاحظات إضافية (اختياري)',
+    membershipNumber: 'رقم العضوية',
+    consentLabel: 'أؤكد موافقتي على استخدام معلوماتي وفقاً لسياسات جمعية الجالية اليمنية في برمنغهام',
+    submit: 'تقديم الطلب',
+    submitAndPay: 'تقديم الطلب والدفع',
+    submitting: 'جاري المعالجة...',
+    successTitle: 'تم تقديم الطلب بنجاح!',
+    successMsg: 'سنراجع طلبك ونتواصل معك قريباً.',
+    paymentSuccess: 'تم الدفع وتقديم الطلب بنجاح!',
+    errorMessage: 'فشل تقديم الطلب. يرجى المحاولة مرة أخرى.',
+    fillAllFields: 'يرجى تعبئة جميع الحقول المطلوبة',
+    uploadRequired: 'يرجى رفع جوازات الموكل والوكيل',
+    loadingData: 'جاري تحميل معلوماتك...',
+    closeConfirm: 'هل تريد الإغلاق؟ سيتم فقدان البيانات.',
+    paymentTitle: 'إكمال الدفع',
+    settingUpPayment: 'جاري تجهيز الدفع...',
+    paymentError: 'فشل في تهيئة الدفع. يرجى المحاولة مرة أخرى.',
+    memberBadge: 'عضو نشط',
+  } : {
+    title: 'New Wakala Application',
+    subtitle: 'Complete the form and upload required documents',
+    closeModal: 'Close',
+    cancel: 'Cancel',
+    personalInfo: 'Contact Details',
+    contactDescription: 'Enter your contact information.',
+    fullName: 'Full Name',
+    phone: 'Phone Number',
+    email: 'Email Address',
+    wakalaDetails: 'Wakala Details',
+    applicantName: 'Applicant Name (Al-Muwakkil)',
+    agentName: 'Agent Name (Al-Wakeel)',
+    wakalaType: 'Wakala Type',
+    wakalaFormat: 'Wakala Format',
+    selectWakalaType: 'Select wakala type',
+    selectWakalaFormat: 'Select wakala format',
+    wakalaTypes: {
+      general: 'General Power of Attorney',
+      specific: 'Specific Power of Attorney',
+      property: 'Property Power of Attorney',
+      legal: 'Legal Representation',
+      financial: 'Financial Power of Attorney',
+    },
+    wakalaFormats: {
+      standard: 'Standard Format',
+      notarized: 'Notarized Format',
+      apostille: 'With Apostille',
+    },
+    documents: 'Required Documents',
+    applicantPassport: 'Applicant Passport Copy',
+    attorneyPassport: 'Attorney Passport Copy',
+    witnessPassports: 'Witness Passports (Optional)',
+    pricingInfo: 'Pricing Information',
+    priceFree: 'Free - First wakala for eligible members (10+ days membership)',
+    priceMember: '\u00A320 - Additional wakala for eligible members',
+    priceNonMember: '\u00A340 - Non-member rate',
+    yourPrice: 'Your Price',
+    free: 'Free',
+    specialRequests: 'Additional Notes (Optional)',
+    membershipNumber: 'Membership Number',
+    consentLabel: 'I confirm that I agree to the use of my information in line with YCA Birmingham policies',
+    submit: 'Submit Application',
+    submitAndPay: 'Submit & Proceed to Payment',
+    submitting: 'Processing...',
+    successTitle: 'Application Submitted!',
+    successMsg: 'We will review your application and contact you soon.',
+    paymentSuccess: 'Payment completed and application submitted!',
+    errorMessage: 'Failed to submit application. Please try again.',
+    fillAllFields: 'Please fill all required fields',
+    uploadRequired: 'Please upload applicant and attorney passport copies',
+    loadingData: 'Loading your information...',
+    closeConfirm: 'Are you sure you want to close? Your changes will be lost.',
+    paymentTitle: 'Complete Payment',
+    settingUpPayment: 'Setting up payment...',
+    paymentError: 'Failed to initialize payment. Please try again.',
+    memberBadge: 'Active Member',
+  };
 
   useEffect(() => {
     if (isOpen) {
-      loadWakalaService();
-      loadSettings();
       loadUserData();
-      loadUnavailableDates();
+      checkMemberEligibility();
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
       resetForm();
     }
-
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
+    return () => { document.body.style.overflow = 'unset'; };
   }, [isOpen]);
-
-  useEffect(() => {
-    if (wakalaService && selectedDate && selectedDuration) {
-      loadSlots();
-    }
-  }, [wakalaService, selectedDate, selectedDuration]);
 
   const loadUserData = async () => {
     if (!user) return;
-
     setDataLoading(true);
     try {
-      let fetchedData: UserData | null = null;
-
       const { data: memberData } = await supabase
         .from('members')
         .select('*')
@@ -397,153 +191,55 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
         .maybeSingle();
 
       if (memberData) {
-        fetchedData = memberData;
-      } else {
-        const { data: appData } = await supabase
-          .from('membership_applications')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (appData) {
-          fetchedData = appData;
+        const fullName = memberData.full_name ||
+          (memberData.first_name && memberData.last_name
+            ? `${memberData.first_name} ${memberData.last_name}` : '');
+        setFormData(prev => ({
+          ...prev,
+          fullName: fullName || prev.fullName,
+          phone: memberData.phone || prev.phone,
+          email: memberData.email || user.email || prev.email,
+        }));
+        if (memberData.membership_number) {
+          setMemberNumber(memberData.membership_number);
+          setFormData(prev => ({ ...prev, membershipNumber: memberData.membership_number }));
         }
+        return;
+      }
+
+      const { data: appData } = await supabase
+        .from('membership_applications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (appData) {
+        const fullName = appData.full_name ||
+          (appData.first_name && appData.last_name ? `${appData.first_name} ${appData.last_name}` : '');
+        setFormData(prev => ({
+          ...prev,
+          fullName: fullName || prev.fullName,
+          phone: appData.phone || prev.phone,
+          email: appData.email || user.email || prev.email,
+        }));
+        return;
       }
 
       const meta = user.user_metadata || {};
-      const authName = meta.full_name || meta.name || '';
-      const authPhone = meta.phone || '';
-
-      if (fetchedData) {
-        const fullName = fetchedData.full_name ||
-          (fetchedData.first_name && fetchedData.last_name
-            ? `${fetchedData.first_name} ${fetchedData.last_name}`
-            : '');
-
-        setFormData(prev => ({
-          ...prev,
-          fullName: fullName || authName || prev.fullName,
-          phone: fetchedData.phone || authPhone || prev.phone,
-          email: fetchedData.email || user.email || prev.email,
-        }));
-      } else {
-        setFormData(prev => ({
-          ...prev,
-          fullName: authName || prev.fullName,
-          phone: authPhone || prev.phone,
-          email: user.email || prev.email,
-        }));
-      }
-    } catch (error) {
-      console.error('Error loading user data:', error);
+      setFormData(prev => ({
+        ...prev,
+        fullName: meta.full_name || meta.name || prev.fullName,
+        phone: meta.phone || prev.phone,
+        email: user.email || prev.email,
+      }));
+    } catch (err) {
+      console.error('Error loading user data:', err);
     } finally {
       setDataLoading(false);
     }
   };
-
-  const loadWakalaService = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('booking_services')
-        .select('*')
-        .eq('name_en', 'Wakala Services')
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (error) throw error;
-      if (data) setWakalaService(data);
-    } catch (error) {
-      console.error('Error loading service:', error);
-    }
-  };
-
-  const loadSettings = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('booking_settings')
-        .select('max_booking_days_ahead')
-        .maybeSingle();
-
-      if (error) throw error;
-      if (data) {
-        setMaxDaysAhead(data.max_booking_days_ahead);
-      }
-    } catch (error) {
-      console.error('Error loading settings:', error);
-    }
-  };
-
-  const loadUnavailableDates = async () => {
-    try {
-      const today = new Date();
-      const endDate = new Date(today);
-      endDate.setDate(endDate.getDate() + maxDaysAhead);
-      const startStr = today.toISOString().split('T')[0];
-      const endStr = endDate.toISOString().split('T')[0];
-      const dates = await getUnavailableDates(startStr, endStr);
-      setUnavailableDates(dates);
-    } catch (error) {
-      console.error('Error loading unavailable dates:', error);
-    }
-  };
-
-  const loadSlots = async () => {
-    if (!wakalaService || !selectedDate || !selectedDuration) return;
-
-    setError('');
-
-    try {
-      const dateStr = selectedDate.toISOString().split('T')[0];
-
-      const hours = await getEffectiveWorkingHours(dateStr);
-      if (hours && hours.is_active) {
-        setWorkingHours({
-          startTime: hours.start_time,
-          endTime: hours.end_time,
-          breakTimes: hours.break_times,
-        });
-      } else {
-        setWorkingHours(null);
-      }
-
-      const availableSlots = await getAvailableSlotsForDuration(
-        wakalaService.id,
-        dateStr,
-        selectedDuration
-      );
-
-      const formattedSlots: TimeSlot[] = availableSlots.map(slot => ({
-        id: slot.id,
-        startTime: slot.start_time,
-        endTime: slot.end_time,
-        isAvailable: slot.is_available
-      }));
-
-      setSlots(formattedSlots);
-    } catch (error) {
-      console.error('Error loading slots:', error);
-      setSlots([]);
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
-  };
-
-  const [membershipStatus, setMembershipStatus] = useState<'none' | 'active'>('none');
-  const [memberDaysSinceJoin, setMemberDaysSinceJoin] = useState(0);
-  const [previousWakalaCount, setPreviousWakalaCount] = useState(0);
-
-  useEffect(() => {
-    if (user && isOpen) {
-      checkMemberEligibility();
-    }
-  }, [user, isOpen]);
 
   const checkMemberEligibility = async () => {
     if (!user) return;
@@ -558,8 +254,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
       if (member?.membership_start_date) {
         setMembershipStatus('active');
         const start = new Date(member.membership_start_date);
-        const now = new Date();
-        const diffDays = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        const diffDays = Math.floor((Date.now() - start.getTime()) / (1000 * 60 * 60 * 24));
         setMemberDaysSinceJoin(diffDays);
       } else {
         setMembershipStatus('none');
@@ -580,10 +275,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
 
   const calculatePrice = () => {
     if (membershipStatus === 'active' && memberDaysSinceJoin >= 10) {
-      if (previousWakalaCount === 0) {
-        return 0;
-      }
-      return 20;
+      return previousWakalaCount === 0 ? 0 : 20;
     }
     return 40;
   };
@@ -601,30 +293,19 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
           body: JSON.stringify({
             amount: Math.round(amount * 100),
             currency: 'gbp',
-            metadata: {
-              user_id: user?.id,
-              wakala_id: wakalaId,
-              type: 'wakala',
-            },
+            metadata: { user_id: user?.id, wakala_id: wakalaId, type: 'wakala' },
           }),
         }
       );
 
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || t.paymentError);
-      }
-
-      if (!data.clientSecret) {
-        throw new Error('No client secret returned from server');
-      }
+      if (!response.ok) throw new Error(data.error || t.paymentError);
+      if (!data.clientSecret) throw new Error('No client secret returned');
 
       setClientSecret(data.clientSecret);
     } catch (err: any) {
-      console.error('Payment intent error:', err);
       setError(err.message || t.paymentError);
-      setStep('booking');
+      setStep('form');
     }
   };
 
@@ -632,81 +313,51 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
     e.preventDefault();
     setError('');
 
-    if (!selectedDate || !selectedSlot) {
-      setError(t.selectDateTime);
-      return;
-    }
-
-    if (!formData.fullName || !formData.phone || !formData.email || !formData.serviceType || !formData.applicantName || !formData.agentName || !formData.wakalaType || !formData.wakalaFormat) {
+    if (!formData.fullName || !formData.phone || !formData.email ||
+        !formData.applicantName || !formData.agentName ||
+        !formData.wakalaType || !formData.wakalaFormat) {
       setError(t.fillAllFields);
       return;
     }
 
-    if (!wakalaService) return;
+    if (applicantPassportUrls.length === 0 || attorneyPassportUrls.length === 0) {
+      setError(t.uploadRequired);
+      return;
+    }
+
+    if (membershipStatus === 'active' && !formData.membershipNumber) {
+      setError(t.fillAllFields);
+      return;
+    }
+
+    if (!consent) {
+      setError(t.fillAllFields);
+      return;
+    }
 
     setLoading(true);
-
     try {
       const price = calculatePrice();
-      const dateStr = selectedDate.toISOString().split('T')[0];
 
-      // Double-check slot availability before proceeding
-      const { data: slotCheck, error: slotError } = await supabase
-        .from('availability_slots')
-        .select('is_available')
-        .eq('id', selectedSlot.id)
-        .single();
-
-      if (slotError || !slotCheck?.is_available) {
-        setError(language === 'ar'
-          ? 'عذراً، هذا الموعد لم يعد متاحاً. يرجى اختيار موعد آخر.'
-          : 'Sorry, this time slot is no longer available. Please select another time.');
-        await loadSlots(); // Refresh available slots
-        setSelectedSlot(null);
-        setLoading(false);
-        return;
-      }
-
-      // Try to reserve the slot first before creating the application
-      const reserveResult = await reserveSlots({
-        slot_id: selectedSlot.id,
-        service_id: wakalaService.id,
-        booking_date: dateStr,
-        start_time: selectedSlot.startTime,
-        end_time: selectedSlot.endTime,
-        duration_minutes: selectedDuration!,
-      });
-
-      if (!reserveResult.success) {
-        setError(language === 'ar'
-          ? `عذراً، ${reserveResult.error || 'لم يعد الموعد متاحاً'}. يرجى اختيار موعد آخر.`
-          : `Sorry, ${reserveResult.error || 'the slot is no longer available'}. Please select another time.`);
-        await loadSlots(); // Refresh available slots
-        setSelectedSlot(null);
-        setLoading(false);
-        return;
-      }
-
-      // Slot reserved successfully, now create the application
       const applicationData = {
         user_id: user?.id,
         full_name: formData.fullName,
         phone: formData.phone,
         email: formData.email,
-        booking_date: dateStr,
-        requested_date: dateStr,
-        service_type: formData.serviceType,
+        service_type: `wakala_${formData.wakalaType}`,
         special_requests: formData.specialRequests,
-        slot_id: selectedSlot.id,
-        start_time: selectedSlot.startTime,
-        end_time: selectedSlot.endTime,
-        duration_minutes: selectedDuration,
         fee_amount: price,
         payment_status: price === 0 ? 'paid' : 'pending',
+        status: price === 0 ? 'submitted' : 'pending_payment',
         applicant_name: formData.applicantName,
         agent_name: formData.agentName,
         wakala_type: formData.wakalaType,
         wakala_format: formData.wakalaFormat,
+        membership_status: membershipStatus === 'active' ? 'member' : 'non_member',
+        is_first_wakala: previousWakalaCount === 0,
+        applicant_passport_url: applicantPassportUrls[0] || null,
+        attorney_passport_url: attorneyPassportUrls[0] || null,
+        witness_passports_url: witnessPassportUrls.length > 0 ? witnessPassportUrls.join(',') : null,
       };
 
       const { data: application, error: appError } = await supabase
@@ -727,7 +378,6 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
         setStep('payment');
       }
     } catch (err: any) {
-      console.error('Application error:', err);
       setError(err.message || t.errorMessage);
     } finally {
       setLoading(false);
@@ -740,12 +390,9 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
       onClose();
       return;
     }
-
-    const hasData = formData.fullName || formData.phone || selectedDate || selectedSlot || step === 'payment';
+    const hasData = formData.fullName || formData.applicantName || applicantPassportUrls.length > 0 || step === 'payment';
     if (hasData && step !== 'success') {
-      if (window.confirm(t.closeConfirm)) {
-        onClose();
-      }
+      if (window.confirm(t.closeConfirm)) onClose();
     } else {
       onClose();
     }
@@ -753,36 +400,28 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
 
   const resetForm = () => {
     setFormData({
-      fullName: '',
-      phone: '',
-      email: user?.email || '',
-      serviceType: '',
-      specialRequests: '',
-      applicantName: '',
-      agentName: '',
-      wakalaType: '',
-      wakalaFormat: '',
+      fullName: '', phone: '', email: user?.email || '',
+      applicantName: '', agentName: '', wakalaType: '', wakalaFormat: '',
+      specialRequests: '', membershipNumber: '',
     });
-    setSelectedDate(null);
-    setSelectedDuration(null);
-    setSelectedSlot(null);
+    setApplicantPassportUrls([]);
+    setAttorneyPassportUrls([]);
+    setWitnessPassportUrls([]);
     setError('');
-    setStep('booking');
+    setStep('form');
     setClientSecret(null);
     setApplicationId(null);
     setPaymentAmount(0);
+    setConsent(false);
   };
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        handleClose();
-      }
+      if (e.key === 'Escape' && isOpen) handleClose();
     };
-
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [isOpen, formData, selectedDate, selectedSlot, step]);
+  }, [isOpen, step]);
 
   if (!isOpen) return null;
 
@@ -792,8 +431,10 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
         <div className="bg-white rounded-2xl p-8 max-w-md w-full" dir={isRTL ? 'rtl' : 'ltr'}>
           <div className="text-center">
             <CheckCircle className="w-16 h-16 text-emerald-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">{t.paymentSuccess}</h2>
-            <p className="text-gray-600 mb-6">{t.redirecting}</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              {paymentAmount > 0 ? t.paymentSuccess : t.successTitle}
+            </h2>
+            <p className="text-gray-600 mb-6">{t.successMsg}</p>
             <button
               onClick={handleClose}
               className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
@@ -808,49 +449,19 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
 
   if (step === 'payment' && clientSecret) {
     return (
-      <div
-        className="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4"
-        onClick={(e) => {
-          if (e.target === e.currentTarget) {
-            handleClose();
-          }
-        }}
-      >
-        <div
-          className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-          dir={isRTL ? 'rtl' : 'ltr'}
-          onClick={(e) => e.stopPropagation()}
-        >
+      <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4"
+        onClick={e => { if (e.target === e.currentTarget) handleClose(); }}>
+        <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+          dir={isRTL ? 'rtl' : 'ltr'} onClick={e => e.stopPropagation()}>
           <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
             <h2 className="text-2xl font-bold text-gray-900">{t.paymentTitle}</h2>
-            <button
-              type="button"
-              onClick={handleClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              aria-label={t.closeModal}
-            >
+            <button type="button" onClick={handleClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <X className="w-6 h-6 text-gray-600" />
             </button>
           </div>
-
           <div className="p-6">
-            <Elements
-              stripe={stripePromise}
-              options={{
-                clientSecret,
-                appearance: {
-                  theme: 'stripe',
-                  variables: {
-                    colorPrimary: '#059669',
-                  },
-                },
-              }}
-            >
-              <CheckoutForm
-                amount={paymentAmount}
-                onSuccess={() => setStep('success')}
-                onBack={() => setStep('booking')}
-              />
+            <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#059669' } } }}>
+              <WakalaCheckoutForm amount={paymentAmount} onSuccess={() => setStep('success')} onBack={() => setStep('form')} />
             </Elements>
           </div>
         </div>
@@ -872,35 +483,23 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
   }
 
   const currentPrice = calculatePrice();
-  const isFormComplete = formData.fullName && formData.phone && formData.email && formData.serviceType && formData.applicantName && formData.agentName && formData.wakalaType && formData.wakalaFormat;
+  const isFormComplete = formData.fullName && formData.phone && formData.email &&
+    formData.applicantName && formData.agentName && formData.wakalaType && formData.wakalaFormat &&
+    applicantPassportUrls.length > 0 && attorneyPassportUrls.length > 0 && consent &&
+    (membershipStatus !== 'active' || formData.membershipNumber);
 
   return (
-    <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          handleClose();
-        }
-      }}
-    >
-      <div
-        className="bg-white rounded-2xl shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto"
-        dir={isRTL ? 'rtl' : 'ltr'}
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4"
+      onClick={e => { if (e.target === e.currentTarget) handleClose(); }}>
+      <div className="bg-white rounded-2xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+        dir={isRTL ? 'rtl' : 'ltr'} onClick={e => e.stopPropagation()}>
+
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">{t.title}</h2>
-            {step === 'booking' && (
-              <p className="text-sm text-gray-500 mt-1">{t.subtitle}</p>
-            )}
+            <p className="text-sm text-gray-500 mt-1">{t.subtitle}</p>
           </div>
-          <button
-            type="button"
-            onClick={handleClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            aria-label={t.closeModal}
-          >
+          <button type="button" onClick={handleClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
             <X className="w-6 h-6 text-gray-600" />
           </button>
         </div>
@@ -915,329 +514,196 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
         {error && (
           <div className="mx-6 mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="text-sm text-red-800">{error}</p>
-            </div>
-            <button
-              onClick={() => setError('')}
-              className="text-red-600 hover:text-red-800"
-            >
+            <p className="text-sm text-red-800 flex-1">{error}</p>
+            <button onClick={() => setError('')} className="text-red-600 hover:text-red-800">
               <X className="w-4 h-4" />
             </button>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">{t.selectSlot}</h3>
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {membershipStatus === 'active' && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+              <span className="text-sm font-medium text-emerald-800">{t.memberBadge}</span>
+              {memberNumber && (
+                <span className="text-sm text-emerald-600">#{memberNumber}</span>
+              )}
+            </div>
+          )}
 
-                <div className="mb-6">
-                  <h4 className="text-sm font-medium text-gray-700 mb-3">
-                    {t.selectDate}
-                    {selectedDate && (
-                      <span className="text-gray-500 font-normal">
-                        {' - '}
-                        {new Intl.DateTimeFormat(language === 'ar' ? 'ar-EG' : 'en-GB', {
-                          month: 'long',
-                          year: 'numeric'
-                        }).format(selectedDate)}
-                      </span>
-                    )}
-                  </h4>
-                  <div className="max-w-md mx-auto">
-                    <Calendar
-                      selectedDate={selectedDate}
-                      onDateSelect={(date) => {
-                        setSelectedDate(date);
-                        setSelectedDuration(null);
-                        setSelectedSlot(null);
-                      }}
-                      maxDaysAhead={maxDaysAhead}
-                      unavailableDates={unavailableDates}
-                    />
-                  </div>
-                </div>
-
-                {selectedDate && (
-                  <div className="mb-6">
-                    <h4 className="text-sm font-medium text-gray-700 mb-3">
-                      {t.selectDuration}
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedDuration(30);
-                          setSelectedSlot(null);
-                        }}
-                        className={`p-4 rounded-lg border-2 transition-all text-left ${
-                          selectedDuration === 30
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 hover:border-blue-300 bg-white'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-bold text-lg text-gray-900">{t.duration30}</span>
-                          {selectedDuration === 30 && (
-                            <CheckCircle className="w-6 h-6 text-blue-600" />
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-600">{t.duration30Desc}</p>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedDuration(60);
-                          setSelectedSlot(null);
-                        }}
-                        className={`p-4 rounded-lg border-2 transition-all text-left ${
-                          selectedDuration === 60
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 hover:border-blue-300 bg-white'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-bold text-lg text-gray-900">{t.duration60}</span>
-                          {selectedDuration === 60 && (
-                            <CheckCircle className="w-6 h-6 text-blue-600" />
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-600">{t.duration60Desc}</p>
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {selectedDate && selectedDuration && (
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-3">
-                      {t.selectTime}
-                    </h4>
-                    <TimeSlotGrid
-                      selectedDate={selectedDate}
-                      slots={slots}
-                      selectedSlot={selectedSlot}
-                      onSlotSelect={setSelectedSlot}
-                      workingHours={workingHours}
-                    />
-                  </div>
-                )}
+          <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+            <div className="flex items-start gap-3 mb-5">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <User className="w-5 h-5 text-blue-600" />
               </div>
-
-              <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                <div className="flex items-start gap-3 mb-6">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <User className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900">{t.personalInfo}</h3>
-                    <p className="text-sm text-gray-600 mt-1">{t.contactDescription}</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t.fullName} *
-                    </label>
-                    <input
-                      type="text"
-                      name="fullName"
-                      value={formData.fullName}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                      disabled={dataLoading}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t.phone} *
-                    </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      placeholder="1234-567-890"
-                      className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                      disabled={dataLoading}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t.email} *
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      placeholder="example@gmail.com"
-                      className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                      disabled={dataLoading}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t.serviceType} *
-                    </label>
-                    <select
-                      name="serviceType"
-                      value={formData.serviceType}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
-                      required
-                      disabled={dataLoading}
-                    >
-                      <option value="">{t.selectServiceType}</option>
-                      {Object.entries(t.serviceTypes).map(([key, label]) => (
-                        <option key={key} value={key}>{label}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="mt-6 border-t border-gray-200 pt-6">
-                  <h4 className="text-md font-bold text-gray-900 mb-4">{t.wakalaDetails}</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {t.applicantName} *
-                      </label>
-                      <input
-                        type="text"
-                        name="applicantName"
-                        value={formData.applicantName}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                        disabled={dataLoading}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {t.agentName} *
-                      </label>
-                      <input
-                        type="text"
-                        name="agentName"
-                        value={formData.agentName}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                        disabled={dataLoading}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {t.wakalaType} *
-                      </label>
-                      <select
-                        name="wakalaType"
-                        value={formData.wakalaType}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
-                        required
-                        disabled={dataLoading}
-                      >
-                        <option value="">{t.selectWakalaType}</option>
-                        {Object.entries(t.wakalaTypes).map(([key, label]) => (
-                          <option key={key} value={key}>{label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {t.wakalaFormat} *
-                      </label>
-                      <select
-                        name="wakalaFormat"
-                        value={formData.wakalaFormat}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
-                        required
-                        disabled={dataLoading}
-                      >
-                        <option value="">{t.selectWakalaFormat}</option>
-                        {Object.entries(t.wakalaFormats).map(([key, label]) => (
-                          <option key={key} value={key}>{label}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-6 border-t border-gray-200 pt-6">
-                  <h4 className="text-md font-bold text-gray-900 mb-3">{t.pricingInfo}</h4>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2 text-sm">
-                    <p className={`${currentPrice === 0 ? 'font-bold text-emerald-700' : 'text-gray-600'}`}>{t.priceFree}</p>
-                    <p className={`${currentPrice === 20 ? 'font-bold text-emerald-700' : 'text-gray-600'}`}>{t.priceMember}</p>
-                    <p className={`${currentPrice === 40 ? 'font-bold text-emerald-700' : 'text-gray-600'}`}>{t.priceNonMember}</p>
-                    <div className="border-t border-blue-300 pt-2 mt-2">
-                      <span className="font-bold text-lg text-emerald-700">{t.yourPrice}: {currentPrice === 0 ? (language === 'ar' ? 'مجاناً' : 'Free') : `£${currentPrice}`}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="md:col-span-2 mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t.specialRequests}
-                  </label>
-                  <textarea
-                    name="specialRequests"
-                    value={formData.specialRequests}
-                    onChange={handleInputChange}
-                    rows={3}
-                    className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    disabled={dataLoading}
-                  />
-                </div>
-
-                <div className="mt-4 flex items-start gap-2">
-                  <input
-                    type="checkbox"
-                    id="consent"
-                    required
-                    className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    disabled={dataLoading}
-                  />
-                  <label htmlFor="consent" className="text-sm text-gray-700">
-                    {t.consentLabel}
-                  </label>
-                </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">{t.personalInfo}</h3>
+                <p className="text-sm text-gray-600 mt-0.5">{t.contactDescription}</p>
               </div>
             </div>
 
-            <div className="space-y-6">
-              <BookingSummaryCard
-                serviceName={wakalaService ? (language === 'ar' ? wakalaService.name_ar : wakalaService.name_en) : 'Wakala Services'}
-                selectedDate={selectedDate}
-                selectedTime={selectedSlot}
-                totalPrice={currentPrice}
-                serviceType={formData.serviceType}
-                isFormComplete={!!isFormComplete}
-                onSubmit={() => {}}
-                isSubmitting={loading}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t.fullName} *</label>
+                <input type="text" name="fullName" value={formData.fullName}
+                  onChange={e => setFormData(p => ({ ...p, fullName: e.target.value }))}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required disabled={dataLoading} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t.phone} *</label>
+                <input type="tel" name="phone" value={formData.phone}
+                  onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required disabled={dataLoading} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t.email} *</label>
+                <input type="email" name="email" value={formData.email}
+                  onChange={e => setFormData(p => ({ ...p, email: e.target.value }))}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required disabled={dataLoading} />
+              </div>
+              {membershipStatus === 'active' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.membershipNumber} *</label>
+                  <input type="text" value={formData.membershipNumber}
+                    onChange={e => setFormData(p => ({ ...p, membershipNumber: e.target.value }))}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required disabled={dataLoading} />
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+            <div className="flex items-start gap-3 mb-5">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <FileText className="w-5 h-5 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">{t.wakalaDetails}</h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t.applicantName} *</label>
+                <input type="text" value={formData.applicantName}
+                  onChange={e => setFormData(p => ({ ...p, applicantName: e.target.value }))}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required disabled={dataLoading} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t.agentName} *</label>
+                <input type="text" value={formData.agentName}
+                  onChange={e => setFormData(p => ({ ...p, agentName: e.target.value }))}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required disabled={dataLoading} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t.wakalaType} *</label>
+                <select value={formData.wakalaType}
+                  onChange={e => setFormData(p => ({ ...p, wakalaType: e.target.value }))}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+                  required disabled={dataLoading}>
+                  <option value="">{t.selectWakalaType}</option>
+                  {Object.entries(t.wakalaTypes).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t.wakalaFormat} *</label>
+                <select value={formData.wakalaFormat}
+                  onChange={e => setFormData(p => ({ ...p, wakalaFormat: e.target.value }))}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+                  required disabled={dataLoading}>
+                  <option value="">{t.selectWakalaFormat}</option>
+                  {Object.entries(t.wakalaFormats).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+            <div className="flex items-start gap-3 mb-5">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Upload className="w-5 h-5 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">{t.documents}</h3>
+            </div>
+
+            <div className="space-y-5">
+              <FileUploadField
+                label={t.applicantPassport}
+                required
+                userId={user?.id}
+                onUploadComplete={setApplicantPassportUrls}
+                existingUrls={applicantPassportUrls}
               />
-
-              <button
-                type="button"
-                onClick={handleClose}
-                className="w-full py-3 px-6 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
-                disabled={loading}
-              >
-                {t.cancel}
-              </button>
+              <FileUploadField
+                label={t.attorneyPassport}
+                required
+                userId={user?.id}
+                onUploadComplete={setAttorneyPassportUrls}
+                existingUrls={attorneyPassportUrls}
+              />
+              <FileUploadField
+                label={t.witnessPassports}
+                multiple
+                userId={user?.id}
+                onUploadComplete={setWitnessPassportUrls}
+                existingUrls={witnessPassportUrls}
+              />
             </div>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
+            <h4 className="text-md font-bold text-gray-900 mb-3">{t.pricingInfo}</h4>
+            <div className="space-y-2 text-sm">
+              <p className={currentPrice === 0 ? 'font-bold text-emerald-700' : 'text-gray-600'}>{t.priceFree}</p>
+              <p className={currentPrice === 20 ? 'font-bold text-emerald-700' : 'text-gray-600'}>{t.priceMember}</p>
+              <p className={currentPrice === 40 ? 'font-bold text-emerald-700' : 'text-gray-600'}>{t.priceNonMember}</p>
+              <div className="border-t border-blue-300 pt-2 mt-2">
+                <span className="font-bold text-lg text-emerald-700">
+                  {t.yourPrice}: {currentPrice === 0 ? t.free : `\u00A3${currentPrice}`}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t.specialRequests}</label>
+            <textarea value={formData.specialRequests}
+              onChange={e => setFormData(p => ({ ...p, specialRequests: e.target.value }))}
+              rows={3}
+              className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              disabled={dataLoading} />
+          </div>
+
+          <div className="flex items-start gap-2">
+            <input type="checkbox" id="wakala-consent" checked={consent}
+              onChange={e => setConsent(e.target.checked)}
+              className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              disabled={dataLoading} />
+            <label htmlFor="wakala-consent" className="text-sm text-gray-700">{t.consentLabel}</label>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={handleClose} disabled={loading}
+              className="flex-1 py-3 px-6 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50">
+              {t.cancel}
+            </button>
+            <button type="submit" disabled={!isFormComplete || loading}
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+              {loading ? (
+                <><Loader2 className="w-5 h-5 animate-spin" /> {t.submitting}</>
+              ) : (
+                <><Send className="w-5 h-5" /> {currentPrice > 0 ? t.submitAndPay : t.submit}</>
+              )}
+            </button>
           </div>
         </form>
       </div>

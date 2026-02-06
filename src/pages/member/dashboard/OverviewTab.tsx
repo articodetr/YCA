@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Shield, FileText, CreditCard, Plus, ArrowRight } from 'lucide-react';
+import { Shield, FileText, CreditCard, Plus, ArrowRight, MessageSquare } from 'lucide-react';
 import { staggerContainer, staggerItem } from '../../../lib/animations';
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   wakalaApps: any[];
   paymentHistory: any[];
   onNewWakala: () => void;
+  onNewAdvisory?: () => void;
   t: Record<string, string>;
 }
 
@@ -16,7 +17,11 @@ function StatusBadge({ status, t }: { status: string; t: Record<string, string> 
   const config: Record<string, { bg: string; text: string; label: string }> = {
     approved: { bg: 'bg-emerald-50', text: 'text-emerald-700', label: t.approved },
     paid: { bg: 'bg-emerald-50', text: 'text-emerald-700', label: t.paid },
+    submitted: { bg: 'bg-blue-50', text: 'text-blue-700', label: t.submitted || 'Submitted' },
     pending: { bg: 'bg-amber-50', text: 'text-amber-700', label: t.pending },
+    pending_payment: { bg: 'bg-amber-50', text: 'text-amber-700', label: t.pending_payment || t.pending },
+    in_progress: { bg: 'bg-sky-50', text: 'text-sky-700', label: t.in_progress || 'In Progress' },
+    completed: { bg: 'bg-emerald-50', text: 'text-emerald-700', label: t.completed || t.approved },
     rejected: { bg: 'bg-red-50', text: 'text-red-700', label: t.rejected },
     cancelled: { bg: 'bg-red-50', text: 'text-red-700', label: t.cancelled },
   };
@@ -28,21 +33,32 @@ function StatusBadge({ status, t }: { status: string; t: Record<string, string> 
   );
 }
 
-export default function OverviewTab({ memberRecord, membershipApp, wakalaApps, paymentHistory, onNewWakala, t }: Props) {
+function isAdvisory(serviceType: string) {
+  return serviceType?.startsWith('advisory_');
+}
+
+export default function OverviewTab({ memberRecord, membershipApp, wakalaApps, paymentHistory, onNewWakala, onNewAdvisory, t }: Props) {
+  const language = (t.approved === 'موافق عليه' || t.cancelled === 'ملغي') ? 'ar' : 'en';
+
   const totalPaid = paymentHistory
     .filter(p => p.status === 'paid')
     .reduce((sum, p) => sum + (p.amount || 0), 0);
 
+  const advisoryCount = wakalaApps.filter(a => isAdvisory(a.service_type)).length;
+  const wakalaCount = wakalaApps.filter(a => !isAdvisory(a.service_type)).length;
+
   const recentItems = [
     ...wakalaApps.slice(0, 3).map(app => ({
-      type: 'application' as const,
-      title: app.service_type,
+      type: isAdvisory(app.service_type) ? 'advisory' as const : 'application' as const,
+      title: isAdvisory(app.service_type)
+        ? (language === 'ar' ? 'موعد استشاري' : 'Advisory Appointment')
+        : (language === 'ar' ? 'طلب وكالة' : 'Wakala Application'),
       date: app.created_at,
       status: app.status,
     })),
     ...paymentHistory.slice(0, 3).map(p => ({
       type: 'payment' as const,
-      title: `£${p.amount}`,
+      title: `\u00A3${p.amount}`,
       date: p.created_at,
       status: p.status,
     })),
@@ -52,7 +68,7 @@ export default function OverviewTab({ memberRecord, membershipApp, wakalaApps, p
 
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
-      <motion.div variants={staggerItem} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <motion.div variants={staggerItem} className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl border border-divider p-5">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-lg bg-sand flex items-center justify-center">
@@ -67,12 +83,22 @@ export default function OverviewTab({ memberRecord, membershipApp, wakalaApps, p
 
         <div className="bg-white rounded-xl border border-divider p-5">
           <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+              <MessageSquare className="w-5 h-5 text-blue-600" />
+            </div>
+            <span className="text-sm text-muted">{language === 'ar' ? 'استشارات' : 'Advisory'}</span>
+          </div>
+          <p className="text-2xl font-bold text-primary">{advisoryCount}</p>
+        </div>
+
+        <div className="bg-white rounded-xl border border-divider p-5">
+          <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-lg bg-sand flex items-center justify-center">
               <FileText className="w-5 h-5 text-primary" />
             </div>
-            <span className="text-sm text-muted">{t.totalApplications}</span>
+            <span className="text-sm text-muted">{language === 'ar' ? 'وكالات' : 'Wakala'}</span>
           </div>
-          <p className="text-2xl font-bold text-primary">{wakalaApps.length}</p>
+          <p className="text-2xl font-bold text-primary">{wakalaCount}</p>
         </div>
 
         <div className="bg-white rounded-xl border border-divider p-5">
@@ -82,7 +108,7 @@ export default function OverviewTab({ memberRecord, membershipApp, wakalaApps, p
             </div>
             <span className="text-sm text-muted">{t.totalPaid}</span>
           </div>
-          <p className="text-2xl font-bold text-primary">£{totalPaid}</p>
+          <p className="text-2xl font-bold text-primary">{totalPaid}</p>
         </div>
       </motion.div>
 
@@ -94,6 +120,15 @@ export default function OverviewTab({ memberRecord, membershipApp, wakalaApps, p
           <Plus className="w-4 h-4" />
           {t.newWakalaApp}
         </button>
+        {onNewAdvisory && (
+          <button
+            onClick={onNewAdvisory}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-5 rounded-lg transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            {language === 'ar' ? 'حجز استشارة' : 'Book Advisory'}
+          </button>
+        )}
         {!membershipApp && (
           <Link
             to="/get-involved/membership"
@@ -112,11 +147,13 @@ export default function OverviewTab({ memberRecord, membershipApp, wakalaApps, p
             {recentItems.map((item, idx) => (
               <div key={idx} className="flex items-center gap-3 py-3 border-b border-divider last:border-0">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  item.type === 'application' ? 'bg-blue-50' : 'bg-emerald-50'
+                  item.type === 'advisory' ? 'bg-blue-50' : item.type === 'payment' ? 'bg-emerald-50' : 'bg-amber-50'
                 }`}>
-                  {item.type === 'application'
-                    ? <FileText className="w-4 h-4 text-blue-600" />
-                    : <CreditCard className="w-4 h-4 text-emerald-600" />
+                  {item.type === 'advisory'
+                    ? <MessageSquare className="w-4 h-4 text-blue-600" />
+                    : item.type === 'payment'
+                      ? <CreditCard className="w-4 h-4 text-emerald-600" />
+                      : <FileText className="w-4 h-4 text-amber-600" />
                   }
                 </div>
                 <div className="flex-1 min-w-0">

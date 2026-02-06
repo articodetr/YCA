@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Loader2, CheckCircle, AlertCircle, X } from 'lucide-react';
+import { Loader2, CheckCircle, AlertCircle, X, User, Phone, Mail } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
@@ -45,12 +45,16 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
   const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
   const [workingHours, setWorkingHours] = useState<{ startTime: string; endTime: string; breakTimes: { start: string; end: string }[] } | null>(null);
 
+  const [isMember, setIsMember] = useState(false);
+  const [memberData, setMemberData] = useState<{ fullName: string; phone: string; email: string; membershipNumber: string } | null>(null);
+
   const [formData, setFormData] = useState({
     reason: '',
     notes: '',
+    fullName: '',
+    phone: '',
+    email: '',
   });
-
-  const [userData, setUserData] = useState({ fullName: '', phone: '', email: '' });
 
   const t = language === 'ar' ? {
     title: 'حجز موعد المكتب الاستشاري',
@@ -62,7 +66,7 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
     duration60: 'موعد ممتد - ساعة كاملة',
     duration30Desc: 'استشارة سريعة أو متابعة',
     duration60Desc: 'استشارة شاملة',
-    reason: 'سبب الموعد *',
+    reason: 'سبب الموعد',
     reasons: {
       welfare_benefits: 'المزايا الاجتماعية',
       housing: 'الإسكان',
@@ -85,8 +89,16 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
     errorMsg: 'فشل في الحجز. يرجى المحاولة مرة أخرى.',
     selectDateTime: 'يرجى اختيار التاريخ والوقت',
     fillRequired: 'يرجى ملء جميع الحقول المطلوبة',
-    freeService: 'هذه خدمة مجانية للأعضاء',
+    freeService: 'هذه خدمة مجانية',
     closeConfirm: 'هل تريد الإغلاق؟ سيتم فقدان البيانات.',
+    memberInfo: 'بيانات العضو',
+    contactInfo: 'بيانات الاتصال',
+    contactInfoDesc: 'أدخل بياناتك للتواصل معك بخصوص الموعد',
+    fullName: 'الاسم الكامل',
+    phone: 'رقم الهاتف',
+    email: 'البريد الإلكتروني',
+    memberBadge: 'عضو مسجل',
+    membershipNumber: 'رقم العضوية',
   } : {
     title: 'Advisory Bureau Appointment',
     subtitle: 'Select a date and time for your appointment',
@@ -97,7 +109,7 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
     duration60: 'Extended Appointment - 1 Hour',
     duration30Desc: 'Quick consultation or follow-up',
     duration60Desc: 'Comprehensive consultation',
-    reason: 'Reason for Appointment *',
+    reason: 'Reason for Appointment',
     reasons: {
       welfare_benefits: 'Welfare Benefits',
       housing: 'Housing',
@@ -120,8 +132,16 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
     errorMsg: 'Failed to book appointment. Please try again.',
     selectDateTime: 'Please select a date and time',
     fillRequired: 'Please fill in all required fields',
-    freeService: 'This is a free service for members',
+    freeService: 'This is a free service',
     closeConfirm: 'Are you sure you want to close? Your changes will be lost.',
+    memberInfo: 'Member Information',
+    contactInfo: 'Contact Information',
+    contactInfoDesc: 'Enter your details so we can reach you about your appointment',
+    fullName: 'Full Name',
+    phone: 'Phone Number',
+    email: 'Email Address',
+    memberBadge: 'Registered Member',
+    membershipNumber: 'Membership Number',
   };
 
   useEffect(() => {
@@ -145,26 +165,44 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
   }, [advisoryService, selectedDate, selectedDuration]);
 
   const loadUserData = async () => {
-    if (!user) return;
+    if (!user) {
+      setIsMember(false);
+      setMemberData(null);
+      return;
+    }
+
     const { data: member } = await supabase
       .from('members')
       .select('*')
       .eq('email', user.email)
+      .eq('status', 'active')
       .maybeSingle();
 
     if (member) {
-      setUserData({
-        fullName: member.full_name || `${member.first_name || ''} ${member.last_name || ''}`.trim(),
+      const fullName = member.full_name || `${member.first_name || ''} ${member.last_name || ''}`.trim();
+      setIsMember(true);
+      setMemberData({
+        fullName,
         phone: member.phone || '',
         email: member.email || user.email || '',
+        membershipNumber: member.membership_number || '',
       });
+      setFormData(prev => ({
+        ...prev,
+        fullName: fullName,
+        phone: member.phone || '',
+        email: member.email || user.email || '',
+      }));
     } else {
+      setIsMember(false);
+      setMemberData(null);
       const meta = user.user_metadata || {};
-      setUserData({
+      setFormData(prev => ({
+        ...prev,
         fullName: meta.full_name || meta.name || '',
         phone: meta.phone || '',
         email: user.email || '',
-      });
+      }));
     }
   };
 
@@ -186,7 +224,6 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
           .eq('is_active', true)
           .limit(1)
           .maybeSingle();
-
         if (fallback) setAdvisoryService(fallback);
       }
     } catch (err) {
@@ -245,6 +282,12 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
       setError(t.fillRequired);
       return;
     }
+
+    if (!isMember && (!formData.fullName || !formData.phone || !formData.email)) {
+      setError(t.fillRequired);
+      return;
+    }
+
     if (!advisoryService) return;
 
     setLoading(true);
@@ -268,11 +311,15 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
         return;
       }
 
+      const contactName = isMember ? memberData?.fullName : formData.fullName;
+      const contactPhone = isMember ? memberData?.phone : formData.phone;
+      const contactEmail = isMember ? memberData?.email : formData.email;
+
       const { error: insertError } = await supabase.from('wakala_applications').insert([{
-        user_id: user?.id,
-        full_name: userData.fullName,
-        phone: userData.phone,
-        email: userData.email,
+        user_id: user?.id || null,
+        full_name: contactName,
+        phone: contactPhone,
+        email: contactEmail,
         booking_date: dateStr,
         requested_date: dateStr,
         service_type: `advisory_${formData.reason}`,
@@ -283,6 +330,7 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
         duration_minutes: selectedDuration,
         fee_amount: 0,
         payment_status: 'paid',
+        status: 'submitted',
       }]);
 
       if (insertError) throw insertError;
@@ -310,7 +358,7 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
   };
 
   const resetForm = () => {
-    setFormData({ reason: '', notes: '' });
+    setFormData({ reason: '', notes: '', fullName: '', phone: '', email: '' });
     setSelectedDate(null);
     setSelectedDuration(null);
     setSelectedSlot(null);
@@ -328,10 +376,8 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
             <CheckCircle className="w-16 h-16 text-emerald-600 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-2">{t.successTitle}</h2>
             <p className="text-gray-600 mb-6">{t.successMsg}</p>
-            <button
-              onClick={handleClose}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-            >
+            <button onClick={handleClose}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
               {t.closeModal}
             </button>
           </div>
@@ -341,15 +387,11 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
-    >
-      <div
-        className="bg-white rounded-2xl shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto"
-        dir={isRTL ? 'rtl' : 'ltr'}
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4"
+      onClick={e => { if (e.target === e.currentTarget) handleClose(); }}>
+      <div className="bg-white rounded-2xl shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto"
+        dir={isRTL ? 'rtl' : 'ltr'} onClick={e => e.stopPropagation()}>
+
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">{t.title}</h2>
@@ -377,13 +419,84 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
                 <p className="text-emerald-800 font-medium">{t.freeService}</p>
               </div>
 
+              {isMember && memberData ? (
+                <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-emerald-100 rounded-lg">
+                      <User className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900">{t.memberInfo}</h3>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full mt-1">
+                        <CheckCircle className="w-3 h-3" /> {t.memberBadge}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <User className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-900 font-medium">{memberData.fullName}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-900">{memberData.phone || '-'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-900">{memberData.email}</span>
+                    </div>
+                    {memberData.membershipNumber && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-gray-500">{t.membershipNumber}:</span>
+                        <span className="text-gray-900 font-medium">#{memberData.membershipNumber}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <User className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900">{t.contactInfo}</h3>
+                      <p className="text-sm text-gray-600 mt-0.5">{t.contactInfoDesc}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">{t.fullName} *</label>
+                      <input type="text" value={formData.fullName}
+                        onChange={e => setFormData(p => ({ ...p, fullName: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">{t.phone} *</label>
+                      <input type="tel" value={formData.phone}
+                        onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">{t.email} *</label>
+                      <input type="email" value={formData.email}
+                        onChange={e => setFormData(p => ({ ...p, email: e.target.value }))}
+                        className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
                 <div className="mb-6">
                   <h4 className="text-sm font-medium text-gray-700 mb-3">{t.selectDate}</h4>
                   <div className="max-w-md mx-auto">
                     <Calendar
                       selectedDate={selectedDate}
-                      onDateSelect={(date) => { setSelectedDate(date); setSelectedDuration(null); setSelectedSlot(null); }}
+                      onDateSelect={date => { setSelectedDate(date); setSelectedDuration(null); setSelectedSlot(null); }}
                       maxDaysAhead={maxDaysAhead}
                       unavailableDates={unavailableDates}
                     />
@@ -394,19 +507,15 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
                   <div className="mb-6">
                     <h4 className="text-sm font-medium text-gray-700 mb-3">{t.selectDuration}</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <button
-                        type="button"
+                      <button type="button"
                         onClick={() => { setSelectedDuration(30); setSelectedSlot(null); }}
-                        className={`p-4 rounded-lg border-2 transition-all text-left ${selectedDuration === 30 ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300 bg-white'}`}
-                      >
+                        className={`p-4 rounded-lg border-2 transition-all text-left ${selectedDuration === 30 ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300 bg-white'}`}>
                         <span className="font-bold text-lg text-gray-900">{t.duration30}</span>
                         <p className="text-sm text-gray-600 mt-1">{t.duration30Desc}</p>
                       </button>
-                      <button
-                        type="button"
+                      <button type="button"
                         onClick={() => { setSelectedDuration(60); setSelectedSlot(null); }}
-                        className={`p-4 rounded-lg border-2 transition-all text-left ${selectedDuration === 60 ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300 bg-white'}`}
-                      >
+                        className={`p-4 rounded-lg border-2 transition-all text-left ${selectedDuration === 60 ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300 bg-white'}`}>
                         <span className="font-bold text-lg text-gray-900">{t.duration60}</span>
                         <p className="text-sm text-gray-600 mt-1">{t.duration60Desc}</p>
                       </button>
@@ -430,13 +539,11 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
 
               <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.reason}</label>
-                  <select
-                    value={formData.reason}
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.reason} *</label>
+                  <select value={formData.reason}
                     onChange={e => setFormData(p => ({ ...p, reason: e.target.value }))}
                     className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
-                    required
-                  >
+                    required>
                     <option value="">{t.selectReason}</option>
                     {Object.entries(t.reasons).map(([key, label]) => (
                       <option key={key} value={key}>{label}</option>
@@ -445,13 +552,11 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">{t.notes}</label>
-                  <textarea
-                    value={formData.notes}
+                  <textarea value={formData.notes}
                     onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))}
                     rows={3}
                     className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    placeholder={t.notesPlaceholder}
-                  />
+                    placeholder={t.notesPlaceholder} />
                 </div>
               </div>
             </div>
@@ -463,16 +568,12 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
                 selectedTime={selectedSlot}
                 totalPrice={0}
                 serviceType={formData.reason}
-                isFormComplete={!!formData.reason}
+                isFormComplete={!!formData.reason && (isMember || (!!formData.fullName && !!formData.phone && !!formData.email))}
                 onSubmit={() => {}}
                 isSubmitting={loading}
               />
-              <button
-                type="button"
-                onClick={handleClose}
-                className="w-full py-3 px-6 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
-                disabled={loading}
-              >
+              <button type="button" onClick={handleClose} disabled={loading}
+                className="w-full py-3 px-6 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
                 {t.cancel}
               </button>
             </div>

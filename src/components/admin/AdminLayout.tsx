@@ -142,41 +142,39 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </header>
 
       {/* Sidebar - Desktop */}
-      <aside
-        className={`fixed top-16 left-0 bottom-0 bg-white border-r border-gray-200 transition-all duration-300 z-20 hidden lg:block ${
-          sidebarOpen ? 'w-64' : 'w-0'
-        }`}
-      >
-        <nav className="p-4 space-y-4 overflow-y-auto h-full">
-          {menuSections.map((section, sectionIdx) => (
-            <div key={sectionIdx}>
-              <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                {section.title}
-              </h3>
-              <div className="space-y-1">
-                {section.items.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = location.pathname === item.path;
-                  return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                        isActive
-                          ? 'bg-emerald-50 text-emerald-700 font-medium'
-                          : 'text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      <Icon className="w-5 h-5 flex-shrink-0" />
-                      <span className="whitespace-nowrap">{item.label}</span>
-                    </Link>
-                  );
-                })}
+      {sidebarOpen && (
+        <aside className="fixed top-16 left-0 bottom-0 w-64 bg-white border-r border-gray-200 transition-all duration-300 z-20 hidden lg:block">
+          <nav className="p-4 space-y-4 overflow-y-auto h-full">
+            {menuSections.map((section, sectionIdx) => (
+              <div key={sectionIdx}>
+                <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                  {section.title}
+                </h3>
+                <div className="space-y-1">
+                  {section.items.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = location.pathname === item.path;
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                          isActive
+                            ? 'bg-emerald-50 text-emerald-700 font-medium'
+                            : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        <Icon className="w-5 h-5 flex-shrink-0" />
+                        <span className="whitespace-nowrap">{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
-        </nav>
-      </aside>
+            ))}
+          </nav>
+        </aside>
+      )}
 
       {/* Sidebar - Mobile */}
       {mobileMenuOpen && (

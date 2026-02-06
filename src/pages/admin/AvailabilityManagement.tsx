@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Calendar, Settings, List } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
-import AdminLayout from '../../components/admin/AdminLayout';
 import CalendarView from './CalendarView';
 import WorkingHoursConfig from './WorkingHoursConfig';
 import BookingsOverview from '../../components/admin/BookingsOverview';
@@ -112,8 +111,7 @@ export default function AvailabilityManagement() {
   endDate.setDate(endDate.getDate() + maxDaysAhead);
 
   return (
-    <AdminLayout>
-      <div className="w-full">
+    <div className="w-full">
         <div className="mb-3">
           <h1 className="text-2xl font-bold text-gray-900">{t.title}</h1>
           <p className="text-gray-600 text-sm mt-1">{t.subtitle}</p>
@@ -211,7 +209,6 @@ export default function AvailabilityManagement() {
             )}
           </div>
         </div>
-      </div>
-    </AdminLayout>
+    </div>
   );
 }

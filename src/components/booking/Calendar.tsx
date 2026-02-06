@@ -181,15 +181,15 @@ export default function Calendar({ selectedDate, onDateSelect, maxDaysAhead, una
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-2 mb-3">
+      <div className="grid grid-cols-7 gap-1 mb-2">
         {dayNames.map((day, index) => (
-          <div key={index} className="text-center text-gray-500 text-xs font-semibold uppercase">
+          <div key={index} className="text-center text-gray-500 text-[11px] font-semibold uppercase py-1">
             {day}
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-1">
         {renderDays()}
       </div>
 

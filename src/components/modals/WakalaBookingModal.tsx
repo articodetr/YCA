@@ -358,6 +358,10 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
         }
       }
 
+      const meta = user.user_metadata || {};
+      const authName = meta.full_name || meta.name || '';
+      const authPhone = meta.phone || '';
+
       if (fetchedData) {
         const fullName = fetchedData.full_name ||
           (fetchedData.first_name && fetchedData.last_name
@@ -366,9 +370,16 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
 
         setFormData(prev => ({
           ...prev,
-          fullName: fullName || prev.fullName,
-          phone: fetchedData.phone || prev.phone,
+          fullName: fullName || authName || prev.fullName,
+          phone: fetchedData.phone || authPhone || prev.phone,
           email: fetchedData.email || user.email || prev.email,
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          fullName: authName || prev.fullName,
+          phone: authPhone || prev.phone,
+          email: user.email || prev.email,
         }));
       }
     } catch (error) {
@@ -833,16 +844,18 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
                       </span>
                     )}
                   </h4>
-                  <Calendar
-                    selectedDate={selectedDate}
-                    onDateSelect={(date) => {
-                      setSelectedDate(date);
-                      setSelectedDuration(null);
-                      setSelectedSlot(null);
-                    }}
-                    maxDaysAhead={maxDaysAhead}
-                    unavailableDates={unavailableDates}
-                  />
+                  <div className="max-w-md mx-auto">
+                    <Calendar
+                      selectedDate={selectedDate}
+                      onDateSelect={(date) => {
+                        setSelectedDate(date);
+                        setSelectedDuration(null);
+                        setSelectedSlot(null);
+                      }}
+                      maxDaysAhead={maxDaysAhead}
+                      unavailableDates={unavailableDates}
+                    />
+                  </div>
                 </div>
 
                 {selectedDate && (

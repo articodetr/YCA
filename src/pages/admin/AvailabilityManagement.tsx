@@ -114,12 +114,12 @@ export default function AvailabilityManagement() {
   return (
     <AdminLayout>
       <div className="w-full">
-        <div className="mb-4">
+        <div className="mb-3">
           <h1 className="text-2xl font-bold text-gray-900">{t.title}</h1>
           <p className="text-gray-600 text-sm mt-1">{t.subtitle}</p>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+        <div className="bg-white rounded-lg border border-gray-200 p-3 mb-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1.5">
@@ -183,9 +183,9 @@ export default function AvailabilityManagement() {
             </div>
           </div>
 
-          <div className="p-4">
+          <div className="p-3">
             {!selectedService ? (
-              <div className="text-center py-8 text-sm text-gray-500">
+              <div className="text-center py-6 text-sm text-gray-500">
                 {language === 'ar' ? 'الرجاء اختيار خدمة' : 'Please select a service'}
               </div>
             ) : (

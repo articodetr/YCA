@@ -226,7 +226,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           sidebarOpen ? 'lg:pl-64' : 'lg:pl-0'
         }`}
       >
-        <div className="p-4 lg:p-8">{children}</div>
+        <div className="p-3 lg:p-4">{children}</div>
       </main>
     </div>
   );

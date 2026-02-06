@@ -5,8 +5,10 @@ import { useState, FormEvent } from 'react';
 import PageHeader from '../../components/PageHeader';
 import { fadeInUp, fadeInLeft, fadeInRight, staggerContainer, staggerItem, scaleIn } from '../../lib/animations';
 import { supabase } from '../../lib/supabase';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function Partnerships() {
+  const { t, isRTL } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [formData, setFormData] = useState({
@@ -59,21 +61,39 @@ export default function Partnerships() {
   };
 
   const benefits = [
-    'Enhanced community reach and impact',
-    'Shared resources and expertise',
-    'Joint programme development opportunities',
-    'Networking with other organizations',
-    'Positive brand association',
-    'Access to diverse community networks',
+    t('partnerships.benefit1'),
+    t('partnerships.benefit2'),
+    t('partnerships.benefit3'),
+    t('partnerships.benefit4'),
+    t('partnerships.benefit5'),
+    t('partnerships.benefit6'),
+  ];
+
+  const opportunities = [
+    t('partnerships.opp1'),
+    t('partnerships.opp2'),
+    t('partnerships.opp3'),
+    t('partnerships.opp4'),
+    t('partnerships.opp5'),
+    t('partnerships.opp6'),
+  ];
+
+  const offers = [
+    t('partnerships.offer1'),
+    t('partnerships.offer2'),
+    t('partnerships.offer3'),
+    t('partnerships.offer4'),
+    t('partnerships.offer5'),
+    t('partnerships.offer6'),
   ];
 
   return (
-    <div>
+    <div dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="pt-20">
       <PageHeader
-        title="Partnerships & Collaborations"
+        title={t('partnerships.title')}
         description=""
-        breadcrumbs={[{ label: 'Get Involved', path: '/get-involved/partnerships' }, { label: 'Partnerships' }]}
+        breadcrumbs={[{ label: t('nav.getInvolved'), path: '/get-involved/partnerships' }, { label: t('nav.getInvolved.partnerships') }]}
         image="https://images.pexels.com/photos/3184306/pexels-photo-3184306.jpeg?auto=compress&cs=tinysrgb&w=1920"
       />
 
@@ -88,7 +108,7 @@ export default function Partnerships() {
               variants={fadeInUp}
             >
               <p className="text-lg text-muted leading-relaxed">
-                YCA Birmingham believes in the power of collaboration. We actively seek partnerships with organizations, businesses, and agencies that share our commitment to community empowerment and social justice.
+                {t('partnerships.intro')}
               </p>
             </motion.div>
 
@@ -110,10 +130,8 @@ export default function Partnerships() {
                 >
                   <Building size={28} className="text-primary" />
                 </motion.div>
-                <h3 className="text-xl font-bold text-primary mb-3">Corporate Partners</h3>
-                <p className="text-muted">
-                  Businesses looking to make a positive social impact
-                </p>
+                <h3 className="text-xl font-bold text-primary mb-3">{t('partnerships.corporate')}</h3>
+                <p className="text-muted">{t('partnerships.corporateDesc')}</p>
               </motion.div>
 
               <motion.div
@@ -127,10 +145,8 @@ export default function Partnerships() {
                 >
                   <Users size={28} className="text-primary" />
                 </motion.div>
-                <h3 className="text-xl font-bold text-primary mb-3">Community Groups</h3>
-                <p className="text-muted">
-                  Local organizations working towards shared goals
-                </p>
+                <h3 className="text-xl font-bold text-primary mb-3">{t('partnerships.community')}</h3>
+                <p className="text-muted">{t('partnerships.communityDesc')}</p>
               </motion.div>
 
               <motion.div
@@ -144,10 +160,8 @@ export default function Partnerships() {
                 >
                   <Award size={28} className="text-primary" />
                 </motion.div>
-                <h3 className="text-xl font-bold text-primary mb-3">Public Sector</h3>
-                <p className="text-muted">
-                  Government agencies and statutory services
-                </p>
+                <h3 className="text-xl font-bold text-primary mb-3">{t('partnerships.publicSector')}</h3>
+                <p className="text-muted">{t('partnerships.publicSectorDesc')}</p>
               </motion.div>
             </motion.div>
 
@@ -158,7 +172,7 @@ export default function Partnerships() {
               viewport={{ once: true }}
               variants={scaleIn}
             >
-              <h2 className="text-3xl font-bold text-primary mb-8 text-center">Partnership Benefits</h2>
+              <h2 className="text-3xl font-bold text-primary mb-8 text-center">{t('partnerships.benefits')}</h2>
               <motion.div
                 className="grid md:grid-cols-2 gap-4"
                 initial="hidden"
@@ -192,32 +206,14 @@ export default function Partnerships() {
                 variants={fadeInLeft}
                 whileHover={{ scale: 1.03 }}
               >
-                <h3 className="text-2xl font-bold mb-6">Partnership Opportunities</h3>
+                <h3 className="text-2xl font-bold mb-6">{t('partnerships.opportunities')}</h3>
                 <ul className="space-y-3">
-                  <li className="flex items-start gap-2">
-                    <span>•</span>
-                    <span>Joint programme delivery</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span>•</span>
-                    <span>Funding and sponsorship</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span>•</span>
-                    <span>Skills sharing and capacity building</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span>•</span>
-                    <span>Research and evaluation projects</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span>•</span>
-                    <span>Event collaboration</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span>•</span>
-                    <span>Resource sharing</span>
-                  </li>
+                  {opportunities.map((opp, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <span>&#8226;</span>
+                      <span>{opp}</span>
+                    </li>
+                  ))}
                 </ul>
               </motion.div>
 
@@ -226,32 +222,14 @@ export default function Partnerships() {
                 variants={fadeInRight}
                 whileHover={{ scale: 1.03 }}
               >
-                <h3 className="text-2xl font-bold text-primary mb-6">What We Offer</h3>
+                <h3 className="text-2xl font-bold text-primary mb-6">{t('partnerships.whatWeOffer')}</h3>
                 <ul className="space-y-3 text-muted">
-                  <li className="flex items-start gap-2">
-                    <span>•</span>
-                    <span>Direct access to the Yemeni community</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span>•</span>
-                    <span>Cultural expertise and insights</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span>•</span>
-                    <span>Bilingual staff and volunteers</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span>•</span>
-                    <span>Established community trust</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span>•</span>
-                    <span>Programme delivery experience</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span>•</span>
-                    <span>Community engagement channels</span>
-                  </li>
+                  {offers.map((offer, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <span>&#8226;</span>
+                      <span>{offer}</span>
+                    </li>
+                  ))}
                 </ul>
               </motion.div>
             </motion.div>
@@ -263,9 +241,9 @@ export default function Partnerships() {
               viewport={{ once: true }}
               variants={fadeInUp}
             >
-              <h2 className="text-3xl font-bold text-primary mb-6 text-center">Partnership Inquiry Form</h2>
+              <h2 className="text-3xl font-bold text-primary mb-6 text-center">{t('partnerships.formTitle')}</h2>
               <p className="text-lg text-muted mb-8 text-center max-w-2xl mx-auto">
-                Complete the form below to express your interest in partnering with YCA Birmingham. We'll review your inquiry and get back to you within 2-3 business days.
+                {t('partnerships.formDesc')}
               </p>
 
               {submitStatus === 'success' && (
@@ -274,8 +252,8 @@ export default function Partnerships() {
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-                  <h3 className="font-bold text-xl mb-2">Inquiry Submitted Successfully!</h3>
-                  <p>Thank you for your interest in partnering with us. We'll review your inquiry and contact you soon.</p>
+                  <h3 className="font-bold text-xl mb-2">{t('partnerships.successTitle')}</h3>
+                  <p>{t('partnerships.successMsg')}</p>
                 </motion.div>
               )}
 
@@ -285,18 +263,18 @@ export default function Partnerships() {
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-                  <h3 className="font-bold text-xl mb-2">Submission Failed</h3>
-                  <p>There was an error submitting your inquiry. Please try again or contact us directly.</p>
+                  <h3 className="font-bold text-xl mb-2">{t('partnerships.errorTitle')}</h3>
+                  <p>{t('partnerships.errorMsg')}</p>
                 </motion.div>
               )}
 
               <form onSubmit={handleSubmit} className="space-y-8">
                 <div className="space-y-6">
-                  <h3 className="text-xl font-bold text-primary border-b-2 border-accent pb-2">Organization Information</h3>
+                  <h3 className="text-xl font-bold text-primary border-b-2 border-accent pb-2">{t('partnerships.orgInfo')}</h3>
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
                       <label htmlFor="organization_name" className="block text-sm font-semibold text-primary mb-2">
-                        Organization Name <span className="text-red-500">*</span>
+                        {t('partnerships.orgName')} <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
@@ -310,7 +288,7 @@ export default function Partnerships() {
                     </div>
                     <div>
                       <label htmlFor="organization_type" className="block text-sm font-semibold text-primary mb-2">
-                        Organization Type
+                        {t('partnerships.orgType')}
                       </label>
                       <select
                         id="organization_type"
@@ -319,24 +297,24 @@ export default function Partnerships() {
                         onChange={handleChange}
                         className="w-full px-4 py-3 border-2 border-sand rounded-lg focus:border-accent focus:outline-none transition-colors"
                       >
-                        <option value="">Select type</option>
-                        <option value="corporate">Corporate/Business</option>
-                        <option value="nonprofit">Non-Profit/Charity</option>
-                        <option value="public_sector">Public Sector</option>
-                        <option value="community">Community Group</option>
-                        <option value="education">Educational Institution</option>
-                        <option value="other">Other</option>
+                        <option value="">{t('partnerships.selectType')}</option>
+                        <option value="corporate">{t('partnerships.typeCorporate')}</option>
+                        <option value="nonprofit">{t('partnerships.typeNonprofit')}</option>
+                        <option value="public_sector">{t('partnerships.typePublic')}</option>
+                        <option value="community">{t('partnerships.typeCommunity')}</option>
+                        <option value="education">{t('partnerships.typeEducation')}</option>
+                        <option value="other">{t('partnerships.typeOther')}</option>
                       </select>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-6">
-                  <h3 className="text-xl font-bold text-primary border-b-2 border-accent pb-2">Contact Information</h3>
+                  <h3 className="text-xl font-bold text-primary border-b-2 border-accent pb-2">{t('partnerships.contactInfo')}</h3>
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
                       <label htmlFor="contact_person" className="block text-sm font-semibold text-primary mb-2">
-                        Contact Person <span className="text-red-500">*</span>
+                        {t('partnerships.contactPerson')} <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
@@ -350,7 +328,7 @@ export default function Partnerships() {
                     </div>
                     <div>
                       <label htmlFor="email" className="block text-sm font-semibold text-primary mb-2">
-                        Email <span className="text-red-500">*</span>
+                        {t('form.email')} <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="email"
@@ -364,7 +342,7 @@ export default function Partnerships() {
                     </div>
                     <div>
                       <label htmlFor="phone" className="block text-sm font-semibold text-primary mb-2">
-                        Phone <span className="text-red-500">*</span>
+                        {t('form.phone')} <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="tel"
@@ -380,10 +358,10 @@ export default function Partnerships() {
                 </div>
 
                 <div className="space-y-6">
-                  <h3 className="text-xl font-bold text-primary border-b-2 border-accent pb-2">Partnership Details</h3>
+                  <h3 className="text-xl font-bold text-primary border-b-2 border-accent pb-2">{t('partnerships.partnershipDetails')}</h3>
                   <div>
                     <label htmlFor="partnership_interest" className="block text-sm font-semibold text-primary mb-2">
-                      Area of Partnership Interest
+                      {t('partnerships.interestArea')}
                     </label>
                     <textarea
                       id="partnership_interest"
@@ -392,12 +370,12 @@ export default function Partnerships() {
                       onChange={handleChange}
                       rows={3}
                       className="w-full px-4 py-3 border-2 border-sand rounded-lg focus:border-accent focus:outline-none transition-colors resize-none"
-                      placeholder="e.g., Joint programme delivery, Funding, Event collaboration"
+                      placeholder={t('partnerships.interestPlaceholder')}
                     />
                   </div>
                   <div>
                     <label htmlFor="message" className="block text-sm font-semibold text-primary mb-2">
-                      Additional Information
+                      {t('partnerships.additionalInfo')}
                     </label>
                     <textarea
                       id="message"
@@ -406,7 +384,7 @@ export default function Partnerships() {
                       onChange={handleChange}
                       rows={4}
                       className="w-full px-4 py-3 border-2 border-sand rounded-lg focus:border-accent focus:outline-none transition-colors resize-none"
-                      placeholder="Tell us more about your organization and partnership ideas..."
+                      placeholder={t('partnerships.additionalPlaceholder')}
                     />
                   </div>
                 </div>
@@ -422,12 +400,12 @@ export default function Partnerships() {
                     {isSubmitting ? (
                       <>
                         <Loader2 size={20} className="animate-spin" />
-                        Submitting...
+                        {t('partnerships.submitting')}
                       </>
                     ) : (
                       <>
                         <Send size={20} />
-                        Submit Inquiry
+                        {t('partnerships.submitInquiry')}
                       </>
                     )}
                   </motion.button>
@@ -437,7 +415,7 @@ export default function Partnerships() {
                       className="bg-white border-2 border-primary text-primary px-8 py-4 rounded-lg hover:bg-primary hover:text-white transition-colors font-semibold flex items-center justify-center gap-2"
                     >
                       <Mail size={20} />
-                      Questions? Contact Us
+                      {t('partnerships.questionsContact')}
                     </Link>
                   </motion.div>
                 </div>
@@ -455,16 +433,16 @@ export default function Partnerships() {
           viewport={{ once: true }}
           variants={fadeInUp}
         >
-          <h2 className="text-3xl font-bold text-primary mb-4">Current Partners</h2>
+          <h2 className="text-3xl font-bold text-primary mb-4">{t('partnerships.currentPartners')}</h2>
           <p className="text-lg text-muted max-w-3xl mx-auto">
-            We're proud to work alongside Birmingham City Council, The Muath Trust, NHS Birmingham and Solihull, and many other organizations committed to community wellbeing.
+            {t('partnerships.currentPartnersDesc')}
           </p>
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Link
               to="/about/partners"
               className="inline-block mt-8 bg-primary text-white px-8 py-4 rounded-lg hover:bg-secondary transition-colors font-semibold"
             >
-              View All Partners
+              {t('partnerships.viewAll')}
             </Link>
           </motion.div>
         </motion.div>

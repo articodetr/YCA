@@ -231,7 +231,7 @@ export default function Resources() {
               Call: 0121 439 5280
             </motion.a>
             <motion.a
-              href="mailto:INFO@yca-birmingham.org.uk"
+              href="mailto:info@yca-birmingham.org.uk"
               className="bg-white border-2 border-primary text-primary px-8 py-4 rounded-lg hover:bg-primary hover:text-white transition-colors font-semibold"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

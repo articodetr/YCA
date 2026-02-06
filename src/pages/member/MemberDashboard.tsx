@@ -34,6 +34,10 @@ export default function MemberDashboard() {
   const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
   const [showWakalaModal, setShowWakalaModal] = useState(false);
   const [userData, setUserData] = useState<any>(null);
+  const [memberRecord, setMemberRecord] = useState<any>(null);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({ full_name: '', phone: '', address: '', city: '', postcode: '' });
 
   const translations = {
     en: {
@@ -72,6 +76,19 @@ export default function MemberDashboard() {
       appointmentTime: 'Appointment Time',
       duration: 'Duration',
       minutes: 'minutes',
+      membershipNumber: 'Membership Number',
+      expiryDate: 'Expiry Date',
+      startDate: 'Start Date',
+      membershipStatus: 'Membership Status',
+      active: 'Active',
+      expired: 'Expired',
+      editProfile: 'Edit Profile',
+      saveProfile: 'Save Changes',
+      saving: 'Saving...',
+      profileUpdated: 'Profile updated successfully',
+      profileError: 'Failed to update profile',
+      fullName: 'Full Name',
+      noExpiry: 'N/A',
     },
     ar: {
       title: 'لوحة تحكم الأعضاء',
@@ -109,6 +126,19 @@ export default function MemberDashboard() {
       appointmentTime: 'وقت الموعد',
       duration: 'المدة',
       minutes: 'دقيقة',
+      membershipNumber: 'رقم العضوية',
+      expiryDate: 'تاريخ الانتهاء',
+      startDate: 'تاريخ البدء',
+      membershipStatus: 'حالة العضوية',
+      active: 'نشط',
+      expired: 'منتهي',
+      editProfile: 'تعديل الملف الشخصي',
+      saveProfile: 'حفظ التغييرات',
+      saving: 'جاري الحفظ...',
+      profileUpdated: 'تم تحديث الملف الشخصي بنجاح',
+      profileError: 'فشل تحديث الملف الشخصي',
+      fullName: 'الاسم الكامل',
+      noExpiry: 'غير محدد',
     },
   };
 
@@ -146,7 +176,18 @@ export default function MemberDashboard() {
         .eq('email', user.email)
         .maybeSingle();
 
+      setMemberRecord(memberData);
       setUserData(memberData || membership);
+      const src = memberData || membership;
+      if (src) {
+        setProfileForm({
+          full_name: src.full_name || src.first_name ? `${src.first_name || ''} ${src.last_name || ''}`.trim() : '',
+          phone: src.phone || '',
+          address: src.address || '',
+          city: src.city || '',
+          postcode: src.postcode || '',
+        });
+      }
 
       const { data: wakala } = await supabase
         .from('wakala_applications')
@@ -167,6 +208,33 @@ export default function MemberDashboard() {
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    setSavingProfile(true);
+    try {
+      if (memberRecord) {
+        const { error } = await supabase
+          .from('members')
+          .update({
+            phone: profileForm.phone,
+            address: profileForm.address,
+            city: profileForm.city,
+            postcode: profileForm.postcode,
+          })
+          .eq('email', user.email);
+        if (error) throw error;
+      }
+      await supabase.auth.updateUser({ data: { full_name: profileForm.full_name, phone: profileForm.phone } });
+      setEditingProfile(false);
+      fetchData();
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      alert(t.profileError);
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -266,20 +334,114 @@ export default function MemberDashboard() {
                 <p className="text-sm text-gray-600 mt-1">{user?.email}</p>
               </div>
 
-              <div className="space-y-3 pt-6 border-t border-gray-200">
-                {user?.user_metadata?.phone && (
-                  <div className="flex items-center gap-3 text-gray-600">
-                    <Phone className="w-5 h-5" />
-                    <span className="text-sm">{user.user_metadata.phone}</span>
-                  </div>
-                )}
-                {membershipApp?.address && (
-                  <div className="flex items-center gap-3 text-gray-600">
-                    <MapPin className="w-5 h-5" />
-                    <span className="text-sm">
-                      {membershipApp.address}, {membershipApp.city} {membershipApp.postcode}
+              {memberRecord && (
+                <div className="space-y-2 pt-4 border-t border-gray-200">
+                  {memberRecord.membership_number && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">{t.membershipNumber}</span>
+                      <span className="font-mono font-bold text-gray-900">{memberRecord.membership_number}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">{t.membershipStatus}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                      memberRecord.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                    }`}>
+                      {memberRecord.status === 'active' ? t.active : t.expired}
                     </span>
                   </div>
+                  {memberRecord.membership_start_date && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">{t.startDate}</span>
+                      <span className="text-gray-900">{new Date(memberRecord.membership_start_date).toLocaleDateString()}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">{t.expiryDate}</span>
+                    <span className="text-gray-900">{memberRecord.membership_end_date ? new Date(memberRecord.membership_end_date).toLocaleDateString() : t.noExpiry}</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-3 pt-4 border-t border-gray-200">
+                {editingProfile ? (
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      value={profileForm.full_name}
+                      onChange={e => setProfileForm(p => ({ ...p, full_name: e.target.value }))}
+                      placeholder={t.fullName}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    />
+                    <input
+                      type="tel"
+                      value={profileForm.phone}
+                      onChange={e => setProfileForm(p => ({ ...p, phone: e.target.value }))}
+                      placeholder={t.phone}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    />
+                    <input
+                      type="text"
+                      value={profileForm.address}
+                      onChange={e => setProfileForm(p => ({ ...p, address: e.target.value }))}
+                      placeholder={t.address}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        value={profileForm.city}
+                        onChange={e => setProfileForm(p => ({ ...p, city: e.target.value }))}
+                        placeholder="City"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                      <input
+                        type="text"
+                        value={profileForm.postcode}
+                        onChange={e => setProfileForm(p => ({ ...p, postcode: e.target.value }))}
+                        placeholder="Postcode"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveProfile}
+                        disabled={savingProfile}
+                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        {savingProfile ? t.saving : t.saveProfile}
+                      </button>
+                      <button
+                        onClick={() => setEditingProfile(false)}
+                        className="flex-1 border border-gray-300 text-gray-700 text-sm font-semibold py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        {language === 'ar' ? 'إلغاء' : 'Cancel'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {(user?.user_metadata?.phone || profileForm.phone) && (
+                      <div className="flex items-center gap-3 text-gray-600">
+                        <Phone className="w-5 h-5" />
+                        <span className="text-sm">{profileForm.phone || user?.user_metadata?.phone}</span>
+                      </div>
+                    )}
+                    {(membershipApp?.address || profileForm.address) && (
+                      <div className="flex items-center gap-3 text-gray-600">
+                        <MapPin className="w-5 h-5" />
+                        <span className="text-sm">
+                          {profileForm.address || membershipApp?.address}, {profileForm.city || membershipApp?.city} {profileForm.postcode || membershipApp?.postcode}
+                        </span>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => setEditingProfile(true)}
+                      className="w-full border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
+                    >
+                      {t.editProfile}
+                    </button>
+                  </>
                 )}
               </div>
 

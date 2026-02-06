@@ -9,6 +9,7 @@ import ElderlyProgramme from './pages/programmes/ElderlyProgramme';
 import YouthProgramme from './pages/programmes/YouthProgramme';
 import ChildrenProgramme from './pages/programmes/ChildrenProgramme';
 import MenProgramme from './pages/programmes/MenProgramme';
+import JourneyWithinProgramme from './pages/programmes/JourneyWithinProgramme';
 import Events from './pages/Events';
 import EventGallery from './pages/EventGallery';
 import News from './pages/News';
@@ -131,6 +132,7 @@ function App() {
                 <Route path="/programmes/youth" element={<YouthProgramme />} />
                 <Route path="/programmes/children" element={<ChildrenProgramme />} />
                 <Route path="/programmes/men" element={<MenProgramme />} />
+                <Route path="/programmes/journey-within" element={<JourneyWithinProgramme />} />
 
                 <Route path="/events" element={<Events />} />
                 <Route path="/event-gallery/:id" element={<EventGallery />} />

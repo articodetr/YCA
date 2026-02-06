@@ -8,6 +8,9 @@ interface EventRegistrationModalProps {
   onClose: () => void;
   eventId: string;
   eventTitle: string;
+  eventCategory?: string;
+  maxCapacity?: number;
+  currentRegistrations?: number;
 }
 
 interface FormData {
@@ -18,6 +21,9 @@ interface FormData {
   numberOfAttendees: number;
   notes: string;
   skills: string;
+  isMember: string;
+  emergencyContactName: string;
+  emergencyContactPhone: string;
 }
 
 interface FormErrors {
@@ -26,6 +32,8 @@ interface FormErrors {
   email?: string;
   phone?: string;
   numberOfAttendees?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
 }
 
 export default function EventRegistrationModal({
@@ -33,7 +41,13 @@ export default function EventRegistrationModal({
   onClose,
   eventId,
   eventTitle,
+  eventCategory,
+  maxCapacity,
+  currentRegistrations,
 }: EventRegistrationModalProps) {
+  const requiresEmergencyContact = eventCategory === 'children' || eventCategory === 'youth';
+  const isFull = maxCapacity && currentRegistrations !== undefined && currentRegistrations >= maxCapacity;
+
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
     lastName: '',
@@ -42,6 +56,9 @@ export default function EventRegistrationModal({
     numberOfAttendees: 1,
     notes: '',
     skills: '',
+    isMember: '',
+    emergencyContactName: '',
+    emergencyContactPhone: '',
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -80,6 +97,9 @@ export default function EventRegistrationModal({
       numberOfAttendees: 1,
       notes: '',
       skills: '',
+      isMember: '',
+      emergencyContactName: '',
+      emergencyContactPhone: '',
     });
     setErrors({});
     setSubmitSuccess(false);
@@ -110,6 +130,15 @@ export default function EventRegistrationModal({
       newErrors.numberOfAttendees = 'Number of attendees must be at least 1';
     }
 
+    if (requiresEmergencyContact) {
+      if (!formData.emergencyContactName.trim()) {
+        newErrors.emergencyContactName = 'Emergency contact name is required for this event';
+      }
+      if (!formData.emergencyContactPhone.trim()) {
+        newErrors.emergencyContactPhone = 'Emergency contact phone is required for this event';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -124,9 +153,20 @@ export default function EventRegistrationModal({
     setIsSubmitting(true);
 
     try {
+      if (maxCapacity && currentRegistrations !== undefined) {
+        const spotsLeft = maxCapacity - currentRegistrations;
+        if (formData.numberOfAttendees > spotsLeft) {
+          alert(spotsLeft > 0
+            ? `Only ${spotsLeft} spot(s) remaining. Please reduce the number of attendees.`
+            : 'This event is fully booked.');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
 
-      const { error } = await supabase.from('event_registrations').insert({
+      const insertData: Record<string, any> = {
         event_id: eventId,
         full_name: fullName,
         email: formData.email.trim(),
@@ -134,7 +174,19 @@ export default function EventRegistrationModal({
         number_of_attendees: formData.numberOfAttendees,
         notes: formData.notes.trim() || null,
         skills: formData.skills.trim() || null,
-      });
+      };
+
+      if (formData.isMember) {
+        insertData.is_member = formData.isMember === 'yes';
+      }
+      if (formData.emergencyContactName) {
+        insertData.emergency_contact_name = formData.emergencyContactName.trim();
+      }
+      if (formData.emergencyContactPhone) {
+        insertData.emergency_contact_phone = formData.emergencyContactPhone.trim();
+      }
+
+      const { error } = await supabase.from('event_registrations').insert(insertData);
 
       if (error) throw error;
 
@@ -327,6 +379,30 @@ export default function EventRegistrationModal({
                   )}
                 </div>
 
+                {isFull && (
+                  <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4 text-center">
+                    <p className="text-red-700 font-semibold">This event is fully booked</p>
+                    <p className="text-red-600 text-sm mt-1">Please check back later or contact us for waitlist options.</p>
+                  </div>
+                )}
+
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-semibold text-primary mb-2">
+                    <User size={16} />
+                    Are you a registered YCA member?
+                  </label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="radio" name="isMember" value="yes" checked={formData.isMember === 'yes'} onChange={handleChange} className="text-primary" />
+                      <span className="text-sm">Yes</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="radio" name="isMember" value="no" checked={formData.isMember === 'no'} onChange={handleChange} className="text-primary" />
+                      <span className="text-sm">No</span>
+                    </label>
+                  </div>
+                </div>
+
                 <div>
                   <label
                     htmlFor="numberOfAttendees"
@@ -373,6 +449,44 @@ export default function EventRegistrationModal({
                     placeholder="Tell us about any skills you have that might be helpful (e.g., photography, event planning, technical skills)"
                   />
                 </div>
+
+                {requiresEmergencyContact && (
+                  <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-4 space-y-4">
+                    <p className="text-sm font-semibold text-amber-800">Emergency Contact (Required for this event)</p>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="emergencyContactName" className="block text-sm font-medium text-gray-700 mb-1">
+                          Contact Name *
+                        </label>
+                        <input
+                          type="text"
+                          id="emergencyContactName"
+                          name="emergencyContactName"
+                          value={formData.emergencyContactName}
+                          onChange={handleChange}
+                          className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-all ${errors.emergencyContactName ? 'border-red-500' : 'border-gray-200 focus:border-primary'}`}
+                          placeholder="Emergency contact name"
+                        />
+                        {errors.emergencyContactName && <p className="text-red-500 text-xs mt-1">{errors.emergencyContactName}</p>}
+                      </div>
+                      <div>
+                        <label htmlFor="emergencyContactPhone" className="block text-sm font-medium text-gray-700 mb-1">
+                          Contact Phone *
+                        </label>
+                        <input
+                          type="tel"
+                          id="emergencyContactPhone"
+                          name="emergencyContactPhone"
+                          value={formData.emergencyContactPhone}
+                          onChange={handleChange}
+                          className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-all ${errors.emergencyContactPhone ? 'border-red-500' : 'border-gray-200 focus:border-primary'}`}
+                          placeholder="Emergency contact phone"
+                        />
+                        {errors.emergencyContactPhone && <p className="text-red-500 text-xs mt-1">{errors.emergencyContactPhone}</p>}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <label

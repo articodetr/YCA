@@ -199,6 +199,10 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
     email: user?.email || '',
     serviceType: '',
     specialRequests: '',
+    applicantName: '',
+    agentName: '',
+    wakalaType: '',
+    wakalaFormat: '',
   });
 
   const translations = {
@@ -251,6 +255,31 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
       settingUpPayment: 'Setting up payment...',
       paymentError: 'Failed to initialize payment. Please try again.',
       backToBooking: 'Back to Booking',
+      wakalaDetails: 'Wakala Details',
+      applicantName: 'Applicant Name (Al-Muwakkil)',
+      agentName: 'Agent Name (Al-Wakeel)',
+      wakalaType: 'Wakala Type',
+      wakalaFormat: 'Wakala Format',
+      selectWakalaType: 'Select wakala type',
+      selectWakalaFormat: 'Select wakala format',
+      wakalaTypes: {
+        general: 'General Power of Attorney',
+        specific: 'Specific Power of Attorney',
+        property: 'Property Power of Attorney',
+        legal: 'Legal Representation',
+        financial: 'Financial Power of Attorney',
+      },
+      wakalaFormats: {
+        standard: 'Standard Format',
+        notarized: 'Notarized Format',
+        apostille: 'With Apostille',
+      },
+      pricingInfo: 'Pricing Information',
+      priceFree: 'Free - First wakala for eligible members (10+ days membership)',
+      priceMember: '£20 - Additional wakala for eligible members',
+      priceNonMember: '£40 - Non-member rate',
+      yourPrice: 'Your Price',
+      consentLabel: 'I confirm that I agree to the use of my information in line with YCA Birmingham policies',
     },
     ar: {
       title: 'حجز وكالة جديد',
@@ -301,6 +330,31 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
       settingUpPayment: 'جاري تجهيز الدفع...',
       paymentError: 'فشل في تهيئة الدفع. يرجى المحاولة مرة أخرى.',
       backToBooking: 'العودة للحجز',
+      wakalaDetails: 'تفاصيل الوكالة',
+      applicantName: 'اسم الموكل',
+      agentName: 'اسم الوكيل',
+      wakalaType: 'نوع الوكالة',
+      wakalaFormat: 'صيغة الوكالة',
+      selectWakalaType: 'اختر نوع الوكالة',
+      selectWakalaFormat: 'اختر صيغة الوكالة',
+      wakalaTypes: {
+        general: 'توكيل عام',
+        specific: 'توكيل خاص',
+        property: 'توكيل عقاري',
+        legal: 'توكيل قضائي',
+        financial: 'توكيل مالي',
+      },
+      wakalaFormats: {
+        standard: 'الصيغة العادية',
+        notarized: 'الصيغة الموثقة',
+        apostille: 'مع أبوستيل',
+      },
+      pricingInfo: 'معلومات التسعير',
+      priceFree: 'مجاناً - أول وكالة للأعضاء المؤهلين (عضوية 10 أيام فأكثر)',
+      priceMember: '20 جنيه - وكالة إضافية للأعضاء المؤهلين',
+      priceNonMember: '40 جنيه - سعر غير الأعضاء',
+      yourPrice: 'السعر الخاص بك',
+      consentLabel: 'أؤكد موافقتي على استخدام معلوماتي وفقاً لسياسات جمعية الجالية اليمنية في برمنغهام',
     },
   };
 
@@ -481,21 +535,57 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
     }));
   };
 
-  const calculatePrice = (appointmentDate: Date) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const daysUntilAppointment = Math.ceil((appointmentDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const [membershipStatus, setMembershipStatus] = useState<'none' | 'active'>('none');
+  const [memberDaysSinceJoin, setMemberDaysSinceJoin] = useState(0);
+  const [previousWakalaCount, setPreviousWakalaCount] = useState(0);
 
-    const baseFee = 50;
-    if (daysUntilAppointment >= 10) {
-      return baseFee;
-    } else if (daysUntilAppointment >= 7) {
-      return baseFee * 1.5;
-    } else if (daysUntilAppointment >= 5) {
-      return baseFee * 2;
-    } else {
-      return baseFee * 3;
+  useEffect(() => {
+    if (user && isOpen) {
+      checkMemberEligibility();
     }
+  }, [user, isOpen]);
+
+  const checkMemberEligibility = async () => {
+    if (!user) return;
+    try {
+      const { data: member } = await supabase
+        .from('members')
+        .select('membership_start_date, status')
+        .eq('email', user.email)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (member?.membership_start_date) {
+        setMembershipStatus('active');
+        const start = new Date(member.membership_start_date);
+        const now = new Date();
+        const diffDays = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        setMemberDaysSinceJoin(diffDays);
+      } else {
+        setMembershipStatus('none');
+        setMemberDaysSinceJoin(0);
+      }
+
+      const { count } = await supabase
+        .from('wakala_applications')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .neq('status', 'cancelled');
+
+      setPreviousWakalaCount(count || 0);
+    } catch (err) {
+      console.error('Error checking eligibility:', err);
+    }
+  };
+
+  const calculatePrice = () => {
+    if (membershipStatus === 'active' && memberDaysSinceJoin >= 10) {
+      if (previousWakalaCount === 0) {
+        return 0;
+      }
+      return 20;
+    }
+    return 40;
   };
 
   const createPaymentIntent = async (wakalaId: string, amount: number) => {
@@ -547,7 +637,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
       return;
     }
 
-    if (!formData.fullName || !formData.phone || !formData.email || !formData.serviceType) {
+    if (!formData.fullName || !formData.phone || !formData.email || !formData.serviceType || !formData.applicantName || !formData.agentName || !formData.wakalaType || !formData.wakalaFormat) {
       setError(t.fillAllFields);
       return;
     }
@@ -557,7 +647,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
     setLoading(true);
 
     try {
-      const price = calculatePrice(selectedDate);
+      const price = calculatePrice();
       const dateStr = selectedDate.toISOString().split('T')[0];
 
       // Double-check slot availability before proceeding
@@ -612,7 +702,11 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
         end_time: selectedSlot.endTime,
         duration_minutes: selectedDuration,
         fee_amount: price,
-        payment_status: 'pending',
+        payment_status: price === 0 ? 'paid' : 'pending',
+        applicant_name: formData.applicantName,
+        agent_name: formData.agentName,
+        wakala_type: formData.wakalaType,
+        wakala_format: formData.wakalaFormat,
       };
 
       const { data: application, error: appError } = await supabase
@@ -626,8 +720,12 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
       setApplicationId(application.id);
       setPaymentAmount(price);
 
-      await createPaymentIntent(application.id, price);
-      setStep('payment');
+      if (price === 0) {
+        setStep('success');
+      } else {
+        await createPaymentIntent(application.id, price);
+        setStep('payment');
+      }
     } catch (err: any) {
       console.error('Application error:', err);
       setError(err.message || t.errorMessage);
@@ -660,6 +758,10 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
       email: user?.email || '',
       serviceType: '',
       specialRequests: '',
+      applicantName: '',
+      agentName: '',
+      wakalaType: '',
+      wakalaFormat: '',
     });
     setSelectedDate(null);
     setSelectedDuration(null);
@@ -769,8 +871,8 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
     );
   }
 
-  const currentPrice = selectedDate ? calculatePrice(selectedDate) : 50;
-  const isFormComplete = formData.fullName && formData.phone && formData.email && formData.serviceType;
+  const currentPrice = calculatePrice();
+  const isFormComplete = formData.fullName && formData.phone && formData.email && formData.serviceType && formData.applicantName && formData.agentName && formData.wakalaType && formData.wakalaFormat;
 
   return (
     <div
@@ -1002,35 +1104,114 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
                       ))}
                     </select>
                   </div>
+                </div>
 
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t.specialRequests}
-                    </label>
-                    <textarea
-                      name="specialRequests"
-                      value={formData.specialRequests}
-                      onChange={handleInputChange}
-                      rows={3}
-                      className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                      disabled={dataLoading}
-                    />
+                <div className="mt-6 border-t border-gray-200 pt-6">
+                  <h4 className="text-md font-bold text-gray-900 mb-4">{t.wakalaDetails}</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {t.applicantName} *
+                      </label>
+                      <input
+                        type="text"
+                        name="applicantName"
+                        value={formData.applicantName}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                        disabled={dataLoading}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {t.agentName} *
+                      </label>
+                      <input
+                        type="text"
+                        name="agentName"
+                        value={formData.agentName}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                        disabled={dataLoading}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {t.wakalaType} *
+                      </label>
+                      <select
+                        name="wakalaType"
+                        value={formData.wakalaType}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+                        required
+                        disabled={dataLoading}
+                      >
+                        <option value="">{t.selectWakalaType}</option>
+                        {Object.entries(t.wakalaTypes).map(([key, label]) => (
+                          <option key={key} value={key}>{label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {t.wakalaFormat} *
+                      </label>
+                      <select
+                        name="wakalaFormat"
+                        value={formData.wakalaFormat}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+                        required
+                        disabled={dataLoading}
+                      >
+                        <option value="">{t.selectWakalaFormat}</option>
+                        {Object.entries(t.wakalaFormats).map(([key, label]) => (
+                          <option key={key} value={key}>{label}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
+                </div>
+
+                <div className="mt-6 border-t border-gray-200 pt-6">
+                  <h4 className="text-md font-bold text-gray-900 mb-3">{t.pricingInfo}</h4>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2 text-sm">
+                    <p className={`${currentPrice === 0 ? 'font-bold text-emerald-700' : 'text-gray-600'}`}>{t.priceFree}</p>
+                    <p className={`${currentPrice === 20 ? 'font-bold text-emerald-700' : 'text-gray-600'}`}>{t.priceMember}</p>
+                    <p className={`${currentPrice === 40 ? 'font-bold text-emerald-700' : 'text-gray-600'}`}>{t.priceNonMember}</p>
+                    <div className="border-t border-blue-300 pt-2 mt-2">
+                      <span className="font-bold text-lg text-emerald-700">{t.yourPrice}: {currentPrice === 0 ? (language === 'ar' ? 'مجاناً' : 'Free') : `£${currentPrice}`}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="md:col-span-2 mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t.specialRequests}
+                  </label>
+                  <textarea
+                    name="specialRequests"
+                    value={formData.specialRequests}
+                    onChange={handleInputChange}
+                    rows={3}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    disabled={dataLoading}
+                  />
                 </div>
 
                 <div className="mt-4 flex items-start gap-2">
                   <input
                     type="checkbox"
-                    id="terms"
+                    id="consent"
                     required
                     className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     disabled={dataLoading}
                   />
-                  <label htmlFor="terms" className="text-sm text-gray-700">
-                    {t.agreeToTerms}{' '}
-                    <a href="#" className="text-blue-600 hover:underline">
-                      {t.termsOfService}
-                    </a>
+                  <label htmlFor="consent" className="text-sm text-gray-700">
+                    {t.consentLabel}
                   </label>
                 </div>
               </div>

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Facebook, Instagram, Twitter, Mail, Phone, MapPin } from 'lucide-react';
+import { Facebook, Instagram, Mail, Phone, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { fadeInUp, staggerContainer, staggerItem } from '../lib/animations';
 import { useContent } from '../contexts/ContentContext';
@@ -7,7 +7,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 
 export default function Footer() {
   const { getContent } = useContent();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   return (
     <footer className="bg-primary text-white">
       <div className="container mx-auto px-4 py-12">
@@ -26,8 +26,14 @@ export default function Footer() {
                 className="h-10 w-auto max-w-fit"
               />
             </div>
+            <p className="text-accent font-semibold text-lg mb-2">
+              {language === 'ar' ? 'جمعية الجالية اليمنية ترحب بكم جميعاً' : 'YCA Welcomes You All'}
+            </p>
             <p className="text-gray-300 mb-4">
               {getContent('footer', 'description', 'Empowering the Yemeni community in Birmingham through support, guidance, and cultural celebration.')}
+            </p>
+            <p className="text-gray-400 text-sm mb-3">
+              {language === 'ar' ? 'تابعونا على وسائل التواصل الاجتماعي للبقاء على اطلاع' : 'Follow us on social media to stay updated'}
             </p>
             <div className="flex gap-4">
               <motion.a
@@ -35,6 +41,7 @@ export default function Footer() {
                 className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center hover:bg-accent hover:text-primary transition-colors"
                 whileHover={{ scale: 1.2, rotate: 360 }}
                 transition={{ duration: 0.4 }}
+                aria-label="Facebook"
               >
                 <Facebook size={20} />
               </motion.a>
@@ -43,6 +50,7 @@ export default function Footer() {
                 className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center hover:bg-accent hover:text-primary transition-colors"
                 whileHover={{ scale: 1.2, rotate: 360 }}
                 transition={{ duration: 0.4 }}
+                aria-label="Instagram"
               >
                 <Instagram size={20} />
               </motion.a>
@@ -51,8 +59,9 @@ export default function Footer() {
                 className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center hover:bg-accent hover:text-primary transition-colors"
                 whileHover={{ scale: 1.2, rotate: 360 }}
                 transition={{ duration: 0.4 }}
+                aria-label="TikTok"
               >
-                <Twitter size={20} />
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 0010.86 4.46V13.2a8.16 8.16 0 005.58 2.17V11.9a4.85 4.85 0 01-3.77-1.45V6.69h3.77z"/></svg>
               </motion.a>
             </div>
           </motion.div>

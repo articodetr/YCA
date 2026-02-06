@@ -446,7 +446,7 @@ export default function Team() {
               Our team is here to help. Contact us for any inquiries or to learn more about our work.
             </p>
             <motion.a
-              href="mailto:INFO@yca-birmingham.org.uk"
+              href="mailto:info@yca-birmingham.org.uk"
               className="inline-block bg-primary text-white px-8 py-4 rounded-lg hover:bg-secondary transition-colors font-semibold"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

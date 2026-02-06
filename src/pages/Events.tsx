@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PageHeader from '../components/PageHeader';
 import EventRegistrationModal from '../components/EventRegistrationModal';
+import PaidEventRegistrationModal from '../components/PaidEventRegistrationModal';
 import AddToCalendar from '../components/AddToCalendar';
 import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../lib/animations';
 import { supabase } from '../lib/supabase';
@@ -11,13 +12,22 @@ import { supabase } from '../lib/supabase';
 interface Event {
   id: string;
   title: string;
+  title_ar?: string;
   description: string;
+  description_ar?: string;
   date: string;
   time: string;
   location: string;
+  location_ar?: string;
   category: string;
   image_url: string | null;
   is_featured: boolean;
+  is_paid_event?: boolean;
+  ticket_price_adult?: number;
+  ticket_price_child?: number | null;
+  ticket_price_member?: number | null;
+  max_capacity?: number | null;
+  current_registrations?: number;
 }
 
 export default function Events() {
@@ -28,7 +38,9 @@ export default function Events() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPaidModalOpen, setIsPaidModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<{ id: string; title: string } | null>(null);
+  const [selectedPaidEvent, setSelectedPaidEvent] = useState<Event | null>(null);
 
   useEffect(() => {
     fetchEvents();
@@ -88,14 +100,25 @@ export default function Events() {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + direction, 1));
   };
 
-  const openRegistrationModal = (eventId: string, eventTitle: string) => {
-    setSelectedEvent({ id: eventId, title: eventTitle });
-    setIsModalOpen(true);
+  const openRegistrationModal = (event: Event) => {
+    if (event.is_paid_event && event.ticket_price_adult) {
+      setSelectedPaidEvent(event);
+      setIsPaidModalOpen(true);
+    } else {
+      setSelectedEvent({ id: event.id, title: event.title });
+      setIsModalOpen(true);
+    }
   };
 
   const closeRegistrationModal = () => {
     setIsModalOpen(false);
     setSelectedEvent(null);
+  };
+
+  const closePaidModal = () => {
+    setIsPaidModalOpen(false);
+    setSelectedPaidEvent(null);
+    fetchEvents();
   };
 
   const renderCalendar = () => {
@@ -235,8 +258,15 @@ export default function Events() {
                           <div className="text-sm uppercase">{new Date(event.date).toLocaleDateString('en-US', { month: 'short' })}</div>
                         </div>
                         <div className="flex-1">
-                          <div className="inline-block bg-accent text-primary px-3 py-1 rounded-full text-xs font-semibold mb-2">
-                            {event.category}
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            <span className="inline-block bg-accent text-primary px-3 py-1 rounded-full text-xs font-semibold">
+                              {event.category}
+                            </span>
+                            {event.is_paid_event && event.ticket_price_adult && (
+                              <span className="inline-block bg-primary text-white px-3 py-1 rounded-full text-xs font-semibold">
+                                From £{Number(event.ticket_price_adult).toFixed(0)}
+                              </span>
+                            )}
                           </div>
                           <h3 className="text-xl font-bold text-primary mb-2">{event.title}</h3>
                           <p className="text-muted text-sm mb-3 leading-relaxed">{event.description}</p>
@@ -254,7 +284,7 @@ export default function Events() {
                       </div>
                       <div className="flex gap-2">
                         <motion.button
-                          onClick={() => openRegistrationModal(event.id, event.title)}
+                          onClick={() => openRegistrationModal(event)}
                           className="flex-1 bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary transition-colors font-semibold text-sm"
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
@@ -344,7 +374,7 @@ export default function Events() {
                         {featuredEvent.description}
                       </p>
                       <motion.button
-                        onClick={() => openRegistrationModal(featuredEvent.id, featuredEvent.title)}
+                        onClick={() => openRegistrationModal(featuredEvent)}
                         className="w-full bg-primary text-white px-6 py-3 rounded-lg hover:bg-secondary transition-colors font-semibold"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
@@ -462,6 +492,27 @@ export default function Events() {
           onClose={closeRegistrationModal}
           eventId={selectedEvent.id}
           eventTitle={selectedEvent.title}
+        />
+      )}
+
+      {selectedPaidEvent && (
+        <PaidEventRegistrationModal
+          isOpen={isPaidModalOpen}
+          onClose={closePaidModal}
+          event={{
+            id: selectedPaidEvent.id,
+            title: selectedPaidEvent.title,
+            title_ar: selectedPaidEvent.title_ar,
+            date: selectedPaidEvent.date,
+            time: selectedPaidEvent.time,
+            location: selectedPaidEvent.location,
+            location_ar: selectedPaidEvent.location_ar,
+            ticket_price_adult: selectedPaidEvent.ticket_price_adult || 0,
+            ticket_price_child: selectedPaidEvent.ticket_price_child ?? null,
+            ticket_price_member: selectedPaidEvent.ticket_price_member ?? null,
+            max_capacity: selectedPaidEvent.max_capacity ?? null,
+            current_registrations: selectedPaidEvent.current_registrations || 0,
+          }}
         />
       )}
     </div>

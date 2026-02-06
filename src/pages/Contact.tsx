@@ -126,8 +126,8 @@ export default function Contact() {
                   </motion.div>
                   <div>
                     <h3 className="font-bold text-lg text-primary mb-2">Email</h3>
-                    <a href="mailto:INFO@yca-birmingham.org.uk" className="text-muted hover:text-accent transition-colors">
-                      INFO@yca-birmingham.org.uk
+                    <a href="mailto:info@yca-birmingham.org.uk" className="text-muted hover:text-accent transition-colors">
+                      info@yca-birmingham.org.uk
                     </a>
                   </div>
                 </motion.div>
@@ -143,8 +143,8 @@ export default function Contact() {
                   <div>
                     <h3 className="font-bold text-lg text-primary mb-2">Opening Times</h3>
                     <p className="text-muted">
-                      Monday - Friday<br />
-                      10:00 AM - 3:00 PM
+                      Monday - Thursday: 10:00 AM - 3:30 PM<br />
+                      Friday: 9:00 AM - 1:00 PM
                     </p>
                   </div>
                 </motion.div>
@@ -281,7 +281,7 @@ export default function Contact() {
       <section className="py-0 bg-white">
         <div className="w-full h-96">
           <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2432.8869579425586!2d-1.873!3d52.457!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNTLCsDI3JzI1LjIiTiAxwrA1MicyMi44Ilc!5e0!3m2!1sen!2suk!4v1234567890"
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2433.5!2d-1.8777!3d52.4633!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4870bdb6f2e8e4b1%3A0x5e8b2e0c8e9f4a0b!2s261-271+Stratford+Rd%2C+Birmingham+B11+1QS!5e0!3m2!1sen!2suk!4v1700000000000"
             width="100%"
             height="100%"
             style={{ border: 0 }}

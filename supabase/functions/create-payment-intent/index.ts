@@ -24,6 +24,7 @@ interface PaymentRequest {
     user_id?: string;
     application_id?: string;
     wakala_id?: string;
+    event_registration_id?: string;
     type?: string;
   };
 }
@@ -38,9 +39,6 @@ Deno.serve(async (req: Request) => {
 
   try {
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
-
-    console.log('Stripe key exists:', !!stripeSecretKey);
-    console.log('Stripe key starts with sk_test_:', stripeSecretKey?.startsWith('sk_test_'));
 
     if (!stripeSecretKey) {
       throw new Error("STRIPE_SECRET_KEY not configured");
@@ -65,7 +63,6 @@ Deno.serve(async (req: Request) => {
         throw new Error("Invalid amount");
       }
 
-      // Check if this is a donation request (has fullName, email, phone)
       if (body.fullName && body.email && body.phone) {
         const { amount, fullName, email, phone, donationType, message } = body as DonationRequest;
 
@@ -152,7 +149,6 @@ Deno.serve(async (req: Request) => {
           }
         );
       } else {
-        // This is a membership or wakala payment
         const { amount, currency, metadata } = body as PaymentRequest;
 
         const paymentIntent = await stripe.paymentIntents.create({
@@ -162,7 +158,6 @@ Deno.serve(async (req: Request) => {
           description: `${metadata?.type || 'Payment'} for user ${metadata?.user_id}`,
         });
 
-        // Update the application status to indicate payment initiated
         if (metadata?.application_id) {
           await supabase
             .from("membership_applications")
@@ -175,6 +170,16 @@ Deno.serve(async (req: Request) => {
             .from("wakala_applications")
             .update({ payment_status: "pending" })
             .eq("id", metadata.wakala_id);
+        }
+
+        if (metadata?.event_registration_id) {
+          await supabase
+            .from("event_registrations")
+            .update({
+              payment_status: "pending",
+              payment_intent_id: paymentIntent.id,
+            })
+            .eq("id", metadata.event_registration_id);
         }
 
         return new Response(

@@ -224,13 +224,13 @@ export default function MenProgramme() {
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <motion.a
-                    href="mailto:INFO@yca-birmingham.org.uk"
+                    href="mailto:info@yca-birmingham.org.uk"
                     className="inline-flex items-center justify-center gap-2 bg-accent text-primary px-8 py-4 rounded-lg hover:bg-hover transition-colors font-semibold"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
                     <Mail size={20} />
-                    INFO@yca-birmingham.org.uk
+                    info@yca-birmingham.org.uk
                   </motion.a>
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                     <Link

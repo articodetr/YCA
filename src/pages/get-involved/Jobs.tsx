@@ -176,7 +176,7 @@ export default function Jobs() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <motion.a
-                  href="mailto:INFO@yca-birmingham.org.uk"
+                  href="mailto:info@yca-birmingham.org.uk"
                   className="bg-accent text-primary px-8 py-4 rounded-lg hover:bg-hover transition-colors font-semibold flex items-center justify-center gap-2"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}

@@ -5,15 +5,18 @@ import { Elements } from '@stripe/react-stripe-js';
 import PageHeader from '../../components/PageHeader';
 import DonationForm from '../../components/DonationForm';
 import { stripePromise } from '../../lib/stripe';
-import { fadeInUp, fadeInLeft, fadeInRight, staggerContainer, staggerItem, scaleIn } from '../../lib/animations';
+import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../../lib/animations';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function Donate() {
+  const { t, isRTL } = useLanguage();
+
   return (
-    <div>
+    <div dir={isRTL ? 'rtl' : 'ltr'}>
       <PageHeader
-        title="Donate / Support Us"
+        title={t('donate.title')}
         description=""
-        breadcrumbs={[{ label: 'Get Involved', path: '/get-involved/donate' }, { label: 'Donate' }]}
+        breadcrumbs={[{ label: t('nav.getInvolved'), path: '/get-involved/donate' }, { label: t('nav.getInvolved.donate') }]}
         image="https://images.pexels.com/photos/6646917/pexels-photo-6646917.jpeg?auto=compress&cs=tinysrgb&w=1920"
       />
 
@@ -29,7 +32,7 @@ export default function Donate() {
               variants={fadeInUp}
             >
               <p className="text-lg text-muted leading-relaxed mb-6">
-                YCA Birmingham relies on the generosity of individuals, businesses, and organizations to continue delivering vital services to the Yemeni community in Birmingham. Your donation, no matter the size, helps us support those who need it most.
+                {t('donate.intro')}
               </p>
             </motion.div>
 
@@ -44,7 +47,7 @@ export default function Donate() {
               viewport={{ once: true }}
               variants={scaleIn}
             >
-              <h2 className="text-3xl font-bold text-primary mb-8 text-center">How Your Donation Helps</h2>
+              <h2 className="text-3xl font-bold text-primary mb-8 text-center">{t('donate.howHelps')}</h2>
               <motion.div
                 className="grid md:grid-cols-2 gap-6"
                 initial="hidden"
@@ -63,10 +66,8 @@ export default function Donate() {
                   >
                     <Users size={28} className="text-primary" />
                   </motion.div>
-                  <h3 className="text-xl font-bold text-primary mb-3">Support Services</h3>
-                  <p className="text-muted">
-                    Fund advice and guidance services for vulnerable community members who need help navigating UK systems.
-                  </p>
+                  <h3 className="text-xl font-bold text-primary mb-3">{t('donate.supportServices')}</h3>
+                  <p className="text-muted">{t('donate.supportServicesDesc')}</p>
                 </motion.div>
                 <motion.div
                   className="bg-white p-6 rounded-lg"
@@ -79,10 +80,8 @@ export default function Donate() {
                   >
                     <Heart size={28} className="text-primary" />
                   </motion.div>
-                  <h3 className="text-xl font-bold text-primary mb-3">Community Programmes</h3>
-                  <p className="text-muted">
-                    Keep our youth, women's, elderly, and children's programmes running and accessible to all.
-                  </p>
+                  <h3 className="text-xl font-bold text-primary mb-3">{t('donate.communityProgrammes')}</h3>
+                  <p className="text-muted">{t('donate.communityProgrammesDesc')}</p>
                 </motion.div>
                 <motion.div
                   className="bg-white p-6 rounded-lg"
@@ -95,10 +94,8 @@ export default function Donate() {
                   >
                     <Building size={28} className="text-primary" />
                   </motion.div>
-                  <h3 className="text-xl font-bold text-primary mb-3">Facilities & Resources</h3>
-                  <p className="text-muted">
-                    Maintain our community spaces and provide necessary resources for our services.
-                  </p>
+                  <h3 className="text-xl font-bold text-primary mb-3">{t('donate.facilities')}</h3>
+                  <p className="text-muted">{t('donate.facilitiesDesc')}</p>
                 </motion.div>
                 <motion.div
                   className="bg-white p-6 rounded-lg"
@@ -111,10 +108,8 @@ export default function Donate() {
                   >
                     <TrendingUp size={28} className="text-primary" />
                   </motion.div>
-                  <h3 className="text-xl font-bold text-primary mb-3">Future Growth</h3>
-                  <p className="text-muted">
-                    Expand our services to reach more people and develop new programmes based on community needs.
-                  </p>
+                  <h3 className="text-xl font-bold text-primary mb-3">{t('donate.futureGrowth')}</h3>
+                  <p className="text-muted">{t('donate.futureGrowthDesc')}</p>
                 </motion.div>
               </motion.div>
             </motion.div>
@@ -132,19 +127,19 @@ export default function Donate() {
               >
                 <Heart size={36} className="text-primary" />
               </motion.div>
-              <h2 className="text-3xl font-bold mb-6">Other Ways to Donate</h2>
+              <h2 className="text-3xl font-bold mb-6">{t('donate.otherWays')}</h2>
               <p className="text-xl mb-8 leading-relaxed max-w-2xl mx-auto">
-                Prefer to donate via bank transfer, cheque, or in person? Contact us to discuss alternative donation options. We are a registered charity (Number: 1057470).
+                {t('donate.otherWaysDesc')}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <motion.a
-                  href="mailto:INFO@yca-birmingham.org.uk"
+                  href="mailto:info@yca-birmingham.org.uk"
                   className="bg-accent text-primary px-8 py-4 rounded-lg hover:bg-hover transition-colors font-semibold flex items-center justify-center gap-2"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
                   <Mail size={20} />
-                  Email Us
+                  {t('donate.emailUs')}
                 </motion.a>
                 <motion.a
                   href="tel:01214395280"
@@ -153,7 +148,7 @@ export default function Donate() {
                   whileTap={{ scale: 0.95 }}
                 >
                   <Phone size={20} />
-                  Call: 0121 439 5280
+                  0121 439 5280
                 </motion.a>
               </div>
             </motion.div>
@@ -169,19 +164,19 @@ export default function Donate() {
           viewport={{ once: true }}
           variants={fadeInUp}
         >
-          <h2 className="text-3xl font-bold text-primary mb-4">Other Ways to Support</h2>
+          <h2 className="text-3xl font-bold text-primary mb-4">{t('donate.otherSupport')}</h2>
           <p className="text-lg text-muted max-w-3xl mx-auto mb-8">
-            Can't donate right now? You can still support us by volunteering your time, attending our events, or spreading the word about our work.
+            {t('donate.otherSupportDesc')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link to="/get-involved/volunteer" className="bg-primary text-white px-8 py-4 rounded-lg hover:bg-secondary transition-colors font-semibold">
-                Become a Volunteer
+                {t('donate.becomeVolunteer')}
               </Link>
             </motion.div>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link to="/get-involved/membership" className="bg-white border-2 border-primary text-primary px-8 py-4 rounded-lg hover:bg-primary hover:text-white transition-colors font-semibold">
-                Become a Member
+                {t('donate.becomeMember')}
               </Link>
             </motion.div>
           </div>

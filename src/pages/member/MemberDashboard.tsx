@@ -1,18 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  User,
-  FileText,
-  Calendar,
-  CreditCard,
-  LogOut,
-  Loader2,
-  CheckCircle,
-  Clock,
-  XCircle,
-  Mail,
-  Phone,
-  MapPin,
+  User, FileText, CreditCard, LogOut, Loader2,
+  LayoutDashboard, CheckCircle, XCircle,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -20,13 +11,134 @@ import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import Layout from '../../components/Layout';
 import PageHeader from '../../components/PageHeader';
 import WakalaBookingModal from '../../components/modals/WakalaBookingModal';
-import { cancelBooking, formatTimeRange } from '../../lib/booking-utils';
+import { cancelBooking } from '../../lib/booking-utils';
+import OverviewTab from './dashboard/OverviewTab';
+import ApplicationsTab from './dashboard/ApplicationsTab';
+import PaymentsTab from './dashboard/PaymentsTab';
+import ProfileTab from './dashboard/ProfileTab';
+
+type TabId = 'overview' | 'applications' | 'payments' | 'profile';
+
+const translations = {
+  en: {
+    title: 'Member Dashboard',
+    subtitle: 'Manage your account',
+    overview: 'Overview',
+    profile: 'My Profile',
+    membership: 'Membership',
+    wakalaApplications: 'Applications',
+    paymentHistory: 'Payments',
+    newWakalaApp: 'New Wakala Application',
+    logout: 'Logout',
+    pending: 'Pending',
+    approved: 'Approved',
+    rejected: 'Rejected',
+    paid: 'Paid',
+    unpaid: 'Unpaid',
+    noMembership: 'No membership application found',
+    noWakala: 'No Wakala applications yet',
+    noPayments: 'No payment history',
+    applyMembership: 'Apply for Membership',
+    email: 'Email',
+    phone: 'Phone',
+    address: 'Address',
+    loading: 'Loading...',
+    cancelAppointment: 'Cancel Appointment',
+    confirmCancel: 'Are you sure you want to cancel this appointment?',
+    cancelSuccess: 'Appointment cancelled successfully',
+    cancelError: 'Failed to cancel appointment',
+    cancelled: 'Cancelled',
+    minutes: 'minutes',
+    membershipNumber: 'Membership Number',
+    expiryDate: 'Expiry Date',
+    startDate: 'Start Date',
+    membershipStatus: 'Membership Status',
+    active: 'Active',
+    expired: 'Expired',
+    editProfile: 'Edit',
+    saveProfile: 'Save Changes',
+    saving: 'Saving...',
+    profileUpdated: 'Profile updated successfully',
+    profileError: 'Failed to update profile',
+    fullName: 'Full Name',
+    noExpiry: 'N/A',
+    recentActivity: 'Recent Activity',
+    totalApplications: 'Applications',
+    totalPaid: 'Total Paid',
+    noRecentActivity: 'No recent activity',
+    personalInfo: 'Personal Information',
+    membershipDetails: 'Membership Details',
+    cancel: 'Cancel',
+    city: 'City',
+    postcode: 'Postcode',
+  },
+  ar: {
+    title: 'لوحة تحكم الأعضاء',
+    subtitle: 'إدارة حسابك',
+    overview: 'نظرة عامة',
+    profile: 'ملفي الشخصي',
+    membership: 'العضوية',
+    wakalaApplications: 'الطلبات',
+    paymentHistory: 'المدفوعات',
+    newWakalaApp: 'طلب وكالة جديد',
+    logout: 'تسجيل الخروج',
+    pending: 'قيد الانتظار',
+    approved: 'موافق عليه',
+    rejected: 'مرفوض',
+    paid: 'مدفوع',
+    unpaid: 'غير مدفوع',
+    noMembership: 'لم يتم العثور على طلب عضوية',
+    noWakala: 'لا توجد طلبات وكالة بعد',
+    noPayments: 'لا يوجد سجل للمدفوعات',
+    applyMembership: 'التقدم للعضوية',
+    email: 'البريد الإلكتروني',
+    phone: 'الهاتف',
+    address: 'العنوان',
+    loading: 'جاري التحميل...',
+    cancelAppointment: 'إلغاء الموعد',
+    confirmCancel: 'هل أنت متأكد من إلغاء هذا الموعد؟',
+    cancelSuccess: 'تم إلغاء الموعد بنجاح',
+    cancelError: 'فشل إلغاء الموعد',
+    cancelled: 'ملغي',
+    minutes: 'دقيقة',
+    membershipNumber: 'رقم العضوية',
+    expiryDate: 'تاريخ الانتهاء',
+    startDate: 'تاريخ البدء',
+    membershipStatus: 'حالة العضوية',
+    active: 'نشط',
+    expired: 'منتهي',
+    editProfile: 'تعديل',
+    saveProfile: 'حفظ التغييرات',
+    saving: 'جاري الحفظ...',
+    profileUpdated: 'تم تحديث الملف الشخصي بنجاح',
+    profileError: 'فشل تحديث الملف الشخصي',
+    fullName: 'الاسم الكامل',
+    noExpiry: 'غير محدد',
+    recentActivity: 'النشاط الأخير',
+    totalApplications: 'الطلبات',
+    totalPaid: 'المبلغ المدفوع',
+    noRecentActivity: 'لا يوجد نشاط حديث',
+    personalInfo: 'المعلومات الشخصية',
+    membershipDetails: 'تفاصيل العضوية',
+    cancel: 'إلغاء',
+    city: 'المدينة',
+    postcode: 'الرمز البريدي',
+  },
+};
+
+const tabs: { id: TabId; icon: typeof LayoutDashboard; labelKey: string }[] = [
+  { id: 'overview', icon: LayoutDashboard, labelKey: 'overview' },
+  { id: 'applications', icon: FileText, labelKey: 'wakalaApplications' },
+  { id: 'payments', icon: CreditCard, labelKey: 'paymentHistory' },
+  { id: 'profile', icon: User, labelKey: 'profile' },
+];
 
 export default function MemberDashboard() {
   const { user, signOut } = useMemberAuth();
   const { language } = useLanguage();
   const location = useLocation();
   const isRTL = language === 'ar';
+  const t = translations[language];
 
   const [loading, setLoading] = useState(true);
   const [membershipApp, setMembershipApp] = useState<any>(null);
@@ -38,111 +150,13 @@ export default function MemberDashboard() {
   const [editingProfile, setEditingProfile] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({ full_name: '', phone: '', address: '', city: '', postcode: '' });
+  const [activeTab, setActiveTab] = useState<TabId>('overview');
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  const translations = {
-    en: {
-      title: 'Member Dashboard',
-      subtitle: 'Manage your account',
-      profile: 'Profile',
-      membership: 'Membership',
-      wakalaApplications: 'Wakala Applications',
-      paymentHistory: 'Payment History',
-      newWakalaApp: 'New Wakala Application',
-      logout: 'Logout',
-      status: 'Status',
-      type: 'Type',
-      date: 'Date',
-      amount: 'Amount',
-      actions: 'Actions',
-      view: 'View',
-      pending: 'Pending',
-      approved: 'Approved',
-      rejected: 'Rejected',
-      paid: 'Paid',
-      unpaid: 'Unpaid',
-      noMembership: 'No membership application found',
-      noWakala: 'No Wakala applications yet',
-      noPayments: 'No payment history',
-      applyMembership: 'Apply for Membership',
-      email: 'Email',
-      phone: 'Phone',
-      address: 'Address',
-      loading: 'Loading...',
-      cancelAppointment: 'Cancel Appointment',
-      confirmCancel: 'Are you sure you want to cancel this appointment?',
-      cancelSuccess: 'Appointment cancelled successfully',
-      cancelError: 'Failed to cancel appointment',
-      cancelled: 'Cancelled',
-      appointmentTime: 'Appointment Time',
-      duration: 'Duration',
-      minutes: 'minutes',
-      membershipNumber: 'Membership Number',
-      expiryDate: 'Expiry Date',
-      startDate: 'Start Date',
-      membershipStatus: 'Membership Status',
-      active: 'Active',
-      expired: 'Expired',
-      editProfile: 'Edit Profile',
-      saveProfile: 'Save Changes',
-      saving: 'Saving...',
-      profileUpdated: 'Profile updated successfully',
-      profileError: 'Failed to update profile',
-      fullName: 'Full Name',
-      noExpiry: 'N/A',
-    },
-    ar: {
-      title: 'لوحة تحكم الأعضاء',
-      subtitle: 'إدارة حسابك',
-      profile: 'الملف الشخصي',
-      membership: 'العضوية',
-      wakalaApplications: 'طلبات الوكالة',
-      paymentHistory: 'سجل المدفوعات',
-      newWakalaApp: 'طلب وكالة جديد',
-      logout: 'تسجيل الخروج',
-      status: 'الحالة',
-      type: 'النوع',
-      date: 'التاريخ',
-      amount: 'المبلغ',
-      actions: 'الإجراءات',
-      view: 'عرض',
-      pending: 'قيد الانتظار',
-      approved: 'موافق عليه',
-      rejected: 'مرفوض',
-      paid: 'مدفوع',
-      unpaid: 'غير مدفوع',
-      noMembership: 'لم يتم العثور على طلب عضوية',
-      noWakala: 'لا توجد طلبات وكالة بعد',
-      noPayments: 'لا يوجد سجل للمدفوعات',
-      applyMembership: 'التقدم للعضوية',
-      email: 'البريد الإلكتروني',
-      phone: 'الهاتف',
-      address: 'العنوان',
-      loading: 'جاري التحميل...',
-      cancelAppointment: 'إلغاء الموعد',
-      confirmCancel: 'هل أنت متأكد من إلغاء هذا الموعد؟',
-      cancelSuccess: 'تم إلغاء الموعد بنجاح',
-      cancelError: 'فشل إلغاء الموعد',
-      cancelled: 'ملغي',
-      appointmentTime: 'وقت الموعد',
-      duration: 'المدة',
-      minutes: 'دقيقة',
-      membershipNumber: 'رقم العضوية',
-      expiryDate: 'تاريخ الانتهاء',
-      startDate: 'تاريخ البدء',
-      membershipStatus: 'حالة العضوية',
-      active: 'نشط',
-      expired: 'منتهي',
-      editProfile: 'تعديل الملف الشخصي',
-      saveProfile: 'حفظ التغييرات',
-      saving: 'جاري الحفظ...',
-      profileUpdated: 'تم تحديث الملف الشخصي بنجاح',
-      profileError: 'فشل تحديث الملف الشخصي',
-      fullName: 'الاسم الكامل',
-      noExpiry: 'غير محدد',
-    },
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3500);
   };
-
-  const t = translations[language];
 
   useEffect(() => {
     fetchData();
@@ -157,7 +171,6 @@ export default function MemberDashboard() {
 
   const fetchData = async () => {
     if (!user) return;
-
     setLoading(true);
     try {
       const { data: membership } = await supabase
@@ -167,7 +180,6 @@ export default function MemberDashboard() {
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
-
       setMembershipApp(membership);
 
       const { data: memberData } = await supabase
@@ -175,9 +187,9 @@ export default function MemberDashboard() {
         .select('*')
         .eq('email', user.email)
         .maybeSingle();
-
       setMemberRecord(memberData);
       setUserData(memberData || membership);
+
       const src = memberData || membership;
       if (src) {
         setProfileForm({
@@ -194,7 +206,6 @@ export default function MemberDashboard() {
         .select('*, availability_slots(service_id)')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
-
       setWakalaApps(wakala || []);
 
       const { data: payments } = await supabase
@@ -202,7 +213,6 @@ export default function MemberDashboard() {
         .select('*')
         .eq('email', user.email)
         .order('created_at', { ascending: false });
-
       setPaymentHistory(payments || []);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -218,99 +228,51 @@ export default function MemberDashboard() {
       if (memberRecord) {
         const { error } = await supabase
           .from('members')
-          .update({
-            phone: profileForm.phone,
-            address: profileForm.address,
-            city: profileForm.city,
-            postcode: profileForm.postcode,
-          })
+          .update({ phone: profileForm.phone, address: profileForm.address, city: profileForm.city, postcode: profileForm.postcode })
           .eq('email', user.email);
         if (error) throw error;
       }
       await supabase.auth.updateUser({ data: { full_name: profileForm.full_name, phone: profileForm.phone } });
       setEditingProfile(false);
+      showToast(t.profileUpdated, 'success');
       fetchData();
-    } catch (err) {
-      console.error('Error updating profile:', err);
-      alert(t.profileError);
+    } catch {
+      showToast(t.profileError, 'error');
     } finally {
       setSavingProfile(false);
     }
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-  };
-
   const handleCancelAppointment = async (app: any) => {
     if (!confirm(t.confirmCancel)) return;
-
     if (!app.slot_id || !app.duration_minutes || !app.booking_date || !app.start_time) {
-      alert(t.cancelError);
+      showToast(t.cancelError, 'error');
       return;
     }
-
     const serviceId = app.availability_slots?.service_id;
     if (!serviceId) {
-      alert(t.cancelError);
+      showToast(t.cancelError, 'error');
       return;
     }
-
     try {
-      const result = await cancelBooking(
-        app.id,
-        app.slot_id,
-        serviceId,
-        app.duration_minutes,
-        app.booking_date,
-        app.start_time
-      );
-
+      const result = await cancelBooking(app.id, app.slot_id, serviceId, app.duration_minutes, app.booking_date, app.start_time);
       if (result.success) {
-        alert(t.cancelSuccess);
+        showToast(t.cancelSuccess, 'success');
         fetchData();
       } else {
-        alert(result.error || t.cancelError);
+        showToast(result.error || t.cancelError, 'error');
       }
-    } catch (error) {
-      console.error('Error cancelling appointment:', error);
-      alert(t.cancelError);
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'approved':
-      case 'paid':
-        return <CheckCircle className="w-5 h-5 text-emerald-600" />;
-      case 'pending':
-        return <Clock className="w-5 h-5 text-amber-600" />;
-      case 'rejected':
-        return <XCircle className="w-5 h-5 text-red-600" />;
-      default:
-        return <Clock className="w-5 h-5 text-gray-600" />;
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return t.approved;
-      case 'pending':
-        return t.pending;
-      case 'rejected':
-        return t.rejected;
-      default:
-        return status;
+    } catch {
+      showToast(t.cancelError, 'error');
     }
   };
 
   if (loading) {
     return (
       <Layout>
-        <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
-          <span className="ml-3 text-gray-600">{t.loading}</span>
+        <div className="min-h-screen flex items-center justify-center gap-3">
+          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          <span className="text-muted">{t.loading}</span>
         </div>
       </Layout>
     );
@@ -318,282 +280,125 @@ export default function MemberDashboard() {
 
   return (
     <Layout>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} description={t.subtitle} />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" dir={isRTL ? 'rtl' : 'ltr'}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-lg p-6 space-y-6">
-              <div className="text-center">
-                <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <User className="w-12 h-12 text-emerald-600" />
-                </div>
-                <h2 className="text-xl font-bold text-gray-900">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8" dir={isRTL ? 'rtl' : 'ltr'}>
+        <div className="bg-white rounded-xl border border-divider p-4 sm:p-5 mb-6">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-sand rounded-full flex items-center justify-center flex-shrink-0">
+                <User className="w-6 h-6 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-base font-bold text-primary truncate">
                   {user?.user_metadata?.full_name || user?.email}
                 </h2>
-                <p className="text-sm text-gray-600 mt-1">{user?.email}</p>
+                <p className="text-xs text-muted truncate">{user?.email}</p>
               </div>
-
               {memberRecord && (
-                <div className="space-y-2 pt-4 border-t border-gray-200">
-                  {memberRecord.membership_number && (
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">{t.membershipNumber}</span>
-                      <span className="font-mono font-bold text-gray-900">{memberRecord.membership_number}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500">{t.membershipStatus}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                      memberRecord.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
-                    }`}>
-                      {memberRecord.status === 'active' ? t.active : t.expired}
-                    </span>
-                  </div>
-                  {memberRecord.membership_start_date && (
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">{t.startDate}</span>
-                      <span className="text-gray-900">{new Date(memberRecord.membership_start_date).toLocaleDateString()}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500">{t.expiryDate}</span>
-                    <span className="text-gray-900">{memberRecord.membership_end_date ? new Date(memberRecord.membership_end_date).toLocaleDateString() : t.noExpiry}</span>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-3 pt-4 border-t border-gray-200">
-                {editingProfile ? (
-                  <div className="space-y-3">
-                    <input
-                      type="text"
-                      value={profileForm.full_name}
-                      onChange={e => setProfileForm(p => ({ ...p, full_name: e.target.value }))}
-                      placeholder={t.fullName}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    />
-                    <input
-                      type="tel"
-                      value={profileForm.phone}
-                      onChange={e => setProfileForm(p => ({ ...p, phone: e.target.value }))}
-                      placeholder={t.phone}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    />
-                    <input
-                      type="text"
-                      value={profileForm.address}
-                      onChange={e => setProfileForm(p => ({ ...p, address: e.target.value }))}
-                      placeholder={t.address}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    />
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        type="text"
-                        value={profileForm.city}
-                        onChange={e => setProfileForm(p => ({ ...p, city: e.target.value }))}
-                        placeholder="City"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                      />
-                      <input
-                        type="text"
-                        value={profileForm.postcode}
-                        onChange={e => setProfileForm(p => ({ ...p, postcode: e.target.value }))}
-                        placeholder="Postcode"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleSaveProfile}
-                        disabled={savingProfile}
-                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
-                      >
-                        {savingProfile ? t.saving : t.saveProfile}
-                      </button>
-                      <button
-                        onClick={() => setEditingProfile(false)}
-                        className="flex-1 border border-gray-300 text-gray-700 text-sm font-semibold py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors"
-                      >
-                        {language === 'ar' ? 'إلغاء' : 'Cancel'}
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    {(user?.user_metadata?.phone || profileForm.phone) && (
-                      <div className="flex items-center gap-3 text-gray-600">
-                        <Phone className="w-5 h-5" />
-                        <span className="text-sm">{profileForm.phone || user?.user_metadata?.phone}</span>
-                      </div>
-                    )}
-                    {(membershipApp?.address || profileForm.address) && (
-                      <div className="flex items-center gap-3 text-gray-600">
-                        <MapPin className="w-5 h-5" />
-                        <span className="text-sm">
-                          {profileForm.address || membershipApp?.address}, {profileForm.city || membershipApp?.city} {profileForm.postcode || membershipApp?.postcode}
-                        </span>
-                      </div>
-                    )}
-                    <button
-                      onClick={() => setEditingProfile(true)}
-                      className="w-full border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
-                    >
-                      {t.editProfile}
-                    </button>
-                  </>
-                )}
-              </div>
-
-              <div className="pt-6 border-t border-gray-200 space-y-3">
-                <button
-                  onClick={() => setShowWakalaModal(true)}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                  <FileText className="w-5 h-5" />
-                  {t.newWakalaApp}
-                </button>
-
-                <button
-                  onClick={handleSignOut}
-                  className="w-full border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                  <LogOut className="w-5 h-5" />
-                  {t.logout}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="lg:col-span-2 space-y-8">
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <User className="w-6 h-6" />
-                {t.membership}
-              </h3>
-              {membershipApp ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900">{membershipApp.membership_type}</p>
-                      <p className="text-sm text-gray-600">
-                        {new Date(membershipApp.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(membershipApp.status)}
-                      <span className="text-sm font-medium">{getStatusText(membershipApp.status)}</span>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-600 mb-4">{t.noMembership}</p>
-                  <Link
-                    to="/get-involved/membership"
-                    className="inline-block bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
-                  >
-                    {t.applyMembership}
-                  </Link>
-                </div>
+                <span className={`hidden sm:inline-flex px-3 py-1 rounded-full text-xs font-semibold border ${
+                  memberRecord.status === 'active'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-red-50 text-red-700 border-red-200'
+                }`}>
+                  {memberRecord.status === 'active' ? t.active : t.expired}
+                </span>
               )}
             </div>
-
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <FileText className="w-6 h-6" />
-                {t.wakalaApplications}
-              </h3>
-              {wakalaApps.length > 0 ? (
-                <div className="space-y-4">
-                  {wakalaApps.map((app) => {
-                    const isCancelled = app.status === 'cancelled' || app.cancelled_at;
-                    const isPastAppointment = app.booking_date && new Date(app.booking_date) < new Date();
-                    const canCancel = app.booking_date && !isCancelled && !isPastAppointment;
-
-                    return (
-                      <div key={app.id} className={`p-4 rounded-lg border-2 ${
-                        isCancelled ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'
-                      }`}>
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <p className="font-bold text-gray-900 mb-1">{app.service_type}</p>
-                            {app.booking_date && app.start_time && app.end_time && (
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2 text-sm text-gray-700">
-                                  <Calendar className="w-4 h-4" />
-                                  <span>{new Date(app.booking_date).toLocaleDateString()}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm text-gray-700">
-                                  <Clock className="w-4 h-4" />
-                                  <span>{formatTimeRange(app.start_time, app.end_time)}</span>
-                                  {app.duration_minutes && (
-                                    <span className="text-xs text-blue-600 font-medium">
-                                      ({app.duration_minutes} {t.minutes})
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                            {isCancelled && app.cancelled_at && (
-                              <p className="text-xs text-red-600 mt-2">
-                                {t.cancelled} - {new Date(app.cancelled_at).toLocaleString()}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex flex-col items-end gap-2">
-                            <div className="flex items-center gap-2">
-                              {getStatusIcon(app.status)}
-                              <span className="text-sm font-medium">{getStatusText(app.status)}</span>
-                            </div>
-                            {canCancel && (
-                              <button
-                                onClick={() => handleCancelAppointment(app)}
-                                className="text-xs px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors font-medium"
-                              >
-                                {t.cancelAppointment}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-center text-gray-600 py-8">{t.noWakala}</p>
-              )}
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <CreditCard className="w-6 h-6" />
-                {t.paymentHistory}
-              </h3>
-              {paymentHistory.length > 0 ? (
-                <div className="space-y-4">
-                  {paymentHistory.map((payment) => (
-                    <div key={payment.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-gray-900">£{payment.amount}</p>
-                        <p className="text-sm text-gray-600">
-                          {new Date(payment.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(payment.status)}
-                        <span className="text-sm font-medium">{getStatusText(payment.status)}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center text-gray-600 py-8">{t.noPayments}</p>
-              )}
-            </div>
+            <button
+              onClick={() => signOut()}
+              className="flex items-center gap-2 text-sm text-muted hover:text-primary font-medium transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              {t.logout}
+            </button>
           </div>
         </div>
+
+        <div className="flex gap-1 mb-8 border-b border-divider overflow-x-auto scrollbar-hide">
+          {tabs.map(tab => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  isActive
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted hover:text-primary hover:border-border'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {t[tab.labelKey as keyof typeof t]}
+              </button>
+            );
+          })}
+        </div>
+
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+          >
+            {activeTab === 'overview' && (
+              <OverviewTab
+                memberRecord={memberRecord}
+                membershipApp={membershipApp}
+                wakalaApps={wakalaApps}
+                paymentHistory={paymentHistory}
+                onNewWakala={() => setShowWakalaModal(true)}
+                t={t}
+              />
+            )}
+            {activeTab === 'applications' && (
+              <ApplicationsTab
+                wakalaApps={wakalaApps}
+                onCancelAppointment={handleCancelAppointment}
+                t={t}
+              />
+            )}
+            {activeTab === 'payments' && (
+              <PaymentsTab paymentHistory={paymentHistory} t={t} />
+            )}
+            {activeTab === 'profile' && (
+              <ProfileTab
+                user={user}
+                memberRecord={memberRecord}
+                profileForm={profileForm}
+                setProfileForm={setProfileForm}
+                editingProfile={editingProfile}
+                setEditingProfile={setEditingProfile}
+                savingProfile={savingProfile}
+                handleSaveProfile={handleSaveProfile}
+                t={t}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
+
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 40 }}
+            className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-lg shadow-xl flex items-center gap-2.5 ${
+              toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'
+            }`}
+          >
+            {toast.type === 'success'
+              ? <CheckCircle className="w-5 h-5 flex-shrink-0" />
+              : <XCircle className="w-5 h-5 flex-shrink-0" />
+            }
+            <span className="text-sm font-medium">{toast.message}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <WakalaBookingModal
         isOpen={showWakalaModal}

@@ -114,15 +114,15 @@ export default function AvailabilityManagement() {
   return (
     <AdminLayout>
       <div className="w-full">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">{t.title}</h1>
-          <p className="text-gray-600 mt-2">{t.subtitle}</p>
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-gray-900">{t.title}</h1>
+          <p className="text-gray-600 text-sm mt-1">{t.subtitle}</p>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">
                 {t.selectService}
               </label>
               <select
@@ -131,7 +131,7 @@ export default function AvailabilityManagement() {
                   const service = services.find((s) => s.id === e.target.value);
                   setSelectedService(service || null);
                 }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 {services.map((service) => (
                   <option key={service.id} value={service.id}>
@@ -142,7 +142,7 @@ export default function AvailabilityManagement() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">
                 {t.maxDays}
               </label>
               <div className="flex items-center gap-2">
@@ -152,9 +152,9 @@ export default function AvailabilityManagement() {
                   max="365"
                   value={maxDaysAhead}
                   readOnly
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
                 />
-                <span className="text-sm text-gray-600 whitespace-nowrap">{t.days}</span>
+                <span className="text-xs text-gray-600 whitespace-nowrap">{t.days}</span>
               </div>
             </div>
           </div>
@@ -169,13 +169,13 @@ export default function AvailabilityManagement() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors whitespace-nowrap ${
+                    className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors whitespace-nowrap ${
                       activeTab === tab.id
                         ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                   >
-                    <Icon className="w-5 h-5" />
+                    <Icon className="w-4 h-4" />
                     {tab.label}
                   </button>
                 );
@@ -183,9 +183,9 @@ export default function AvailabilityManagement() {
             </div>
           </div>
 
-          <div className="p-6">
+          <div className="p-4">
             {!selectedService ? (
-              <div className="text-center py-12 text-gray-500">
+              <div className="text-center py-8 text-sm text-gray-500">
                 {language === 'ar' ? 'الرجاء اختيار خدمة' : 'Please select a service'}
               </div>
             ) : (

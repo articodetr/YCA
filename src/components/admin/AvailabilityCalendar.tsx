@@ -100,60 +100,60 @@ export default function AvailabilityCalendar({
 
   return (
     <div className="bg-white rounded-lg border border-gray-200">
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">
+      <div className="p-3 border-b border-gray-200">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-base font-semibold text-gray-900">
             {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
           </h3>
-          <div className="flex gap-2">
+          <div className="flex gap-1">
             <button
               onClick={previousMonth}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-600" />
+              <ChevronLeft className="w-4 h-4 text-gray-600" />
             </button>
             <button
               onClick={nextMonth}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <ChevronRight className="w-5 h-5 text-gray-600" />
+              <ChevronRight className="w-4 h-4 text-gray-600" />
             </button>
           </div>
         </div>
 
-        <div className="flex gap-2 text-xs mb-3">
+        <div className="flex gap-2 text-[10px] mb-2">
           <div className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-green-200 rounded"></div>
+            <div className="w-2.5 h-2.5 bg-green-200 rounded"></div>
             <span className="text-gray-600">High Availability</span>
           </div>
           <div className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-yellow-200 rounded"></div>
+            <div className="w-2.5 h-2.5 bg-yellow-200 rounded"></div>
             <span className="text-gray-600">Medium</span>
           </div>
           <div className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-orange-200 rounded"></div>
+            <div className="w-2.5 h-2.5 bg-orange-200 rounded"></div>
             <span className="text-gray-600">Low</span>
           </div>
           <div className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-red-200 rounded"></div>
+            <div className="w-2.5 h-2.5 bg-red-200 rounded"></div>
             <span className="text-gray-600">Full/Blocked</span>
           </div>
         </div>
       </div>
 
-      <div className="p-4">
-        <div className="grid grid-cols-7 gap-2 mb-2">
+      <div className="p-3">
+        <div className="grid grid-cols-7 gap-1.5 mb-1.5">
           {dayNames.map((day) => (
             <div
               key={day}
-              className="text-center text-xs font-semibold text-gray-600 py-2"
+              className="text-center text-[10px] font-semibold text-gray-600 py-1"
             >
               {day}
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-2">
+        <div className="grid grid-cols-7 gap-1.5">
           {Array.from({ length: startingDayOfWeek }).map((_, index) => (
             <div key={`empty-${index}`} className="aspect-square"></div>
           ))}
@@ -172,21 +172,21 @@ export default function AvailabilityCalendar({
                 onClick={() => stat && onDateSelect(dateKey)}
                 disabled={!stat}
                 className={`
-                  aspect-square p-2 rounded-lg border-2 transition-all text-sm font-medium
+                  aspect-square p-1 rounded-lg border-2 transition-all text-xs font-medium
                   ${colorClass}
-                  ${isSelected ? 'ring-2 ring-blue-500 ring-offset-2' : ''}
+                  ${isSelected ? 'ring-2 ring-blue-500 ring-offset-1' : ''}
                   ${isTodayDate ? 'font-bold' : ''}
                 `}
               >
                 <div className="flex flex-col items-center justify-center h-full">
-                  <div className={`${isTodayDate ? 'text-base' : ''}`}>{day}</div>
+                  <div className={`${isTodayDate ? 'text-sm' : ''}`}>{day}</div>
                   {stat && stat.total_slots > 0 && (
-                    <div className="text-xs mt-1">
+                    <div className="text-[10px] mt-0.5">
                       {stat.available_slots}/{stat.total_slots}
                     </div>
                   )}
                   {stat && stat.is_blocked && (
-                    <div className="text-xs">🚫</div>
+                    <div className="text-[10px]">🚫</div>
                   )}
                 </div>
               </button>

@@ -98,25 +98,25 @@ export default function BookingsOverview({
 
   return (
     <div className="bg-white rounded-lg border border-gray-200">
-      <div className="p-4 border-b border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Bookings</h3>
+      <div className="p-3 border-b border-gray-200">
+        <h3 className="text-base font-semibold text-gray-900 mb-3">Upcoming Bookings</h3>
 
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-2">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by name, email or phone..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="all">All Status</option>
             <option value="pending_payment">Pending Payment</option>
@@ -127,44 +127,44 @@ export default function BookingsOverview({
           </select>
         </div>
 
-        <div className="mt-3 text-sm text-gray-600">
+        <div className="mt-2 text-xs text-gray-600">
           Showing {filteredBookings.length} of {bookings.length} bookings
         </div>
       </div>
 
-      <div className="max-h-[600px] overflow-y-auto">
+      <div className="max-h-[500px] overflow-y-auto">
         {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="text-gray-600 mt-3">Loading bookings...</p>
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="text-sm text-gray-600 mt-2">Loading bookings...</p>
           </div>
         ) : filteredBookings.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <p>No bookings found</p>
+          <div className="text-center py-8 text-gray-500">
+            <Calendar className="w-10 h-10 text-gray-400 mx-auto mb-2" />
+            <p className="text-sm">No bookings found</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
             {filteredBookings.map((booking) => (
-              <div key={booking.id} className="p-4 hover:bg-gray-50 transition-colors">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <Calendar className="w-5 h-5 text-blue-600" />
+              <div key={booking.id} className="p-3 hover:bg-gray-50 transition-colors">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-start gap-2">
+                    <div className="p-1.5 bg-blue-100 rounded-lg">
+                      <Calendar className="w-4 h-4 text-blue-600" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900">
+                      <h4 className="text-sm font-semibold text-gray-900">
                         {booking.full_name ||
                           (booking.members
                             ? `${booking.members.first_name} ${booking.members.last_name}`
                             : 'Unknown')}
                       </h4>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-sm text-gray-600">
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-xs text-gray-600">
                           {formatDate(booking.booking_date)}
                         </span>
-                        <span className="text-gray-400">•</span>
-                        <span className="text-sm font-medium text-gray-700">
+                        <span className="text-gray-400 text-xs">•</span>
+                        <span className="text-xs font-medium text-gray-700">
                           {formatTime(booking.start_time)} -{' '}
                           {formatTime(booking.end_time)}
                         </span>
@@ -172,7 +172,7 @@ export default function BookingsOverview({
                     </div>
                   </div>
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${getStatusColor(
                       booking.status
                     )}`}
                   >
@@ -180,18 +180,18 @@ export default function BookingsOverview({
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Mail className="w-4 h-4" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
+                  <div className="flex items-center gap-1.5 text-gray-600">
+                    <Mail className="w-3 h-3" />
                     <span>{booking.email}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Phone className="w-4 h-4" />
+                  <div className="flex items-center gap-1.5 text-gray-600">
+                    <Phone className="w-3 h-3" />
                     <span>{booking.phone}</span>
                   </div>
                   {booking.service_type && (
-                    <div className="flex items-center gap-2 text-gray-600 col-span-2">
-                      <User className="w-4 h-4" />
+                    <div className="flex items-center gap-1.5 text-gray-600 col-span-2">
+                      <User className="w-3 h-3" />
                       <span className="capitalize">
                         {booking.service_type.replace(/_/g, ' ')}
                       </span>

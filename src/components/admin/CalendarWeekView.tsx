@@ -31,7 +31,12 @@ export default function CalendarWeekView({ startDate, bookings, onBookingClick }
     return date;
   });
 
-  const hours = Array.from({ length: 24 }, (_, i) => i);
+  const workingHoursStart = 8;
+  const workingHoursEnd = 18;
+  const hours = Array.from(
+    { length: workingHoursEnd - workingHoursStart + 1 },
+    (_, i) => i + workingHoursStart
+  );
 
   const getBookingsForDateTime = (date: Date, hour: number) => {
     const dateString = date.toISOString().split('T')[0];
@@ -55,17 +60,29 @@ export default function CalendarWeekView({ startDate, bookings, onBookingClick }
 
   const getBookingColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'confirmed':
-        return 'bg-green-500 hover:bg-green-600';
-      case 'pending':
+      case 'pending_payment':
         return 'bg-yellow-500 hover:bg-yellow-600';
-      case 'cancelled':
-        return 'bg-red-500 hover:bg-red-600';
-      case 'completed':
+      case 'submitted':
         return 'bg-blue-500 hover:bg-blue-600';
+      case 'in_progress':
+        return 'bg-purple-500 hover:bg-purple-600';
+      case 'completed':
+        return 'bg-green-500 hover:bg-green-600';
+      case 'cancelled':
+      case 'rejected':
+        return 'bg-red-500 hover:bg-red-600';
+      case 'confirmed':
+        return 'bg-emerald-500 hover:bg-emerald-600';
+      case 'pending':
+        return 'bg-amber-500 hover:bg-amber-600';
       default:
         return 'bg-gray-500 hover:bg-gray-600';
     }
+  };
+
+  const hasBookingsForDay = (date: Date) => {
+    const dateString = date.toISOString().split('T')[0];
+    return bookings.some(b => b.date === dateString);
   };
 
   const isToday = (date: Date) => {
@@ -85,10 +102,11 @@ export default function CalendarWeekView({ startDate, bookings, onBookingClick }
             <div className="p-3 border-r border-gray-200"></div>
             {weekDays.map((date, index) => {
               const { dayName, dayNum } = formatDayHeader(date);
+              const hasDayBookings = hasBookingsForDay(date);
               return (
                 <div
                   key={index}
-                  className={`p-3 text-center border-r border-gray-200 last:border-r-0 ${
+                  className={`p-3 text-center border-r border-gray-200 last:border-r-0 relative ${
                     isToday(date) ? 'bg-blue-50' : ''
                   }`}
                 >
@@ -100,6 +118,9 @@ export default function CalendarWeekView({ startDate, bookings, onBookingClick }
                   >
                     {dayNum}
                   </div>
+                  {hasDayBookings && (
+                    <div className="absolute top-2 right-2 w-2 h-2 bg-blue-600 rounded-full" title="Has bookings" />
+                  )}
                 </div>
               );
             })}

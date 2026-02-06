@@ -197,12 +197,18 @@ export default function WorkingHoursConfig({ maxDaysAhead, selectedServiceId, on
         });
       }
 
-      const { data, error } = await supabase.rpc('regenerate_slots_for_date', {
-        p_service_id: selectedServiceId,
-        p_date: dayConfig.date,
-      });
+      const { data: services } = await supabase
+        .from('booking_services')
+        .select('id')
+        .eq('is_active', true);
 
-      if (error) throw error;
+      for (const service of (services || [])) {
+        const { error } = await supabase.rpc('regenerate_slots_for_date', {
+          p_service_id: service.id,
+          p_date: dayConfig.date,
+        });
+        if (error) throw error;
+      }
 
       alert(t.success);
       onUpdate();
@@ -221,10 +227,17 @@ export default function WorkingHoursConfig({ maxDaysAhead, selectedServiceId, on
       const dateString = selectedDate.toISOString().split('T')[0];
       await supabase.from('day_specific_hours').delete().eq('date', dateString);
 
-      await supabase.rpc('regenerate_slots_for_date', {
-        p_service_id: selectedServiceId,
-        p_date: dateString,
-      });
+      const { data: services } = await supabase
+        .from('booking_services')
+        .select('id')
+        .eq('is_active', true);
+
+      for (const service of (services || [])) {
+        await supabase.rpc('regenerate_slots_for_date', {
+          p_service_id: service.id,
+          p_date: dateString,
+        });
+      }
 
       alert(t.success);
       loadDayConfig(selectedDate);

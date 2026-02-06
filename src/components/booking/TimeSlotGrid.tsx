@@ -1,4 +1,3 @@
-import { Clock } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface TimeSlot {
@@ -8,34 +7,33 @@ interface TimeSlot {
   isAvailable: boolean;
 }
 
+interface WorkingHoursInfo {
+  startTime: string;
+  endTime: string;
+  breakTimes: { start: string; end: string }[];
+}
+
 interface TimeSlotGridProps {
   selectedDate: Date | null;
   slots: TimeSlot[];
   selectedSlot: TimeSlot | null;
   onSlotSelect: (slot: TimeSlot) => void;
+  workingHours?: WorkingHoursInfo | null;
 }
 
-export default function TimeSlotGrid({ selectedDate, slots, selectedSlot, onSlotSelect }: TimeSlotGridProps) {
+export default function TimeSlotGrid({ selectedDate, slots, selectedSlot, onSlotSelect, workingHours }: TimeSlotGridProps) {
   const { language } = useLanguage();
 
   const t = {
     en: {
-      selectTime: 'Available Time Slots',
       noSlots: 'No available slots for this date',
-      selectDate: 'Please select a date first',
-      availableFor: 'Available times for',
-      mondayToThursday: 'Monday-Thursday hours: 10:00 AM - 2:15 PM',
-      fridayHours: 'Friday hours: 9:00 AM - 11:45 AM',
-      weekendClosed: 'Closed on weekends'
+      hoursLabel: 'Working hours',
+      breakLabel: 'Break',
     },
     ar: {
-      selectTime: 'الأوقات المتاحة',
       noSlots: 'لا توجد أوقات متاحة لهذا التاريخ',
-      selectDate: 'الرجاء اختيار التاريخ أولاً',
-      availableFor: 'الأوقات المتاحة ليوم',
-      mondayToThursday: 'الاثنين-الخميس: 10:00 صباحاً - 2:15 مساءً',
-      fridayHours: 'يوم الجمعة: 9:00 صباحاً - 11:45 صباحاً',
-      weekendClosed: 'مغلق في عطلة نهاية الأسبوع'
+      hoursLabel: 'ساعات العمل',
+      breakLabel: 'استراحة',
     }
   }[language];
 
@@ -47,39 +45,52 @@ export default function TimeSlotGrid({ selectedDate, slots, selectedSlot, onSlot
     return `${hour12}:${minutes} ${ampm}`;
   };
 
-  const formatDateDisplay = (date: Date) => {
-    const options: Intl.DateTimeFormatOptions = {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    };
+  const formatTimeAr = (time: string) => {
+    const [hours, minutes] = time.split(':');
+    const hour = parseInt(hours);
+    const period = hour >= 12 ? 'مساءً' : 'صباحاً';
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${period}`;
+  };
 
-    if (language === 'ar') {
-      return date.toLocaleDateString('ar-EG', options);
-    }
-    return date.toLocaleDateString('en-GB', options);
+  const getDayName = (date: Date) => {
+    return date.toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-GB', { weekday: 'long' });
   };
 
   if (!selectedDate) {
     return null;
   }
 
-  const dayOfWeek = selectedDate.getDay();
-  const isFriday = dayOfWeek === 5;
-  const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 4;
-
   return (
     <div>
-      {(isFriday || isWeekday) && (
-        <div className={`mb-4 p-3 rounded-lg border ${isFriday ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
+      {workingHours && (
+        <div className="mb-4 p-3 rounded-lg border bg-gray-50 border-gray-200">
           <div className="flex items-center gap-2">
-            <svg className={`w-4 h-4 ${isFriday ? 'text-blue-600' : 'text-gray-600'}`} fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
             </svg>
-            <p className={`text-sm font-medium ${isFriday ? 'text-blue-800' : 'text-gray-700'}`}>
-              {isFriday ? t.fridayHours : t.mondayToThursday}
+            <p className="text-sm font-medium text-gray-700">
+              {getDayName(selectedDate)} {t.hoursLabel}:{' '}
+              {language === 'ar'
+                ? `${formatTimeAr(workingHours.startTime)} - ${formatTimeAr(workingHours.endTime)}`
+                : `${formatTime(workingHours.startTime)} - ${formatTime(workingHours.endTime)}`
+              }
             </p>
           </div>
+          {workingHours.breakTimes.length > 0 && (
+            <div className="mt-1.5 flex items-center gap-2 text-xs text-gray-500">
+              <span className="inline-block w-3 h-3 bg-orange-200 rounded-full"></span>
+              {workingHours.breakTimes.map((b, i) => (
+                <span key={i}>
+                  {t.breakLabel}:{' '}
+                  {language === 'ar'
+                    ? `${formatTimeAr(b.start)} - ${formatTimeAr(b.end)}`
+                    : `${formatTime(b.start)} - ${formatTime(b.end)}`
+                  }
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

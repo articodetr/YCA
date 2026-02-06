@@ -31,6 +31,50 @@ export interface BookingData {
   duration_minutes: 30 | 60;
 }
 
+export interface EffectiveWorkingHours {
+  start_time: string;
+  end_time: string;
+  break_times: { start: string; end: string }[];
+  is_active: boolean;
+}
+
+export async function getEffectiveWorkingHours(date: string): Promise<EffectiveWorkingHours | null> {
+  const { data: specific } = await supabase
+    .from('day_specific_hours')
+    .select('start_time, end_time, break_times, is_holiday')
+    .eq('date', date)
+    .maybeSingle();
+
+  if (specific) {
+    return {
+      start_time: specific.start_time,
+      end_time: specific.end_time,
+      break_times: specific.break_times || [],
+      is_active: !specific.is_holiday,
+    };
+  }
+
+  const d = new Date(date);
+  const dow = d.getDay() === 0 ? 7 : d.getDay();
+
+  const { data: config } = await supabase
+    .from('working_hours_config')
+    .select('start_time, end_time, is_active')
+    .eq('day_of_week', dow)
+    .maybeSingle();
+
+  if (config) {
+    return {
+      start_time: config.start_time,
+      end_time: config.end_time,
+      break_times: [],
+      is_active: config.is_active,
+    };
+  }
+
+  return null;
+}
+
 export async function getWorkingHoursConfig(): Promise<WorkingHoursConfig[]> {
   const { data, error } = await supabase
     .from('working_hours_config')

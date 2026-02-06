@@ -9,7 +9,7 @@ import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import Calendar from '../booking/Calendar';
 import TimeSlotGrid from '../booking/TimeSlotGrid';
 import BookingSummaryCard from '../booking/BookingSummaryCard';
-import { getAvailableSlotsForDuration, reserveSlots, getUnavailableDates } from '../../lib/booking-utils';
+import { getAvailableSlotsForDuration, reserveSlots, getUnavailableDates, getEffectiveWorkingHours } from '../../lib/booking-utils';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
@@ -191,6 +191,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
   const [maxDaysAhead, setMaxDaysAhead] = useState(30);
 
   const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
+  const [workingHours, setWorkingHours] = useState<{ startTime: string; endTime: string; breakTimes: { start: string; end: string }[] } | null>(null);
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -239,7 +240,6 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
       agreeToTerms: 'I agree to the',
       termsOfService: 'Terms of Service',
       loadingData: 'Loading your information...',
-      weekendError: 'We are closed on weekends. Please select a weekday.',
       closeConfirm: 'Are you sure you want to close? Your changes will be lost.',
       paymentTitle: 'Complete Payment',
       paymentType: 'Payment Type',
@@ -290,7 +290,6 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
       agreeToTerms: 'أوافق على',
       termsOfService: 'شروط الخدمة',
       loadingData: 'جاري تحميل معلوماتك...',
-      weekendError: 'نحن مغلقون في عطلة نهاية الأسبوع. الرجاء اختيار يوم من أيام الأسبوع.',
       closeConfirm: 'هل تريد الإغلاق؟ سيتم فقدان التغييرات.',
       paymentTitle: 'إكمال الدفع',
       paymentType: 'نوع الدفع',
@@ -428,17 +427,22 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
   const loadSlots = async () => {
     if (!wakalaService || !selectedDate || !selectedDuration) return;
 
-    const dayOfWeek = selectedDate.getDay();
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
-      setError(t.weekendError);
-      setSlots([]);
-      return;
-    }
-
     setError('');
 
     try {
       const dateStr = selectedDate.toISOString().split('T')[0];
+
+      const hours = await getEffectiveWorkingHours(dateStr);
+      if (hours && hours.is_active) {
+        setWorkingHours({
+          startTime: hours.start_time,
+          endTime: hours.end_time,
+          breakTimes: hours.break_times,
+        });
+      } else {
+        setWorkingHours(null);
+      }
+
       const availableSlots = await getAvailableSlotsForDuration(
         wakalaService.id,
         dateStr,
@@ -902,6 +906,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
                       slots={slots}
                       selectedSlot={selectedSlot}
                       onSlotSelect={setSelectedSlot}
+                      workingHours={workingHours}
                     />
                   </div>
                 )}

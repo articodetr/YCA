@@ -158,7 +158,7 @@ export default function AvailabilityManagement() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-lg border border-gray-200">
           <div className="border-b border-gray-200">
             <div className="flex overflow-x-auto">
               {tabs.map((tab) => {

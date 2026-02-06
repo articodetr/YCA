@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { ChevronLeft, ChevronRight, ChevronDown, Calendar as CalendarIcon } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import CalendarDayView from '../../components/admin/CalendarDayView';
@@ -33,6 +33,21 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [pickerMonth, setPickerMonth] = useState(new Date());
+  const datePickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (datePickerRef.current && !datePickerRef.current.contains(e.target as Node)) {
+        setShowDatePicker(false);
+      }
+    };
+    if (showDatePicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showDatePicker]);
 
   const t = {
     en: {
@@ -193,6 +208,44 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
     return weekStart;
   };
 
+  const handleDateSelect = (day: number) => {
+    const selected = new Date(pickerMonth.getFullYear(), pickerMonth.getMonth(), day);
+    setCurrentDate(selected);
+    setShowDatePicker(false);
+  };
+
+  const toggleDatePicker = () => {
+    if (!showDatePicker) {
+      setPickerMonth(new Date(currentDate.getFullYear(), currentDate.getMonth(), 1));
+    }
+    setShowDatePicker(!showDatePicker);
+  };
+
+  const getDaysInMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  };
+
+  const getFirstDayOfMonth = (date: Date) => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
+
+  const isToday = (day: number) => {
+    const now = new Date();
+    return day === now.getDate() &&
+      pickerMonth.getMonth() === now.getMonth() &&
+      pickerMonth.getFullYear() === now.getFullYear();
+  };
+
+  const isSelected = (day: number) => {
+    return day === currentDate.getDate() &&
+      pickerMonth.getMonth() === currentDate.getMonth() &&
+      pickerMonth.getFullYear() === currentDate.getFullYear();
+  };
+
+  const weekDayNames = language === 'ar'
+    ? ['أحد', 'إثن', 'ثلا', 'أرب', 'خمي', 'جمع', 'سبت']
+    : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
   return (
     <div className="space-y-3">
       <div>
@@ -218,9 +271,78 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
-            <CalendarIcon className="w-5 h-5 text-gray-600" />
-            <h2 className="text-xl font-bold text-gray-900">{formatDateHeader()}</h2>
+          <div className="relative" ref={datePickerRef}>
+            <button
+              onClick={toggleDatePicker}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors group"
+            >
+              <CalendarIcon className="w-5 h-5 text-gray-600" />
+              <h2 className="text-xl font-bold text-gray-900">{formatDateHeader()}</h2>
+              <ChevronDown className={`w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-transform ${showDatePicker ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showDatePicker && (
+              <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50 bg-white rounded-xl shadow-xl border border-gray-200 p-4 w-80">
+                <div className="flex items-center justify-between mb-3">
+                  <button
+                    onClick={() => setPickerMonth(new Date(pickerMonth.getFullYear(), pickerMonth.getMonth() - 1, 1))}
+                    className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4 text-gray-600" />
+                  </button>
+                  <span className="font-semibold text-gray-900">
+                    {pickerMonth.toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-GB', { month: 'long', year: 'numeric' })}
+                  </span>
+                  <button
+                    onClick={() => setPickerMonth(new Date(pickerMonth.getFullYear(), pickerMonth.getMonth() + 1, 1))}
+                    className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <ChevronRight className="w-4 h-4 text-gray-600" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-7 gap-1 mb-1">
+                  {weekDayNames.map((day) => (
+                    <div key={day} className="text-center text-xs font-medium text-gray-400 py-1">
+                      {day}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-7 gap-1">
+                  {Array.from({ length: getFirstDayOfMonth(pickerMonth) }).map((_, i) => (
+                    <div key={`empty-${i}`} />
+                  ))}
+                  {Array.from({ length: getDaysInMonth(pickerMonth) }, (_, i) => i + 1).map((day) => (
+                    <button
+                      key={day}
+                      onClick={() => handleDateSelect(day)}
+                      className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors
+                        ${isSelected(day)
+                          ? 'bg-blue-600 text-white'
+                          : isToday(day)
+                            ? 'bg-blue-50 text-blue-700 font-bold ring-1 ring-blue-300'
+                            : 'text-gray-700 hover:bg-gray-100'
+                        }`}
+                    >
+                      {day}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mt-3 pt-3 border-t border-gray-100 flex justify-center">
+                  <button
+                    onClick={() => {
+                      setCurrentDate(new Date());
+                      setShowDatePicker(false);
+                    }}
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    {t.today}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">

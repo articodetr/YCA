@@ -434,6 +434,28 @@ export async function regenerateSlotsBulk(
   }
 }
 
+export async function getUnavailableDates(
+  startDate: string,
+  endDate: string
+): Promise<string[]> {
+  try {
+    const { data, error } = await supabase.rpc('get_unavailable_dates', {
+      p_start_date: startDate,
+      p_end_date: endDate,
+    });
+
+    if (error) {
+      console.error('Error fetching unavailable dates:', error);
+      return [];
+    }
+
+    return (data || []).map((row: { unavailable_date: string }) => row.unavailable_date);
+  } catch (error) {
+    console.error('Error calling unavailable dates function:', error);
+    return [];
+  }
+}
+
 export async function getBlockedDates(): Promise<BlockedDate[]> {
   const { data, error } = await supabase
     .from('blocked_dates')

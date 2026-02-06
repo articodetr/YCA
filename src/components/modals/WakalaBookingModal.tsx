@@ -9,7 +9,7 @@ import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import Calendar from '../booking/Calendar';
 import TimeSlotGrid from '../booking/TimeSlotGrid';
 import BookingSummaryCard from '../booking/BookingSummaryCard';
-import { getAvailableSlotsForDuration, reserveSlots } from '../../lib/booking-utils';
+import { getAvailableSlotsForDuration, reserveSlots, getUnavailableDates } from '../../lib/booking-utils';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
@@ -190,6 +190,8 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [maxDaysAhead, setMaxDaysAhead] = useState(30);
 
+  const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
+
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
@@ -310,6 +312,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
       loadWakalaService();
       loadSettings();
       loadUserData();
+      loadUnavailableDates();
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -405,6 +408,20 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
       }
     } catch (error) {
       console.error('Error loading settings:', error);
+    }
+  };
+
+  const loadUnavailableDates = async () => {
+    try {
+      const today = new Date();
+      const endDate = new Date(today);
+      endDate.setDate(endDate.getDate() + maxDaysAhead);
+      const startStr = today.toISOString().split('T')[0];
+      const endStr = endDate.toISOString().split('T')[0];
+      const dates = await getUnavailableDates(startStr, endStr);
+      setUnavailableDates(dates);
+    } catch (error) {
+      console.error('Error loading unavailable dates:', error);
     }
   };
 
@@ -820,6 +837,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
                       setSelectedSlot(null);
                     }}
                     maxDaysAhead={maxDaysAhead}
+                    unavailableDates={unavailableDates}
                   />
                 </div>
 

@@ -145,15 +145,21 @@ export async function reserveSlots(
     const { slot_id, service_id, duration_minutes, booking_date, start_time } = bookingData;
 
     if (duration_minutes === 30) {
-      const { error } = await supabase
-        .from('availability_slots')
-        .update({ is_available: false })
-        .eq('id', slot_id);
+      // Use atomic reservation function with row-level locking
+      const { data, error } = await supabase.rpc('reserve_availability_slot', {
+        p_slot_id: slot_id,
+      });
 
       if (error) {
         return { success: false, error: error.message };
       }
+
+      // Check the result from the function
+      if (!data.success) {
+        return { success: false, error: data.error || 'Slot is no longer available' };
+      }
     } else {
+      // For 60-minute bookings, we need to reserve two consecutive slots
       const allSlots = await getAvailableSlotsForDate(service_id, booking_date);
       const currentSlotIndex = allSlots.findIndex(s => s.id === slot_id);
 
@@ -163,13 +169,23 @@ export async function reserveSlots(
 
       const nextSlot = allSlots[currentSlotIndex + 1];
 
-      const { error } = await supabase
-        .from('availability_slots')
-        .update({ is_available: false })
-        .in('id', [slot_id, nextSlot.id]);
+      // Reserve both slots atomically
+      const { data: firstData, error: firstError } = await supabase.rpc('reserve_availability_slot', {
+        p_slot_id: slot_id,
+      });
 
-      if (error) {
-        return { success: false, error: error.message };
+      if (firstError || !firstData?.success) {
+        return { success: false, error: firstData?.error || 'First slot is no longer available' };
+      }
+
+      const { data: secondData, error: secondError } = await supabase.rpc('reserve_availability_slot', {
+        p_slot_id: nextSlot.id,
+      });
+
+      if (secondError || !secondData?.success) {
+        // If second slot fails, release the first slot
+        await supabase.rpc('release_availability_slot', { p_slot_id: slot_id });
+        return { success: false, error: secondData?.error || 'Second slot is no longer available' };
       }
     }
 

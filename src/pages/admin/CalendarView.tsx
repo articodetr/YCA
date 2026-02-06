@@ -100,6 +100,7 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
         .gte('booking_date', startDate)
         .lte('booking_date', endDate)
         .not('booking_date', 'is', null)
+        .neq('status', 'cancelled')
         .order('booking_date', { ascending: true })
         .order('start_time', { ascending: true });
 

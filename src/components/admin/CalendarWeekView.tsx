@@ -213,7 +213,7 @@ export default function CalendarWeekView({ startDate, bookings, onBookingClick }
       <div className="overflow-x-auto">
         <div className="min-w-[800px]">
           <div className="grid grid-cols-8 border-b border-gray-200 bg-gray-50">
-            <div className="p-3 border-r border-gray-200"></div>
+            <div className="p-2 border-r border-gray-200"></div>
             {weekDays.map((date, index) => {
               const { dayName, dayNum } = formatDayHeader(date);
               const dateString = date.toISOString().split('T')[0];
@@ -223,20 +223,20 @@ export default function CalendarWeekView({ startDate, bookings, onBookingClick }
               return (
                 <div
                   key={index}
-                  className={`p-3 text-center border-r border-gray-200 last:border-r-0 ${
+                  className={`p-2 text-center border-r border-gray-200 last:border-r-0 ${
                     isToday(date) ? 'bg-blue-50' : ''
                   } ${isDayInactive ? 'bg-gray-100' : ''}`}
                 >
-                  <div className="text-xs font-medium text-gray-600 mb-1">{dayName}</div>
+                  <div className="text-[10px] font-medium text-gray-600 mb-0.5">{dayName}</div>
                   <div
-                    className={`text-lg font-bold ${
+                    className={`text-sm font-bold ${
                       isToday(date) ? 'text-blue-600' : isDayInactive ? 'text-gray-400' : 'text-gray-900'
                     }`}
                   >
                     {dayNum}
                   </div>
                   {isDayInactive && (
-                    <div className="text-xs text-gray-500 mt-1">
+                    <div className="text-[10px] text-gray-500 mt-0.5">
                       {dayHours?.isHoliday
                         ? language === 'ar' ? 'عطلة' : 'Holiday'
                         : language === 'ar' ? 'غير نشط' : 'Closed'}
@@ -247,11 +247,11 @@ export default function CalendarWeekView({ startDate, bookings, onBookingClick }
             })}
           </div>
 
-          <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
+          <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 250px)' }}>
             {hours.map((hour) => (
-              <div key={hour} className="grid grid-cols-8 border-b border-gray-200 min-h-[80px]">
-                <div className="p-3 border-r border-gray-200 bg-gray-50 flex items-start">
-                  <span className="text-sm font-semibold text-gray-700">{formatHour(hour)}</span>
+              <div key={hour} className="grid grid-cols-8 border-b border-gray-200 min-h-[50px]">
+                <div className="p-1.5 border-r border-gray-200 bg-gray-50 flex items-start">
+                  <span className="text-xs font-semibold text-gray-700">{formatHour(hour)}</span>
                 </div>
                 {weekDays.map((date, dayIndex) => {
                   const dayBookings = getBookingsForDateTime(date, hour);
@@ -260,17 +260,17 @@ export default function CalendarWeekView({ startDate, bookings, onBookingClick }
                   return (
                     <div
                       key={dayIndex}
-                      className={`p-2 border-r border-gray-200 last:border-r-0 ${
+                      className={`p-1 border-r border-gray-200 last:border-r-0 ${
                         isToday(date) ? 'bg-blue-50/30' : ''
                       } ${!isWorking ? 'bg-gray-100 bg-opacity-50' : 'hover:bg-gray-50'}`}
                     >
                       {dayBookings.length > 0 ? (
-                        <div className="space-y-1">
+                        <div className="space-y-0.5">
                           {dayBookings.map((booking) => (
                             <button
                               key={booking.id}
                               onClick={() => onBookingClick(booking)}
-                              className={`w-full text-left p-2 rounded text-white text-xs font-medium transition-colors ${getBookingColor(
+                              className={`w-full text-left p-1.5 rounded text-white text-[10px] font-medium transition-colors ${getBookingColor(
                                 booking.status
                               )}`}
                               title={language === 'ar' ? booking.applicant_name_ar : booking.applicant_name_en}

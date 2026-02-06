@@ -528,6 +528,44 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
       const price = calculatePrice(selectedDate);
       const dateStr = selectedDate.toISOString().split('T')[0];
 
+      // Double-check slot availability before proceeding
+      const { data: slotCheck, error: slotError } = await supabase
+        .from('availability_slots')
+        .select('is_available')
+        .eq('id', selectedSlot.id)
+        .single();
+
+      if (slotError || !slotCheck?.is_available) {
+        setError(language === 'ar'
+          ? 'عذراً، هذا الموعد لم يعد متاحاً. يرجى اختيار موعد آخر.'
+          : 'Sorry, this time slot is no longer available. Please select another time.');
+        await loadSlots(); // Refresh available slots
+        setSelectedSlot(null);
+        setLoading(false);
+        return;
+      }
+
+      // Try to reserve the slot first before creating the application
+      const reserveResult = await reserveSlots({
+        slot_id: selectedSlot.id,
+        service_id: wakalaService.id,
+        booking_date: dateStr,
+        start_time: selectedSlot.startTime,
+        end_time: selectedSlot.endTime,
+        duration_minutes: selectedDuration!,
+      });
+
+      if (!reserveResult.success) {
+        setError(language === 'ar'
+          ? `عذراً، ${reserveResult.error || 'لم يعد الموعد متاحاً'}. يرجى اختيار موعد آخر.`
+          : `Sorry, ${reserveResult.error || 'the slot is no longer available'}. Please select another time.`);
+        await loadSlots(); // Refresh available slots
+        setSelectedSlot(null);
+        setLoading(false);
+        return;
+      }
+
+      // Slot reserved successfully, now create the application
       const applicationData = {
         user_id: user?.id,
         full_name: formData.fullName,
@@ -552,19 +590,6 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
         .maybeSingle();
 
       if (appError) throw appError;
-
-      const reserveResult = await reserveSlots({
-        slot_id: selectedSlot.id,
-        service_id: wakalaService.id,
-        booking_date: dateStr,
-        start_time: selectedSlot.startTime,
-        end_time: selectedSlot.endTime,
-        duration_minutes: selectedDuration!,
-      });
-
-      if (!reserveResult.success) {
-        throw new Error(reserveResult.error || 'Failed to reserve slot');
-      }
 
       setApplicationId(application.id);
       setPaymentAmount(price);

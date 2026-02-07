@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { Download, X, Loader2, Calendar, FileSpreadsheet } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
-import ExcelJS from 'exceljs';
 import {
   styleHeaderRow,
   styleDataRows,
   addSummaryHeader,
   buildCaseNotesMap,
   downloadWorkbook,
+  createWorkbook,
 } from '../../lib/excel-export';
 
 interface BookingsExportDialogProps {
@@ -172,7 +172,7 @@ export default function BookingsExportDialog({ serviceId, onClose }: BookingsExp
         ];
       });
 
-      const workbook = new ExcelJS.Workbook();
+      const workbook = await createWorkbook();
       const sheet = workbook.addWorksheet(
         language === 'ar' ? 'الحجوزات' : 'Bookings'
       );

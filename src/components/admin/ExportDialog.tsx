@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { X, Download, Loader2, Calendar, Filter, FileSpreadsheet } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import ExcelJS from 'exceljs';
 import {
   styleHeaderRow,
   styleDataRows,
   addSummaryHeader,
   buildCaseNotesMap,
   downloadWorkbook,
+  createWorkbook,
 } from '../../lib/excel-export';
 
 interface ExportDialogProps {
@@ -150,7 +150,7 @@ export default function ExportDialog({ open, onClose, entityType, admins }: Expo
         ];
       });
 
-      const workbook = new ExcelJS.Workbook();
+      const workbook = await createWorkbook();
       const sheet = workbook.addWorksheet('Wakala Applications');
 
       sheet.addRow(headers);

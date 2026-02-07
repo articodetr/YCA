@@ -1,5 +1,3 @@
-import ExcelJS from 'exceljs';
-
 const COLORS = {
   headerBg: '1B5E20',
   headerFont: 'FFFFFF',
@@ -17,17 +15,17 @@ const COLORS = {
   } as Record<string, { bg: string; font: string }>,
 };
 
-const thinBorder: Partial<ExcelJS.Borders> = {
+const thinBorder = {
   top: { style: 'thin', color: { argb: COLORS.borderColor } },
   bottom: { style: 'thin', color: { argb: COLORS.borderColor } },
   left: { style: 'thin', color: { argb: COLORS.borderColor } },
   right: { style: 'thin', color: { argb: COLORS.borderColor } },
 };
 
-export function styleHeaderRow(sheet: ExcelJS.Worksheet) {
+export function styleHeaderRow(sheet: any) {
   const headerRow = sheet.getRow(1);
   headerRow.height = 28;
-  headerRow.eachCell((cell) => {
+  headerRow.eachCell((cell: any) => {
     cell.fill = {
       type: 'pattern',
       pattern: 'solid',
@@ -39,12 +37,12 @@ export function styleHeaderRow(sheet: ExcelJS.Worksheet) {
   });
 }
 
-export function styleDataRows(sheet: ExcelJS.Worksheet, statusColIndex?: number, rawStatuses?: string[]) {
+export function styleDataRows(sheet: any, statusColIndex?: number, rawStatuses?: string[]) {
   const rowCount = sheet.rowCount;
   for (let i = 2; i <= rowCount; i++) {
     const row = sheet.getRow(i);
     const isStripe = i % 2 === 0;
-    row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+    row.eachCell({ includeEmpty: true }, (cell: any) => {
       if (isStripe) {
         cell.fill = {
           type: 'pattern',
@@ -75,7 +73,7 @@ export function styleDataRows(sheet: ExcelJS.Worksheet, statusColIndex?: number,
 }
 
 export function addSummaryHeader(
-  sheet: ExcelJS.Worksheet,
+  sheet: any,
   lines: string[],
   colCount: number
 ) {
@@ -137,7 +135,7 @@ export function buildCaseNotesMap(caseNotes: CaseNote[]): Map<string, string> {
   return result;
 }
 
-export async function downloadWorkbook(workbook: ExcelJS.Workbook, filename: string) {
+export async function downloadWorkbook(workbook: any, filename: string) {
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -150,4 +148,9 @@ export async function downloadWorkbook(workbook: ExcelJS.Workbook, filename: str
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+export async function createWorkbook() {
+  const ExcelJS = await import('exceljs');
+  return new ExcelJS.default.Workbook();
 }

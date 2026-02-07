@@ -37,13 +37,13 @@ export default function SectionWrapper({
         </div>
       </button>
 
-      <div className="p-4">
-        <div className="rounded-lg overflow-hidden border border-gray-100 mb-4">
+      <div className="p-5">
+        <div className="rounded-lg overflow-hidden border border-gray-100 mb-5">
           {preview}
         </div>
 
         {isOpen && (
-          <div className="border-t border-gray-100 pt-4 space-y-4">
+          <div className="border-t border-gray-100 pt-5 space-y-5">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Edit Content</p>
             {editor}
           </div>

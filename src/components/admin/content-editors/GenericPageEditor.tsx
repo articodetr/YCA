@@ -74,8 +74,8 @@ export default function GenericPageEditor({
             <h3 className="text-sm font-semibold text-primary">{formatGroupName(groupName)}</h3>
           </div>
 
-          <div className="p-4">
-            <div className="rounded-lg border border-gray-100 bg-sand/30 p-4 mb-4">
+          <div className="p-6">
+            <div className="rounded-lg border border-gray-100 bg-sand/30 p-5 mb-6">
               {groupSections.map((section) => {
                 const fieldType = getFieldType(section.section_key);
                 const enValue = editedContentEn[section.id] || '';
@@ -100,27 +100,24 @@ export default function GenericPageEditor({
               })}
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               {groupSections.map((section) => {
                 const fieldType = getFieldType(section.section_key);
                 const shortLabel = section.section_key
                   .split('_')
-                  .slice(-1)[0]
-                  .replace(/^\w/, (c) => c.toUpperCase());
+                  .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                  .join(' ');
 
                 return (
-                  <div key={section.id} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <EditableField
-                        label={shortLabel}
-                        valueEn={editedContentEn[section.id] || ''}
-                        valueAr={editedContentAr[section.id] || ''}
-                        onChangeEn={(v) => onContentEnChange(section.id, v)}
-                        onChangeAr={(v) => onContentArChange(section.id, v)}
-                        multiline={fieldType === 'description'}
-                        compact
-                      />
-                    </div>
+                  <div key={section.id} className="space-y-2 border-b border-gray-100 pb-4 last:border-b-0 last:pb-0">
+                    <EditableField
+                      label={shortLabel}
+                      valueEn={editedContentEn[section.id] || ''}
+                      valueAr={editedContentAr[section.id] || ''}
+                      onChangeEn={(v) => onContentEnChange(section.id, v)}
+                      onChangeAr={(v) => onContentArChange(section.id, v)}
+                      multiline={fieldType === 'description' || fieldType === 'text'}
+                    />
 
                     {editedImages[section.id] && (
                       <div className="relative inline-block">

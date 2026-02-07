@@ -21,9 +21,11 @@ export default function EditableField({
   compact = false,
 }: EditableFieldProps) {
   const [activeLang, setActiveLang] = useState<'en' | 'ar'>('en');
+  const currentValue = activeLang === 'en' ? valueEn : valueAr;
+  const autoRows = Math.max(compact ? 3 : 4, Math.ceil((currentValue?.length || 0) / 80));
 
   return (
-    <div className={compact ? 'space-y-1' : 'space-y-2'}>
+    <div className="space-y-2 w-full">
       <div className="flex items-center justify-between">
         <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
           <Type size={12} />
@@ -33,7 +35,7 @@ export default function EditableField({
           <button
             type="button"
             onClick={() => setActiveLang('en')}
-            className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium transition-colors ${
+            className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors ${
               activeLang === 'en'
                 ? 'bg-white text-primary shadow-sm'
                 : 'text-gray-400 hover:text-gray-600'
@@ -45,7 +47,7 @@ export default function EditableField({
           <button
             type="button"
             onClick={() => setActiveLang('ar')}
-            className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium transition-colors ${
+            className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors ${
               activeLang === 'ar'
                 ? 'bg-white text-primary shadow-sm'
                 : 'text-gray-400 hover:text-gray-600'
@@ -60,27 +62,27 @@ export default function EditableField({
       {multiline ? (
         <textarea
           dir={activeLang === 'ar' ? 'rtl' : 'ltr'}
-          value={activeLang === 'en' ? valueEn : valueAr}
+          value={currentValue}
           onChange={(e) =>
             activeLang === 'en'
               ? onChangeEn(e.target.value)
               : onChangeAr(e.target.value)
           }
-          rows={compact ? 2 : 3}
-          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm resize-none bg-white transition-all"
+          rows={autoRows}
+          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm leading-relaxed bg-white transition-all resize-y min-h-[80px]"
           placeholder={activeLang === 'en' ? 'English text...' : 'Arabic text...'}
         />
       ) : (
         <input
           type="text"
           dir={activeLang === 'ar' ? 'rtl' : 'ltr'}
-          value={activeLang === 'en' ? valueEn : valueAr}
+          value={currentValue}
           onChange={(e) =>
             activeLang === 'en'
               ? onChangeEn(e.target.value)
               : onChangeAr(e.target.value)
           }
-          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm bg-white transition-all"
+          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm bg-white transition-all"
           placeholder={activeLang === 'en' ? 'English text...' : 'Arabic text...'}
         />
       )}

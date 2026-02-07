@@ -7,6 +7,7 @@ interface DateRangeCalendarProps {
   maxDaysAhead: number;
   onRangeSelect: (startDate: Date, endDate: Date) => void;
   selectedRange: { start: Date | null; end: Date | null };
+  singleClickMode?: boolean;
 }
 
 interface DayMeta {
@@ -19,7 +20,7 @@ const ARABIC_MONTHS = [
   'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
 ];
 
-export default function DateRangeCalendar({ maxDaysAhead, onRangeSelect, selectedRange }: DateRangeCalendarProps) {
+export default function DateRangeCalendar({ maxDaysAhead, onRangeSelect, selectedRange, singleClickMode = false }: DateRangeCalendarProps) {
   const { language } = useLanguage();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [clickState, setClickState] = useState<'first' | 'second'>('first');
@@ -102,6 +103,12 @@ export default function DateRangeCalendar({ maxDaysAhead, onRangeSelect, selecte
 
     if (isDateDisabled(clicked)) return;
 
+    if (singleClickMode) {
+      onRangeSelect(clicked, clicked);
+      setClickState('first');
+      return;
+    }
+
     if (clickState === 'first') {
       setTempStart(clicked);
       setClickState('second');
@@ -153,14 +160,23 @@ export default function DateRangeCalendar({ maxDaysAhead, onRangeSelect, selecte
   return (
     <div className="select-none">
       <div className="bg-teal-50 border border-teal-200 rounded-lg px-4 py-3 mb-4 text-center">
-        <div className="text-xs text-teal-700">
-          <span>{language === 'ar' ? 'من' : 'From'}: </span>
-          <span className="font-semibold">{formatSelectedDate(selectedRange.start)}</span>
-        </div>
-        <div className="text-xs text-teal-700 mt-0.5">
-          <span>{language === 'ar' ? 'إلى' : 'To'}: </span>
-          <span className="font-semibold">{formatSelectedDate(selectedRange.end)}</span>
-        </div>
+        {singleClickMode ? (
+          <div className="text-xs text-teal-700">
+            <span>{language === 'ar' ? 'التاريخ المحدد' : 'Selected date'}: </span>
+            <span className="font-semibold">{formatSelectedDate(selectedRange.start)}</span>
+          </div>
+        ) : (
+          <>
+            <div className="text-xs text-teal-700">
+              <span>{language === 'ar' ? 'من' : 'From'}: </span>
+              <span className="font-semibold">{formatSelectedDate(selectedRange.start)}</span>
+            </div>
+            <div className="text-xs text-teal-700 mt-0.5">
+              <span>{language === 'ar' ? 'إلى' : 'To'}: </span>
+              <span className="font-semibold">{formatSelectedDate(selectedRange.end)}</span>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="flex items-center justify-between mb-3">
@@ -238,7 +254,7 @@ export default function DateRangeCalendar({ maxDaysAhead, onRangeSelect, selecte
         })}
       </div>
 
-      {clickState === 'second' && (
+      {clickState === 'second' && !singleClickMode && (
         <div className="mt-3 text-center">
           <span className="text-xs text-teal-600 font-medium animate-pulse">
             {language === 'ar' ? 'اضغط على تاريخ النهاية' : 'Click the end date'}

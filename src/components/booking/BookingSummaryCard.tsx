@@ -32,6 +32,8 @@ export default function BookingSummaryCard({
       dateTime: 'Date & Time',
       totalAmount: 'Total Amount',
       proceed: 'Proceed to Pay',
+      confirmBooking: 'Confirm Booking',
+      free: 'Free',
       notSelected: 'Not selected',
       fillForm: 'Please complete all required fields',
       serviceTypes: {
@@ -49,6 +51,8 @@ export default function BookingSummaryCard({
       dateTime: 'التاريخ والوقت',
       totalAmount: 'المبلغ الإجمالي',
       proceed: 'المتابعة للدفع',
+      confirmBooking: 'تأكيد الحجز',
+      free: 'مجاني',
       notSelected: 'لم يتم الاختيار',
       fillForm: 'يرجى إكمال جميع الحقول المطلوبة',
       serviceTypes: {
@@ -140,23 +144,33 @@ export default function BookingSummaryCard({
         <div className="pt-2">
           <div className="flex justify-between items-baseline">
             <span className="text-sm font-semibold text-gray-900">{t.totalAmount}</span>
-            <span className="text-2xl font-bold text-blue-600">
-              £{totalPrice > 0 ? totalPrice.toFixed(0) : 0}
-            </span>
+            {totalPrice > 0 ? (
+              <span className="text-2xl font-bold text-blue-600">
+                £{totalPrice.toFixed(0)}
+              </span>
+            ) : (
+              <span className="text-2xl font-bold text-emerald-600">
+                {t.free}
+              </span>
+            )}
           </div>
         </div>
       </div>
 
-      <button
-        onClick={onSubmit}
-        disabled={!canProceed || isSubmitting}
-        className="w-full py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md disabled:hover:bg-blue-600"
-      >
-        {t.proceed}
-      </button>
+      {totalPrice > 0 && (
+        <>
+          <button
+            onClick={onSubmit}
+            disabled={!canProceed || isSubmitting}
+            className="w-full py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md disabled:hover:bg-blue-600"
+          >
+            {t.proceed}
+          </button>
 
-      {!canProceed && (
-        <p className="text-xs text-gray-500 text-center mt-3">{t.fillForm}</p>
+          {!canProceed && (
+            <p className="text-xs text-gray-500 text-center mt-3">{t.fillForm}</p>
+          )}
+        </>
       )}
     </div>
   );

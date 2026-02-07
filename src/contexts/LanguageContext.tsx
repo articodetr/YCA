@@ -75,8 +75,10 @@ const translations: Record<Language, Record<string, string>> = {
     'button.apply': 'Apply',
     'button.book': 'Book',
     'button.download': 'Download',
+    'button.contactUs': 'Contact Us',
 
     // Home page
+    'home.learnMore': 'Learn More',
     'home.welcomeToYCA': 'Welcome to YCA Birmingham',
     'home.servingCommunity': 'Serving Our Community Since 1988',
     'home.ourServices': 'Our Services',
@@ -388,8 +390,10 @@ const translations: Record<Language, Record<string, string>> = {
     'button.apply': 'تقديم',
     'button.book': 'حجز موعد',
     'button.download': 'تحميل',
+    'button.contactUs': 'اتصل بنا',
 
     // Home page
+    'home.learnMore': 'اعرف المزيد',
     'home.welcomeToYCA': 'مرحباً بكم في جمعية الجالية اليمنية',
     'home.servingCommunity': 'نخدم مجتمعنا منذ عام 1988',
     'home.ourServices': 'خدماتنا',

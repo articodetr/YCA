@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Shield, FileText, CreditCard, Plus, ArrowRight, MessageSquare } from 'lucide-react';
 import { staggerContainer, staggerItem } from '../../../lib/animations';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 interface Props {
   memberRecord: any;
@@ -38,7 +39,8 @@ function isAdvisory(serviceType: string) {
 }
 
 export default function OverviewTab({ memberRecord, membershipApp, wakalaApps, paymentHistory, onNewWakala, onNewAdvisory, t }: Props) {
-  const language = (t.approved === 'موافق عليه' || t.cancelled === 'ملغي') ? 'ar' : 'en';
+  const { language } = useLanguage();
+  const isRTL = language === 'ar';
 
   const totalPaid = paymentHistory
     .filter(p => p.status === 'paid')

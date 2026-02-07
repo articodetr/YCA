@@ -21,8 +21,11 @@ export default function NewsManagement() {
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
   const [formData, setFormData] = useState({
     title: '',
+    title_ar: '',
     excerpt: '',
+    description_ar: '',
     content: '',
+    content_ar: '',
     category: 'Community',
     author: 'YCA Birmingham',
     image_url: '',
@@ -55,8 +58,11 @@ export default function NewsManagement() {
       setEditingArticle(article);
       setFormData({
         title: article.title,
+        title_ar: (article as any).title_ar || '',
         excerpt: article.excerpt,
+        description_ar: (article as any).description_ar || '',
         content: article.content,
+        content_ar: (article as any).content_ar || '',
         category: article.category,
         author: article.author,
         image_url: article.image_url || '',
@@ -65,8 +71,11 @@ export default function NewsManagement() {
       setEditingArticle(null);
       setFormData({
         title: '',
+        title_ar: '',
         excerpt: '',
+        description_ar: '',
         content: '',
+        content_ar: '',
         category: 'Community',
         author: 'YCA Birmingham',
         image_url: '',
@@ -86,7 +95,14 @@ export default function NewsManagement() {
 
     try {
       const articleData = {
-        ...formData,
+        title: formData.title,
+        title_ar: formData.title_ar || null,
+        excerpt: formData.excerpt,
+        description_ar: formData.description_ar || null,
+        content: formData.content,
+        content_ar: formData.content_ar || null,
+        category: formData.category,
+        author: formData.author,
         image_url: formData.image_url || null,
         published_at: editingArticle?.published_at || new Date().toISOString(),
       };
@@ -258,6 +274,18 @@ export default function NewsManagement() {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title (Arabic) <span className="text-gray-400">العنوان</span></label>
+                <input
+                  type="text"
+                  value={formData.title_ar || ''}
+                  onChange={(e) => setFormData({ ...formData, title_ar: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  dir="rtl"
+                  placeholder="أدخل العنوان بالعربية"
+                />
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
                 <select
                   value={formData.category}
@@ -309,6 +337,18 @@ export default function NewsManagement() {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Excerpt (Arabic) <span className="text-gray-400">الوصف</span></label>
+                <textarea
+                  value={formData.description_ar || ''}
+                  onChange={(e) => setFormData({ ...formData, description_ar: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  dir="rtl"
+                  placeholder="أدخل الوصف بالعربية"
+                />
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Content</label>
                 <textarea
                   value={formData.content}
@@ -316,6 +356,18 @@ export default function NewsManagement() {
                   rows={10}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Content (Arabic) <span className="text-gray-400">المحتوى</span></label>
+                <textarea
+                  value={formData.content_ar || ''}
+                  onChange={(e) => setFormData({ ...formData, content_ar: e.target.value })}
+                  rows={10}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  dir="rtl"
+                  placeholder="أدخل المحتوى بالعربية"
                 />
               </div>
 

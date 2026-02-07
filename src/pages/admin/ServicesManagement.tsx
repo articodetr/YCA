@@ -21,7 +21,9 @@ export default function ServicesManagement() {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [formData, setFormData] = useState({
     title: '',
+    title_ar: '',
     description: '',
+    description_ar: '',
     icon: 'FileText',
     category: 'advice' as 'advice' | 'support' | 'community',
     detailed_content: '',
@@ -125,7 +127,9 @@ export default function ServicesManagement() {
   const resetForm = () => {
     setFormData({
       title: '',
+      title_ar: '',
       description: '',
+      description_ar: '',
       icon: 'FileText',
       category: 'advice',
       detailed_content: '',
@@ -140,7 +144,9 @@ export default function ServicesManagement() {
     setEditingService(service);
     setFormData({
       title: service.title,
+      title_ar: (service as any).title_ar || '',
       description: service.description,
+      description_ar: (service as any).description_ar || '',
       icon: service.icon || 'FileText',
       category: service.category,
       detailed_content: service.detailed_content || '',
@@ -213,6 +219,18 @@ export default function ServicesManagement() {
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Title (Arabic) <span className="text-gray-400">العنوان</span></label>
+              <input
+                type="text"
+                value={formData.title_ar || ''}
+                onChange={(e) => setFormData({ ...formData, title_ar: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                dir="rtl"
+                placeholder="أدخل العنوان بالعربية"
+              />
+            </div>
+
+            <div>
               <label className="block text-sm font-semibold text-primary mb-2">
                 Description *
               </label>
@@ -222,6 +240,18 @@ export default function ServicesManagement() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                 rows={3}
                 required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Description (Arabic) <span className="text-gray-400">الوصف</span></label>
+              <textarea
+                value={formData.description_ar || ''}
+                onChange={(e) => setFormData({ ...formData, description_ar: e.target.value })}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                dir="rtl"
+                placeholder="أدخل الوصف بالعربية"
               />
             </div>
 

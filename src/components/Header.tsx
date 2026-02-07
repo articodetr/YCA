@@ -7,6 +7,7 @@ import { useSiteSettings } from '../contexts/SiteSettingsContext';
 
 export default function Header() {
   const { language, setLanguage, t } = useLanguage();
+  const isRTL = language === 'ar';
   const { getSetting } = useSiteSettings();
   const logoMain = getSetting('site_logo', '/logo.png');
   const logoText = getSetting('site_logo_text', '/logo_text.png');
@@ -174,7 +175,7 @@ export default function Header() {
               <AnimatePresence>
                 {activeDesktopMenu === 'involved' && (
                   <motion.div
-                    className="absolute top-full left-0 mt-2 w-64 bg-white text-primary shadow-xl rounded-lg overflow-hidden"
+                    className={`absolute top-full ${isRTL ? 'right-0' : 'left-0'} mt-2 w-64 bg-white text-primary shadow-xl rounded-lg overflow-hidden`}
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
@@ -219,7 +220,7 @@ export default function Header() {
               <AnimatePresence>
                 {activeDesktopMenu === 'about' && (
                   <motion.div
-                    className="absolute top-full left-0 mt-2 w-56 bg-white text-primary shadow-xl rounded-lg overflow-hidden"
+                    className={`absolute top-full ${isRTL ? 'right-0' : 'left-0'} mt-2 w-56 bg-white text-primary shadow-xl rounded-lg overflow-hidden`}
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
@@ -322,7 +323,7 @@ export default function Header() {
                 <AnimatePresence>
                   {openDropdown === 'involved' && (
                     <motion.div
-                      className="pl-4 space-y-2 mt-2"
+                      className={`${isRTL ? 'pr-4' : 'pl-4'} space-y-2 mt-2`}
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
@@ -373,7 +374,7 @@ export default function Header() {
                 <AnimatePresence>
                   {openDropdown === 'about' && (
                     <motion.div
-                      className="pl-4 space-y-2 mt-2"
+                      className={`${isRTL ? 'pr-4' : 'pl-4'} space-y-2 mt-2`}
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}

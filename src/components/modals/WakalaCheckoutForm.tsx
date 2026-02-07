@@ -13,6 +13,7 @@ export default function WakalaCheckoutForm({ amount, onSuccess, onBack }: Wakala
   const stripe = useStripe();
   const elements = useElements();
   const { language } = useLanguage();
+  const isRTL = language === 'ar';
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
 
@@ -52,14 +53,14 @@ export default function WakalaCheckoutForm({ amount, onSuccess, onBack }: Wakala
       if (confirmError) throw confirmError;
       onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Payment failed. Please try again.');
+      setError(err.message || (isRTL ? 'فشل الدفع. يرجى المحاولة مرة أخرى.' : 'Payment failed. Please try again.'));
     } finally {
       setProcessing(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="bg-gray-50 rounded-lg p-4 space-y-2">
         <div className="flex justify-between">
           <span className="text-gray-600">{t.paymentType}:</span>
@@ -67,7 +68,7 @@ export default function WakalaCheckoutForm({ amount, onSuccess, onBack }: Wakala
         </div>
         <div className="flex justify-between">
           <span className="text-gray-600">{t.amount}:</span>
-          <span className="font-bold text-2xl text-emerald-600">{amount}</span>
+          <span className="font-bold text-2xl text-emerald-600">{'\u00A3'}{amount}</span>
         </div>
       </div>
 

@@ -8,7 +8,7 @@ import { useSiteSettings } from '../contexts/SiteSettingsContext';
 
 export default function Footer() {
   const { getContent } = useContent();
-  const { t, language } = useLanguage();
+  const { t, language, isRTL } = useLanguage();
   const { getSetting } = useSiteSettings();
 
   const logoText = getSetting('site_logo_text', '/logo_text.png');
@@ -88,25 +88,25 @@ export default function Footer() {
           <motion.div variants={staggerItem}>
             <h3 className="text-xl font-bold mb-4 text-accent">{t('footer.quickLinks')}</h3>
             <ul className="space-y-2">
-              <motion.li whileHover={{ x: 5 }}><Link to="/about/mission" className="text-gray-300 hover:text-accent transition-colors">{t('nav.about.mission')}</Link></motion.li>
-              <motion.li whileHover={{ x: 5 }}><Link to="/services" className="text-gray-300 hover:text-accent transition-colors">{t('nav.services')}</Link></motion.li>
-              <motion.li whileHover={{ x: 5 }}><Link to="/events" className="text-gray-300 hover:text-accent transition-colors">{t('nav.events')}</Link></motion.li>
-              <motion.li whileHover={{ x: 5 }}><Link to="/news" className="text-gray-300 hover:text-accent transition-colors">{t('nav.news')}</Link></motion.li>
-              <motion.li whileHover={{ x: 5 }}><Link to="/book" className="text-gray-300 hover:text-accent transition-colors">{t('button.book')}</Link></motion.li>
-              <motion.li whileHover={{ x: 5 }}><Link to="/book/track" className="text-gray-300 hover:text-accent transition-colors">{language === 'ar' ? 'تتبع حجزك' : 'Track Your Booking'}</Link></motion.li>
-              <motion.li whileHover={{ x: 5 }}><Link to="/get-involved/volunteer" className="text-gray-300 hover:text-accent transition-colors">{t('nav.getInvolved.volunteer')}</Link></motion.li>
-              <motion.li whileHover={{ x: 5 }}><Link to="/contact" className="text-gray-300 hover:text-accent transition-colors">{t('nav.contact')}</Link></motion.li>
+              <motion.li whileHover={{ x: isRTL ? -5 : 5 }}><Link to="/about/mission" className="text-gray-300 hover:text-accent transition-colors">{t('nav.about.mission')}</Link></motion.li>
+              <motion.li whileHover={{ x: isRTL ? -5 : 5 }}><Link to="/services" className="text-gray-300 hover:text-accent transition-colors">{t('nav.services')}</Link></motion.li>
+              <motion.li whileHover={{ x: isRTL ? -5 : 5 }}><Link to="/events" className="text-gray-300 hover:text-accent transition-colors">{t('nav.events')}</Link></motion.li>
+              <motion.li whileHover={{ x: isRTL ? -5 : 5 }}><Link to="/news" className="text-gray-300 hover:text-accent transition-colors">{t('nav.news')}</Link></motion.li>
+              <motion.li whileHover={{ x: isRTL ? -5 : 5 }}><Link to="/book" className="text-gray-300 hover:text-accent transition-colors">{t('button.book')}</Link></motion.li>
+              <motion.li whileHover={{ x: isRTL ? -5 : 5 }}><Link to="/book/track" className="text-gray-300 hover:text-accent transition-colors">{language === 'ar' ? 'تتبع حجزك' : 'Track Your Booking'}</Link></motion.li>
+              <motion.li whileHover={{ x: isRTL ? -5 : 5 }}><Link to="/get-involved/volunteer" className="text-gray-300 hover:text-accent transition-colors">{t('nav.getInvolved.volunteer')}</Link></motion.li>
+              <motion.li whileHover={{ x: isRTL ? -5 : 5 }}><Link to="/contact" className="text-gray-300 hover:text-accent transition-colors">{t('nav.contact')}</Link></motion.li>
             </ul>
           </motion.div>
 
           <motion.div variants={staggerItem}>
             <h3 className="text-xl font-bold mb-4 text-accent">{t('nav.programmes')}</h3>
             <ul className="space-y-2">
-              <motion.li whileHover={{ x: 5 }}><Link to="/programmes/women" className="text-gray-300 hover:text-accent transition-colors">{t('nav.programmes.women')}</Link></motion.li>
-              <motion.li whileHover={{ x: 5 }}><Link to="/programmes/elderly" className="text-gray-300 hover:text-accent transition-colors">{t('nav.programmes.elderly')}</Link></motion.li>
-              <motion.li whileHover={{ x: 5 }}><Link to="/programmes/youth" className="text-gray-300 hover:text-accent transition-colors">{t('nav.programmes.youth')}</Link></motion.li>
-              <motion.li whileHover={{ x: 5 }}><Link to="/programmes/children" className="text-gray-300 hover:text-accent transition-colors">{t('nav.programmes.children')}</Link></motion.li>
-              <motion.li whileHover={{ x: 5 }}><Link to="/programmes/men" className="text-gray-300 hover:text-accent transition-colors">{t('nav.programmes.men')}</Link></motion.li>
+              <motion.li whileHover={{ x: isRTL ? -5 : 5 }}><Link to="/programmes/women" className="text-gray-300 hover:text-accent transition-colors">{t('nav.programmes.women')}</Link></motion.li>
+              <motion.li whileHover={{ x: isRTL ? -5 : 5 }}><Link to="/programmes/elderly" className="text-gray-300 hover:text-accent transition-colors">{t('nav.programmes.elderly')}</Link></motion.li>
+              <motion.li whileHover={{ x: isRTL ? -5 : 5 }}><Link to="/programmes/youth" className="text-gray-300 hover:text-accent transition-colors">{t('nav.programmes.youth')}</Link></motion.li>
+              <motion.li whileHover={{ x: isRTL ? -5 : 5 }}><Link to="/programmes/children" className="text-gray-300 hover:text-accent transition-colors">{t('nav.programmes.children')}</Link></motion.li>
+              <motion.li whileHover={{ x: isRTL ? -5 : 5 }}><Link to="/programmes/men" className="text-gray-300 hover:text-accent transition-colors">{t('nav.programmes.men')}</Link></motion.li>
             </ul>
           </motion.div>
 
@@ -121,13 +121,13 @@ export default function Footer() {
                   {getContent('footer', 'address_line3', 'Birmingham, B11 1QS')}
                 </span>
               </li>
-              <motion.li className="flex items-center gap-3" whileHover={{ x: 5 }}>
+              <motion.li className="flex items-center gap-3" whileHover={{ x: isRTL ? -5 : 5 }}>
                 <Phone size={20} className="text-accent flex-shrink-0" />
                 <a href={`tel:${getContent('footer', 'phone', '01214395280').replace(/\s/g, '')}`} className="text-gray-300 hover:text-accent transition-colors">
                   {getContent('footer', 'phone', '0121 439 5280')}
                 </a>
               </motion.li>
-              <motion.li className="flex items-center gap-3" whileHover={{ x: 5 }}>
+              <motion.li className="flex items-center gap-3" whileHover={{ x: isRTL ? -5 : 5 }}>
                 <Mail size={20} className="text-accent flex-shrink-0" />
                 <a href={`mailto:${getContent('footer', 'email', 'info@yca-birmingham.org.uk')}`} className="text-gray-300 hover:text-accent transition-colors">
                   {getContent('footer', 'email', 'info@yca-birmingham.org.uk')}

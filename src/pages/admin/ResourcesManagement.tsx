@@ -25,7 +25,9 @@ export default function ResourcesManagement() {
   const [filterType, setFilterType] = useState<string>('all');
   const [formData, setFormData] = useState({
     title: '',
+    title_ar: '',
     description: '',
+    description_ar: '',
     resource_type: 'policy' as 'policy' | 'form' | 'guide' | 'link',
     file_url: '',
     link: '',
@@ -143,7 +145,9 @@ export default function ResourcesManagement() {
   const resetForm = () => {
     setFormData({
       title: '',
+      title_ar: '',
       description: '',
+      description_ar: '',
       resource_type: 'policy',
       file_url: '',
       link: '',
@@ -161,7 +165,9 @@ export default function ResourcesManagement() {
     setEditingResource(resource);
     setFormData({
       title: resource.title,
+      title_ar: (resource as any).title_ar || '',
       description: resource.description || '',
+      description_ar: (resource as any).description_ar || '',
       resource_type: resource.resource_type,
       file_url: resource.file_url || '',
       link: resource.link || '',
@@ -249,6 +255,18 @@ export default function ResourcesManagement() {
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Title (Arabic) <span className="text-gray-400">العنوان</span></label>
+              <input
+                type="text"
+                value={formData.title_ar || ''}
+                onChange={(e) => setFormData({ ...formData, title_ar: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                dir="rtl"
+                placeholder="أدخل العنوان بالعربية"
+              />
+            </div>
+
+            <div>
               <label className="block text-sm font-semibold text-primary mb-2">
                 Description
               </label>
@@ -257,6 +275,18 @@ export default function ResourcesManagement() {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                 rows={3}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Description (Arabic) <span className="text-gray-400">الوصف</span></label>
+              <textarea
+                value={formData.description_ar || ''}
+                onChange={(e) => setFormData({ ...formData, description_ar: e.target.value })}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                dir="rtl"
+                placeholder="أدخل الوصف بالعربية"
               />
             </div>
 

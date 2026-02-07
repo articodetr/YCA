@@ -23,6 +23,7 @@ export default function BookingSummaryCard({
   isSubmitting,
 }: BookingSummaryCardProps) {
   const { language } = useLanguage();
+  const isRTL = language === 'ar';
 
   const t = {
     en: {
@@ -93,7 +94,7 @@ export default function BookingSummaryCard({
   const canProceed = selectedDate && selectedTime && isFormComplete;
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200 h-fit sticky top-6">
+    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200 h-fit sticky top-6" dir={isRTL ? 'rtl' : 'ltr'}>
       <h3 className="text-xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">
         {t.title}
       </h3>

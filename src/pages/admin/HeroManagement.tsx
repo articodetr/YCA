@@ -20,7 +20,9 @@ export default function HeroManagement() {
   const [editingSlide, setEditingSlide] = useState<HeroSlide | null>(null);
   const [formData, setFormData] = useState({
     title: '',
+    title_ar: '',
     subtitle: '',
+    subtitle_ar: '',
     image_url: '',
     order_number: 0,
     is_active: true
@@ -121,7 +123,9 @@ export default function HeroManagement() {
   const resetForm = () => {
     setFormData({
       title: '',
+      title_ar: '',
       subtitle: '',
+      subtitle_ar: '',
       image_url: '',
       order_number: 0,
       is_active: true
@@ -134,7 +138,9 @@ export default function HeroManagement() {
     setEditingSlide(slide);
     setFormData({
       title: slide.title,
+      title_ar: (slide as any).title_ar || '',
       subtitle: slide.subtitle,
+      subtitle_ar: (slide as any).subtitle_ar || '',
       image_url: slide.image_url,
       order_number: slide.order_number,
       is_active: slide.is_active
@@ -186,6 +192,18 @@ export default function HeroManagement() {
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Title (Arabic) <span className="text-gray-400">العنوان</span></label>
+              <input
+                type="text"
+                value={formData.title_ar || ''}
+                onChange={(e) => setFormData({ ...formData, title_ar: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                dir="rtl"
+                placeholder="أدخل العنوان بالعربية"
+              />
+            </div>
+
+            <div>
               <label className="block text-sm font-semibold text-primary mb-2">
                 Subtitle
               </label>
@@ -194,6 +212,18 @@ export default function HeroManagement() {
                 value={formData.subtitle}
                 onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Subtitle (Arabic) <span className="text-gray-400">العنوان الفرعي</span></label>
+              <input
+                type="text"
+                value={formData.subtitle_ar || ''}
+                onChange={(e) => setFormData({ ...formData, subtitle_ar: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                dir="rtl"
+                placeholder="أدخل العنوان الفرعي بالعربية"
               />
             </div>
 

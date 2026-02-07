@@ -185,7 +185,7 @@ export default function MemberPayment() {
     }
 
     if (!amount || amount <= 0) {
-      setError('Invalid amount');
+      setError(language === 'ar' ? 'مبلغ غير صالح' : 'Invalid amount');
       setLoading(false);
       return;
     }
@@ -280,7 +280,7 @@ export default function MemberPayment() {
                 onClick={() => navigate('/member/dashboard')}
                 className="text-emerald-600 hover:text-emerald-700 font-medium"
               >
-                Back to Dashboard
+                {isRTL ? 'العودة إلى لوحة التحكم' : 'Back to Dashboard'}
               </button>
             </div>
           )}

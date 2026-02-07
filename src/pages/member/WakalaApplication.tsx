@@ -18,6 +18,7 @@ export default function WakalaApplication() {
   };
 
   const t = translations[language];
+  const isRTL = language === 'ar';
 
   useEffect(() => {
     navigate('/member/dashboard?openWakala=true', { replace: true });
@@ -25,7 +26,7 @@ export default function WakalaApplication() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center p-4" dir={isRTL ? 'rtl' : 'ltr'}>
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto mb-4" />
           <p className="text-gray-600">{t.redirecting}</p>

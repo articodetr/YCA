@@ -381,7 +381,7 @@ export default function AdvisoryBookingForm({ onComplete }: AdvisoryBookingFormP
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-lg overflow-hidden" dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-6 sm:px-8 py-6">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">

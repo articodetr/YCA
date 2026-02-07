@@ -23,11 +23,14 @@ export default function EventsManagement() {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [formData, setFormData] = useState({
     title: '',
+    title_ar: '',
     description: '',
+    description_ar: '',
     category: 'Community Events',
     date: '',
     time: '',
     location: '',
+    location_ar: '',
     capacity: '',
     image_url: '',
     is_featured: false,
@@ -60,11 +63,14 @@ export default function EventsManagement() {
       setEditingEvent(event);
       setFormData({
         title: event.title,
+        title_ar: (event as any).title_ar || '',
         description: event.description,
+        description_ar: (event as any).description_ar || '',
         category: event.category,
         date: event.date,
         time: event.time,
         location: event.location,
+        location_ar: (event as any).location_ar || '',
         capacity: event.capacity?.toString() || '',
         image_url: event.image_url || '',
         is_featured: event.is_featured,
@@ -73,11 +79,14 @@ export default function EventsManagement() {
       setEditingEvent(null);
       setFormData({
         title: '',
+        title_ar: '',
         description: '',
+        description_ar: '',
         category: 'Community Events',
         date: '',
         time: '',
         location: '',
+        location_ar: '',
         capacity: '',
         image_url: '',
         is_featured: false,
@@ -98,11 +107,14 @@ export default function EventsManagement() {
     try {
       const eventData = {
         title: formData.title,
+        title_ar: formData.title_ar || null,
         description: formData.description,
+        description_ar: formData.description_ar || null,
         category: formData.category,
         date: formData.date,
         time: formData.time,
         location: formData.location,
+        location_ar: formData.location_ar || null,
         capacity: formData.capacity ? parseInt(formData.capacity) : null,
         image_url: formData.image_url || null,
         is_featured: formData.is_featured,
@@ -291,6 +303,18 @@ export default function EventsManagement() {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title (Arabic) <span className="text-gray-400">العنوان</span></label>
+                <input
+                  type="text"
+                  value={formData.title_ar || ''}
+                  onChange={(e) => setFormData({ ...formData, title_ar: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  dir="rtl"
+                  placeholder="أدخل العنوان بالعربية"
+                />
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
                 <select
                   value={formData.category}
@@ -340,6 +364,18 @@ export default function EventsManagement() {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location (Arabic) <span className="text-gray-400">الموقع</span></label>
+                <input
+                  type="text"
+                  value={formData.location_ar || ''}
+                  onChange={(e) => setFormData({ ...formData, location_ar: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  dir="rtl"
+                  placeholder="أدخل الموقع بالعربية"
+                />
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Capacity (optional)
                 </label>
@@ -373,6 +409,18 @@ export default function EventsManagement() {
                   rows={6}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description (Arabic) <span className="text-gray-400">الوصف</span></label>
+                <textarea
+                  value={formData.description_ar || ''}
+                  onChange={(e) => setFormData({ ...formData, description_ar: e.target.value })}
+                  rows={6}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  dir="rtl"
+                  placeholder="أدخل الوصف بالعربية"
                 />
               </div>
 

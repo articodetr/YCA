@@ -1,14 +1,18 @@
 import { useState } from 'react';
-import { Users, Heart, Sparkles, Baby, Briefcase, ArrowRight } from 'lucide-react';
+import { Users, Heart, Sparkles, Baby, Briefcase, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PageHeader from '../components/PageHeader';
 import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../lib/animations';
 import { useContent } from '../contexts/ContentContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function Programmes() {
   const { getContent } = useContent();
+  const { t, language } = useLanguage();
+  const isRTL = language === 'ar';
   const c = (key: string, fallback: string) => getContent('programmes', key, fallback);
+  const Arrow = isRTL ? ArrowLeft : ArrowRight;
 
   const [selectedCategory, setSelectedCategory] = useState('All');
 
@@ -65,19 +69,27 @@ export default function Programmes() {
     },
   ];
 
-  const categories = ['All', "Women's", "Elderly's", 'Youth', "Children's", "Men's"];
+  const categoriesEn = ['All', "Women's", "Elderly's", 'Youth', "Children's", "Men's"];
+  const categoriesAr = ['الكل', 'النساء', 'كبار السن', 'الشباب', 'الأطفال', 'الرجال'];
+  const categories = isRTL ? categoriesAr : categoriesEn;
+  const categoryMap: Record<string, string> = isRTL
+    ? { 'الكل': 'All', 'النساء': "Women's", 'كبار السن': "Elderly's", 'الشباب': 'Youth', 'الأطفال': "Children's", 'الرجال': "Men's" }
+    : {};
+  const getInternalCat = (cat: string) => categoryMap[cat] || cat;
 
-  const filteredProgrammes = selectedCategory === 'All'
+  const internalCat = getInternalCat(selectedCategory);
+  const filteredProgrammes = internalCat === 'All'
     ? programmes
-    : programmes.filter(programme => programme.category === selectedCategory);
+    : programmes.filter(programme => programme.category === internalCat);
 
   const getCategoryCount = (category: string) => {
-    if (category === 'All') return programmes.length;
-    return programmes.filter(programme => programme.category === category).length;
+    const ic = getInternalCat(category);
+    if (ic === 'All') return programmes.length;
+    return programmes.filter(programme => programme.category === ic).length;
   };
 
   const getHeaderImage = () => {
-    switch (selectedCategory) {
+    switch (internalCat) {
       case "Women's":
         return 'https://images.pexels.com/photos/3184434/pexels-photo-3184434.jpeg?auto=compress&cs=tinysrgb&w=1920';
       case "Elderly's":
@@ -98,11 +110,11 @@ export default function Programmes() {
   };
 
   return (
-    <div>
+    <div dir={isRTL ? 'rtl' : 'ltr'}>
       <PageHeader
-        title={selectedCategory === 'All' ? 'Our Programmes' : `${selectedCategory} Programme`}
+        title={internalCat === 'All' ? t('nav.programmes') : `${selectedCategory}`}
         description={getHeaderDescription()}
-        breadcrumbs={[{ label: 'Programmes' }]}
+        breadcrumbs={[{ label: t('nav.programmes') }]}
         pageKey="programmes"
       />
 
@@ -185,7 +197,7 @@ export default function Programmes() {
                       to={programme.link}
                       className="inline-flex items-center gap-2 text-primary font-semibold hover:text-accent transition-colors"
                     >
-                      Learn More <ArrowRight size={18} />
+                      {t('home.learnMore')} <Arrow size={18} />
                     </Link>
                   </div>
                 </motion.div>
@@ -214,7 +226,7 @@ export default function Programmes() {
                   to="/get-involved/membership"
                   className="bg-primary text-white px-8 py-3 rounded-lg hover:bg-secondary transition-colors font-semibold inline-block"
                 >
-                  Become a Member
+                  {isRTL ? 'كن عضواً' : 'Become a Member'}
                 </Link>
               </motion.div>
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -222,7 +234,7 @@ export default function Programmes() {
                   to="/contact"
                   className="bg-transparent border-2 border-primary text-primary px-8 py-3 rounded-lg hover:bg-primary hover:text-white transition-colors font-semibold inline-block"
                 >
-                  Contact Us
+                  {t('button.contactUs')}
                 </Link>
               </motion.div>
             </div>
@@ -248,7 +260,7 @@ export default function Programmes() {
                 to="/get-involved/donate"
                 className="bg-accent text-primary px-8 py-4 rounded-lg hover:bg-hover transition-colors font-semibold inline-block"
               >
-                Support Our Work
+                {isRTL ? 'ادعم عملنا' : 'Support Our Work'}
               </Link>
             </motion.div>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -256,7 +268,7 @@ export default function Programmes() {
                 to="/get-involved/volunteer"
                 className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg hover:bg-white hover:text-primary transition-colors font-semibold inline-block"
               >
-                Volunteer With Us
+                {isRTL ? 'تطوع معنا' : 'Volunteer With Us'}
               </Link>
             </motion.div>
           </div>

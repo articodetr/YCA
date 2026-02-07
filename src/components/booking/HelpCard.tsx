@@ -3,6 +3,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function HelpCard() {
   const { language } = useLanguage();
+  const isRTL = language === 'ar';
 
   const t = {
     en: {
@@ -30,7 +31,7 @@ export default function HelpCard() {
   };
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
+    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200" dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="flex items-start gap-3 mb-4">
         <div className="p-2 bg-purple-100 rounded-lg">
           <MessageCircle className="w-5 h-5 text-purple-600" />

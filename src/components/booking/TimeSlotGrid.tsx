@@ -26,6 +26,7 @@ interface TimeSlotGridProps {
 
 export default function TimeSlotGrid({ selectedDate, slots, selectedSlot, onSlotSelect, workingHours, recentlyBookedSlotIds }: TimeSlotGridProps) {
   const { language } = useLanguage();
+  const isRTL = language === 'ar';
   const [fadingOutIds, setFadingOutIds] = useState<Set<string>>(new Set());
   const prevSlotsRef = useRef<Map<string, boolean>>(new Map());
 
@@ -104,7 +105,7 @@ export default function TimeSlotGrid({ selectedDate, slots, selectedSlot, onSlot
   );
 
   return (
-    <div>
+    <div dir={isRTL ? 'rtl' : 'ltr'}>
       {workingHours && (
         <div className="mb-4 p-3 rounded-lg border bg-gray-50 border-gray-200">
           <div className="flex items-center gap-2">

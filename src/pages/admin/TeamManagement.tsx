@@ -28,7 +28,9 @@ export default function TeamManagement() {
   const [formData, setFormData] = useState({
     name: '',
     role: '',
+    role_ar: '',
     bio: '',
+    bio_ar: '',
     image_url: '',
     email: '',
     phone: '',
@@ -135,7 +137,9 @@ export default function TeamManagement() {
     setFormData({
       name: '',
       role: '',
+      role_ar: '',
       bio: '',
+      bio_ar: '',
       image_url: '',
       email: '',
       phone: '',
@@ -153,7 +157,9 @@ export default function TeamManagement() {
     setFormData({
       name: member.name,
       role: member.role,
+      role_ar: (member as any).role_ar || '',
       bio: member.bio || '',
+      bio_ar: (member as any).bio_ar || '',
       image_url: member.image_url || '',
       email: member.email || '',
       phone: member.phone || '',
@@ -228,6 +234,18 @@ export default function TeamManagement() {
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Role (Arabic) <span className="text-gray-400">الدور</span></label>
+              <input
+                type="text"
+                value={formData.role_ar || ''}
+                onChange={(e) => setFormData({ ...formData, role_ar: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                dir="rtl"
+                placeholder="أدخل الدور بالعربية"
+              />
+            </div>
+
+            <div>
               <label className="block text-sm font-semibold text-primary mb-2">
                 Bio
               </label>
@@ -236,6 +254,18 @@ export default function TeamManagement() {
                 onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                 rows={4}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Bio (Arabic) <span className="text-gray-400">السيرة الذاتية</span></label>
+              <textarea
+                value={formData.bio_ar || ''}
+                onChange={(e) => setFormData({ ...formData, bio_ar: e.target.value })}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                dir="rtl"
+                placeholder="أدخل السيرة الذاتية بالعربية"
               />
             </div>
 

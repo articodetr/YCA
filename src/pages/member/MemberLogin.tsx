@@ -186,7 +186,7 @@ export default function MemberLogin() {
         </div>
 
         <p className="text-center text-sm text-gray-600 mt-6">
-          © {new Date().getFullYear()} YCA Birmingham. All rights reserved.
+          © {new Date().getFullYear()} {isRTL ? 'جمعية الجالية اليمنية برمنغهام. جميع الحقوق محفوظة.' : 'YCA Birmingham. All rights reserved.'}
         </p>
       </div>
     </div>

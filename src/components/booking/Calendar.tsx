@@ -22,6 +22,7 @@ export default function Calendar({
   autoSelectNearest = false,
 }: CalendarProps) {
   const { language } = useLanguage();
+  const isRTL = language === 'ar';
   const [currentMonth, setCurrentMonth] = React.useState(new Date());
   const [showWarning, setShowWarning] = React.useState(false);
   const hasAutoSelected = React.useRef(false);
@@ -215,7 +216,7 @@ export default function Calendar({
   };
 
   return (
-    <div>
+    <div dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="flex items-center justify-between mb-4">
         <button
           type="button"

@@ -296,7 +296,7 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
 
   if (step === 'payment' && clientSecret) {
     return (
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden" dir={isRTL ? 'rtl' : 'ltr'}>
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 sm:px-8 py-6">
           <h2 className="text-xl sm:text-2xl font-bold text-white">{t.paymentTitle}</h2>
         </div>
@@ -312,7 +312,7 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
 
   if (step === 'payment' && !clientSecret) {
     return (
-      <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+      <div className="bg-white rounded-2xl shadow-lg p-8 text-center" dir={isRTL ? 'rtl' : 'ltr'}>
         <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto mb-4" />
         <p className="text-gray-600">{t.settingUpPayment}</p>
       </div>
@@ -320,7 +320,7 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-lg overflow-hidden" dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 sm:px-8 py-6">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">

@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Calendar, Clock, FileText, CheckCircle, XCircle, CreditCard, ExternalLink, MessageSquare } from 'lucide-react';
 import { staggerContainer, staggerItem } from '../../../lib/animations';
 import { formatTimeRange } from '../../../lib/booking-utils';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 interface Props {
   wakalaApps: any[];
@@ -243,7 +244,7 @@ function WakalaCard({ app, t, language }: { app: any; t: Record<string, string>;
 }
 
 export default function ApplicationsTab({ wakalaApps, onCancelAppointment, t }: Props) {
-  const language = (t.approved === 'موافق عليه' || t.cancelled === 'ملغي') ? 'ar' : 'en';
+  const { language } = useLanguage();
 
   if (wakalaApps.length === 0) {
     return (

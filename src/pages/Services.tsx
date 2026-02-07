@@ -5,109 +5,53 @@ import { motion } from 'framer-motion';
 import PageHeader from '../components/PageHeader';
 import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../lib/animations';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useContent } from '../contexts/ContentContext';
 import AdvisoryBookingModal from '../components/modals/AdvisoryBookingModal';
 
 export default function Services() {
   const { language } = useLanguage();
+  const { getContent } = useContent();
   const isRTL = language === 'ar';
   const [showAdvisoryModal, setShowAdvisoryModal] = useState(false);
 
-  const t = language === 'ar' ? {
-    pageTitle: 'خدماتنا',
-    introTitle: 'تقديم خدمات استشارية وإرشادية شاملة ومستدامة',
-    introP1: 'تقدم جمعية الجالية اليمنية في برمنغهام خدمات استشارية وإرشادية شاملة في مجالات الصحة والتعليم والرعاية الاجتماعية لخدمة المجتمع بأكمله.',
-    introP2: 'نعمل بجد لتمكين مجتمعنا، وخاصة أولئك الذين يحتاجون إلى مساعدتنا أكثر من غيرهم: الأفراد الذين لا يتحدثون الإنجليزية ولا يعرفون النظام في المملكة المتحدة. كما نقدم دعمًا مخصصًا للاجئين والمحتاجين.',
-    missionTitle: 'مهمتنا ومن نساعد',
-    missionDesc: 'نمكّن الأفراد الذين لا يتحدثون الإنجليزية ولا يعرفون النظام البريطاني. جميع موظفينا الذين يعملون مع هؤلاء الأفراد يجيدون اللغتين الإنجليزية والعربية، مما يضمن التواصل الواضح والتفاهم.',
-    howWeHelpTitle: 'كيف نساعد',
-    howWeHelpDesc: 'نعمل مع العملاء على أساس سري وفردي، نقدم المشورة المباشرة والدعم العملي في القضايا الحياتية الأساسية مثل المزايا الاجتماعية والديون والتوظيف والهجرة والطلاق والعنف الأسري والإسكان.',
-    supportTitle: 'سيقوم موظفو الدعم لدينا بـ:',
-    supportItems: [
-      'توجيه العملاء إلى الجهات ذات الصلة',
-      'المساعدة في ملء نماذج الطلبات',
-      'قراءة وشرح وترجمة الرسائل المعقدة',
-      'الترجمة الفورية نيابة عن العميل خلال الاجتماعات والمكالمات',
-      'ترتيب جلسات استشارية مع المحامين عند الحاجة للمشورة القانونية',
-      'دعم طلبات الإسكان عبر الإنترنت باستخدام أجهزة الكمبيوتر المخصصة لدينا',
-    ],
-    servicesTitle: 'الخدمات التي نقدمها',
-    servicesSubtitle: 'نقدم الإرشاد والمساعدة العملية في مجموعة واسعة من طلبات الإدارة والمزايا',
-    categories: [
-      {
-        category: 'الرعاية الاجتماعية والمزايا',
-        items: ['بدل الرعاية', 'الائتمان الشامل', 'PIP و DLA', 'إعانة السكن', 'إعانة الطفل', 'الائتمان الضريبي'],
-      },
-      {
-        category: 'الطلبات والإدارة',
-        items: ['طلبات الهجرة', 'طلبات الإسكان', 'طلبات جواز السفر', 'ضريبة المجلس', 'ترجمة الرسائل', 'الفواتير'],
-      },
-      {
-        category: 'القانونية والعملية',
-        items: ['ترتيب جلسات المحامين', 'الديون', 'التوظيف', 'العنف الأسري', 'المساعدة في السكن', 'التوكيل الرسمي'],
-      },
-    ],
-    hoursTitle: 'متى يمكنكم زيارتنا',
-    monThu: 'الاثنين - الخميس:',
-    monThuTime: '10:00 صباحاً - 3:30 مساءً',
-    fri: 'الجمعة:',
-    friTime: '9:00 صباحاً - 1:00 مساءً',
-    contactCta: 'تواصل معنا اليوم لحجز موعدك الفردي',
-    sendMessage: 'أرسل رسالة',
-    bookAdvisory: 'احجز موعد استشاري',
-    feedbackTitle: 'نقدّر ملاحظاتكم',
-    feedbackDesc: 'نطلب من عملائنا تقديم ملاحظاتهم في كل مرة يستخدمون فيها الخدمة، ونستخدم ذلك لتطوير مشروعنا باستمرار.',
-  } : {
-    pageTitle: 'Our Services',
-    introTitle: 'Sustaining and Developing Comprehensive Advice and Guidance Services',
-    introP1: 'The Yemeni Community Association in Birmingham provides comprehensive advice and guidance services in health, education, and social welfare to serve the whole community.',
-    introP2: 'We are working hard to empower our community, especially those who need our help the most: individuals who don\'t speak English and do not know the system in the UK. We also provide dedicated support to refugees and those in need.',
-    missionTitle: 'Our Mission and Who We Help',
-    missionDesc: 'We empower individuals who don\'t speak English and do not know the UK system. All our staff working with these individuals are fluent in both English and Arabic, ensuring clear communication and understanding.',
-    howWeHelpTitle: 'How We Help',
-    howWeHelpDesc: 'We work with clients on a confidential, one-to-one basis, providing direct advice and practical support on essential life issues such as welfare benefits, debt, employment, immigration, divorce, domestic violence, and housing.',
-    supportTitle: 'Our Support Workers Will:',
-    supportItems: [
-      'Signpost clients to relevant third-party agencies',
-      'Assist in filling out application forms',
-      'Read, explain, and translate complex letters',
-      'Interpret on the client\'s behalf during meetings and calls',
-      'Arrange for solicitor surgeries when legal advice is required',
-      'Support online housing applications using our dedicated computers',
-    ],
-    servicesTitle: 'Services We Provide',
-    servicesSubtitle: 'We provide guidance and practical help with a wide range of administrative and benefit applications',
-    categories: [
-      {
-        category: 'Welfare & Benefits',
-        items: ['Carer Allowance', 'Universal Credit', 'PIP & DLA', 'Housing Benefits', 'Child Benefit', 'Tax Credit'],
-      },
-      {
-        category: 'Applications & Admin',
-        items: ['Immigration Applications', 'Housing Applications', 'Passport Applications', 'Council Tax', 'Letters Translation', 'Bills'],
-      },
-      {
-        category: 'Legal & Practical',
-        items: ['Arranging Solicitor Surgeries', 'Debt', 'Employment', 'Domestic Violence', 'Housing Assistance', 'Power of Attorney'],
-      },
-    ],
-    hoursTitle: 'When You Can Find Us',
-    monThu: 'Monday - Thursday:',
-    monThuTime: '10:00 AM - 3:30 PM',
-    fri: 'Friday:',
-    friTime: '9:00 AM - 1:00 PM',
-    contactCta: 'Contact us today to book your one-to-one appointment',
-    sendMessage: 'Send a Message',
-    bookAdvisory: 'Book an Advisory Appointment',
-    feedbackTitle: 'We Value Your Feedback',
-    feedbackDesc: 'We ask our clients for feedback every time they use the service, using this to inform the continuous development of our project.',
-  };
+  const c = (key: string, fallback: string) => getContent('services', key, fallback);
+
+  const supportItems = [
+    c('support_1', language === 'ar' ? 'توجيه العملاء إلى الجهات ذات الصلة' : 'Signpost clients to relevant third-party agencies'),
+    c('support_2', language === 'ar' ? 'المساعدة في ملء نماذج الطلبات' : 'Assist in filling out application forms'),
+    c('support_3', language === 'ar' ? 'قراءة وشرح وترجمة الرسائل المعقدة' : 'Read, explain, and translate complex letters'),
+    c('support_4', language === 'ar' ? 'الترجمة الفورية نيابة عن العميل خلال الاجتماعات والمكالمات' : "Interpret on the client's behalf during meetings and calls"),
+    c('support_5', language === 'ar' ? 'ترتيب جلسات استشارية مع المحامين عند الحاجة للمشورة القانونية' : 'Arrange for solicitor surgeries when legal advice is required'),
+    c('support_6', language === 'ar' ? 'دعم طلبات الإسكان عبر الإنترنت باستخدام أجهزة الكمبيوتر المخصصة لدينا' : 'Support online housing applications using our dedicated computers'),
+  ];
+
+  const categories = [
+    {
+      category: c('cat_1_title', language === 'ar' ? 'الرعاية الاجتماعية والمزايا' : 'Welfare & Benefits'),
+      items: language === 'ar'
+        ? ['بدل الرعاية', 'الائتمان الشامل', 'PIP و DLA', 'إعانة السكن', 'إعانة الطفل', 'الائتمان الضريبي']
+        : ['Carer Allowance', 'Universal Credit', 'PIP & DLA', 'Housing Benefits', 'Child Benefit', 'Tax Credit'],
+    },
+    {
+      category: c('cat_2_title', language === 'ar' ? 'الطلبات والإدارة' : 'Applications & Admin'),
+      items: language === 'ar'
+        ? ['طلبات الهجرة', 'طلبات الإسكان', 'طلبات جواز السفر', 'ضريبة المجلس', 'ترجمة الرسائل', 'الفواتير']
+        : ['Immigration Applications', 'Housing Applications', 'Passport Applications', 'Council Tax', 'Letters Translation', 'Bills'],
+    },
+    {
+      category: c('cat_3_title', language === 'ar' ? 'القانونية والعملية' : 'Legal & Practical'),
+      items: language === 'ar'
+        ? ['ترتيب جلسات المحامين', 'الديون', 'التوظيف', 'العنف الأسري', 'المساعدة في السكن', 'التوكيل الرسمي']
+        : ['Arranging Solicitor Surgeries', 'Debt', 'Employment', 'Domestic Violence', 'Housing Assistance', 'Power of Attorney'],
+    },
+  ];
 
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'}>
       <PageHeader
-        title={t.pageTitle}
+        title={c('page_title', language === 'ar' ? 'خدماتنا' : 'Our Services')}
         description=""
-        breadcrumbs={[{ label: t.pageTitle }]}
+        breadcrumbs={[{ label: c('page_title', language === 'ar' ? 'خدماتنا' : 'Our Services') }]}
         pageKey="services"
       />
 
@@ -122,9 +66,15 @@ export default function Services() {
                 whileInView="visible"
                 viewport={{ once: true }}
               >
-                <h2 className="text-3xl font-bold text-primary mb-6">{t.introTitle}</h2>
-                <p className="text-lg text-muted leading-relaxed mb-4">{t.introP1}</p>
-                <p className="text-lg text-muted leading-relaxed">{t.introP2}</p>
+                <h2 className="text-3xl font-bold text-primary mb-6">
+                  {c('intro_title', language === 'ar' ? 'تقديم خدمات استشارية وإرشادية شاملة ومستدامة' : 'Sustaining and Developing Comprehensive Advice and Guidance Services')}
+                </h2>
+                <p className="text-lg text-muted leading-relaxed mb-4">
+                  {c('intro_p1', language === 'ar' ? 'تقدم جمعية الجالية اليمنية في برمنغهام خدمات استشارية وإرشادية شاملة في مجالات الصحة والتعليم والرعاية الاجتماعية لخدمة المجتمع بأكمله.' : 'The Yemeni Community Association in Birmingham provides comprehensive advice and guidance services in health, education, and social welfare to serve the whole community.')}
+                </p>
+                <p className="text-lg text-muted leading-relaxed">
+                  {c('intro_p2', language === 'ar' ? 'نعمل بجد لتمكين مجتمعنا، وخاصة أولئك الذين يحتاجون إلى مساعدتنا أكثر من غيرهم.' : "We are working hard to empower our community, especially those who need our help the most: individuals who don't speak English and do not know the system in the UK. We also provide dedicated support to refugees and those in need.")}
+                </p>
               </motion.div>
 
               <motion.div
@@ -143,8 +93,12 @@ export default function Services() {
                   <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mb-6">
                     <Users size={32} className="text-primary" />
                   </div>
-                  <h3 className="text-2xl font-bold text-primary mb-4">{t.missionTitle}</h3>
-                  <p className="text-muted leading-relaxed">{t.missionDesc}</p>
+                  <h3 className="text-2xl font-bold text-primary mb-4">
+                    {c('mission_title', language === 'ar' ? 'مهمتنا ومن نساعد' : 'Our Mission and Who We Help')}
+                  </h3>
+                  <p className="text-muted leading-relaxed">
+                    {c('mission_desc', language === 'ar' ? 'نمكّن الأفراد الذين لا يتحدثون الإنجليزية ولا يعرفون النظام البريطاني.' : "We empower individuals who don't speak English and do not know the UK system. All our staff working with these individuals are fluent in both English and Arabic, ensuring clear communication and understanding.")}
+                  </p>
                 </motion.div>
 
                 <motion.div
@@ -156,8 +110,12 @@ export default function Services() {
                   <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mb-6">
                     <FileText size={32} className="text-primary" />
                   </div>
-                  <h3 className="text-2xl font-bold text-primary mb-4">{t.howWeHelpTitle}</h3>
-                  <p className="text-muted leading-relaxed">{t.howWeHelpDesc}</p>
+                  <h3 className="text-2xl font-bold text-primary mb-4">
+                    {c('how_we_help_title', language === 'ar' ? 'كيف نساعد' : 'How We Help')}
+                  </h3>
+                  <p className="text-muted leading-relaxed">
+                    {c('how_we_help_desc', language === 'ar' ? 'نعمل مع العملاء على أساس سري وفردي.' : 'We work with clients on a confidential, one-to-one basis, providing direct advice and practical support on essential life issues such as welfare benefits, debt, employment, immigration, divorce, domestic violence, and housing.')}
+                  </p>
                 </motion.div>
               </motion.div>
 
@@ -168,7 +126,9 @@ export default function Services() {
                 whileInView="visible"
                 viewport={{ once: true }}
               >
-                <h3 className="text-2xl font-bold mb-6">{t.supportTitle}</h3>
+                <h3 className="text-2xl font-bold mb-6">
+                  {c('support_title', language === 'ar' ? 'سيقوم موظفو الدعم لدينا بـ:' : 'Our Support Workers Will:')}
+                </h3>
                 <motion.div
                   className="space-y-4"
                   variants={staggerContainer}
@@ -176,7 +136,7 @@ export default function Services() {
                   whileInView="visible"
                   viewport={{ once: true }}
                 >
-                  {t.supportItems.map((item, idx) => (
+                  {supportItems.map((item, idx) => (
                     <motion.div key={idx} className="flex items-start gap-4" variants={staggerItem}>
                       <CheckCircle size={24} className="text-accent flex-shrink-0 mt-1" />
                       <p className="text-lg">{item}</p>
@@ -197,7 +157,9 @@ export default function Services() {
               whileInView="visible"
               viewport={{ once: true }}
             >
-              <h2 className="text-4xl font-bold text-primary mb-4">{t.servicesTitle}</h2>
+              <h2 className="text-4xl font-bold text-primary mb-4">
+                {c('services_title', language === 'ar' ? 'الخدمات التي نقدمها' : 'Services We Provide')}
+              </h2>
               <motion.div
                 className="w-24 h-1 bg-accent mx-auto mb-6"
                 variants={scaleIn}
@@ -205,7 +167,9 @@ export default function Services() {
                 whileInView="visible"
                 viewport={{ once: true }}
               />
-              <p className="text-lg text-muted max-w-3xl mx-auto">{t.servicesSubtitle}</p>
+              <p className="text-lg text-muted max-w-3xl mx-auto">
+                {c('services_subtitle', language === 'ar' ? 'نقدم الإرشاد والمساعدة العملية في مجموعة واسعة من طلبات الإدارة والمزايا' : 'We provide guidance and practical help with a wide range of administrative and benefit applications')}
+              </p>
             </motion.div>
 
             <motion.div
@@ -215,7 +179,7 @@ export default function Services() {
               whileInView="visible"
               viewport={{ once: true }}
             >
-              {t.categories.map((service, index) => (
+              {categories.map((service, index) => (
                 <motion.div
                   key={index}
                   className="bg-white p-8 rounded-lg shadow-lg"
@@ -257,13 +221,17 @@ export default function Services() {
                 >
                   <Clock size={40} className="text-primary" />
                 </motion.div>
-                <h2 className="text-3xl font-bold text-primary mb-6">{t.hoursTitle}</h2>
+                <h2 className="text-3xl font-bold text-primary mb-6">
+                  {c('hours_title', language === 'ar' ? 'متى يمكنكم زيارتنا' : 'When You Can Find Us')}
+                </h2>
                 <div className="space-y-4 text-lg text-secondary">
-                  <p><strong>{t.monThu}</strong> {t.monThuTime}</p>
-                  <p><strong>{t.fri}</strong> {t.friTime}</p>
+                  <p><strong>{c('hours_mon_thu', language === 'ar' ? 'الاثنين - الخميس:' : 'Monday - Thursday:')}</strong> {c('hours_mon_thu_time', language === 'ar' ? '10:00 صباحاً - 3:30 مساءً' : '10:00 AM - 3:30 PM')}</p>
+                  <p><strong>{c('hours_fri', language === 'ar' ? 'الجمعة:' : 'Friday:')}</strong> {c('hours_fri_time', language === 'ar' ? '9:00 صباحاً - 1:00 مساءً' : '9:00 AM - 1:00 PM')}</p>
                 </div>
                 <div className="mt-8 pt-8 border-t-2 border-hover">
-                  <p className="text-xl text-primary mb-6 font-semibold">{t.contactCta}</p>
+                  <p className="text-xl text-primary mb-6 font-semibold">
+                    {c('contact_cta', language === 'ar' ? 'تواصل معنا اليوم لحجز موعدك الفردي' : 'Contact us today to book your one-to-one appointment')}
+                  </p>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <motion.a
                       href="tel:01214395280"
@@ -280,7 +248,7 @@ export default function Services() {
                         className="inline-flex items-center justify-center gap-2 bg-white text-primary px-8 py-4 rounded-lg hover:bg-hover transition-colors font-semibold border-2 border-primary"
                       >
                         <Mail size={20} />
-                        {t.sendMessage}
+                        {c('send_message', language === 'ar' ? 'أرسل رسالة' : 'Send a Message')}
                       </Link>
                     </motion.div>
                     <motion.button
@@ -290,7 +258,7 @@ export default function Services() {
                       whileTap={{ scale: 0.95 }}
                     >
                       <CalendarCheck size={20} />
-                      {t.bookAdvisory}
+                      {c('book_advisory', language === 'ar' ? 'احجز موعد استشاري' : 'Book an Advisory Appointment')}
                     </motion.button>
                   </div>
                 </div>
@@ -307,8 +275,12 @@ export default function Services() {
             whileInView="visible"
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl font-bold mb-4">{t.feedbackTitle}</h2>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto">{t.feedbackDesc}</p>
+            <h2 className="text-3xl font-bold mb-4">
+              {c('feedback_title', language === 'ar' ? 'نقدّر ملاحظاتكم' : 'We Value Your Feedback')}
+            </h2>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+              {c('feedback_desc', language === 'ar' ? 'نطلب من عملائنا تقديم ملاحظاتهم في كل مرة يستخدمون فيها الخدمة، ونستخدم ذلك لتطوير مشروعنا باستمرار.' : 'We ask our clients for feedback every time they use the service, using this to inform the continuous development of our project.')}
+            </p>
           </motion.div>
         </section>
       </div>

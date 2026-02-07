@@ -2,8 +2,12 @@ import { FileText, Download, ExternalLink, Link as LinkIcon } from 'lucide-react
 import { motion } from 'framer-motion';
 import PageHeader from '../components/PageHeader';
 import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../lib/animations';
+import { useContent } from '../contexts/ContentContext';
 
 export default function Resources() {
+  const { getContent } = useContent();
+  const c = (key: string, fallback: string) => getContent('resources', key, fallback);
+
   const policies = [
     { title: 'Safeguarding Policy', size: '1.2 MB', year: '2024' },
     { title: 'Equal Opportunities Policy', size: '890 KB', year: '2024' },
@@ -50,7 +54,7 @@ export default function Resources() {
                 whileInView="visible"
                 viewport={{ once: true }}
               >
-                <h2 className="text-4xl font-bold text-primary mb-4">Policy Documents</h2>
+                <h2 className="text-4xl font-bold text-primary mb-4">{c('policies_title', 'Policy Documents')}</h2>
                 <motion.div
                   className="w-24 h-1 bg-accent mx-auto mb-6"
                   variants={scaleIn}
@@ -59,7 +63,7 @@ export default function Resources() {
                   viewport={{ once: true }}
                 ></motion.div>
                 <p className="text-lg text-muted">
-                  Download our organizational policies and procedures
+                  {c('policies_desc', 'Download our organizational policies and procedures')}
                 </p>
               </motion.div>
 
@@ -107,7 +111,7 @@ export default function Resources() {
                 whileInView="visible"
                 viewport={{ once: true }}
               >
-                <h2 className="text-4xl font-bold text-primary mb-4">Forms / Guides</h2>
+                <h2 className="text-4xl font-bold text-primary mb-4">{c('forms_title', 'Forms / Guides')}</h2>
                 <motion.div
                   className="w-24 h-1 bg-accent mx-auto mb-6"
                   variants={scaleIn}
@@ -116,7 +120,7 @@ export default function Resources() {
                   viewport={{ once: true }}
                 ></motion.div>
                 <p className="text-lg text-muted">
-                  Download forms for membership, volunteering, and services
+                  {c('forms_desc', 'Download forms for membership, volunteering, and services')}
                 </p>
               </motion.div>
 
@@ -160,7 +164,7 @@ export default function Resources() {
                 whileInView="visible"
                 viewport={{ once: true }}
               >
-                <h2 className="text-4xl font-bold text-primary mb-4">Useful Links</h2>
+                <h2 className="text-4xl font-bold text-primary mb-4">{c('links_title', 'Useful Links')}</h2>
                 <motion.div
                   className="w-24 h-1 bg-accent mx-auto mb-6"
                   variants={scaleIn}
@@ -169,7 +173,7 @@ export default function Resources() {
                   viewport={{ once: true }}
                 ></motion.div>
                 <p className="text-lg text-muted">
-                  Important external resources and partner organizations
+                  {c('links_desc', 'Important external resources and partner organizations')}
                 </p>
               </motion.div>
 
@@ -217,9 +221,9 @@ export default function Resources() {
           whileInView="visible"
           viewport={{ once: true }}
         >
-          <h2 className="text-3xl font-bold text-primary mb-4">Need Help?</h2>
+          <h2 className="text-3xl font-bold text-primary mb-4">{c('help_title', 'Need Help?')}</h2>
           <p className="text-lg text-muted max-w-3xl mx-auto mb-8">
-            If you can't find what you're looking for or need assistance with any forms or documents, our team is here to help.
+            {c('help_desc', "If you can't find what you're looking for or need assistance with any forms or documents, our team is here to help.")}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <motion.a

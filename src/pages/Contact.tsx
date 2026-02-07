@@ -4,8 +4,11 @@ import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import PageHeader from '../components/PageHeader';
 import { fadeInUp, fadeInLeft, fadeInRight, staggerContainer, staggerItem, scaleIn } from '../lib/animations';
+import { useContent } from '../contexts/ContentContext';
 
 export default function Contact() {
+  const { getContent } = useContent();
+  const c = (key: string, fallback: string) => getContent('contact', key, fallback);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -70,9 +73,9 @@ export default function Contact() {
               whileInView="visible"
               viewport={{ once: true }}
             >
-              <h2 className="text-3xl font-bold text-primary mb-6">Get In Touch With Us</h2>
+              <h2 className="text-3xl font-bold text-primary mb-6">{c('heading', 'Get In Touch With Us')}</h2>
               <p className="text-lg text-muted mb-8 leading-relaxed">
-                If you have got a question or general query, you can contact us and we will get in touch with you as soon as possible.
+                {c('intro', 'If you have got a question or general query, you can contact us and we will get in touch with you as soon as possible.')}
               </p>
 
               <motion.div
@@ -91,11 +94,11 @@ export default function Contact() {
                     <MapPin size={24} className="text-primary" />
                   </motion.div>
                   <div>
-                    <h3 className="font-bold text-lg text-primary mb-2">Address</h3>
+                    <h3 className="font-bold text-lg text-primary mb-2">{c('address_label', 'Address')}</h3>
                     <p className="text-muted">
-                      YCA GreenCoat House<br />
-                      261-271 Stratford Road<br />
-                      Birmingham, B11 1QS
+                      {c('address_line1', 'YCA GreenCoat House')}<br />
+                      {c('address_line2', '261-271 Stratford Road')}<br />
+                      {c('address_line3', 'Birmingham, B11 1QS')}
                     </p>
                   </div>
                 </motion.div>
@@ -109,9 +112,9 @@ export default function Contact() {
                     <Phone size={24} className="text-primary" />
                   </motion.div>
                   <div>
-                    <h3 className="font-bold text-lg text-primary mb-2">Phone</h3>
+                    <h3 className="font-bold text-lg text-primary mb-2">{c('phone_label', 'Phone')}</h3>
                     <a href="tel:01214395280" className="text-muted hover:text-accent transition-colors">
-                      0121 439 5280
+                      {c('phone_number', '0121 439 5280')}
                     </a>
                   </div>
                 </motion.div>
@@ -125,9 +128,9 @@ export default function Contact() {
                     <Mail size={24} className="text-primary" />
                   </motion.div>
                   <div>
-                    <h3 className="font-bold text-lg text-primary mb-2">Email</h3>
+                    <h3 className="font-bold text-lg text-primary mb-2">{c('email_label', 'Email')}</h3>
                     <a href="mailto:info@yca-birmingham.org.uk" className="text-muted hover:text-accent transition-colors">
-                      info@yca-birmingham.org.uk
+                      {c('email_address', 'info@yca-birmingham.org.uk')}
                     </a>
                   </div>
                 </motion.div>
@@ -141,10 +144,9 @@ export default function Contact() {
                     <Clock size={24} className="text-primary" />
                   </motion.div>
                   <div>
-                    <h3 className="font-bold text-lg text-primary mb-2">Opening Times</h3>
-                    <p className="text-muted">
-                      Monday - Thursday: 10:00 AM - 3:30 PM<br />
-                      Friday: 9:00 AM - 1:00 PM
+                    <h3 className="font-bold text-lg text-primary mb-2">{c('hours_label', 'Opening Times')}</h3>
+                    <p className="text-muted whitespace-pre-line">
+                      {c('hours_text', 'Monday - Thursday: 10:00 AM - 3:30 PM\nFriday: 9:00 AM - 1:00 PM')}
                     </p>
                   </div>
                 </motion.div>
@@ -157,12 +159,12 @@ export default function Contact() {
                 whileInView="visible"
                 viewport={{ once: true }}
               >
-                <h3 className="font-bold text-xl text-primary mb-3">Need Advice or Support?</h3>
+                <h3 className="font-bold text-xl text-primary mb-3">{c('advice_title', 'Need Advice or Support?')}</h3>
                 <p className="text-muted mb-4">
-                  Our bilingual team provides confidential advice and guidance on welfare benefits, housing, immigration, and more.
+                  {c('advice_desc', 'Our bilingual team provides confidential advice and guidance on welfare benefits, housing, immigration, and more.')}
                 </p>
                 <p className="text-primary font-semibold">
-                  Call us today to book your one-to-one appointment
+                  {c('advice_cta', 'Call us today to book your one-to-one appointment')}
                 </p>
               </motion.div>
             </motion.div>
@@ -174,7 +176,7 @@ export default function Contact() {
               viewport={{ once: true }}
             >
               <div className="bg-sand p-8 rounded-lg">
-                <h2 className="text-3xl font-bold text-primary mb-6">Send Us a Message</h2>
+                <h2 className="text-3xl font-bold text-primary mb-6">{c('form_title', 'Send Us a Message')}</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
                     <label htmlFor="name" className="block text-primary font-semibold mb-2">

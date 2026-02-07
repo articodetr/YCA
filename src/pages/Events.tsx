@@ -8,6 +8,7 @@ import PaidEventRegistrationModal from '../components/PaidEventRegistrationModal
 import AddToCalendar from '../components/AddToCalendar';
 import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../lib/animations';
 import { supabase } from '../lib/supabase';
+import { useContent } from '../contexts/ContentContext';
 
 interface Event {
   id: string;
@@ -41,6 +42,9 @@ export default function Events() {
   const [isPaidModalOpen, setIsPaidModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<{ id: string; title: string } | null>(null);
   const [selectedPaidEvent, setSelectedPaidEvent] = useState<Event | null>(null);
+
+  const { getContent } = useContent();
+  const c = (key: string, fallback: string) => getContent('events', key, fallback);
 
   useEffect(() => {
     fetchEvents();
@@ -174,7 +178,7 @@ export default function Events() {
             whileInView="visible"
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold text-primary mb-4">Upcoming Events</h2>
+            <h2 className="text-4xl font-bold text-primary mb-4">{c('upcoming_title', 'Upcoming Events')}</h2>
             <motion.div
               className="w-24 h-1 bg-accent mx-auto mb-6"
               variants={scaleIn}
@@ -183,7 +187,7 @@ export default function Events() {
               viewport={{ once: true }}
             ></motion.div>
             <p className="text-lg text-muted max-w-3xl mx-auto">
-              Stay informed and get involved in our next gathering
+              {c('upcoming_desc', 'Stay informed and get involved in our next gathering')}
             </p>
           </motion.div>
 
@@ -228,9 +232,9 @@ export default function Events() {
               <div className="inline-flex items-center justify-center w-24 h-24 bg-sand rounded-full mb-6">
                 <Calendar size={48} className="text-primary" />
               </div>
-              <h3 className="text-2xl font-bold text-primary mb-4">No Upcoming Events</h3>
+              <h3 className="text-2xl font-bold text-primary mb-4">{c('no_events_title', 'No Upcoming Events')}</h3>
               <p className="text-lg text-muted mb-8">
-                There are currently no upcoming events scheduled. Please check back later or contact us for more information.
+                {c('no_events_desc', 'There are currently no upcoming events scheduled. Please check back later or contact us for more information.')}
               </p>
             </motion.div>
           ) : (
@@ -400,7 +404,7 @@ export default function Events() {
               whileInView="visible"
               viewport={{ once: true }}
             >
-              <h2 className="text-4xl font-bold text-primary mb-4">Past Events & Photo Galleries</h2>
+              <h2 className="text-4xl font-bold text-primary mb-4">{c('past_events_title', 'Past Events & Photo Galleries')}</h2>
               <motion.div
                 className="w-24 h-1 bg-accent mx-auto mb-6"
                 variants={scaleIn}
@@ -409,7 +413,7 @@ export default function Events() {
                 viewport={{ once: true }}
               ></motion.div>
               <p className="text-lg text-muted max-w-3xl mx-auto">
-                Relive our favorite moments and see the impact of our community work
+                {c('past_events_desc', 'Relive our favorite moments and see the impact of our community work')}
               </p>
             </motion.div>
 
@@ -460,9 +464,9 @@ export default function Events() {
           whileInView="visible"
           viewport={{ once: true }}
         >
-          <h2 className="text-3xl font-bold mb-4">Never Miss an Event</h2>
+          <h2 className="text-3xl font-bold mb-4">{c('cta_title', 'Never Miss an Event')}</h2>
           <p className="text-xl text-gray-300 mb-6 max-w-2xl mx-auto">
-            Stay connected with us on your favorite platforms for real-time news and event updates
+            {c('cta_desc', 'Stay connected with us on your favorite platforms for real-time news and event updates')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <motion.a
@@ -471,7 +475,7 @@ export default function Events() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              Follow on Instagram
+              {c('follow_instagram', 'Follow on Instagram')}
             </motion.a>
             <motion.a
               href="#"
@@ -479,7 +483,7 @@ export default function Events() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              Join Facebook Group
+              {c('join_facebook', 'Join Facebook Group')}
             </motion.a>
           </div>
         </motion.div>

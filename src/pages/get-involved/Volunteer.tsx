@@ -5,6 +5,7 @@ import { useState, FormEvent } from 'react';
 import PageHeader from '../../components/PageHeader';
 import { fadeInUp, fadeInLeft, fadeInRight, staggerContainer, staggerItem, scaleIn } from '../../lib/animations';
 import { supabase } from '../../lib/supabase';
+import { useContent } from '../../contexts/ContentContext';
 
 export default function Volunteer() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,6 +24,9 @@ export default function Volunteer() {
     emergency_contact_name: '',
     emergency_contact_phone: '',
   });
+
+  const { getContent } = useContent();
+  const c = (key: string, fallback: string) => getContent('volunteer', key, fallback);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -69,12 +73,12 @@ export default function Volunteer() {
   };
 
   const opportunities = [
-    { title: 'Event Support', description: 'Help organize and run community events and celebrations' },
-    { title: 'Admin Support', description: 'Assist with office tasks, data entry, and correspondence' },
-    { title: 'Programme Assistants', description: 'Support our youth, women\'s, or elderly programmes' },
-    { title: 'Translation Services', description: 'Help translate documents and interpret for community members' },
-    { title: 'Mentoring', description: 'Guide and support young people in the community' },
-    { title: 'Fundraising', description: 'Help with fundraising initiatives and grant applications' },
+    { title: c('opp_1_title', 'Event Support'), description: c('opp_1_desc', 'Help organize and run community events and celebrations') },
+    { title: c('opp_2_title', 'Admin Support'), description: c('opp_2_desc', 'Assist with office tasks, data entry, and correspondence') },
+    { title: c('opp_3_title', 'Programme Assistants'), description: c('opp_3_desc', 'Support our youth, women\'s, or elderly programmes') },
+    { title: c('opp_4_title', 'Translation Services'), description: c('opp_4_desc', 'Help translate documents and interpret for community members') },
+    { title: c('opp_5_title', 'Mentoring'), description: c('opp_5_desc', 'Guide and support young people in the community') },
+    { title: c('opp_6_title', 'Fundraising'), description: c('opp_6_desc', 'Help with fundraising initiatives and grant applications') },
   ];
 
   return (
@@ -98,7 +102,7 @@ export default function Volunteer() {
               variants={fadeInUp}
             >
               <p className="text-lg text-muted leading-relaxed">
-                YCA Birmingham relies on the dedication and passion of volunteers to deliver our services. Whether you have a few hours a week or can commit to regular volunteering, there's a role for you.
+                {c('intro', 'YCA Birmingham relies on the dedication and passion of volunteers to deliver our services. Whether you have a few hours a week or can commit to regular volunteering, there\'s a role for you.')}
               </p>
             </motion.div>
 
@@ -110,7 +114,7 @@ export default function Volunteer() {
                 viewport={{ once: true }}
                 variants={fadeInUp}
               >
-                Volunteer Opportunities
+                {c('opportunities_title', 'Volunteer Opportunities')}
               </motion.h2>
               <motion.div
                 className="grid md:grid-cols-2 gap-6"
@@ -151,9 +155,9 @@ export default function Volunteer() {
                 >
                   <HandHeart size={28} className="text-accent" />
                 </motion.div>
-                <h3 className="text-xl font-bold text-primary mb-3">Give Back</h3>
+                <h3 className="text-xl font-bold text-primary mb-3">{c('benefit_1_title', 'Give Back')}</h3>
                 <p className="text-secondary">
-                  Make a real difference in people's lives
+                  {c('benefit_1_desc', 'Make a real difference in people\'s lives')}
                 </p>
               </motion.div>
               <motion.div
@@ -167,9 +171,9 @@ export default function Volunteer() {
                 >
                   <Users size={28} className="text-accent" />
                 </motion.div>
-                <h3 className="text-xl font-bold text-primary mb-3">Build Skills</h3>
+                <h3 className="text-xl font-bold text-primary mb-3">{c('benefit_2_title', 'Build Skills')}</h3>
                 <p className="text-secondary">
-                  Develop new skills and experience
+                  {c('benefit_2_desc', 'Develop new skills and experience')}
                 </p>
               </motion.div>
               <motion.div
@@ -183,9 +187,9 @@ export default function Volunteer() {
                 >
                   <Calendar size={28} className="text-accent" />
                 </motion.div>
-                <h3 className="text-xl font-bold text-primary mb-3">Flexible Hours</h3>
+                <h3 className="text-xl font-bold text-primary mb-3">{c('benefit_3_title', 'Flexible Hours')}</h3>
                 <p className="text-secondary">
-                  Volunteer when it suits you
+                  {c('benefit_3_desc', 'Volunteer when it suits you')}
                 </p>
               </motion.div>
             </motion.div>
@@ -197,9 +201,9 @@ export default function Volunteer() {
               viewport={{ once: true }}
               variants={fadeInUp}
             >
-              <h2 className="text-3xl font-bold text-primary mb-6 text-center">Apply to Volunteer</h2>
+              <h2 className="text-3xl font-bold text-primary mb-6 text-center">{c('apply_title', 'Apply to Volunteer')}</h2>
               <p className="text-lg text-muted mb-8 text-center max-w-2xl mx-auto">
-                Complete the form below to submit your volunteer application. We'll review it and get back to you within 2-3 business days.
+                {c('apply_desc', 'Complete the form below to submit your volunteer application. We\'ll review it and get back to you within 2-3 business days.')}
               </p>
 
               {submitStatus === 'success' && (

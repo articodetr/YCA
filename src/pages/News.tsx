@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import PageHeader from '../components/PageHeader';
 import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../lib/animations';
 import { supabase } from '../lib/supabase';
+import { useContent } from '../contexts/ContentContext';
 
 interface Article {
   id: string;
@@ -22,6 +23,9 @@ export default function News() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [displayCount, setDisplayCount] = useState(6);
+
+  const { getContent } = useContent();
+  const c = (key: string, fallback: string) => getContent('news', key, fallback);
 
   useEffect(() => {
     fetchArticles();
@@ -292,9 +296,9 @@ export default function News() {
             whileInView="visible"
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl font-bold text-primary mb-4">Subscribe to Our Newsletter</h2>
+            <h2 className="text-3xl font-bold text-primary mb-4">{c('newsletter_title', 'Subscribe to Our Newsletter')}</h2>
             <p className="text-lg text-muted mb-6">
-              Get the latest news, events, and community updates delivered directly to your inbox
+              {c('newsletter_desc', 'Get the latest news, events, and community updates delivered directly to your inbox')}
             </p>
 
             {subscribeStatus === 'success' && (
@@ -364,9 +368,9 @@ export default function News() {
           whileInView="visible"
           viewport={{ once: true }}
         >
-          <h2 className="text-3xl font-bold mb-4">Follow Us on Social Media</h2>
+          <h2 className="text-3xl font-bold mb-4">{c('social_title', 'Follow Us on Social Media')}</h2>
           <p className="text-xl text-gray-300 mb-6 max-w-2xl mx-auto">
-            Stay connected for real-time updates and community stories
+            {c('social_desc', 'Stay connected for real-time updates and community stories')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <motion.a
@@ -375,7 +379,7 @@ export default function News() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              Follow on Instagram
+              {c('follow_instagram', 'Follow on Instagram')}
             </motion.a>
             <motion.a
               href="#"
@@ -383,7 +387,7 @@ export default function News() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              Join Facebook Group
+              {c('join_facebook', 'Join Facebook Group')}
             </motion.a>
           </div>
         </motion.div>

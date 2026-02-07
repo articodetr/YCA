@@ -3,8 +3,12 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PageHeader from '../../components/PageHeader';
 import { fadeInUp, fadeInLeft, fadeInRight, staggerContainer, staggerItem, scaleIn } from '../../lib/animations';
+import { useContent } from '../../contexts/ContentContext';
 
 export default function Jobs() {
+  const { getContent } = useContent();
+  const c = (key: string, fallback: string) => getContent('jobs', key, fallback);
+
   return (
     <div>
       <PageHeader
@@ -26,7 +30,7 @@ export default function Jobs() {
               variants={fadeInUp}
             >
               <p className="text-lg text-muted leading-relaxed">
-                YCA Birmingham is always looking for passionate, dedicated individuals to join our team. Whether you're looking for paid employment or volunteer roles, we offer opportunities to make a real difference in the community.
+                {c('intro', 'YCA Birmingham is always looking for passionate, dedicated individuals to join our team. Whether you\'re looking for paid employment or volunteer roles, we offer opportunities to make a real difference in the community.')}
               </p>
             </motion.div>
 
@@ -37,7 +41,7 @@ export default function Jobs() {
               viewport={{ once: true }}
               variants={scaleIn}
             >
-              <h2 className="text-3xl font-bold text-primary mb-6 text-center">Why Work With Us?</h2>
+              <h2 className="text-3xl font-bold text-primary mb-6 text-center">{c('why_work_title', 'Why Work With Us?')}</h2>
               <motion.div
                 className="grid md:grid-cols-2 gap-6"
                 initial="hidden"
@@ -53,8 +57,8 @@ export default function Jobs() {
                     <Users size={24} className="text-primary" />
                   </motion.div>
                   <div>
-                    <h3 className="text-xl font-bold text-primary mb-2">Meaningful Work</h3>
-                    <p className="text-muted">Make a real difference in people's lives every day</p>
+                    <h3 className="text-xl font-bold text-primary mb-2">{c('why_1_title', 'Meaningful Work')}</h3>
+                    <p className="text-muted">{c('why_1_desc', 'Make a real difference in people\'s lives every day')}</p>
                   </div>
                 </motion.div>
                 <motion.div className="flex items-start gap-4" variants={staggerItem}>
@@ -65,8 +69,8 @@ export default function Jobs() {
                     <Briefcase size={24} className="text-primary" />
                   </motion.div>
                   <div>
-                    <h3 className="text-xl font-bold text-primary mb-2">Career Development</h3>
-                    <p className="text-muted">Opportunities for professional growth and training</p>
+                    <h3 className="text-xl font-bold text-primary mb-2">{c('why_2_title', 'Career Development')}</h3>
+                    <p className="text-muted">{c('why_2_desc', 'Opportunities for professional growth and training')}</p>
                   </div>
                 </motion.div>
                 <motion.div className="flex items-start gap-4" variants={staggerItem}>
@@ -77,8 +81,8 @@ export default function Jobs() {
                     <Users size={24} className="text-primary" />
                   </motion.div>
                   <div>
-                    <h3 className="text-xl font-bold text-primary mb-2">Supportive Team</h3>
-                    <p className="text-muted">Work alongside passionate, dedicated colleagues</p>
+                    <h3 className="text-xl font-bold text-primary mb-2">{c('why_3_title', 'Supportive Team')}</h3>
+                    <p className="text-muted">{c('why_3_desc', 'Work alongside passionate, dedicated colleagues')}</p>
                   </div>
                 </motion.div>
                 <motion.div className="flex items-start gap-4" variants={staggerItem}>
@@ -89,8 +93,8 @@ export default function Jobs() {
                     <Briefcase size={24} className="text-primary" />
                   </motion.div>
                   <div>
-                    <h3 className="text-xl font-bold text-primary mb-2">Community Impact</h3>
-                    <p className="text-muted">Be part of a respected community organization</p>
+                    <h3 className="text-xl font-bold text-primary mb-2">{c('why_4_title', 'Community Impact')}</h3>
+                    <p className="text-muted">{c('why_4_desc', 'Be part of a respected community organization')}</p>
                   </div>
                 </motion.div>
               </motion.div>
@@ -103,14 +107,14 @@ export default function Jobs() {
               viewport={{ once: true }}
               variants={fadeInUp}
             >
-              <h2 className="text-3xl font-bold text-primary mb-6">Current Opportunities</h2>
+              <h2 className="text-3xl font-bold text-primary mb-6">{c('current_title', 'Current Opportunities')}</h2>
               <p className="text-lg text-secondary mb-8">
-                We don't have any open positions at the moment, but we're always interested in hearing from talented individuals who share our values.
+                {c('current_desc', 'We don\'t have any open positions at the moment, but we\'re always interested in hearing from talented individuals who share our values.')}
               </p>
               <div className="bg-white p-6 rounded-lg">
-                <h3 className="text-xl font-bold text-primary mb-4">Register Your Interest</h3>
+                <h3 className="text-xl font-bold text-primary mb-4">{c('register_title', 'Register Your Interest')}</h3>
                 <p className="text-muted mb-6">
-                  Send us your CV and a cover letter explaining why you'd like to work with YCA Birmingham. We'll keep your details on file and contact you when suitable opportunities arise.
+                  {c('register_desc', 'Send us your CV and a cover letter explaining why you\'d like to work with YCA Birmingham. We\'ll keep your details on file and contact you when suitable opportunities arise.')}
                 </p>
               </div>
             </motion.div>
@@ -127,15 +131,15 @@ export default function Jobs() {
                 variants={fadeInLeft}
                 whileHover={{ scale: 1.03 }}
               >
-                <h3 className="text-2xl font-bold mb-4">Typical Roles</h3>
-                <p className="mb-4">Positions we typically recruit for:</p>
+                <h3 className="text-2xl font-bold mb-4">{c('typical_roles_title', 'Typical Roles')}</h3>
+                <p className="mb-4">{c('typical_roles_intro', 'Positions we typically recruit for:')}</p>
                 <ul className="space-y-2">
-                  <li>• Community Support Workers</li>
-                  <li>• Advice & Guidance Officers</li>
-                  <li>• Programme Coordinators</li>
-                  <li>• Admin & Office Staff</li>
-                  <li>• Youth Workers</li>
-                  <li>• Translators & Interpreters</li>
+                  <li>{c('role_1', 'Community Support Workers')}</li>
+                  <li>{c('role_2', 'Advice & Guidance Officers')}</li>
+                  <li>{c('role_3', 'Programme Coordinators')}</li>
+                  <li>{c('role_4', 'Admin & Office Staff')}</li>
+                  <li>{c('role_5', 'Youth Workers')}</li>
+                  <li>{c('role_6', 'Translators & Interpreters')}</li>
                 </ul>
               </motion.div>
 
@@ -144,15 +148,15 @@ export default function Jobs() {
                 variants={fadeInRight}
                 whileHover={{ scale: 1.03 }}
               >
-                <h3 className="text-2xl font-bold text-primary mb-4">What We Look For</h3>
-                <p className="text-muted mb-4">Ideal candidates typically have:</p>
+                <h3 className="text-2xl font-bold text-primary mb-4">{c('look_for_title', 'What We Look For')}</h3>
+                <p className="text-muted mb-4">{c('look_for_intro', 'Ideal candidates typically have:')}</p>
                 <ul className="space-y-2 text-muted">
-                  <li>• Passion for community work</li>
-                  <li>• Bilingual skills (Arabic/English preferred)</li>
-                  <li>• Cultural awareness and sensitivity</li>
-                  <li>• Strong communication skills</li>
-                  <li>• Commitment to our values</li>
-                  <li>• Relevant qualifications or experience</li>
+                  <li>{c('quality_1', 'Passion for community work')}</li>
+                  <li>{c('quality_2', 'Bilingual skills (Arabic/English preferred)')}</li>
+                  <li>{c('quality_3', 'Cultural awareness and sensitivity')}</li>
+                  <li>{c('quality_4', 'Strong communication skills')}</li>
+                  <li>{c('quality_5', 'Commitment to our values')}</li>
+                  <li>{c('quality_6', 'Relevant qualifications or experience')}</li>
                 </ul>
               </motion.div>
             </motion.div>
@@ -170,9 +174,9 @@ export default function Jobs() {
               >
                 <Briefcase size={36} className="text-primary" />
               </motion.div>
-              <h2 className="text-3xl font-bold mb-6">Get in Touch</h2>
+              <h2 className="text-3xl font-bold mb-6">{c('contact_title', 'Get in Touch')}</h2>
               <p className="text-xl mb-8 leading-relaxed max-w-2xl mx-auto">
-                Interested in working with us? Send your CV and cover letter to our team.
+                {c('contact_desc', 'Interested in working with us? Send your CV and cover letter to our team.')}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <motion.a

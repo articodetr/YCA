@@ -3,8 +3,12 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PageHeader from '../../components/PageHeader';
 import { fadeInUp, fadeInLeft, fadeInRight, staggerContainer, staggerItem, scaleIn } from '../../lib/animations';
+import { useContent } from '../../contexts/ContentContext';
 
 export default function Partners() {
+  const { getContent } = useContent();
+  const c = (key: string, fallback: string) => getContent('about_partners', key, fallback);
+
   return (
     <div>
       <PageHeader
@@ -26,7 +30,7 @@ export default function Partners() {
               variants={fadeInUp}
             >
               <p className="text-lg text-muted leading-relaxed">
-                YCA Birmingham is proud to work with a network of partners and funders who share our commitment to empowering the Yemeni community in Birmingham. Through these collaborations, we are able to expand our services and reach more people in need.
+                {c('intro', 'YCA Birmingham is proud to work with a network of partners and funders who share our commitment to empowering the Yemeni community in Birmingham. Through these collaborations, we are able to expand our services and reach more people in need.')}
               </p>
             </motion.div>
 
@@ -48,9 +52,9 @@ export default function Partners() {
                 >
                   <Building size={36} className="text-primary" />
                 </motion.div>
-                <h3 className="text-2xl font-bold text-primary mb-3">Local Authorities</h3>
+                <h3 className="text-2xl font-bold text-primary mb-3">{c('local_authorities_title', 'Local Authorities')}</h3>
                 <p className="text-muted">
-                  Birmingham City Council and local government partners supporting community development
+                  {c('local_authorities_desc', 'Birmingham City Council and local government partners supporting community development')}
                 </p>
               </motion.div>
 
@@ -65,9 +69,9 @@ export default function Partners() {
                 >
                   <Award size={36} className="text-primary" />
                 </motion.div>
-                <h3 className="text-2xl font-bold text-primary mb-3">Charitable Trusts</h3>
+                <h3 className="text-2xl font-bold text-primary mb-3">{c('charitable_trusts_title', 'Charitable Trusts')}</h3>
                 <p className="text-muted">
-                  Charitable foundations and trusts funding our programmes and services
+                  {c('charitable_trusts_desc', 'Charitable foundations and trusts funding our programmes and services')}
                 </p>
               </motion.div>
 
@@ -82,9 +86,9 @@ export default function Partners() {
                 >
                   <Handshake size={36} className="text-primary" />
                 </motion.div>
-                <h3 className="text-2xl font-bold text-primary mb-3">Community Partners</h3>
+                <h3 className="text-2xl font-bold text-primary mb-3">{c('community_partners_title', 'Community Partners')}</h3>
                 <p className="text-muted">
-                  Local organizations and community groups working alongside us
+                  {c('community_partners_desc', 'Local organizations and community groups working alongside us')}
                 </p>
               </motion.div>
             </motion.div>
@@ -96,7 +100,7 @@ export default function Partners() {
               viewport={{ once: true }}
               variants={scaleIn}
             >
-              <h2 className="text-3xl font-bold text-primary mb-6 text-center">Key Partnerships</h2>
+              <h2 className="text-3xl font-bold text-primary mb-6 text-center">{c('key_partnerships_title', 'Key Partnerships')}</h2>
               <motion.div
                 className="space-y-4"
                 initial="hidden"
@@ -109,9 +113,9 @@ export default function Partners() {
                   variants={staggerItem}
                   whileHover={{ scale: 1.03 }}
                 >
-                  <h3 className="text-xl font-bold text-primary mb-2">Birmingham City Council</h3>
+                  <h3 className="text-xl font-bold text-primary mb-2">{c('partner_1_name', 'Birmingham City Council')}</h3>
                   <p className="text-muted">
-                    Supporting community services, advice provision, and programme development
+                    {c('partner_1_desc', 'Supporting community services, advice provision, and programme development')}
                   </p>
                 </motion.div>
                 <motion.div
@@ -119,9 +123,9 @@ export default function Partners() {
                   variants={staggerItem}
                   whileHover={{ scale: 1.03 }}
                 >
-                  <h3 className="text-xl font-bold text-primary mb-2">The Muath Trust</h3>
+                  <h3 className="text-xl font-bold text-primary mb-2">{c('partner_2_name', 'The Muath Trust')}</h3>
                   <p className="text-muted">
-                    Providing premises and facilities for our community programmes
+                    {c('partner_2_desc', 'Providing premises and facilities for our community programmes')}
                   </p>
                 </motion.div>
                 <motion.div
@@ -129,9 +133,9 @@ export default function Partners() {
                   variants={staggerItem}
                   whileHover={{ scale: 1.03 }}
                 >
-                  <h3 className="text-xl font-bold text-primary mb-2">NHS Birmingham and Solihull</h3>
+                  <h3 className="text-xl font-bold text-primary mb-2">{c('partner_3_name', 'NHS Birmingham and Solihull')}</h3>
                   <p className="text-muted">
-                    Health and wellbeing partnerships to support community health initiatives
+                    {c('partner_3_desc', 'Health and wellbeing partnerships to support community health initiatives')}
                   </p>
                 </motion.div>
                 <motion.div
@@ -139,9 +143,9 @@ export default function Partners() {
                   variants={staggerItem}
                   whileHover={{ scale: 1.03 }}
                 >
-                  <h3 className="text-xl font-bold text-primary mb-2">Local Solicitors and Legal Services</h3>
+                  <h3 className="text-xl font-bold text-primary mb-2">{c('partner_4_name', 'Local Solicitors and Legal Services')}</h3>
                   <p className="text-muted">
-                    Providing pro bono legal surgeries and advice for community members
+                    {c('partner_4_desc', 'Providing pro bono legal surgeries and advice for community members')}
                   </p>
                 </motion.div>
               </motion.div>
@@ -154,9 +158,9 @@ export default function Partners() {
               viewport={{ once: true }}
               variants={fadeInUp}
             >
-              <h2 className="text-3xl font-bold mb-6 text-center">Become a Partner</h2>
+              <h2 className="text-3xl font-bold mb-6 text-center">{c('become_partner_title', 'Become a Partner')}</h2>
               <p className="text-lg text-center mb-8 leading-relaxed">
-                Are you an organization interested in partnering with YCA Birmingham? We welcome collaborations that help us serve our community better.
+                {c('become_partner_desc', 'Are you an organization interested in partnering with YCA Birmingham? We welcome collaborations that help us serve our community better.')}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -191,9 +195,9 @@ export default function Partners() {
           viewport={{ once: true }}
           variants={fadeInUp}
         >
-          <h2 className="text-3xl font-bold text-primary mb-4">Thank You to Our Partners</h2>
+          <h2 className="text-3xl font-bold text-primary mb-4">{c('thank_you_title', 'Thank You to Our Partners')}</h2>
           <p className="text-lg text-muted max-w-3xl mx-auto">
-            We are grateful for the continued support of our partners and funders. Together, we are making a real difference in the lives of Yemeni families in Birmingham.
+            {c('thank_you_desc', 'We are grateful for the continued support of our partners and funders. Together, we are making a real difference in the lives of Yemeni families in Birmingham.')}
           </p>
         </motion.div>
       </section>

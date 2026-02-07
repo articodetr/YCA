@@ -4,15 +4,19 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PageHeader from '../components/PageHeader';
 import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../lib/animations';
+import { useContent } from '../contexts/ContentContext';
 
 export default function Programmes() {
+  const { getContent } = useContent();
+  const c = (key: string, fallback: string) => getContent('programmes', key, fallback);
+
   const [selectedCategory, setSelectedCategory] = useState('All');
 
   const programmes = [
     {
       id: 1,
-      title: "Women's Programme",
-      description: 'Empowering women through education, skills training, and community support. We offer workshops, health awareness sessions, and a safe space for women to connect and grow.',
+      title: c('women_title', "Women's Programme"),
+      description: c('women_desc', "Empowering women through education, skills training, and community support. We offer workshops, health awareness sessions, and a safe space for women to connect and grow."),
       category: "Women's",
       icon: Heart,
       link: '/programmes/women',
@@ -21,8 +25,8 @@ export default function Programmes() {
     },
     {
       id: 2,
-      title: "Elderly's Programme",
-      description: 'Supporting our elders with dignity and respect. We provide social activities, health services, and companionship to ensure our senior community members thrive.',
+      title: c('elderly_title', "Elderly's Programme"),
+      description: c('elderly_desc', "Supporting our elders with dignity and respect. We provide social activities, health services, and companionship to ensure our senior community members thrive."),
       category: "Elderly's",
       icon: Users,
       link: '/programmes/elderly',
@@ -31,8 +35,8 @@ export default function Programmes() {
     },
     {
       id: 3,
-      title: 'Youth Programme',
-      description: 'Building tomorrow\'s leaders today. Our youth programme offers mentorship, sports activities, educational support, and leadership development opportunities.',
+      title: c('youth_title', 'Youth Programme'),
+      description: c('youth_desc', "Building tomorrow's leaders today. Our youth programme offers mentorship, sports activities, educational support, and leadership development opportunities."),
       category: 'Youth',
       icon: Sparkles,
       link: '/programmes/youth',
@@ -41,8 +45,8 @@ export default function Programmes() {
     },
     {
       id: 4,
-      title: "Children's Programme",
-      description: 'Nurturing young minds through play, learning, and cultural activities. We provide a safe, engaging environment where children can develop and explore.',
+      title: c('children_title', "Children's Programme"),
+      description: c('children_desc', "Nurturing young minds through play, learning, and cultural activities. We provide a safe, engaging environment where children can develop and explore."),
       category: "Children's",
       icon: Baby,
       link: '/programmes/children',
@@ -51,8 +55,8 @@ export default function Programmes() {
     },
     {
       id: 5,
-      title: "Men's Programme",
-      description: 'Strengthening our community through brotherhood and support. We offer workshops, sports activities, and forums for men to connect and address important issues.',
+      title: c('men_title', "Men's Programme"),
+      description: c('men_desc', "Strengthening our community through brotherhood and support. We offer workshops, sports activities, and forums for men to connect and address important issues."),
       category: "Men's",
       icon: Briefcase,
       link: '/programmes/men',
@@ -200,9 +204,9 @@ export default function Programmes() {
             whileInView="visible"
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl font-bold text-primary mb-4">Join Our Programmes</h2>
+            <h2 className="text-3xl font-bold text-primary mb-4">{c('join_title', 'Join Our Programmes')}</h2>
             <p className="text-lg text-muted mb-6">
-              Whether you're looking to participate, volunteer, or support our initiatives, there's a place for you in our community programmes.
+              {c('join_desc', "Whether you're looking to participate, volunteer, or support our initiatives, there's a place for you in our community programmes.")}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -234,9 +238,9 @@ export default function Programmes() {
           whileInView="visible"
           viewport={{ once: true }}
         >
-          <h2 className="text-3xl font-bold mb-4">Make a Difference</h2>
+          <h2 className="text-3xl font-bold mb-4">{c('cta_title', 'Make a Difference')}</h2>
           <p className="text-xl text-gray-300 mb-6 max-w-2xl mx-auto">
-            Your support helps us continue providing vital services to our community members
+            {c('cta_desc', 'Your support helps us continue providing vital services to our community members')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>

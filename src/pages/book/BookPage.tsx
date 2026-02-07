@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Building2,
   FileText,
@@ -17,6 +17,7 @@ import Layout from '../../components/Layout';
 import AdvisoryBookingForm from './AdvisoryBookingForm';
 import WakalaBookingForm from './WakalaBookingForm';
 import BookingConfirmation from './BookingConfirmation';
+import BookingGateModal from './BookingGateModal';
 
 export type ServiceType = 'advisory' | 'wakala' | null;
 
@@ -73,8 +74,12 @@ const translations = {
 };
 
 export default function BookPage() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [selectedService, setSelectedService] = useState<ServiceType>(null);
   const [bookingResult, setBookingResult] = useState<BookingResult | null>(null);
+  const [showGateModal, setShowGateModal] = useState(false);
+  const [pendingService, setPendingService] = useState<ServiceType>(null);
   const { language } = useLanguage();
   const { user } = useMemberAuth();
   const { getSetting } = useSiteSettings();
@@ -84,6 +89,33 @@ export default function BookPage() {
     'org_name_' + language,
     language === 'ar' ? 'جمعية المجتمع اليمني' : 'Yemeni Community Association'
   );
+
+  useEffect(() => {
+    const serviceParam = searchParams.get('service') as ServiceType;
+    if (serviceParam && (serviceParam === 'advisory' || serviceParam === 'wakala')) {
+      setSelectedService(serviceParam);
+    }
+  }, [searchParams]);
+
+  const handleServiceSelect = (serviceId: ServiceType) => {
+    if (user) {
+      setSelectedService(serviceId);
+    } else {
+      setPendingService(serviceId);
+      setShowGateModal(true);
+    }
+  };
+
+  const handleMemberLogin = () => {
+    setShowGateModal(false);
+    navigate(`/member/login?redirect=/book&service=${pendingService}`);
+  };
+
+  const handleContinueAsGuest = () => {
+    setShowGateModal(false);
+    setSelectedService(pendingService);
+    setPendingService(null);
+  };
 
   const handleBookingComplete = (result: BookingResult) => {
     setBookingResult(result);
@@ -150,7 +182,7 @@ export default function BookPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.1, duration: 0.4 }}
-                    onClick={() => setSelectedService(service.id)}
+                    onClick={() => handleServiceSelect(service.id)}
                     className="group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 sm:p-8 text-left border-2 border-transparent hover:border-emerald-500"
                   >
                     <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-5 ${
@@ -264,6 +296,14 @@ export default function BookPage() {
           )}
         </div>
       </div>
+
+      <BookingGateModal
+        isOpen={showGateModal}
+        onClose={() => setShowGateModal(false)}
+        onMemberLogin={handleMemberLogin}
+        onContinueAsGuest={handleContinueAsGuest}
+        serviceType={pendingService}
+      />
     </Layout>
   );
 }

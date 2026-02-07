@@ -59,7 +59,9 @@ export default function MemberLogin() {
       const { error } = await signIn(email, password);
       if (error) throw error;
 
-      if (redirectPath === '/apply' && serviceType) {
+      if (redirectPath === '/book' && serviceType) {
+        navigate(`/book?service=${serviceType}`);
+      } else if (redirectPath === '/apply' && serviceType) {
         if (serviceType === 'wakala') {
           navigate('/member/dashboard?openWakala=true');
         } else if (serviceType === 'in_person') {

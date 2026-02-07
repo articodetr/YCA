@@ -124,6 +124,8 @@ export default function ContentManagement() {
 
           return {
             id: section.id,
+            page: section.page,
+            section_key: section.section_key,
             content,
             updated_at: new Date().toISOString(),
           };

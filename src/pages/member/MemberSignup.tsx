@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { Lock, Mail, AlertCircle, Loader2 } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Lock, Mail, AlertCircle, Loader2, User } from 'lucide-react';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -17,52 +17,58 @@ function GoogleIcon() {
   );
 }
 
-export default function MemberLogin() {
-  const [searchParams] = useSearchParams();
+export default function MemberSignup() {
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { signIn, signInWithGoogle } = useMemberAuth();
+  const { signUp, signInWithGoogle } = useMemberAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
-
-  const redirectPath = searchParams.get('redirect');
-  const serviceType = searchParams.get('service');
 
   const isRTL = language === 'ar';
 
   const translations = {
     en: {
-      title: 'Member Login',
-      subtitle: 'Access your account',
+      title: 'Create Account',
+      subtitle: 'Join our community',
+      fullName: 'Full Name',
       email: 'Email Address',
       password: 'Password',
-      signIn: 'Sign In',
-      signingIn: 'Signing in...',
-      signInWithGoogle: 'Continue with Google',
+      confirmPassword: 'Confirm Password',
+      signUp: 'Create Account',
+      signingUp: 'Creating account...',
+      signInWithGoogle: 'Sign up with Google',
       or: 'OR',
-      noAccount: "Don't have an account?",
-      register: 'Register',
-      forgotPassword: 'Forgot Password?',
+      haveAccount: 'Already have an account?',
+      signIn: 'Sign In',
       backToWebsite: 'Back to Website',
-      errorMessage: 'Invalid email or password. Please try again.',
+      passwordMismatch: 'Passwords do not match',
+      passwordMinLength: 'Password must be at least 6 characters',
+      errorMessage: 'Failed to create account. Please try again.',
+      userExists: 'An account with this email already exists.',
     },
     ar: {
-      title: 'تسجيل الدخول للأعضاء',
-      subtitle: 'الوصول إلى حسابك',
+      title: 'إنشاء حساب',
+      subtitle: 'انضم إلى مجتمعنا',
+      fullName: 'الاسم الكامل',
       email: 'البريد الإلكتروني',
       password: 'كلمة المرور',
-      signIn: 'تسجيل الدخول',
-      signingIn: 'جاري تسجيل الدخول...',
+      confirmPassword: 'تأكيد كلمة المرور',
+      signUp: 'إنشاء حساب',
+      signingUp: 'جاري إنشاء الحساب...',
       signInWithGoogle: 'التسجيل عبر جوجل',
       or: 'أو',
-      noAccount: 'ليس لديك حساب؟',
-      register: 'سجل الآن',
-      forgotPassword: 'نسيت كلمة المرور؟',
+      haveAccount: 'لديك حساب بالفعل؟',
+      signIn: 'تسجيل الدخول',
       backToWebsite: 'العودة للموقع',
-      errorMessage: 'البريد الإلكتروني أو كلمة المرور غير صحيحة. يرجى المحاولة مرة أخرى.',
+      passwordMismatch: 'كلمات المرور غير متطابقة',
+      passwordMinLength: 'يجب أن تكون كلمة المرور 6 أحرف على الأقل',
+      errorMessage: 'فشل إنشاء الحساب. يرجى المحاولة مرة أخرى.',
+      userExists: 'يوجد حساب بهذا البريد الإلكتروني بالفعل.',
     },
   };
 
@@ -71,34 +77,43 @@ export default function MemberLogin() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (password !== confirmPassword) {
+      setError(t.passwordMismatch);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError(t.passwordMinLength);
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const { error } = await signIn(email, password);
-      if (error) throw error;
+      const { data, error } = await signUp(email, password, {
+        full_name: fullName,
+      });
 
-      if (redirectPath === '/book' && serviceType) {
-        navigate(`/book?service=${serviceType}`);
-      } else if (redirectPath === '/apply' && serviceType) {
-        if (serviceType === 'wakala') {
-          navigate('/member/dashboard?openWakala=true');
-        } else if (serviceType === 'in_person') {
-          navigate('/member/dashboard?openAdvisory=true');
+      if (error) {
+        if (error.message.includes('already registered')) {
+          setError(t.userExists);
         } else {
-          navigate('/member/dashboard');
+          throw error;
         }
-      } else {
-        navigate('/member/dashboard');
+        return;
       }
+
+      navigate('/member/dashboard');
     } catch (err: any) {
-      console.error('Login error:', err);
+      console.error('Signup error:', err);
       setError(t.errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignUp = async () => {
     setError('');
     setGoogleLoading(true);
 
@@ -106,8 +121,8 @@ export default function MemberLogin() {
       const { error } = await signInWithGoogle();
       if (error) throw error;
     } catch (err: any) {
-      console.error('Google login error:', err);
-      setError(language === 'ar' ? 'فشل تسجيل الدخول عبر جوجل. يرجى المحاولة مرة أخرى.' : 'Google sign in failed. Please try again.');
+      console.error('Google signup error:', err);
+      setError(language === 'ar' ? 'فشل التسجيل عبر جوجل. يرجى المحاولة مرة أخرى.' : 'Google sign up failed. Please try again.');
       setGoogleLoading(false);
     }
   };
@@ -142,14 +157,14 @@ export default function MemberLogin() {
 
           <button
             type="button"
-            onClick={handleGoogleSignIn}
+            onClick={handleGoogleSignUp}
             disabled={googleLoading || loading}
             className="w-full bg-white hover:bg-gray-50 text-gray-700 font-semibold py-3 px-6 rounded-lg border-2 border-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 mb-6"
           >
             {googleLoading ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                {language === 'ar' ? 'جاري التسجيل...' : 'Signing in...'}
+                {language === 'ar' ? 'جاري التسجيل...' : 'Signing up...'}
               </>
             ) : (
               <>
@@ -168,7 +183,26 @@ export default function MemberLogin() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
+                {t.fullName}
+              </label>
+              <div className="relative">
+                <User className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400`} />
+                <input
+                  id="fullName"
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-shadow`}
+                  placeholder={language === 'ar' ? 'أحمد محمد' : 'John Doe'}
+                  required
+                  disabled={loading}
+                />
+              </div>
+            </div>
+
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 {t.email}
@@ -202,18 +236,30 @@ export default function MemberLogin() {
                   className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-shadow`}
                   placeholder="••••••••"
                   required
+                  minLength={6}
                   disabled={loading}
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <Link
-                to="/member/forgot-password"
-                className="text-sm text-emerald-600 hover:text-emerald-700 transition-colors"
-              >
-                {t.forgotPassword}
-              </Link>
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                {t.confirmPassword}
+              </label>
+              <div className="relative">
+                <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400`} />
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-shadow`}
+                  placeholder="••••••••"
+                  required
+                  minLength={6}
+                  disabled={loading}
+                />
+              </div>
             </div>
 
             <button
@@ -224,19 +270,19 @@ export default function MemberLogin() {
               {loading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  {t.signingIn}
+                  {t.signingUp}
                 </>
               ) : (
-                t.signIn
+                t.signUp
               )}
             </button>
           </form>
 
           <div className="mt-6 text-center space-y-3">
             <p className="text-sm text-gray-600">
-              {t.noAccount}{' '}
-              <Link to="/member/signup" className="text-emerald-600 hover:text-emerald-700 font-medium transition-colors">
-                {t.register}
+              {t.haveAccount}{' '}
+              <Link to="/member/login" className="text-emerald-600 hover:text-emerald-700 font-medium transition-colors">
+                {t.signIn}
               </Link>
             </p>
             <Link to="/" className="block text-sm text-emerald-600 hover:text-emerald-700 transition-colors">

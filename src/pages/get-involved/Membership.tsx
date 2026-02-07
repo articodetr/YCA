@@ -281,7 +281,7 @@ export default function Membership() {
 
                       <div className="mt-4 pt-4 border-t border-gray-200">
                         <Link
-                          to={`/member/membership/apply?type=${type.id}`}
+                          to="/member/signup"
                           className={`block w-full py-2.5 rounded-lg font-semibold transition-colors ${
                             isSelected
                               ? 'bg-accent hover:bg-hover text-white'

@@ -7,6 +7,7 @@ interface MemberAuthContextType {
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signInWithGoogle: () => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, metadata?: any) => Promise<{ data: { user: User | null } | null; error: Error | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
@@ -47,6 +48,21 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const signInWithGoogle = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/member/dashboard`,
+        },
+      });
+      if (error) throw error;
+      return { error: null };
+    } catch (error) {
+      return { error: error as Error };
+    }
+  };
+
   const signUp = async (email: string, password: string, metadata?: any) => {
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -78,7 +94,7 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <MemberAuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut, resetPassword }}>
+    <MemberAuthContext.Provider value={{ user, session, loading, signIn, signInWithGoogle, signUp, signOut, resetPassword }}>
       {children}
     </MemberAuthContext.Provider>
   );

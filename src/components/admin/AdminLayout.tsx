@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -27,6 +27,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   ExternalLink,
+  ChevronLeft,
 } from 'lucide-react';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
 import { useSiteSettings } from '../../contexts/SiteSettingsContext';
@@ -42,10 +43,11 @@ interface MenuSection {
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { adminData, signOut } = useAdminAuth();
@@ -58,6 +60,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         setExpandedSections((prev) => ({ ...prev, [section.title]: true }));
       }
     });
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const handleSignOut = async () => {
@@ -128,6 +140,25 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }
     if (location.pathname === '/admin/dashboard') return 'Dashboard';
     return 'Admin';
+  };
+
+  const getPageSection = () => {
+    for (const section of menuSections) {
+      for (const item of section.items) {
+        if (location.pathname === item.path) return section.title;
+      }
+    }
+    return null;
+  };
+
+  const getPageIcon = () => {
+    for (const section of menuSections) {
+      for (const item of section.items) {
+        if (location.pathname === item.path) return item.icon;
+      }
+    }
+    if (location.pathname === '/admin/dashboard') return LayoutDashboard;
+    return LayoutDashboard;
   };
 
   const initials = adminData?.full_name
@@ -271,9 +302,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200/80 fixed top-0 left-0 right-0 z-30 h-16">
-        <div className="flex items-center justify-between h-full px-4 lg:px-6">
-          <div className="flex items-center gap-3">
+      <header className="bg-white border-b border-slate-200/80 fixed top-0 left-0 right-0 z-30 h-14">
+        <div className="flex items-center justify-between h-full px-3 lg:px-5">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-lg hover:bg-slate-100 transition-colors lg:hidden"
@@ -285,55 +316,116 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               )}
             </button>
 
-            <div className="hidden lg:flex items-center gap-3">
-              <button
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-500"
-                title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              >
-                {sidebarCollapsed ? (
-                  <PanelLeftOpen className="w-5 h-5" />
-                ) : (
-                  <PanelLeftClose className="w-5 h-5" />
-                )}
-              </button>
-            </div>
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="hidden lg:flex p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600"
+              title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {sidebarCollapsed ? (
+                <PanelLeftOpen className="w-[18px] h-[18px]" />
+              ) : (
+                <PanelLeftClose className="w-[18px] h-[18px]" />
+              )}
+            </button>
 
-            <div className="flex items-center gap-2.5">
+            <div className="hidden lg:block w-px h-5 bg-slate-200 mx-1" />
+
+            <div className="flex items-center gap-2">
               <img
                 src={getSetting('site_logo', '/logo.png')}
                 alt="Logo"
-                className="h-9 w-auto"
+                className="h-7 w-auto"
               />
-              <div className="hidden sm:block">
-                <h1 className="text-sm font-bold text-slate-900 leading-tight">
+              <div className="hidden sm:flex items-center gap-1.5 text-sm">
+                <span className="font-semibold text-slate-800">
                   {getSetting('org_name_en', 'YCA Birmingham')}
-                </h1>
-                <p className="text-[11px] text-slate-400 leading-tight">{getPageTitle()}</p>
+                </span>
+                {getPageSection() && (
+                  <>
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
+                    <span className="text-slate-400">{getPageSection()}</span>
+                  </>
+                )}
+                <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
+                <span className="text-slate-600 font-medium">{getPageTitle()}</span>
               </div>
+              <span className="sm:hidden text-sm font-semibold text-slate-800">{getPageTitle()}</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                {initials}
-              </div>
-              <div className="hidden md:block text-right">
-                <p className="text-sm font-semibold text-slate-800 leading-tight">
-                  {adminData?.full_name || 'Admin'}
-                </p>
-                <p className="text-[11px] text-slate-400 leading-tight capitalize">
-                  {adminData?.role || 'Administrator'}
-                </p>
-              </div>
+          <div className="flex items-center gap-2" ref={userMenuRef}>
+            <a
+              href="/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 transition-all"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              View Site
+            </a>
+
+            <div className="relative">
+              <button
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="flex items-center gap-2.5 p-1.5 pr-3 rounded-lg hover:bg-slate-50 transition-all"
+              >
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-[11px] font-bold shadow-sm">
+                  {initials}
+                </div>
+                <div className="hidden md:block text-left">
+                  <p className="text-[13px] font-semibold text-slate-700 leading-tight">
+                    {adminData?.full_name || 'Admin'}
+                  </p>
+                  <p className="text-[10px] text-slate-400 leading-tight capitalize">
+                    {adminData?.role || 'Administrator'}
+                  </p>
+                </div>
+                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 hidden md:block transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {userMenuOpen && (
+                <div className="absolute right-0 top-full mt-1.5 w-56 bg-white rounded-xl border border-slate-200 shadow-lg shadow-slate-200/50 py-1.5 z-50">
+                  <div className="px-3.5 py-2.5 border-b border-slate-100">
+                    <p className="text-sm font-semibold text-slate-800">{adminData?.full_name || 'Admin'}</p>
+                    <p className="text-xs text-slate-400 capitalize">{adminData?.role || 'Administrator'}</p>
+                  </div>
+                  <div className="py-1">
+                    <Link
+                      to="/admin/settings"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-3.5 py-2 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
+                    >
+                      <Settings className="w-4 h-4 text-slate-400" />
+                      Settings
+                    </Link>
+                    <a
+                      href="/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2.5 px-3.5 py-2 text-sm text-slate-600 hover:bg-slate-50 transition-colors md:hidden"
+                    >
+                      <ExternalLink className="w-4 h-4 text-slate-400" />
+                      View Site
+                    </a>
+                  </div>
+                  <div className="border-t border-slate-100 pt-1">
+                    <button
+                      onClick={() => { setUserMenuOpen(false); handleSignOut(); }}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </header>
 
       <aside
-        className={`fixed top-16 left-0 bottom-0 ${sidebarWidth} bg-white border-r border-slate-200/80 transition-all duration-300 ease-in-out z-20 hidden lg:flex flex-col`}
+        className={`fixed top-14 left-0 bottom-0 ${sidebarWidth} bg-white border-r border-slate-200/80 transition-all duration-300 ease-in-out z-20 hidden lg:flex flex-col`}
       >
         {renderSidebarContent()}
       </aside>
@@ -344,14 +436,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             className="absolute inset-0 bg-slate-900/30 backdrop-blur-sm"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <aside className="absolute top-16 left-0 bottom-0 w-72 bg-white border-r border-slate-200 shadow-xl flex flex-col">
+          <aside className="absolute top-14 left-0 bottom-0 w-72 bg-white border-r border-slate-200 shadow-xl flex flex-col">
             {renderSidebarContent(true)}
           </aside>
         </div>
       )}
 
       <main
-        className={`pt-16 transition-all duration-300 ease-in-out ${
+        className={`pt-14 transition-all duration-300 ease-in-out ${
           sidebarCollapsed ? 'lg:pl-[72px]' : 'lg:pl-64'
         }`}
       >

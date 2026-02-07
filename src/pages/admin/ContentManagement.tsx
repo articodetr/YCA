@@ -1,19 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Save, RefreshCw, FileText, Home, Mail, Info, DollarSign, Image as ImageIcon, Users, Calendar, Newspaper, BookOpen, Briefcase, Heart, HandHeart, FolderOpen } from 'lucide-react';
+import { Save, RefreshCw, FileText, Home, Mail, Info, Users, Calendar, Newspaper, BookOpen, Briefcase, Heart, HandHeart, FolderOpen } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useContent } from '../../contexts/ContentContext';
-import ImageUploader from '../../components/admin/ImageUploader';
-
-interface ContentSection {
-  id: string;
-  page: string;
-  section_key: string;
-  content: { text?: string; text_en?: string; text_ar?: string; image?: string };
-  is_active: boolean;
-}
+import { useSiteSettings } from '../../contexts/SiteSettingsContext';
+import HomePageEditor from '../../components/admin/content-editors/HomePageEditor';
+import GenericPageEditor from '../../components/admin/content-editors/GenericPageEditor';
+import { ContentSection, PageImage } from '../../components/admin/content-editors/types';
 
 export default function ContentManagement() {
   const [contentSections, setContentSections] = useState<ContentSection[]>([]);
+  const [pageImages, setPageImages] = useState<PageImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -21,8 +17,8 @@ export default function ContentManagement() {
   const [editedContentEn, setEditedContentEn] = useState<Record<string, string>>({});
   const [editedContentAr, setEditedContentAr] = useState<Record<string, string>>({});
   const [editedImages, setEditedImages] = useState<Record<string, string>>({});
-  const [showImageUpload, setShowImageUpload] = useState<Record<string, boolean>>({});
   const { refreshContent } = useContent();
+  const { refreshSettings } = useSiteSettings();
 
   const pageGroups = [
     {
@@ -72,20 +68,28 @@ export default function ContentManagement() {
   const fetchContent = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('content_sections')
-        .select('*')
-        .order('page', { ascending: true })
-        .order('section_key', { ascending: true });
+      const [contentRes, imagesRes] = await Promise.all([
+        supabase
+          .from('content_sections')
+          .select('*')
+          .order('page', { ascending: true })
+          .order('section_key', { ascending: true }),
+        supabase
+          .from('page_images')
+          .select('*')
+          .order('page_key')
+          .order('image_key'),
+      ]);
 
-      if (error) throw error;
+      if (contentRes.error) throw contentRes.error;
 
-      setContentSections(data || []);
+      setContentSections(contentRes.data || []);
+      setPageImages(imagesRes.data || []);
 
       const enMap: Record<string, string> = {};
       const arMap: Record<string, string> = {};
       const imageMap: Record<string, string> = {};
-      data?.forEach((section) => {
+      contentRes.data?.forEach((section) => {
         const c = section.content;
         enMap[section.id] = c?.text_en || c?.text || '';
         arMap[section.id] = c?.text_ar || '';
@@ -131,13 +135,10 @@ export default function ContentManagement() {
           };
         });
 
-      const { error } = await supabase
-        .from('content_sections')
-        .upsert(updates);
-
+      const { error } = await supabase.from('content_sections').upsert(updates);
       if (error) throw error;
 
-      await refreshContent();
+      await Promise.all([refreshContent(), refreshSettings()]);
       setMessage('Content saved successfully!');
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
@@ -148,7 +149,15 @@ export default function ContentManagement() {
     }
   };
 
-  const handleImageUpload = (id: string, url: string) => {
+  const handleContentEnChange = (id: string, value: string) => {
+    setEditedContentEn((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const handleContentArChange = (id: string, value: string) => {
+    setEditedContentAr((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const handleImageChange = (id: string, url: string) => {
     setEditedImages((prev) => ({ ...prev, [id]: url }));
   };
 
@@ -160,20 +169,36 @@ export default function ContentManagement() {
     });
   };
 
-  const toggleImageUpload = (id: string) => {
-    setShowImageUpload((prev) => ({ ...prev, [id]: !prev[id] }));
+  const handlePageImageChange = async (id: string, url: string) => {
+    const { error } = await supabase
+      .from('page_images')
+      .update({ image_url: url, updated_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (!error) {
+      setPageImages((prev) =>
+        prev.map((img) => (img.id === id ? { ...img, image_url: url } : img))
+      );
+      await refreshSettings();
+    }
   };
 
-  const formatSectionKey = (key: string) => {
-    return key
-      .split('_')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+  const handleToggleActive = async (section: ContentSection, checked: boolean) => {
+    const { error } = await supabase
+      .from('content_sections')
+      .update({ is_active: checked })
+      .eq('id', section.id);
+
+    if (!error) {
+      setContentSections((prev) =>
+        prev.map((s) => (s.id === section.id ? { ...s, is_active: checked } : s))
+      );
+      await refreshContent();
+    }
   };
 
-  const filteredSections = contentSections.filter(
-    (section) => section.page === activeTab
-  );
+  const filteredSections = contentSections.filter((s) => s.page === activeTab);
+  const filteredPageImages = pageImages.filter((i) => i.page_key === activeTab);
 
   if (loading) {
     return (
@@ -183,12 +208,25 @@ export default function ContentManagement() {
     );
   }
 
+  const editorProps = {
+    sections: filteredSections,
+    editedContentEn,
+    editedContentAr,
+    editedImages,
+    onContentEnChange: handleContentEnChange,
+    onContentArChange: handleContentArChange,
+    onImageChange: handleImageChange,
+    onImageRemove: handleImageRemove,
+    pageImages: filteredPageImages,
+    onPageImageChange: handlePageImageChange,
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-primary">Content Management</h1>
-          <p className="text-muted mt-2">Manage all website text content (English & Arabic)</p>
+          <p className="text-muted mt-2">Manage website content with live preview</p>
         </div>
         <button
           onClick={handleSave}
@@ -247,138 +285,15 @@ export default function ContentManagement() {
           ))}
         </div>
 
-        <div className="flex-1 bg-white rounded-lg shadow-md p-6">
-          <div className="space-y-6">
-            {filteredSections.length === 0 ? (
-              <div className="text-center py-12">
-                <FileText size={48} className="text-gray-300 mx-auto mb-4" />
-                <p className="text-muted">No content sections found for this page</p>
-                <p className="text-sm text-gray-400 mt-2">Content sections are added automatically when new content entries are created in the database</p>
-              </div>
-            ) : (
-              filteredSections.map((section) => (
-                <div
-                  key={section.id}
-                  className="border border-gray-200 rounded-lg p-4 hover:border-primary transition-colors"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <label className="block">
-                      <span className="text-sm font-semibold text-primary">
-                        {formatSectionKey(section.section_key)}
-                      </span>
-                      <span className="text-xs text-muted ml-2">
-                        ({section.page}.{section.section_key})
-                      </span>
-                    </label>
-                    <label className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={section.is_active}
-                        onChange={async (e) => {
-                          const { error } = await supabase
-                            .from('content_sections')
-                            .update({ is_active: e.target.checked })
-                            .eq('id', section.id);
-
-                          if (!error) {
-                            setContentSections((prev) =>
-                              prev.map((s) =>
-                                s.id === section.id ? { ...s, is_active: e.target.checked } : s
-                              )
-                            );
-                            await refreshContent();
-                          }
-                        }}
-                        className="rounded text-primary focus:ring-primary"
-                      />
-                      <span className="text-muted">Active</span>
-                    </label>
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">English</label>
-                      {(editedContentEn[section.id]?.length || 0) > 100 ? (
-                        <textarea
-                          value={editedContentEn[section.id] || ''}
-                          onChange={(e) => setEditedContentEn((prev) => ({ ...prev, [section.id]: e.target.value }))}
-                          rows={4}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none text-sm"
-                        />
-                      ) : (
-                        <input
-                          type="text"
-                          value={editedContentEn[section.id] || ''}
-                          onChange={(e) => setEditedContentEn((prev) => ({ ...prev, [section.id]: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-                        />
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Arabic</label>
-                      {(editedContentAr[section.id]?.length || 0) > 100 ? (
-                        <textarea
-                          dir="rtl"
-                          value={editedContentAr[section.id] || ''}
-                          onChange={(e) => setEditedContentAr((prev) => ({ ...prev, [section.id]: e.target.value }))}
-                          rows={4}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none text-sm"
-                        />
-                      ) : (
-                        <input
-                          type="text"
-                          dir="rtl"
-                          value={editedContentAr[section.id] || ''}
-                          onChange={(e) => setEditedContentAr((prev) => ({ ...prev, [section.id]: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-                        />
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="mt-3 border-t border-gray-100 pt-3">
-                    <button
-                      type="button"
-                      onClick={() => toggleImageUpload(section.id)}
-                      className="flex items-center gap-2 text-xs text-primary hover:text-secondary transition-colors font-semibold"
-                    >
-                      <ImageIcon size={14} />
-                      {showImageUpload[section.id] ? 'Hide Image' : 'Image'}
-                    </button>
-
-                    {showImageUpload[section.id] && (
-                      <div className="mt-3">
-                        {editedImages[section.id] && (
-                          <div className="mb-3">
-                            <div className="relative inline-block">
-                              <img
-                                src={editedImages[section.id]}
-                                alt="Content preview"
-                                className="max-w-xs max-h-32 rounded-lg border-2 border-gray-200"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => handleImageRemove(section.id)}
-                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                              >
-                                <RefreshCw size={14} />
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                        <ImageUploader
-                          bucket="content-images"
-                          onUploadSuccess={(url) => handleImageUpload(section.id, url)}
-                          currentImage={editedImages[section.id] || null}
-                          label="Upload Image"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+        <div className="flex-1">
+          {activeTab === 'home' ? (
+            <HomePageEditor {...editorProps} />
+          ) : (
+            <GenericPageEditor
+              {...editorProps}
+              onToggleActive={handleToggleActive}
+            />
+          )}
         </div>
       </div>
     </div>

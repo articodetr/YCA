@@ -2,7 +2,14 @@ import { useState } from 'react';
 import { Download, X, Loader2, Calendar, FileSpreadsheet } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+import {
+  styleHeaderRow,
+  styleDataRows,
+  addSummaryHeader,
+  buildCaseNotesMap,
+  downloadWorkbook,
+} from '../../lib/excel-export';
 
 interface BookingsExportDialogProps {
   serviceId: string;
@@ -36,6 +43,12 @@ export default function BookingsExportDialog({ serviceId, onClose }: BookingsExp
       caseNotes: 'Case Notes',
       createdAt: 'Created At',
       service: 'Service',
+      summaryTitle: 'Bookings Report',
+      summaryService: 'Service',
+      summaryPeriod: 'Period',
+      summaryTotal: 'Total Records',
+      summaryExported: 'Exported on',
+      all: 'All',
     },
     ar: {
       title: 'تصدير الحجوزات',
@@ -56,6 +69,12 @@ export default function BookingsExportDialog({ serviceId, onClose }: BookingsExp
       caseNotes: 'ملاحظات القضية',
       createdAt: 'تاريخ الإنشاء',
       service: 'الخدمة',
+      summaryTitle: 'تقرير الحجوزات',
+      summaryService: 'الخدمة',
+      summaryPeriod: 'الفترة',
+      summaryTotal: 'إجمالي السجلات',
+      summaryExported: 'تم التصدير في',
+      all: 'الكل',
     },
   }[language];
 
@@ -120,15 +139,7 @@ export default function BookingsExportDialog({ serviceId, onClose }: BookingsExp
         .in('entity_id', bookingIds)
         .order('created_at', { ascending: true });
 
-      const notesMap = new Map<string, string>();
-      if (caseNotes) {
-        for (const note of caseNotes) {
-          const existing = notesMap.get(note.entity_id) || '';
-          const dateStr = new Date(note.created_at).toLocaleDateString('en-GB');
-          const entry = `[${dateStr}] ${note.note_text}`;
-          notesMap.set(note.entity_id, existing ? `${existing}\n${entry}` : entry);
-        }
-      }
+      const notesMap = buildCaseNotesMap(caseNotes || []);
 
       const { data: service } = await supabase
         .from('booking_services')
@@ -138,39 +149,57 @@ export default function BookingsExportDialog({ serviceId, onClose }: BookingsExp
 
       const serviceName = language === 'ar' ? service?.name_ar : service?.name_en;
 
-      const rows = bookings.map((b: any) => ({
-        [t.name]: b.full_name || '',
-        [t.email]: b.email || '',
-        [t.phone]: b.phone || '',
-        [t.date]: b.booking_date || '',
-        [t.time]: `${formatTime(b.start_time)} - ${formatTime(b.end_time)}`,
-        [t.status]: STATUS_LABELS[b.status] || b.status,
-        [t.assignedTo]: b.admins?.full_name || '',
-        [t.service]: serviceName || '',
-        [t.notes]: b.additional_notes || '',
-        [t.caseNotes]: notesMap.get(b.id) || '',
-        [t.createdAt]: b.created_at ? new Date(b.created_at).toLocaleDateString('en-GB') : '',
-      }));
+      const headers = [
+        t.name, t.email, t.phone, t.date, t.time,
+        t.status, t.assignedTo, t.service, t.notes, t.caseNotes, t.createdAt,
+      ];
 
-      const ws = XLSX.utils.json_to_sheet(rows);
-
-      const colWidths = Object.keys(rows[0]).map((key) => {
-        const maxLen = Math.max(
-          key.length,
-          ...rows.map((r: Record<string, string>) => String(r[key] || '').length)
-        );
-        return { wch: Math.min(maxLen + 2, 50) };
+      const rawStatuses: string[] = [];
+      const dataRows = bookings.map((b: any) => {
+        rawStatuses.push(b.status);
+        return [
+          b.full_name || '',
+          b.email || '',
+          b.phone || '',
+          b.booking_date || '',
+          `${formatTime(b.start_time)} - ${formatTime(b.end_time)}`,
+          STATUS_LABELS[b.status] || b.status,
+          (b.admins as any)?.full_name || '',
+          serviceName || '',
+          b.additional_notes || '',
+          notesMap.get(b.id) || '',
+          b.created_at ? new Date(b.created_at).toLocaleDateString('en-GB') : '',
+        ];
       });
-      ws['!cols'] = colWidths;
 
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, language === 'ar' ? 'الحجوزات' : 'Bookings');
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet(
+        language === 'ar' ? 'الحجوزات' : 'Bookings'
+      );
 
-      const dateLabel = exportAll
-        ? 'all'
-        : `${startDate}_${endDate}`;
-      XLSX.writeFile(wb, `bookings_${dateLabel}.xlsx`);
+      sheet.addRow(headers);
+      dataRows.forEach((row) => sheet.addRow(row));
 
+      const colWidths = [22, 28, 16, 12, 14, 16, 20, 20, 30, 45, 12];
+      sheet.columns = colWidths.map((w) => ({ width: w }));
+
+      styleHeaderRow(sheet);
+      const statusColIndex = 6;
+      styleDataRows(sheet, statusColIndex, rawStatuses);
+
+      const periodLabel = exportAll
+        ? t.all
+        : `${startDate} → ${endDate}`;
+      addSummaryHeader(sheet, [
+        t.summaryTitle,
+        `${t.summaryService}: ${serviceName || '-'}`,
+        `${t.summaryPeriod}: ${periodLabel}`,
+        `${t.summaryTotal}: ${bookings.length}`,
+        `${t.summaryExported}: ${new Date().toLocaleDateString('en-GB')}`,
+      ], headers.length);
+
+      const dateLabel = exportAll ? 'all' : `${startDate}_${endDate}`;
+      await downloadWorkbook(workbook, `bookings_${dateLabel}.xlsx`);
       onClose();
     } catch (err: any) {
       setError(err.message || 'Export failed');

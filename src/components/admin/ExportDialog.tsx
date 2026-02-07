@@ -1,6 +1,14 @@
 import { useState } from 'react';
-import { X, Download, Loader2, Calendar, Filter } from 'lucide-react';
+import { X, Download, Loader2, Calendar, Filter, FileSpreadsheet } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import ExcelJS from 'exceljs';
+import {
+  styleHeaderRow,
+  styleDataRows,
+  addSummaryHeader,
+  buildCaseNotesMap,
+  downloadWorkbook,
+} from '../../lib/excel-export';
 
 interface ExportDialogProps {
   open: boolean;
@@ -8,6 +16,17 @@ interface ExportDialogProps {
   entityType: 'wakala' | 'bookings';
   admins: { id: string; full_name: string }[];
 }
+
+const STATUS_LABELS: Record<string, string> = {
+  pending_payment: 'Pending Payment',
+  submitted: 'Submitted',
+  in_progress: 'In Progress',
+  completed: 'Completed',
+  rejected: 'Rejected',
+  cancelled: 'Cancelled',
+  no_show: 'No Show',
+  incomplete: 'Incomplete',
+};
 
 export default function ExportDialog({ open, onClose, entityType, admins }: ExportDialogProps) {
   const [dateFrom, setDateFrom] = useState('');
@@ -18,7 +37,7 @@ export default function ExportDialog({ open, onClose, entityType, admins }: Expo
 
   if (!open) return null;
 
-  const exportCSV = async () => {
+  const exportExcel = async () => {
     setExporting(true);
     try {
       let query = supabase.from('wakala_applications').select('*');
@@ -57,26 +76,23 @@ export default function ExportDialog({ open, onClose, entityType, admins }: Expo
         adminMap = new Map(adminData?.map((a) => [a.id, a.full_name]) || []);
       }
 
-      const noteMap = new Map<string, string>();
       const entityIds = data.map((d) => d.id);
+      const allNotes: any[] = [];
       if (entityIds.length > 0) {
         const batchSize = 50;
         for (let i = 0; i < entityIds.length; i += batchSize) {
           const batch = entityIds.slice(i, i + batchSize);
           const { data: notes } = await supabase
             .from('case_notes')
-            .select('entity_id, note_text, created_at')
+            .select('entity_id, note_text, note_type, created_at')
             .eq('entity_type', 'wakala_application')
             .in('entity_id', batch)
-            .order('created_at', { ascending: false });
-
-          notes?.forEach((n) => {
-            if (!noteMap.has(n.entity_id)) {
-              noteMap.set(n.entity_id, n.note_text);
-            }
-          });
+            .order('created_at', { ascending: true });
+          if (notes) allNotes.push(...notes);
         }
       }
+
+      const notesMap = buildCaseNotesMap(allNotes);
 
       const headers = [
         'Booking Reference',
@@ -100,57 +116,68 @@ export default function ExportDialog({ open, onClose, entityType, admins }: Expo
         'Assigned Admin',
         'Special Requests',
         'Passport Documents',
-        'Latest Note',
+        'Case Notes',
         'Created At',
       ];
 
-      const escape = (val: string | null | undefined) => {
-        if (val === null || val === undefined) return '';
-        const str = String(val);
-        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-          return `"${str.replace(/"/g, '""')}"`;
-        }
-        return str;
-      };
+      const rawStatuses: string[] = [];
+      const dataRows = data.map((row) => {
+        rawStatuses.push(row.status);
+        return [
+          row.booking_reference || '',
+          row.full_name || '',
+          row.applicant_name_ar || '',
+          row.nationality || '',
+          row.passport_number || '',
+          row.date_of_birth || '',
+          row.phone || '',
+          row.email || '',
+          row.service_type || '',
+          row.wakala_type || '',
+          row.wakala_format || '',
+          row.agent_name || '',
+          row.booking_date || '',
+          row.start_time || '',
+          row.end_time || '',
+          row.duration_minutes || '',
+          STATUS_LABELS[row.status] || row.status || '',
+          row.payment_status || '',
+          adminMap.get(row.assigned_admin_id) || 'Unassigned',
+          row.special_requests || '',
+          Array.isArray(row.passport_copies) ? row.passport_copies.join(' | ') : '',
+          notesMap.get(row.id) || '',
+          row.created_at ? new Date(row.created_at).toLocaleDateString('en-GB') : '',
+        ];
+      });
 
-      const rows = data.map((row) => [
-        escape(row.booking_reference),
-        escape(row.full_name),
-        escape(row.applicant_name_ar),
-        escape(row.nationality),
-        escape(row.passport_number),
-        escape(row.date_of_birth),
-        escape(row.phone),
-        escape(row.email),
-        escape(row.service_type),
-        escape(row.wakala_type),
-        escape(row.wakala_format),
-        escape(row.agent_name),
-        escape(row.booking_date),
-        escape(row.start_time),
-        escape(row.end_time),
-        escape(row.duration_minutes),
-        escape(row.status),
-        escape(row.payment_status),
-        escape(adminMap.get(row.assigned_admin_id) || 'Unassigned'),
-        escape(row.special_requests),
-        escape(Array.isArray(row.passport_copies) ? row.passport_copies.join(' | ') : ''),
-        escape(noteMap.get(row.id) || ''),
-        escape(row.created_at ? new Date(row.created_at).toLocaleString() : ''),
-      ]);
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('Wakala Applications');
 
-      const bom = '\uFEFF';
-      const csv = bom + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
+      sheet.addRow(headers);
+      dataRows.forEach((row) => sheet.addRow(row));
+
+      const colWidths = [
+        16, 22, 22, 14, 16, 12, 14, 26, 14, 14, 14, 20,
+        12, 10, 10, 10, 16, 14, 20, 30, 30, 45, 12,
+      ];
+      sheet.columns = colWidths.map((w) => ({ width: w }));
+
+      styleHeaderRow(sheet);
+      const statusColIndex = 17;
+      styleDataRows(sheet, statusColIndex, rawStatuses);
+
+      const periodLabel = dateFrom && dateTo
+        ? `${dateFrom} → ${dateTo}`
+        : 'All';
+      addSummaryHeader(sheet, [
+        'Wakala Applications Report',
+        `Period: ${periodLabel}`,
+        `Total Records: ${data.length}`,
+        `Exported on: ${new Date().toLocaleDateString('en-GB')}`,
+      ], headers.length);
+
       const dateStr = new Date().toISOString().split('T')[0];
-      a.download = `wakala-applications-${dateStr}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      await downloadWorkbook(workbook, `wakala-applications-${dateStr}.xlsx`);
       onClose();
     } catch (error) {
       console.error('Export error:', error);
@@ -165,7 +192,7 @@ export default function ExportDialog({ open, onClose, entityType, admins }: Expo
       <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            <Download className="w-5 h-5" />
+            <FileSpreadsheet className="w-5 h-5 text-green-600" />
             Export Data
           </h3>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
@@ -247,7 +274,7 @@ export default function ExportDialog({ open, onClose, entityType, admins }: Expo
             Cancel
           </button>
           <button
-            onClick={exportCSV}
+            onClick={exportExcel}
             disabled={exporting}
             className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
@@ -259,7 +286,7 @@ export default function ExportDialog({ open, onClose, entityType, admins }: Expo
             ) : (
               <>
                 <Download className="w-4 h-4" />
-                Export CSV
+                Export Excel
               </>
             )}
           </button>

@@ -79,6 +79,7 @@ export default function BookPage() {
   const [selectedService, setSelectedService] = useState<ServiceType>(null);
   const [bookingResult, setBookingResult] = useState<BookingResult | null>(null);
   const [showGateModal, setShowGateModal] = useState(false);
+  const [pendingService, setPendingService] = useState<ServiceType>(null);
   const { language } = useLanguage();
   const { user, loading: authLoading } = useMemberAuth();
   const { getSetting } = useSiteSettings();
@@ -96,24 +97,28 @@ export default function BookPage() {
     }
   }, [searchParams]);
 
-  useEffect(() => {
-    if (!authLoading && !user && !selectedService) {
-      setShowGateModal(true);
-    }
-  }, [authLoading, user]);
-
   const handleServiceSelect = (serviceId: ServiceType) => {
+    if (!user && !authLoading) {
+      setPendingService(serviceId);
+      setShowGateModal(true);
+      return;
+    }
     setSelectedService(serviceId);
   };
 
   const handleMemberLogin = () => {
     setShowGateModal(false);
-    const service = selectedService || '';
+    const service = pendingService || '';
     navigate(`/member/login?redirect=/book${service ? `&service=${service}` : ''}`);
+    setPendingService(null);
   };
 
   const handleContinueAsGuest = () => {
     setShowGateModal(false);
+    if (pendingService) {
+      setSelectedService(pendingService);
+      setPendingService(null);
+    }
   };
 
   const handleBookingComplete = (result: BookingResult) => {

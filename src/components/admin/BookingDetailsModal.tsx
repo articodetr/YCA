@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X, Calendar, Clock, Mail, Phone, User, FileText, CheckCircle, XCircle, UserCheck, Loader2, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { X, Calendar, Clock, Mail, Phone, User, FileText, CheckCircle, XCircle, UserCheck, Loader2, AlertCircle, ArrowRightLeft } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
 import { supabase } from '../../lib/supabase';
@@ -23,11 +23,6 @@ interface BookingDetails {
   assigned_admin_name?: string;
 }
 
-interface Admin {
-  id: string;
-  full_name: string;
-}
-
 interface BookingDetailsModalProps {
   booking: BookingDetails | null;
   onClose: () => void;
@@ -45,35 +40,28 @@ const STATUS_OPTIONS = [
 
 export default function BookingDetailsModal({ booking, onClose, onUpdate }: BookingDetailsModalProps) {
   const { language } = useLanguage();
-  const { user } = useAdminAuth();
-  const [admins, setAdmins] = useState<Admin[]>([]);
+  const { user, adminData } = useAdminAuth();
   const [currentStatus, setCurrentStatus] = useState('');
-  const [currentAssignedId, setCurrentAssignedId] = useState<string | null>(null);
+  const [assignedAdminId, setAssignedAdminId] = useState<string | null>(null);
+  const [assignedAdminName, setAssignedAdminName] = useState<string | null>(null);
   const [savingStatus, setSavingStatus] = useState(false);
-  const [savingAssignment, setSavingAssignment] = useState(false);
+  const [takingOver, setTakingOver] = useState(false);
   const [statusSuccess, setStatusSuccess] = useState(false);
-  const [assignSuccess, setAssignSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [timelineKey, setTimelineKey] = useState(0);
+  const assignedRef = useRef({ id: null as string | null, name: null as string | null });
 
   useEffect(() => {
     if (booking) {
       setCurrentStatus(booking.status);
-      setCurrentAssignedId(booking.assigned_admin_id || null);
-      fetchAdmins();
+      setAssignedAdminId(booking.assigned_admin_id || null);
+      setAssignedAdminName(booking.assigned_admin_name || null);
+      assignedRef.current = {
+        id: booking.assigned_admin_id || null,
+        name: booking.assigned_admin_name || null,
+      };
     }
   }, [booking?.id]);
-
-  const fetchAdmins = async () => {
-    const { data } = await supabase
-      .from('admins')
-      .select('id, full_name')
-      .eq('is_active', true)
-      .order('full_name');
-    if (data) setAdmins(data);
-  };
-
-  if (!booking) return null;
 
   const t = {
     en: {
@@ -88,9 +76,6 @@ export default function BookingDetailsModal({ booking, onClose, onUpdate }: Book
       notes: 'Notes',
       createdAt: 'Created At',
       close: 'Close',
-      assignedTo: 'Assigned To',
-      unassigned: 'Unassigned',
-      selectStaff: 'Select staff member...',
       changeStatus: 'Change Status',
       submitted: 'Submitted',
       in_progress: 'In Progress',
@@ -101,6 +86,11 @@ export default function BookingDetailsModal({ booking, onClose, onUpdate }: Book
       pending_payment: 'Pending Payment',
       rejected: 'Rejected',
       saved: 'Saved',
+      handledBy: 'Handled by',
+      notAssigned: 'Not yet assigned',
+      autoAssignHint: 'Will be auto-assigned on first action',
+      takeOver: 'Take Over',
+      takeOverConfirm: 'Taking over...',
     },
     ar: {
       title: 'تفاصيل الحجز',
@@ -114,9 +104,6 @@ export default function BookingDetailsModal({ booking, onClose, onUpdate }: Book
       notes: 'ملاحظات',
       createdAt: 'تاريخ الإنشاء',
       close: 'إغلاق',
-      assignedTo: 'مُعيّن إلى',
-      unassigned: 'غير مُعيّن',
-      selectStaff: 'اختر موظف...',
       changeStatus: 'تغيير الحالة',
       submitted: 'مقدّم',
       in_progress: 'قيد المعالجة',
@@ -127,8 +114,15 @@ export default function BookingDetailsModal({ booking, onClose, onUpdate }: Book
       pending_payment: 'بانتظار الدفع',
       rejected: 'مرفوض',
       saved: 'تم الحفظ',
+      handledBy: 'مسؤول المتابعة',
+      notAssigned: 'لم يُعيّن بعد',
+      autoAssignHint: 'سيتم التعيين تلقائياً عند أول إجراء',
+      takeOver: 'استلام',
+      takeOverConfirm: 'جاري الاستلام...',
     },
   }[language];
+
+  if (!booking) return null;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -181,6 +175,37 @@ export default function BookingDetailsModal({ booking, onClose, onUpdate }: Book
     return timeString.substring(0, 5);
   };
 
+  const ensureAssignment = useCallback(async () => {
+    if (assignedRef.current.id || !user || !adminData) return;
+
+    try {
+      const { error: updateError } = await supabase
+        .from('wakala_applications')
+        .update({ assigned_admin_id: user.id })
+        .eq('id', booking.id);
+
+      if (updateError) throw updateError;
+
+      await addSystemNote(
+        'booking',
+        booking.id,
+        user.id,
+        language === 'ar'
+          ? `تم التعيين تلقائياً إلى: ${adminData.full_name}`
+          : `Auto-assigned to: ${adminData.full_name}`,
+        'assignment'
+      );
+
+      assignedRef.current = { id: user.id, name: adminData.full_name };
+      setAssignedAdminId(user.id);
+      setAssignedAdminName(adminData.full_name);
+      setTimelineKey((k) => k + 1);
+      onUpdate?.();
+    } catch (err: any) {
+      console.error('Auto-assignment failed:', err);
+    }
+  }, [booking?.id, user, adminData, language, onUpdate]);
+
   const handleStatusChange = async (newStatus: string) => {
     if (newStatus === currentStatus || !user) return;
     setSavingStatus(true);
@@ -188,6 +213,8 @@ export default function BookingDetailsModal({ booking, onClose, onUpdate }: Book
     setStatusSuccess(false);
 
     try {
+      await ensureAssignment();
+
       const { error: updateError } = await supabase
         .from('wakala_applications')
         .update({ status: newStatus })
@@ -201,7 +228,7 @@ export default function BookingDetailsModal({ booking, onClose, onUpdate }: Book
         'booking',
         booking.id,
         user.id,
-        `Status changed: ${oldLabel} → ${newLabel}`,
+        `${language === 'ar' ? 'تغيير الحالة' : 'Status changed'}: ${oldLabel} → ${newLabel}`,
         'status_change'
       );
 
@@ -217,45 +244,45 @@ export default function BookingDetailsModal({ booking, onClose, onUpdate }: Book
     }
   };
 
-  const handleAssignmentChange = async (adminId: string) => {
-    if (!user) return;
-    const newAdminId = adminId === '' ? null : adminId;
-    if (newAdminId === currentAssignedId) return;
-
-    setSavingAssignment(true);
+  const handleTakeOver = async () => {
+    if (!user || !adminData) return;
+    setTakingOver(true);
     setError(null);
-    setAssignSuccess(false);
 
     try {
+      const previousName = assignedAdminName || (language === 'ar' ? 'غير معيّن' : 'Unassigned');
+
       const { error: updateError } = await supabase
         .from('wakala_applications')
-        .update({ assigned_admin_id: newAdminId })
+        .update({ assigned_admin_id: user.id })
         .eq('id', booking.id);
 
       if (updateError) throw updateError;
 
-      const adminName = newAdminId
-        ? admins.find((a) => a.id === newAdminId)?.full_name || 'Unknown'
-        : t.unassigned;
       await addSystemNote(
         'booking',
         booking.id,
         user.id,
-        `Assigned to: ${adminName}`,
+        language === 'ar'
+          ? `تم الاستلام بواسطة ${adminData.full_name} من ${previousName}`
+          : `Taken over by ${adminData.full_name} from ${previousName}`,
         'assignment'
       );
 
-      setCurrentAssignedId(newAdminId);
-      setAssignSuccess(true);
+      assignedRef.current = { id: user.id, name: adminData.full_name };
+      setAssignedAdminId(user.id);
+      setAssignedAdminName(adminData.full_name);
       setTimelineKey((k) => k + 1);
       onUpdate?.();
-      setTimeout(() => setAssignSuccess(false), 2000);
     } catch (err: any) {
-      setError(err.message || 'Failed to update assignment');
+      setError(err.message || 'Failed to take over booking');
     } finally {
-      setSavingAssignment(false);
+      setTakingOver(false);
     }
   };
+
+  const isAssignedToMe = assignedAdminId === user?.id;
+  const isAssignedToOther = !!assignedAdminId && !isAssignedToMe;
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -275,6 +302,43 @@ export default function BookingDetailsModal({ booking, onClose, onUpdate }: Book
             <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700 flex items-center gap-2">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               {error}
+            </div>
+          )}
+
+          {assignedAdminId ? (
+            <div className={`rounded-lg p-3 flex items-center justify-between ${
+              isAssignedToMe
+                ? 'bg-teal-50 border border-teal-200'
+                : 'bg-amber-50 border border-amber-200'
+            }`}>
+              <div className="flex items-center gap-2.5">
+                <UserCheck className={`w-4.5 h-4.5 ${isAssignedToMe ? 'text-teal-600' : 'text-amber-600'}`} />
+                <span className={`text-sm font-medium ${isAssignedToMe ? 'text-teal-800' : 'text-amber-800'}`}>
+                  {t.handledBy}: <span className="font-semibold">{assignedAdminName}</span>
+                </span>
+              </div>
+              {isAssignedToOther && (
+                <button
+                  onClick={handleTakeOver}
+                  disabled={takingOver}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-white border border-amber-300 text-amber-700 rounded-lg hover:bg-amber-100 transition-colors disabled:opacity-50"
+                >
+                  {takingOver ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <ArrowRightLeft className="w-3.5 h-3.5" />
+                  )}
+                  {takingOver ? t.takeOverConfirm : t.takeOver}
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="bg-gray-50 border border-gray-200 border-dashed rounded-lg p-3 flex items-center gap-2.5">
+              <UserCheck className="w-4.5 h-4.5 text-gray-400" />
+              <div>
+                <span className="text-sm text-gray-500">{t.notAssigned}</span>
+                <span className="text-xs text-gray-400 block">{t.autoAssignHint}</span>
+              </div>
             </div>
           )}
 
@@ -336,56 +400,30 @@ export default function BookingDetailsModal({ booking, onClose, onUpdate }: Book
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  {getStatusIcon(currentStatus)}
-                  <span className="text-sm font-medium text-gray-700">{t.changeStatus}</span>
-                </div>
-                {savingStatus && <Loader2 className="w-4 h-4 animate-spin text-blue-500" />}
-                {statusSuccess && <span className="text-xs text-green-600 font-medium">{t.saved}</span>}
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                {getStatusIcon(currentStatus)}
+                <span className="text-sm font-medium text-gray-700">{t.changeStatus}</span>
               </div>
-              <select
-                value={currentStatus}
-                onChange={(e) => handleStatusChange(e.target.value)}
-                disabled={savingStatus}
-                className={`w-full px-3 py-2 text-sm font-medium rounded-lg border transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent ${getStatusColor(currentStatus)}`}
-              >
-                {currentStatus === 'pending_payment' && (
-                  <option value="pending_payment">{t.pending_payment}</option>
-                )}
-                {STATUS_OPTIONS.map((s) => (
-                  <option key={s} value={s}>
-                    {getStatusLabel(s)}
-                  </option>
-                ))}
-              </select>
+              {savingStatus && <Loader2 className="w-4 h-4 animate-spin text-blue-500" />}
+              {statusSuccess && <span className="text-xs text-green-600 font-medium">{t.saved}</span>}
             </div>
-
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <UserCheck className="w-4 h-4 text-teal-600" />
-                  <span className="text-sm font-medium text-gray-700">{t.assignedTo}</span>
-                </div>
-                {savingAssignment && <Loader2 className="w-4 h-4 animate-spin text-blue-500" />}
-                {assignSuccess && <span className="text-xs text-green-600 font-medium">{t.saved}</span>}
-              </div>
-              <select
-                value={currentAssignedId || ''}
-                onChange={(e) => handleAssignmentChange(e.target.value)}
-                disabled={savingAssignment}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors"
-              >
-                <option value="">{t.selectStaff}</option>
-                {admins.map((admin) => (
-                  <option key={admin.id} value={admin.id}>
-                    {admin.full_name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <select
+              value={currentStatus}
+              onChange={(e) => handleStatusChange(e.target.value)}
+              disabled={savingStatus}
+              className={`w-full px-3 py-2 text-sm font-medium rounded-lg border transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent ${getStatusColor(currentStatus)}`}
+            >
+              {currentStatus === 'pending_payment' && (
+                <option value="pending_payment">{t.pending_payment}</option>
+              )}
+              {STATUS_OPTIONS.map((s) => (
+                <option key={s} value={s}>
+                  {getStatusLabel(s)}
+                </option>
+              ))}
+            </select>
           </div>
 
           {booking.notes && (
@@ -398,7 +436,12 @@ export default function BookingDetailsModal({ booking, onClose, onUpdate }: Book
             </div>
           )}
 
-          <CaseTimeline key={timelineKey} entityType="booking" entityId={booking.id} />
+          <CaseTimeline
+            key={timelineKey}
+            entityType="booking"
+            entityId={booking.id}
+            onBeforeAddNote={ensureAssignment}
+          />
 
           <div className="text-xs text-gray-500 pt-4 border-t border-gray-200">
             {t.createdAt}: {new Date(booking.created_at).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-GB')}

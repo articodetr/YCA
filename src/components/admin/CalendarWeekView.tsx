@@ -280,7 +280,8 @@ export default function CalendarWeekView({ startDate, bookings, onBookingClick }
                                   {language === 'ar' ? booking.applicant_name_ar : booking.applicant_name_en}
                                 </div>
                                 {booking.assigned_admin_name && (
-                                  <div className="truncate text-white/60 text-[9px] font-normal mt-0.5">
+                                  <div className="truncate text-white/80 text-[10px] font-normal mt-0.5 flex items-center gap-0.5">
+                                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-white/50 flex-shrink-0" />
                                     {booking.assigned_admin_name}
                                   </div>
                                 )}

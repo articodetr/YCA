@@ -6,6 +6,7 @@ import CalendarView from './CalendarView';
 import WorkingHoursConfig from './WorkingHoursConfig';
 import BookingsOverview from '../../components/admin/BookingsOverview';
 import BookingsExportDialog from '../../components/admin/BookingsExportDialog';
+import BookingDetailsModal from '../../components/admin/BookingDetailsModal';
 
 interface Service {
   id: string;
@@ -28,6 +29,8 @@ export default function AvailabilityManagement() {
   const [savingPeriod, setSavingPeriod] = useState(false);
   const [periodSuccess, setPeriodSuccess] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [selectedListBooking, setSelectedListBooking] = useState<any>(null);
+  const [listRefreshKey, setListRefreshKey] = useState(0);
 
   const t = {
     en: {
@@ -279,6 +282,14 @@ export default function AvailabilityManagement() {
         />
       )}
 
+      {selectedListBooking && (
+        <BookingDetailsModal
+          booking={selectedListBooking}
+          onClose={() => setSelectedListBooking(null)}
+          onUpdate={() => setListRefreshKey((k) => k + 1)}
+        />
+      )}
+
       <div className="bg-white rounded-lg border border-gray-200">
         <div className="border-b border-gray-200">
           <div className="flex overflow-x-auto">
@@ -334,6 +345,8 @@ export default function AvailabilityManagement() {
                   serviceId={selectedService.id}
                   startDate={today}
                   endDate={endDate.toISOString().split('T')[0]}
+                  onBookingClick={(booking) => setSelectedListBooking(booking)}
+                  refreshKey={listRefreshKey}
                 />
               )}
             </>

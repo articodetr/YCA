@@ -25,6 +25,7 @@ interface CaseNote {
 interface CaseTimelineProps {
   entityType: 'wakala_application' | 'booking';
   entityId: string;
+  onBeforeAddNote?: () => Promise<void>;
 }
 
 const noteTypeConfig: Record<string, { icon: typeof MessageSquare; color: string; bg: string; label: string }> = {
@@ -34,7 +35,7 @@ const noteTypeConfig: Record<string, { icon: typeof MessageSquare; color: string
   data_edit: { icon: Pencil, color: 'text-amber-600', bg: 'bg-amber-100', label: 'Data Edit' },
 };
 
-export default function CaseTimeline({ entityType, entityId }: CaseTimelineProps) {
+export default function CaseTimeline({ entityType, entityId, onBeforeAddNote }: CaseTimelineProps) {
   const [notes, setNotes] = useState<CaseNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [newNote, setNewNote] = useState('');
@@ -85,6 +86,7 @@ export default function CaseTimeline({ entityType, entityId }: CaseTimelineProps
 
     setSubmitting(true);
     try {
+      if (onBeforeAddNote) await onBeforeAddNote();
       const { error } = await supabase.from('case_notes').insert({
         entity_type: entityType,
         entity_id: entityId,

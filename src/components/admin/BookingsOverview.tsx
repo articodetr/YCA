@@ -21,22 +21,45 @@ interface Booking {
   };
 }
 
+interface BookingClickData {
+  id: string;
+  applicant_name_en: string;
+  applicant_name_ar: string;
+  email: string;
+  phone: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  status: string;
+  notes?: string;
+  service_name_en?: string;
+  service_name_ar?: string;
+  created_at: string;
+  assigned_admin_id?: string;
+  assigned_admin_name?: string;
+}
+
 interface BookingsOverviewProps {
   serviceId: string;
   startDate: string;
   endDate: string;
+  onBookingClick?: (booking: BookingClickData) => void;
+  refreshKey?: number;
 }
 
 export default function BookingsOverview({
   serviceId,
   startDate,
   endDate,
+  onBookingClick,
+  refreshKey,
 }: BookingsOverviewProps) {
   const { language } = useLanguage();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [serviceName, setServiceName] = useState<{ en: string; ar: string } | null>(null);
 
   const t = {
     en: {
@@ -77,7 +100,7 @@ export default function BookingsOverview({
 
   useEffect(() => {
     loadBookings();
-  }, [serviceId, startDate, endDate]);
+  }, [serviceId, startDate, endDate, refreshKey]);
 
   const loadBookings = async () => {
     setLoading(true);
@@ -98,6 +121,13 @@ export default function BookingsOverview({
         .order('start_time');
 
       if (error) throw error;
+
+      const { data: svc } = await supabase
+        .from('booking_services')
+        .select('name_en, name_ar')
+        .eq('id', serviceId)
+        .maybeSingle();
+      if (svc) setServiceName({ en: svc.name_en, ar: svc.name_ar });
 
       const formatted = (data || []).map((b: any) => ({
         ...b,
@@ -208,7 +238,30 @@ export default function BookingsOverview({
         ) : (
           <div className="divide-y divide-gray-200">
             {filteredBookings.map((booking) => (
-              <div key={booking.id} className="p-3 hover:bg-gray-50 transition-colors">
+              <div
+                key={booking.id}
+                className={`p-3 hover:bg-gray-50 transition-colors ${onBookingClick ? 'cursor-pointer' : ''}`}
+                onClick={() => {
+                  if (!onBookingClick) return;
+                  onBookingClick({
+                    id: booking.id,
+                    applicant_name_en: booking.full_name || '',
+                    applicant_name_ar: booking.full_name || '',
+                    email: booking.email,
+                    phone: booking.phone,
+                    date: booking.booking_date,
+                    start_time: booking.start_time,
+                    end_time: booking.end_time,
+                    status: booking.status,
+                    notes: booking.additional_notes,
+                    service_name_en: serviceName?.en,
+                    service_name_ar: serviceName?.ar,
+                    created_at: booking.created_at,
+                    assigned_admin_id: booking.assigned_admin_id,
+                    assigned_admin_name: booking.assigned_admin_name,
+                  });
+                }}
+              >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-start gap-2">
                     <div className="p-1.5 bg-blue-100 rounded-lg">

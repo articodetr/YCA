@@ -83,6 +83,8 @@ export default function WorkingHoursModal({ startDate, endDate, onClose, onSaved
       resetting: 'Resetting...',
       confirmReset: 'Remove custom settings for these dates and use default working hours?',
       affectedDates: `This will affect ${dayCount} date${dayCount > 1 ? 's' : ''}`,
+      breakOutOfRange: 'Break must be within working hours',
+      lastAppointmentOutOfRange: 'Last appointment must be within working hours',
     },
     ar: {
       title: 'إعدادات ساعات العمل',
@@ -109,6 +111,8 @@ export default function WorkingHoursModal({ startDate, endDate, onClose, onSaved
       resetting: 'جاري إعادة التعيين...',
       confirmReset: 'حذف الإعدادات المخصصة لهذه التواريخ واستخدام ساعات العمل الافتراضية؟',
       affectedDates: `سيتأثر ${dayCount} يوم`,
+      breakOutOfRange: 'يجب أن تكون الراحة ضمن ساعات العمل',
+      lastAppointmentOutOfRange: 'يجب أن يكون آخر موعد ضمن ساعات العمل',
     },
   }[language];
 
@@ -165,7 +169,43 @@ export default function WorkingHoursModal({ startDate, endDate, onClose, onSaved
     }
   };
 
+  const startHHMM = config.start_time.substring(0, 5);
+  const endHHMM = config.end_time.substring(0, 5);
+  const lastHHMM = config.last_appointment_time.substring(0, 5);
+
+  const isLastAppointmentValid = lastHHMM >= startHHMM && lastHHMM <= endHHMM;
+
+  const breakErrors = config.break_times.map((bt) => {
+    const bStart = bt.start.substring(0, 5);
+    const bEnd = bt.end.substring(0, 5);
+    return bStart < startHHMM || bEnd > endHHMM || bStart >= bEnd;
+  });
+
+  const hasValidationErrors = !isLastAppointmentValid || breakErrors.some(Boolean);
+
+  const updateWorkingHours = (field: 'start_time' | 'end_time', value: string) => {
+    const newConfig = { ...config, [field]: value + ':00' };
+    const newStart = field === 'start_time' ? value : startHHMM;
+    const newEnd = field === 'end_time' ? value : endHHMM;
+    const curLast = lastHHMM;
+    if (curLast < newStart) {
+      newConfig.last_appointment_time = newStart + ':00';
+    } else if (curLast > newEnd) {
+      newConfig.last_appointment_time = newEnd + ':00';
+    }
+    setConfig(newConfig);
+  };
+
   const handleSave = async () => {
+    if (hasValidationErrors) {
+      setSaveResult({
+        success: false,
+        message: !isLastAppointmentValid
+          ? t.lastAppointmentOutOfRange
+          : t.breakOutOfRange,
+      });
+      return;
+    }
     setSaving(true);
     setSaveResult(null);
     try {
@@ -366,8 +406,8 @@ export default function WorkingHoursModal({ startDate, endDate, onClose, onSaved
                       <label className="block text-xs font-medium text-gray-700 mb-1.5">{t.startTime}</label>
                       <input
                         type="time"
-                        value={config.start_time.substring(0, 5)}
-                        onChange={(e) => setConfig({ ...config, start_time: e.target.value + ':00' })}
+                        value={startHHMM}
+                        onChange={(e) => updateWorkingHours('start_time', e.target.value)}
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                       />
                     </div>
@@ -375,8 +415,8 @@ export default function WorkingHoursModal({ startDate, endDate, onClose, onSaved
                       <label className="block text-xs font-medium text-gray-700 mb-1.5">{t.endTime}</label>
                       <input
                         type="time"
-                        value={config.end_time.substring(0, 5)}
-                        onChange={(e) => setConfig({ ...config, end_time: e.target.value + ':00' })}
+                        value={endHHMM}
+                        onChange={(e) => updateWorkingHours('end_time', e.target.value)}
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                       />
                     </div>
@@ -387,10 +427,17 @@ export default function WorkingHoursModal({ startDate, endDate, onClose, onSaved
                       <label className="block text-xs font-medium text-gray-700 mb-1.5">{t.lastAppointment}</label>
                       <input
                         type="time"
-                        value={config.last_appointment_time.substring(0, 5)}
+                        value={lastHHMM}
+                        min={startHHMM}
+                        max={endHHMM}
                         onChange={(e) => setConfig({ ...config, last_appointment_time: e.target.value + ':00' })}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                        className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                          !isLastAppointmentValid ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                        }`}
                       />
+                      {!isLastAppointmentValid && (
+                        <p className="text-[10px] text-red-600 mt-1">{t.lastAppointmentOutOfRange}</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-gray-700 mb-1.5">{t.slotInterval}</label>
@@ -428,36 +475,54 @@ export default function WorkingHoursModal({ startDate, endDate, onClose, onSaved
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        {config.break_times.map((breakTime, index) => (
-                          <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded-lg">
-                            <div className="flex-1 grid grid-cols-2 gap-2">
-                              <div>
-                                <label className="block text-[10px] text-gray-600 mb-1">{t.breakStart}</label>
-                                <input
-                                  type="time"
-                                  value={breakTime.start}
-                                  onChange={(e) => updateBreakTime(index, 'start', e.target.value)}
-                                  className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-teal-500 text-xs"
-                                />
+                        {config.break_times.map((breakTime, index) => {
+                          const hasError = breakErrors[index];
+                          return (
+                            <div key={index} className={`flex items-center gap-2 p-2 rounded-lg border ${
+                              hasError ? 'bg-red-50 border-red-300' : 'bg-gray-50 border-gray-200'
+                            }`}>
+                              <div className="flex-1">
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <label className="block text-[10px] text-gray-600 mb-1">{t.breakStart}</label>
+                                    <input
+                                      type="time"
+                                      value={breakTime.start}
+                                      min={startHHMM}
+                                      max={endHHMM}
+                                      onChange={(e) => updateBreakTime(index, 'start', e.target.value)}
+                                      className={`w-full px-2 py-1.5 border rounded focus:ring-2 focus:ring-teal-500 text-xs ${
+                                        hasError ? 'border-red-400' : 'border-gray-300'
+                                      }`}
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-[10px] text-gray-600 mb-1">{t.breakEnd}</label>
+                                    <input
+                                      type="time"
+                                      value={breakTime.end}
+                                      min={startHHMM}
+                                      max={endHHMM}
+                                      onChange={(e) => updateBreakTime(index, 'end', e.target.value)}
+                                      className={`w-full px-2 py-1.5 border rounded focus:ring-2 focus:ring-teal-500 text-xs ${
+                                        hasError ? 'border-red-400' : 'border-gray-300'
+                                      }`}
+                                    />
+                                  </div>
+                                </div>
+                                {hasError && (
+                                  <p className="text-[10px] text-red-600 mt-1">{t.breakOutOfRange}</p>
+                                )}
                               </div>
-                              <div>
-                                <label className="block text-[10px] text-gray-600 mb-1">{t.breakEnd}</label>
-                                <input
-                                  type="time"
-                                  value={breakTime.end}
-                                  onChange={(e) => updateBreakTime(index, 'end', e.target.value)}
-                                  className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-teal-500 text-xs"
-                                />
-                              </div>
+                              <button
+                                onClick={() => removeBreakTime(index)}
+                                className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
                             </div>
-                            <button
-                              onClick={() => removeBreakTime(index)}
-                              className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -484,7 +549,7 @@ export default function WorkingHoursModal({ startDate, endDate, onClose, onSaved
             <div className="flex gap-2">
               <button
                 onClick={handleSave}
-                disabled={saving || resetting}
+                disabled={saving || resetting || (!config.is_holiday && hasValidationErrors)}
                 className="flex-1 bg-teal-600 text-white py-2.5 rounded-lg hover:bg-teal-700 transition-colors text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saving ? (

@@ -59,6 +59,8 @@ export default function DefaultHoursEditor({ maxDaysAhead, onUpdate }: DefaultHo
       error: 'An error occurred while saving',
       currentSchedule: 'Current default schedule',
       closed: 'Closed',
+      breakOutOfRange: 'Break must be within working hours',
+      lastAppointmentOutOfRange: 'Last appointment must be within working hours',
     },
     ar: {
       selectDays: 'اختر الأيام للتحديث',
@@ -83,6 +85,8 @@ export default function DefaultHoursEditor({ maxDaysAhead, onUpdate }: DefaultHo
       error: 'حدث خطأ أثناء الحفظ',
       currentSchedule: 'الجدول الافتراضي الحالي',
       closed: 'مغلق',
+      breakOutOfRange: 'يجب أن تكون الراحة ضمن ساعات العمل',
+      lastAppointmentOutOfRange: 'يجب أن يكون آخر موعد ضمن ساعات العمل',
     },
   }[language];
 
@@ -139,9 +143,34 @@ export default function DefaultHoursEditor({ maxDaysAhead, onUpdate }: DefaultHo
     setBreakTimes(updated);
   };
 
+  const isLastAppointmentValid = lastAppointment >= startTime && lastAppointment <= endTime;
+
+  const breakErrors = breakTimes.map((bt) =>
+    bt.start < startTime || bt.end > endTime || bt.start >= bt.end
+  );
+
+  const hasValidationErrors = !isLastAppointmentValid || breakErrors.some(Boolean);
+
+  const handleStartTimeChange = (value: string) => {
+    setStartTime(value);
+    if (lastAppointment < value) setLastAppointment(value);
+  };
+
+  const handleEndTimeChange = (value: string) => {
+    setEndTime(value);
+    if (lastAppointment > value) setLastAppointment(value);
+  };
+
   const handleSave = async () => {
     if (selectedDays.size === 0) {
       setSaveResult({ success: false, message: t.selectAtLeastOne });
+      return;
+    }
+    if (hasValidationErrors) {
+      setSaveResult({
+        success: false,
+        message: !isLastAppointmentValid ? t.lastAppointmentOutOfRange : t.breakOutOfRange,
+      });
       return;
     }
 
@@ -296,7 +325,7 @@ export default function DefaultHoursEditor({ maxDaysAhead, onUpdate }: DefaultHo
               <input
                 type="time"
                 value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
+                onChange={(e) => handleStartTimeChange(e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
             </div>
@@ -305,7 +334,7 @@ export default function DefaultHoursEditor({ maxDaysAhead, onUpdate }: DefaultHo
               <input
                 type="time"
                 value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
+                onChange={(e) => handleEndTimeChange(e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
             </div>
@@ -317,9 +346,16 @@ export default function DefaultHoursEditor({ maxDaysAhead, onUpdate }: DefaultHo
               <input
                 type="time"
                 value={lastAppointment}
+                min={startTime}
+                max={endTime}
                 onChange={(e) => setLastAppointment(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${
+                  !isLastAppointmentValid ? 'border-red-400 bg-red-50' : 'border-gray-300'
+                }`}
               />
+              {!isLastAppointmentValid && (
+                <p className="text-[10px] text-red-600 mt-1">{t.lastAppointmentOutOfRange}</p>
+              )}
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1.5">{t.slotInterval}</label>
@@ -357,36 +393,54 @@ export default function DefaultHoursEditor({ maxDaysAhead, onUpdate }: DefaultHo
               </div>
             ) : (
               <div className="space-y-2">
-                {breakTimes.map((bt, index) => (
-                  <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded-lg">
-                    <div className="flex-1 grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="block text-[10px] text-gray-600 mb-1">{t.breakStart}</label>
-                        <input
-                          type="time"
-                          value={bt.start}
-                          onChange={(e) => updateBreak(index, 'start', e.target.value)}
-                          className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-teal-500 text-xs"
-                        />
+                {breakTimes.map((bt, index) => {
+                  const hasError = breakErrors[index];
+                  return (
+                    <div key={index} className={`flex items-center gap-2 p-2 rounded-lg border ${
+                      hasError ? 'bg-red-50 border-red-300' : 'bg-gray-50 border-gray-200'
+                    }`}>
+                      <div className="flex-1">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] text-gray-600 mb-1">{t.breakStart}</label>
+                            <input
+                              type="time"
+                              value={bt.start}
+                              min={startTime}
+                              max={endTime}
+                              onChange={(e) => updateBreak(index, 'start', e.target.value)}
+                              className={`w-full px-2 py-1.5 border rounded focus:ring-2 focus:ring-teal-500 text-xs ${
+                                hasError ? 'border-red-400' : 'border-gray-300'
+                              }`}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] text-gray-600 mb-1">{t.breakEnd}</label>
+                            <input
+                              type="time"
+                              value={bt.end}
+                              min={startTime}
+                              max={endTime}
+                              onChange={(e) => updateBreak(index, 'end', e.target.value)}
+                              className={`w-full px-2 py-1.5 border rounded focus:ring-2 focus:ring-teal-500 text-xs ${
+                                hasError ? 'border-red-400' : 'border-gray-300'
+                              }`}
+                            />
+                          </div>
+                        </div>
+                        {hasError && (
+                          <p className="text-[10px] text-red-600 mt-1">{t.breakOutOfRange}</p>
+                        )}
                       </div>
-                      <div>
-                        <label className="block text-[10px] text-gray-600 mb-1">{t.breakEnd}</label>
-                        <input
-                          type="time"
-                          value={bt.end}
-                          onChange={(e) => updateBreak(index, 'end', e.target.value)}
-                          className="w-full px-2 py-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-teal-500 text-xs"
-                        />
-                      </div>
+                      <button
+                        onClick={() => removeBreak(index)}
+                        className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
                     </div>
-                    <button
-                      onClick={() => removeBreak(index)}
-                      className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -416,7 +470,7 @@ export default function DefaultHoursEditor({ maxDaysAhead, onUpdate }: DefaultHo
 
           <button
             onClick={handleSave}
-            disabled={saving}
+            disabled={saving || hasValidationErrors}
             className="w-full bg-teal-600 text-white py-3 rounded-lg hover:bg-teal-700 transition-colors text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? (

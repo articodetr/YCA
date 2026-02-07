@@ -40,7 +40,8 @@ export default function DateRangeCalendar({ maxDaysAhead, onRangeSelect, selecte
   useEffect(() => {
     if (selectedRange.start) {
       setTempStart(selectedRange.start);
-      setClickState(selectedRange.end ? 'first' : 'second');
+      const rangeComplete = selectedRange.end && selectedRange.start.getTime() !== selectedRange.end.getTime();
+      setClickState(rangeComplete ? 'first' : 'second');
     }
   }, [selectedRange]);
 

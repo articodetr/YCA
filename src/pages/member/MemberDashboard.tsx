@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, FileText, CreditCard, LogOut, Loader2,
-  LayoutDashboard, CheckCircle, XCircle,
+  LayoutDashboard, CheckCircle, XCircle, Bell, ShieldCheck,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -14,8 +14,11 @@ import OverviewTab from './dashboard/OverviewTab';
 import ApplicationsTab from './dashboard/ApplicationsTab';
 import PaymentsTab from './dashboard/PaymentsTab';
 import ProfileTab from './dashboard/ProfileTab';
+import NotificationsTab from './dashboard/NotificationsTab';
+import SecurityTab from './dashboard/SecurityTab';
+import WelcomeModal from '../../components/member/WelcomeModal';
 
-type TabId = 'overview' | 'applications' | 'payments' | 'profile';
+type TabId = 'overview' | 'applications' | 'payments' | 'profile' | 'notifications' | 'security';
 
 const translations = {
   en: {
@@ -26,6 +29,7 @@ const translations = {
     membership: 'Membership',
     wakalaApplications: 'Applications',
     paymentHistory: 'Payments',
+    notifications: 'Notifications',
     newWakalaApp: 'New Wakala Application',
     logout: 'Logout',
     pending: 'Pending',
@@ -73,6 +77,12 @@ const translations = {
     pending_payment: 'Pending Payment',
     in_progress: 'In Progress',
     completed: 'Completed',
+    quickActions: 'Quick Actions',
+    bookAppointment: 'Book Appointment',
+    viewServices: 'View Services',
+    noNotifications: 'No notifications yet',
+    markAllRead: 'Mark all read',
+    security: 'Security',
   },
   ar: {
     title: 'لوحة تحكم الأعضاء',
@@ -82,6 +92,7 @@ const translations = {
     membership: 'العضوية',
     wakalaApplications: 'الطلبات',
     paymentHistory: 'المدفوعات',
+    notifications: 'الإشعارات',
     newWakalaApp: 'طلب وكالة جديد',
     logout: 'تسجيل الخروج',
     pending: 'قيد الانتظار',
@@ -129,6 +140,12 @@ const translations = {
     pending_payment: 'بانتظار الدفع',
     in_progress: 'قيد المعالجة',
     completed: 'مكتمل',
+    quickActions: 'إجراءات سريعة',
+    bookAppointment: 'حجز موعد',
+    viewServices: 'عرض الخدمات',
+    noNotifications: 'لا توجد إشعارات بعد',
+    markAllRead: 'تحديد الكل كمقروء',
+    security: 'الأمان',
   },
 };
 
@@ -136,7 +153,9 @@ const tabs: { id: TabId; icon: typeof LayoutDashboard; labelKey: string }[] = [
   { id: 'overview', icon: LayoutDashboard, labelKey: 'overview' },
   { id: 'applications', icon: FileText, labelKey: 'wakalaApplications' },
   { id: 'payments', icon: CreditCard, labelKey: 'paymentHistory' },
+  { id: 'notifications', icon: Bell, labelKey: 'notifications' },
   { id: 'profile', icon: User, labelKey: 'profile' },
+  { id: 'security', icon: ShieldCheck, labelKey: 'security' },
 ];
 
 export default function MemberDashboard() {
@@ -150,11 +169,15 @@ export default function MemberDashboard() {
   const [wakalaApps, setWakalaApps] = useState<any[]>([]);
   const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
   const [memberRecord, setMemberRecord] = useState<any>(null);
+  const [memberProfile, setMemberProfile] = useState<any>(null);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [editingProfile, setEditingProfile] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({ full_name: '', phone: '', address: '', city: '', postcode: '' });
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [showWelcome, setShowWelcome] = useState(false);
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
@@ -169,46 +192,69 @@ export default function MemberDashboard() {
     if (!user) return;
     setLoading(true);
     try {
-      const { data: membership } = await supabase
-        .from('membership_applications')
-        .select('*')
-        .eq('email', user.email)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      setMembershipApp(membership);
+      const [membershipRes, memberRes, profileRes, wakalaRes, paymentsRes, notifRes] = await Promise.all([
+        supabase
+          .from('membership_applications')
+          .select('*')
+          .eq('email', user.email)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from('members')
+          .select('*')
+          .eq('email', user.email)
+          .maybeSingle(),
+        supabase
+          .from('member_profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle(),
+        supabase
+          .from('wakala_applications')
+          .select('*, availability_slots(service_id)')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('donations')
+          .select('*')
+          .eq('email', user.email)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('notifications')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(50),
+      ]);
 
-      const { data: memberData } = await supabase
-        .from('members')
-        .select('*')
-        .eq('email', user.email)
-        .maybeSingle();
-      setMemberRecord(memberData);
+      setMembershipApp(membershipRes.data);
+      setMemberRecord(memberRes.data);
+      setMemberProfile(profileRes.data);
+      setWakalaApps(wakalaRes.data || []);
+      setPaymentHistory(paymentsRes.data || []);
+      setNotifications(notifRes.data || []);
+      setUnreadCount((notifRes.data || []).filter((n: any) => !n.is_read).length);
 
-      const src = memberData || membership;
-      if (src) {
-        setProfileForm({
-          full_name: src.full_name || src.first_name ? `${src.first_name || ''} ${src.last_name || ''}`.trim() : '',
-          phone: src.phone || '',
-          address: src.address || '',
-          city: src.city || '',
-          postcode: src.postcode || '',
-        });
+      if (!profileRes.data?.onboarding_completed) {
+        setShowWelcome(true);
       }
 
-      const { data: wakala } = await supabase
-        .from('wakala_applications')
-        .select('*, availability_slots(service_id)')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-      setWakalaApps(wakala || []);
+      const profile = profileRes.data;
+      const member = memberRes.data;
+      const membership = membershipRes.data;
 
-      const { data: payments } = await supabase
-        .from('donations')
-        .select('*')
-        .eq('email', user.email)
-        .order('created_at', { ascending: false });
-      setPaymentHistory(payments || []);
+      const nameSource = profile?.full_name || user.user_metadata?.full_name ||
+        (member ? `${member.first_name || ''} ${member.last_name || ''}`.trim() : '') ||
+        membership?.full_name || '';
+
+      setProfileForm({
+        full_name: nameSource,
+        phone: profile?.phone || member?.phone || membership?.phone || '',
+        address: profile?.address || member?.address || membership?.address || '',
+        city: profile?.city || member?.city || '',
+        postcode: profile?.postcode || member?.postcode || '',
+      });
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -220,13 +266,30 @@ export default function MemberDashboard() {
     if (!user) return;
     setSavingProfile(true);
     try {
+      await supabase
+        .from('member_profiles')
+        .upsert({
+          id: user.id,
+          full_name: profileForm.full_name,
+          phone: profileForm.phone,
+          address: profileForm.address,
+          city: profileForm.city,
+          postcode: profileForm.postcode,
+          updated_at: new Date().toISOString(),
+        });
+
       if (memberRecord) {
-        const { error } = await supabase
+        await supabase
           .from('members')
-          .update({ phone: profileForm.phone, address: profileForm.address, city: profileForm.city, postcode: profileForm.postcode })
+          .update({
+            phone: profileForm.phone,
+            address: profileForm.address,
+            city: profileForm.city,
+            postcode: profileForm.postcode,
+          })
           .eq('email', user.email);
-        if (error) throw error;
       }
+
       await supabase.auth.updateUser({ data: { full_name: profileForm.full_name, phone: profileForm.phone } });
       setEditingProfile(false);
       showToast(t.profileUpdated, 'success');
@@ -262,6 +325,12 @@ export default function MemberDashboard() {
     }
   };
 
+  const avatarUrl = memberProfile?.avatar_url || user?.user_metadata?.avatar_url || '';
+  const displayName = profileForm.full_name || user?.user_metadata?.full_name || '';
+  const initials = displayName
+    ? displayName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+    : (user?.email?.[0] || '?').toUpperCase();
+
   if (loading) {
     return (
       <Layout>
@@ -281,12 +350,16 @@ export default function MemberDashboard() {
         <div className="bg-white rounded-xl border border-divider p-4 sm:p-5 mb-6">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-sand rounded-full flex items-center justify-center flex-shrink-0">
-                <User className="w-6 h-6 text-primary" />
+              <div className="w-12 h-12 rounded-full overflow-hidden bg-sand flex items-center justify-center flex-shrink-0 border border-divider">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-sm font-bold text-primary">{initials}</span>
+                )}
               </div>
               <div className="min-w-0">
                 <h2 className="text-base font-bold text-primary truncate">
-                  {user?.user_metadata?.full_name || user?.email}
+                  {displayName || user?.email}
                 </h2>
                 <p className="text-xs text-muted truncate">{user?.email}</p>
               </div>
@@ -318,7 +391,7 @@ export default function MemberDashboard() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                className={`relative flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                   isActive
                     ? 'border-primary text-primary'
                     : 'border-transparent text-muted hover:text-primary hover:border-border'
@@ -326,6 +399,11 @@ export default function MemberDashboard() {
               >
                 <Icon className="w-4 h-4" />
                 {t[tab.labelKey as keyof typeof t]}
+                {tab.id === 'notifications' && unreadCount > 0 && (
+                  <span className="absolute -top-0.5 end-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -345,6 +423,7 @@ export default function MemberDashboard() {
                 membershipApp={membershipApp}
                 wakalaApps={wakalaApps}
                 paymentHistory={paymentHistory}
+                notifications={notifications}
                 onNewWakala={() => {}}
                 t={t}
               />
@@ -359,16 +438,28 @@ export default function MemberDashboard() {
             {activeTab === 'payments' && (
               <PaymentsTab paymentHistory={paymentHistory} t={t} />
             )}
+            {activeTab === 'notifications' && (
+              <NotificationsTab
+                notifications={notifications}
+                onRefresh={fetchData}
+                t={t}
+              />
+            )}
+            {activeTab === 'security' && (
+              <SecurityTab t={t} />
+            )}
             {activeTab === 'profile' && (
               <ProfileTab
                 user={user}
                 memberRecord={memberRecord}
+                memberProfile={memberProfile}
                 profileForm={profileForm}
                 setProfileForm={setProfileForm}
                 editingProfile={editingProfile}
                 setEditingProfile={setEditingProfile}
                 savingProfile={savingProfile}
                 handleSaveProfile={handleSaveProfile}
+                onProfileUpdate={fetchData}
                 t={t}
               />
             )}
@@ -394,6 +485,8 @@ export default function MemberDashboard() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <WelcomeModal isOpen={showWelcome} onClose={() => setShowWelcome(false)} />
 
     </Layout>
   );

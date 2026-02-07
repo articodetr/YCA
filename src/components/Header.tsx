@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, ChevronDown, Globe } from 'lucide-react';
+import { Menu, X, ChevronDown, Globe, UserCircle, LogIn } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSiteSettings } from '../contexts/SiteSettingsContext';
+import { useMemberAuth } from '../contexts/MemberAuthContext';
 
 export default function Header() {
   const { language, setLanguage, t } = useLanguage();
   const isRTL = language === 'ar';
   const { getSetting } = useSiteSettings();
+  const { user } = useMemberAuth();
   const logoMain = getSetting('site_logo', '/logo.png');
   const logoText = getSetting('site_logo_text', '/logo_text.png');
   const orgName = getSetting('org_name_en', 'Yemeni Community Association');
@@ -259,6 +261,16 @@ export default function Header() {
               </Link>
             </motion.div>
 
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Link
+                to={user ? '/member/dashboard' : '/member/login'}
+                className="flex items-center gap-2 text-sm uppercase tracking-wider hover:text-accent transition-colors px-3 py-2 border border-white/30 rounded-lg"
+              >
+                {user ? <UserCircle size={16} /> : <LogIn size={16} />}
+                <span>{user ? (language === 'ar' ? 'حسابي' : 'My Account') : (language === 'ar' ? 'دخول' : 'Login')}</span>
+              </Link>
+            </motion.div>
+
             <motion.button
               onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
               className="flex items-center gap-2 text-sm uppercase tracking-wider hover:text-accent transition-colors px-3 py-2 border border-white/30 rounded-lg"
@@ -415,6 +427,15 @@ export default function Header() {
                   className="block mt-3 bg-white/10 text-white px-6 py-3 rounded-lg hover:bg-white/15 transition-colors font-semibold text-center whitespace-nowrap"
                 >
                   {t('button.book')}
+                </Link>
+
+                <Link
+                  to={user ? '/member/dashboard' : '/member/login'}
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center justify-center gap-2 mt-3 border border-white/30 text-white px-6 py-3 rounded-lg hover:bg-white/10 transition-colors font-semibold whitespace-nowrap"
+                >
+                  {user ? <UserCircle size={18} /> : <LogIn size={18} />}
+                  {user ? (language === 'ar' ? 'حسابي' : 'My Account') : (language === 'ar' ? 'تسجيل الدخول' : 'Login')}
                 </Link>
               </motion.div>
             </motion.nav>

@@ -15,6 +15,15 @@ interface MemberAuthContextType {
 
 const MemberAuthContext = createContext<MemberAuthContextType | undefined>(undefined);
 
+function recordLoginActivity(userId: string, method: string, status: 'success' | 'failed') {
+  supabase.from('login_history').insert({
+    user_id: userId,
+    user_agent: navigator.userAgent,
+    login_method: method,
+    status,
+  }).then(() => {});
+}
+
 export function MemberAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -28,10 +37,16 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      (async () => {
+      (() => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        if (event === 'SIGNED_IN' && session?.user) {
+          const provider = session.user.app_metadata?.provider;
+          const method = provider === 'google' ? 'google' : 'email';
+          recordLoginActivity(session.user.id, method, 'success');
+        }
       })();
     });
 

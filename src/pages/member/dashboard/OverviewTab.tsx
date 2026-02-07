@@ -1,6 +1,9 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Shield, FileText, CreditCard, Plus, ArrowRight, MessageSquare } from 'lucide-react';
+import {
+  Shield, FileText, CreditCard, Plus, MessageSquare,
+  Bell, Calendar, Handshake, BookOpen,
+} from 'lucide-react';
 import { staggerContainer, staggerItem } from '../../../lib/animations';
 import { useLanguage } from '../../../contexts/LanguageContext';
 
@@ -9,6 +12,7 @@ interface Props {
   membershipApp: any;
   wakalaApps: any[];
   paymentHistory: any[];
+  notifications: any[];
   onNewWakala: () => void;
   onNewAdvisory?: () => void;
   t: Record<string, string>;
@@ -38,7 +42,7 @@ function isAdvisory(serviceType: string) {
   return serviceType?.startsWith('advisory_');
 }
 
-export default function OverviewTab({ memberRecord, membershipApp, wakalaApps, paymentHistory, onNewWakala, onNewAdvisory, t }: Props) {
+export default function OverviewTab({ memberRecord, membershipApp, wakalaApps, paymentHistory, notifications, t }: Props) {
   const { language } = useLanguage();
   const isRTL = language === 'ar';
 
@@ -48,6 +52,12 @@ export default function OverviewTab({ memberRecord, membershipApp, wakalaApps, p
 
   const advisoryCount = wakalaApps.filter(a => isAdvisory(a.service_type)).length;
   const wakalaCount = wakalaApps.filter(a => !isAdvisory(a.service_type)).length;
+  const unreadNotifs = notifications.filter(n => !n.is_read).length;
+
+  const upcomingAppointments = wakalaApps
+    .filter(a => a.booking_date && new Date(a.booking_date) >= new Date() && a.status !== 'cancelled')
+    .sort((a, b) => new Date(a.booking_date).getTime() - new Date(b.booking_date).getTime())
+    .slice(0, 3);
 
   const recentItems = [
     ...wakalaApps.slice(0, 3).map(app => ({
@@ -110,28 +120,138 @@ export default function OverviewTab({ memberRecord, membershipApp, wakalaApps, p
             </div>
             <span className="text-sm text-muted">{t.totalPaid}</span>
           </div>
-          <p className="text-2xl font-bold text-primary">{totalPaid}</p>
+          <p className="text-2xl font-bold text-primary">{`\u00A3${totalPaid}`}</p>
         </div>
       </motion.div>
 
-      <motion.div variants={staggerItem} className="flex flex-wrap gap-3">
-        <Link
-          to="/book"
-          className="flex items-center gap-2 bg-primary hover:bg-secondary text-white font-medium py-2.5 px-5 rounded-lg transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          {language === 'ar' ? 'حجز موعد جديد' : 'Book an Appointment'}
-        </Link>
-        {!membershipApp && (
+      <motion.div variants={staggerItem}>
+        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">
+          {t.quickActions || (language === 'ar' ? 'إجراءات سريعة' : 'Quick Actions')}
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Link
-            to="/get-involved/membership"
-            className="flex items-center gap-2 border border-primary text-primary hover:bg-sand font-medium py-2.5 px-5 rounded-lg transition-colors"
+            to="/book"
+            className="flex flex-col items-center gap-2 bg-white rounded-xl border border-divider p-4 hover:border-primary hover:shadow-md transition-all group"
           >
-            {t.applyMembership}
-            <ArrowRight className="w-4 h-4" />
+            <div className="w-10 h-10 rounded-lg bg-primary/5 group-hover:bg-primary/10 flex items-center justify-center transition-colors">
+              <Plus className="w-5 h-5 text-primary" />
+            </div>
+            <span className="text-xs font-medium text-primary text-center">
+              {language === 'ar' ? 'حجز موعد' : 'Book Appointment'}
+            </span>
           </Link>
-        )}
+
+          <Link
+            to="/services"
+            className="flex flex-col items-center gap-2 bg-white rounded-xl border border-divider p-4 hover:border-primary hover:shadow-md transition-all group"
+          >
+            <div className="w-10 h-10 rounded-lg bg-primary/5 group-hover:bg-primary/10 flex items-center justify-center transition-colors">
+              <BookOpen className="w-5 h-5 text-primary" />
+            </div>
+            <span className="text-xs font-medium text-primary text-center">
+              {language === 'ar' ? 'الخدمات' : 'Services'}
+            </span>
+          </Link>
+
+          <Link
+            to="/events"
+            className="flex flex-col items-center gap-2 bg-white rounded-xl border border-divider p-4 hover:border-primary hover:shadow-md transition-all group"
+          >
+            <div className="w-10 h-10 rounded-lg bg-primary/5 group-hover:bg-primary/10 flex items-center justify-center transition-colors">
+              <Calendar className="w-5 h-5 text-primary" />
+            </div>
+            <span className="text-xs font-medium text-primary text-center">
+              {language === 'ar' ? 'الفعاليات' : 'Events'}
+            </span>
+          </Link>
+
+          {!membershipApp ? (
+            <Link
+              to="/get-involved/membership"
+              className="flex flex-col items-center gap-2 bg-white rounded-xl border border-divider p-4 hover:border-primary hover:shadow-md transition-all group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-primary/5 group-hover:bg-primary/10 flex items-center justify-center transition-colors">
+                <Handshake className="w-5 h-5 text-primary" />
+              </div>
+              <span className="text-xs font-medium text-primary text-center">
+                {t.applyMembership}
+              </span>
+            </Link>
+          ) : (
+            <Link
+              to="/get-involved/donate"
+              className="flex flex-col items-center gap-2 bg-white rounded-xl border border-divider p-4 hover:border-primary hover:shadow-md transition-all group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-primary/5 group-hover:bg-primary/10 flex items-center justify-center transition-colors">
+                <CreditCard className="w-5 h-5 text-primary" />
+              </div>
+              <span className="text-xs font-medium text-primary text-center">
+                {language === 'ar' ? 'تبرع' : 'Donate'}
+              </span>
+            </Link>
+          )}
+        </div>
       </motion.div>
+
+      {upcomingAppointments.length > 0 && (
+        <motion.div variants={staggerItem} className="bg-white rounded-xl border border-divider p-5">
+          <h3 className="text-base font-bold text-primary mb-4">
+            {language === 'ar' ? 'المواعيد القادمة' : 'Upcoming Appointments'}
+          </h3>
+          <div className="space-y-3">
+            {upcomingAppointments.map(app => (
+              <div key={app.id} className="flex items-center gap-3 p-3 bg-blue-50/50 rounded-lg border border-blue-100">
+                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                  <Calendar className="w-5 h-5 text-blue-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-primary">
+                    {isAdvisory(app.service_type)
+                      ? (language === 'ar' ? 'موعد استشاري' : 'Advisory Appointment')
+                      : (language === 'ar' ? 'موعد وكالة' : 'Wakala Appointment')}
+                  </p>
+                  <p className="text-xs text-muted">
+                    {new Date(app.booking_date).toLocaleDateString(isRTL ? 'ar-GB' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+                    {app.start_time && ` - ${app.start_time.slice(0, 5)}`}
+                  </p>
+                </div>
+                <StatusBadge status={app.status} t={t} />
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {unreadNotifs > 0 && (
+        <motion.div variants={staggerItem} className="bg-white rounded-xl border border-divider p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-bold text-primary flex items-center gap-2">
+              <Bell className="w-4 h-4" />
+              {language === 'ar' ? 'إشعارات جديدة' : 'New Notifications'}
+              <span className="ml-1 min-w-[20px] h-[20px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                {unreadNotifs}
+              </span>
+            </h3>
+          </div>
+          <div className="space-y-2">
+            {notifications.filter(n => !n.is_read).slice(0, 3).map(n => (
+              <div key={n.id} className="flex items-start gap-3 p-3 bg-blue-50/30 rounded-lg">
+                <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Bell className="w-4 h-4 text-blue-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-primary">
+                    {language === 'ar' ? (n.title_ar || n.title) : n.title}
+                  </p>
+                  <p className="text-xs text-muted mt-0.5 line-clamp-1">
+                    {language === 'ar' ? (n.message_ar || n.message) : n.message}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       <motion.div variants={staggerItem} className="bg-white rounded-xl border border-divider p-5">
         <h3 className="text-base font-bold text-primary mb-4">{t.recentActivity}</h3>
@@ -151,7 +271,7 @@ export default function OverviewTab({ memberRecord, membershipApp, wakalaApps, p
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-primary truncate">{item.title}</p>
-                  <p className="text-xs text-muted">{new Date(item.date).toLocaleDateString()}</p>
+                  <p className="text-xs text-muted">{new Date(item.date).toLocaleDateString(isRTL ? 'ar-GB' : 'en-GB')}</p>
                 </div>
                 <StatusBadge status={item.status} t={t} />
               </div>

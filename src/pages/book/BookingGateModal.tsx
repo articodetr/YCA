@@ -1,14 +1,12 @@
 import { X, User, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../../contexts/LanguageContext';
-import type { ServiceType } from './BookPage';
 
 interface BookingGateModalProps {
   isOpen: boolean;
   onClose: () => void;
   onMemberLogin: () => void;
   onContinueAsGuest: () => void;
-  serviceType: ServiceType;
 }
 
 const translations = {
@@ -28,12 +26,7 @@ const translations = {
   },
 };
 
-export default function BookingGateModal({
-  isOpen,
-  onClose,
-  onMemberLogin,
-  onContinueAsGuest,
-}: BookingGateModalProps) {
+export default function BookingGateModal({ isOpen, onClose, onMemberLogin, onContinueAsGuest }: BookingGateModalProps) {
   const { language } = useLanguage();
   const isRTL = language === 'ar';
   const t = translations[language];

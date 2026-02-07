@@ -79,9 +79,8 @@ export default function BookPage() {
   const [selectedService, setSelectedService] = useState<ServiceType>(null);
   const [bookingResult, setBookingResult] = useState<BookingResult | null>(null);
   const [showGateModal, setShowGateModal] = useState(false);
-  const [pendingService, setPendingService] = useState<ServiceType>(null);
   const { language } = useLanguage();
-  const { user } = useMemberAuth();
+  const { user, loading: authLoading } = useMemberAuth();
   const { getSetting } = useSiteSettings();
   const isRTL = language === 'ar';
   const t = translations[language];
@@ -97,24 +96,24 @@ export default function BookPage() {
     }
   }, [searchParams]);
 
-  const handleServiceSelect = (serviceId: ServiceType) => {
-    if (user) {
-      setSelectedService(serviceId);
-    } else {
-      setPendingService(serviceId);
+  useEffect(() => {
+    if (!authLoading && !user && !selectedService) {
       setShowGateModal(true);
     }
+  }, [authLoading, user]);
+
+  const handleServiceSelect = (serviceId: ServiceType) => {
+    setSelectedService(serviceId);
   };
 
   const handleMemberLogin = () => {
     setShowGateModal(false);
-    navigate(`/member/login?redirect=/book&service=${pendingService}`);
+    const service = selectedService || '';
+    navigate(`/member/login?redirect=/book${service ? `&service=${service}` : ''}`);
   };
 
   const handleContinueAsGuest = () => {
     setShowGateModal(false);
-    setSelectedService(pendingService);
-    setPendingService(null);
   };
 
   const handleBookingComplete = (result: BookingResult) => {
@@ -299,10 +298,9 @@ export default function BookPage() {
 
       <BookingGateModal
         isOpen={showGateModal}
-        onClose={() => setShowGateModal(false)}
+        onClose={handleContinueAsGuest}
         onMemberLogin={handleMemberLogin}
         onContinueAsGuest={handleContinueAsGuest}
-        serviceType={pendingService}
       />
     </Layout>
   );

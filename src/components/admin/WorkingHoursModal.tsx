@@ -209,45 +209,39 @@ export default function WorkingHoursModal({ startDate, endDate, onClose, onSaved
     setSaving(true);
     setSaveResult(null);
     try {
-      for (const dateStr of datesList) {
-        const { data: existing } = await supabase
-          .from('day_specific_hours')
-          .select('id')
-          .eq('date', dateStr)
-          .maybeSingle();
+      const basePayload = {
+        start_time: config.start_time,
+        end_time: config.end_time,
+        last_appointment_time: config.last_appointment_time,
+        slot_interval_minutes: config.slot_interval_minutes,
+        break_times: config.break_times,
+        is_holiday: config.is_holiday,
+        holiday_reason_en: config.holiday_reason_en,
+        holiday_reason_ar: config.holiday_reason_ar,
+        updated_at: new Date().toISOString(),
+      };
 
-        const payload = {
-          start_time: config.start_time,
-          end_time: config.end_time,
-          last_appointment_time: config.last_appointment_time,
-          slot_interval_minutes: config.slot_interval_minutes,
-          break_times: config.break_times,
-          is_holiday: config.is_holiday,
-          holiday_reason_en: config.holiday_reason_en,
-          holiday_reason_ar: config.holiday_reason_ar,
-          updated_at: new Date().toISOString(),
-        };
-
-        if (existing) {
-          await supabase.from('day_specific_hours').update(payload).eq('id', existing.id);
-        } else {
-          await supabase.from('day_specific_hours').insert({ ...payload, date: dateStr });
-        }
-      }
+      const rows = datesList.map(dateStr => ({ ...basePayload, date: dateStr }));
+      const { error: upsertError } = await supabase
+        .from('day_specific_hours')
+        .upsert(rows, { onConflict: 'date' });
+      if (upsertError) throw upsertError;
 
       const { data: services } = await supabase
         .from('booking_services')
         .select('id')
         .eq('is_active', true);
 
-      for (const dateStr of datesList) {
-        for (const service of (services || [])) {
-          await supabase.rpc('regenerate_slots_for_date', {
-            p_service_id: service.id,
-            p_date: dateStr,
-          });
-        }
-      }
+      await Promise.all(
+        datesList.flatMap(dateStr =>
+          (services || []).map(service =>
+            supabase.rpc('regenerate_slots_for_date', {
+              p_service_id: service.id,
+              p_date: dateStr,
+            })
+          )
+        )
+      );
 
       setSaveResult({
         success: true,
@@ -274,23 +268,26 @@ export default function WorkingHoursModal({ startDate, endDate, onClose, onSaved
     setResetting(true);
     setSaveResult(null);
     try {
-      for (const dateStr of datesList) {
-        await supabase.from('day_specific_hours').delete().eq('date', dateStr);
-      }
+      await supabase
+        .from('day_specific_hours')
+        .delete()
+        .in('date', datesList);
 
       const { data: services } = await supabase
         .from('booking_services')
         .select('id')
         .eq('is_active', true);
 
-      for (const dateStr of datesList) {
-        for (const service of (services || [])) {
-          await supabase.rpc('regenerate_slots_for_date', {
-            p_service_id: service.id,
-            p_date: dateStr,
-          });
-        }
-      }
+      await Promise.all(
+        datesList.flatMap(dateStr =>
+          (services || []).map(service =>
+            supabase.rpc('regenerate_slots_for_date', {
+              p_service_id: service.id,
+              p_date: dateStr,
+            })
+          )
+        )
+      );
 
       setSaveResult({
         success: true,

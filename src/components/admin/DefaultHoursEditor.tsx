@@ -178,20 +178,24 @@ export default function DefaultHoursEditor({ maxDaysAhead, onUpdate }: DefaultHo
     setSaveResult(null);
 
     try {
-      for (const dayOfWeek of selectedDays) {
-        const { error } = await supabase
-          .from('working_hours_config')
-          .update({
-            start_time: startTime + ':00',
-            end_time: endTime + ':00',
-            last_appointment_time: lastAppointment + ':00',
-            slot_interval_minutes: slotInterval,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('day_of_week', dayOfWeek);
+      const updatePayload = {
+        start_time: startTime + ':00',
+        end_time: endTime + ':00',
+        last_appointment_time: lastAppointment + ':00',
+        slot_interval_minutes: slotInterval,
+        updated_at: new Date().toISOString(),
+      };
 
-        if (error) throw error;
-      }
+      const updateResults = await Promise.all(
+        Array.from(selectedDays).map(dayOfWeek =>
+          supabase
+            .from('working_hours_config')
+            .update(updatePayload)
+            .eq('day_of_week', dayOfWeek)
+        )
+      );
+      const updateError = updateResults.find(r => r.error)?.error;
+      if (updateError) throw updateError;
 
       if (clearOverrides) {
         const todayStr = new Date().toISOString().split('T')[0];
@@ -206,35 +210,36 @@ export default function DefaultHoursEditor({ maxDaysAhead, onUpdate }: DefaultHo
           .lte('date', futureDateStr);
       }
 
-      const todayStr = new Date().toISOString().split('T')[0];
-      const futureDate = new Date();
-      futureDate.setDate(futureDate.getDate() + maxDaysAhead);
-      const futureDateStr = futureDate.toISOString().split('T')[0];
-
       const { data: services } = await supabase
         .from('booking_services')
         .select('id')
         .eq('is_active', true);
 
+      const rpcCalls: ReturnType<typeof supabase.rpc>[] = [];
       const current = new Date();
       current.setHours(0, 0, 0, 0);
-      const end = new Date(futureDateStr);
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + maxDaysAhead);
 
-      while (current <= end) {
+      while (current <= endDate) {
         const jsDay = current.getDay();
         const dbDay = jsDay === 0 ? 7 : jsDay;
 
         if (selectedDays.has(dbDay) || clearOverrides) {
           const dateStr = current.toISOString().split('T')[0];
           for (const service of services || []) {
-            await supabase.rpc('regenerate_slots_for_date', {
-              p_service_id: service.id,
-              p_date: dateStr,
-            });
+            rpcCalls.push(
+              supabase.rpc('regenerate_slots_for_date', {
+                p_service_id: service.id,
+                p_date: dateStr,
+              })
+            );
           }
         }
         current.setDate(current.getDate() + 1);
       }
+
+      await Promise.all(rpcCalls);
 
       setSaveResult({ success: true, message: t.saved });
       loadDays();

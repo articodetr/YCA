@@ -32,9 +32,11 @@ interface DayWorkingHours {
   isInactive: boolean;
 }
 
+const DEFAULT_HOURS = Array.from({ length: 10 }, (_, i) => i + 8);
+
 export default function CalendarWeekView({ startDate, bookings, onBookingClick }: CalendarWeekViewProps) {
   const { language } = useLanguage();
-  const [hours, setHours] = useState<number[]>([]);
+  const [hours, setHours] = useState<number[]>(DEFAULT_HOURS);
   const [loading, setLoading] = useState(true);
   const [dayWorkingHours, setDayWorkingHours] = useState<Map<string, DayWorkingHours>>(new Map());
 
@@ -59,12 +61,11 @@ export default function CalendarWeekView({ startDate, bookings, onBookingClick }
         const dateString = date.toISOString().split('T')[0];
         const dayOfWeek = date.getDay() === 0 ? 7 : date.getDay();
 
-        // Check for day-specific hours first
         const { data: daySpecific } = await supabase
           .from('day_specific_hours')
           .select('*')
           .eq('date', dateString)
-          .single();
+          .maybeSingle();
 
         if (daySpecific) {
           if (daySpecific.is_holiday) {
@@ -89,12 +90,11 @@ export default function CalendarWeekView({ startDate, bookings, onBookingClick }
             maxEndHour = Math.max(maxEndHour, endHour);
           }
         } else {
-          // Use default working hours
           const { data: defaultHours } = await supabase
             .from('working_hours_config')
             .select('*')
             .eq('day_of_week', dayOfWeek)
-            .single();
+            .maybeSingle();
 
           if (defaultHours && defaultHours.is_active) {
             const startHour = parseInt(defaultHours.start_time.split(':')[0]);
@@ -122,17 +122,14 @@ export default function CalendarWeekView({ startDate, bookings, onBookingClick }
 
       setDayWorkingHours(dayHoursMap);
 
-      // Set the overall hour range
       if (minStartHour < 24 && maxEndHour > 0) {
-        const hoursArray = Array.from({ length: maxEndHour - minStartHour + 1 }, (_, i) => minStartHour + i);
-        setHours(hoursArray);
+        setHours(Array.from({ length: maxEndHour - minStartHour + 1 }, (_, i) => minStartHour + i));
       } else {
-        setHours([]);
+        setHours(DEFAULT_HOURS);
       }
     } catch (error) {
       console.error('Error fetching working hours:', error);
-      // Fallback to showing all hours
-      setHours(Array.from({ length: 24 }, (_, i) => i));
+      setHours(DEFAULT_HOURS);
     } finally {
       setLoading(false);
     }
@@ -143,6 +140,12 @@ export default function CalendarWeekView({ startDate, bookings, onBookingClick }
     const dayHours = dayWorkingHours.get(dateString);
     if (!dayHours || dayHours.isHoliday || dayHours.isInactive) return false;
     return hour >= dayHours.startHour && hour <= dayHours.endHour;
+  };
+
+  const isDayClosed = (date: Date): boolean => {
+    const dateString = date.toISOString().split('T')[0];
+    const dayHours = dayWorkingHours.get(dateString);
+    return !dayHours || dayHours.isHoliday || dayHours.isInactive;
   };
 
   const getBookingsForDateTime = (date: Date, hour: number) => {
@@ -198,16 +201,6 @@ export default function CalendarWeekView({ startDate, bookings, onBookingClick }
     );
   }
 
-  if (hours.length === 0) {
-    return (
-      <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-        <p className="text-gray-600 text-lg font-medium">
-          {language === 'ar' ? 'لا توجد ساعات عمل لهذا الأسبوع' : 'No working hours for this week'}
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
       <div className="overflow-x-auto">
@@ -216,30 +209,30 @@ export default function CalendarWeekView({ startDate, bookings, onBookingClick }
             <div className="p-2 border-r border-gray-200"></div>
             {weekDays.map((date, index) => {
               const { dayName, dayNum } = formatDayHeader(date);
+              const closed = isDayClosed(date);
               const dateString = date.toISOString().split('T')[0];
               const dayHours = dayWorkingHours.get(dateString);
-              const isDayInactive = dayHours?.isInactive || dayHours?.isHoliday;
 
               return (
                 <div
                   key={index}
                   className={`p-2 text-center border-r border-gray-200 last:border-r-0 ${
                     isToday(date) ? 'bg-blue-50' : ''
-                  } ${isDayInactive ? 'bg-gray-100' : ''}`}
+                  } ${closed ? 'bg-gray-100' : ''}`}
                 >
                   <div className="text-[10px] font-medium text-gray-600 mb-0.5">{dayName}</div>
                   <div
                     className={`text-sm font-bold ${
-                      isToday(date) ? 'text-blue-600' : isDayInactive ? 'text-gray-400' : 'text-gray-900'
+                      isToday(date) ? 'text-blue-600' : closed ? 'text-gray-400' : 'text-gray-900'
                     }`}
                   >
                     {dayNum}
                   </div>
-                  {isDayInactive && (
+                  {closed && (
                     <div className="text-[10px] text-gray-500 mt-0.5">
                       {dayHours?.isHoliday
                         ? language === 'ar' ? 'عطلة' : 'Holiday'
-                        : language === 'ar' ? 'غير نشط' : 'Closed'}
+                        : language === 'ar' ? 'مغلق' : 'Closed'}
                     </div>
                   )}
                 </div>
@@ -256,13 +249,14 @@ export default function CalendarWeekView({ startDate, bookings, onBookingClick }
                 {weekDays.map((date, dayIndex) => {
                   const dayBookings = getBookingsForDateTime(date, hour);
                   const isWorking = isHourWorkingForDay(date, hour);
+                  const closed = isDayClosed(date);
 
                   return (
                     <div
                       key={dayIndex}
                       className={`p-1 border-r border-gray-200 last:border-r-0 ${
                         isToday(date) ? 'bg-blue-50/30' : ''
-                      } ${!isWorking ? 'bg-gray-100 bg-opacity-50' : 'hover:bg-gray-50'}`}
+                      } ${closed ? 'bg-gray-50' : !isWorking ? 'bg-gray-100 bg-opacity-50' : 'hover:bg-gray-50'}`}
                     >
                       {dayBookings.length > 0 ? (
                         <div className="space-y-0.5">

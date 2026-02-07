@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, ChevronDown, Calendar as CalendarIcon } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
-import CalendarDayView from '../../components/admin/CalendarDayView';
 import CalendarWeekView from '../../components/admin/CalendarWeekView';
 import BookingDetailsModal from '../../components/admin/BookingDetailsModal';
 
@@ -26,9 +25,17 @@ interface CalendarViewProps {
   selectedServiceId: string;
 }
 
+function getMondayStart(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
   const { language } = useLanguage();
-  const [viewType, setViewType] = useState<'day' | 'week'>('day');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
@@ -55,8 +62,6 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
       today: 'Today',
       back: 'Back',
       next: 'Next',
-      day: 'Day',
-      week: 'Week',
       loading: 'Loading bookings...',
       noBookings: 'No bookings for this period',
     },
@@ -65,34 +70,24 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
       today: 'اليوم',
       back: 'السابق',
       next: 'التالي',
-      day: 'يومي',
-      week: 'أسبوعي',
       loading: 'جاري تحميل الحجوزات...',
       noBookings: 'لا توجد حجوزات لهذه الفترة',
     },
   }[language];
 
+  const weekStart = useMemo(() => getMondayStart(currentDate), [currentDate]);
+
   useEffect(() => {
     loadBookings();
-  }, [currentDate, viewType, selectedServiceId]);
+  }, [weekStart, selectedServiceId]);
 
   const loadBookings = async () => {
     setLoading(true);
     try {
-      let startDate: string;
-      let endDate: string;
-
-      if (viewType === 'day') {
-        startDate = currentDate.toISOString().split('T')[0];
-        endDate = startDate;
-      } else {
-        const weekStart = new Date(currentDate);
-        weekStart.setDate(currentDate.getDate() - currentDate.getDay());
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekStart.getDate() + 6);
-        startDate = weekStart.toISOString().split('T')[0];
-        endDate = weekEnd.toISOString().split('T')[0];
-      }
+      const startDate = weekStart.toISOString().split('T')[0];
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      const endDate = weekEnd.toISOString().split('T')[0];
 
       const { data: bookingsData, error } = await supabase
         .from('wakala_applications')
@@ -151,61 +146,27 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
     }
   };
 
-  const goToToday = () => {
-    setCurrentDate(new Date());
-  };
+  const goToToday = () => setCurrentDate(new Date());
 
   const goToPrevious = () => {
     const newDate = new Date(currentDate);
-    if (viewType === 'day') {
-      newDate.setDate(currentDate.getDate() - 1);
-    } else {
-      newDate.setDate(currentDate.getDate() - 7);
-    }
+    newDate.setDate(currentDate.getDate() - 7);
     setCurrentDate(newDate);
   };
 
   const goToNext = () => {
     const newDate = new Date(currentDate);
-    if (viewType === 'day') {
-      newDate.setDate(currentDate.getDate() + 1);
-    } else {
-      newDate.setDate(currentDate.getDate() + 7);
-    }
+    newDate.setDate(currentDate.getDate() + 7);
     setCurrentDate(newDate);
   };
 
   const formatDateHeader = () => {
-    if (viewType === 'day') {
-      return currentDate.toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-GB', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-    } else {
-      const weekStart = new Date(currentDate);
-      weekStart.setDate(currentDate.getDate() - currentDate.getDay());
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 6);
-
-      const startStr = weekStart.toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-GB', {
-        month: 'short',
-        day: 'numeric',
-      });
-      const endStr = weekEnd.toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-GB', {
-        month: 'short',
-        day: 'numeric',
-      });
-
-      return `${startStr} - ${endStr}`;
-    }
-  };
-
-  const getWeekStart = () => {
-    const weekStart = new Date(currentDate);
-    weekStart.setDate(currentDate.getDate() - currentDate.getDay());
-    return weekStart;
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    const locale = language === 'ar' ? 'ar-SA' : 'en-GB';
+    const startStr = weekStart.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
+    const endStr = weekEnd.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
+    return `${startStr} - ${endStr}`;
   };
 
   const handleDateSelect = (day: number) => {
@@ -221,12 +182,11 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
     setShowDatePicker(!showDatePicker);
   };
 
-  const getDaysInMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  };
+  const getDaysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
 
   const getFirstDayOfMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+    const day = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+    return day === 0 ? 6 : day - 1;
   };
 
   const isToday = (day: number) => {
@@ -243,8 +203,14 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
   };
 
   const weekDayNames = language === 'ar'
-    ? ['أحد', 'إثن', 'ثلا', 'أرب', 'خمي', 'جمع', 'سبت']
-    : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    ? ['إثن', 'ثلا', 'أرب', 'خمي', 'جمع', 'سبت', 'أحد']
+    : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  const handleBookingClick = useCallback((booking: Booking) => {
+    setSelectedBooking(booking);
+  }, []);
+
+  const stableBookings = useMemo(() => bookings, [bookings]);
 
   return (
     <div className="space-y-3">
@@ -344,29 +310,6 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
               </div>
             )}
           </div>
-
-          <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setViewType('day')}
-              className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                viewType === 'day'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              {t.day}
-            </button>
-            <button
-              onClick={() => setViewType('week')}
-              className={`px-4 py-2 rounded-md font-medium transition-colors ${
-                viewType === 'week'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              {t.week}
-            </button>
-          </div>
         </div>
 
         {loading ? (
@@ -374,22 +317,11 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
             <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
             <p className="text-gray-600">{t.loading}</p>
           </div>
-        ) : bookings.length === 0 ? (
-          <div className="p-12 text-center">
-            <CalendarIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">{t.noBookings}</p>
-          </div>
-        ) : viewType === 'day' ? (
-          <CalendarDayView
-            date={currentDate}
-            bookings={bookings}
-            onBookingClick={setSelectedBooking}
-          />
         ) : (
           <CalendarWeekView
-            startDate={getWeekStart()}
-            bookings={bookings}
-            onBookingClick={setSelectedBooking}
+            startDate={weekStart}
+            bookings={stableBookings}
+            onBookingClick={handleBookingClick}
           />
         )}
       </div>

@@ -145,7 +145,7 @@ export default function Header() {
           </div>
 
           {/* Desktop Nav */}
-          <nav className="hidden xl:flex items-center gap-5 2xl:gap-8">
+          <nav className="hidden xl:flex items-center gap-3 2xl:gap-5">
             <Link to="/" className="text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
               {t('nav.home')}
             </Link>
@@ -255,7 +255,7 @@ export default function Header() {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 to="/book"
-                className="bg-accent text-primary px-8 py-2.5 hover:bg-hover transition-colors font-semibold text-sm uppercase tracking-wider whitespace-nowrap"
+                className="bg-accent text-primary px-6 py-2.5 hover:bg-hover transition-colors font-semibold text-sm uppercase tracking-wider whitespace-nowrap"
               >
                 {t('button.book')}
               </Link>
@@ -264,10 +264,10 @@ export default function Header() {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 to={user ? '/member/dashboard' : '/member/login'}
-                className="flex items-center gap-2 text-sm uppercase tracking-wider hover:text-accent transition-colors px-3 py-2 border border-white/30 rounded-lg"
+                className="hover:text-accent transition-colors p-2.5 border border-white/30 rounded-lg"
+                title={user ? (language === 'ar' ? 'حسابي' : 'My Account') : (language === 'ar' ? 'دخول' : 'Login')}
               >
-                {user ? <UserCircle size={16} /> : <LogIn size={16} />}
-                <span>{user ? (language === 'ar' ? 'حسابي' : 'My Account') : (language === 'ar' ? 'دخول' : 'Login')}</span>
+                {user ? <UserCircle size={20} /> : <LogIn size={20} />}
               </Link>
             </motion.div>
 

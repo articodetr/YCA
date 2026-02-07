@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Settings, List, Pencil, Check, X, AlertTriangle } from 'lucide-react';
+import { Calendar, Settings, List, Pencil, Check, X, AlertTriangle, Download } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 import CalendarView from './CalendarView';
 import WorkingHoursConfig from './WorkingHoursConfig';
 import BookingsOverview from '../../components/admin/BookingsOverview';
+import BookingsExportDialog from '../../components/admin/BookingsExportDialog';
 
 interface Service {
   id: string;
@@ -26,6 +27,7 @@ export default function AvailabilityManagement() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [savingPeriod, setSavingPeriod] = useState(false);
   const [periodSuccess, setPeriodSuccess] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
 
   const t = {
     en: {
@@ -46,6 +48,7 @@ export default function AvailabilityManagement() {
       confirmSave: 'Confirm & Save',
       confirmCancel: 'Cancel',
       saved: 'Saved successfully',
+      export: 'Export',
     },
     ar: {
       title: 'المكتب الاستشاري - الأوقات المتاحة',
@@ -65,6 +68,7 @@ export default function AvailabilityManagement() {
       confirmSave: 'تأكيد وحفظ',
       confirmCancel: 'إلغاء',
       saved: 'تم الحفظ بنجاح',
+      export: 'تصدير',
     },
   }[language];
 
@@ -268,6 +272,13 @@ export default function AvailabilityManagement() {
         </div>
       )}
 
+      {showExportDialog && selectedService && (
+        <BookingsExportDialog
+          serviceId={selectedService.id}
+          onClose={() => setShowExportDialog(false)}
+        />
+      )}
+
       <div className="bg-white rounded-lg border border-gray-200">
         <div className="border-b border-gray-200">
           <div className="flex overflow-x-auto">
@@ -288,6 +299,16 @@ export default function AvailabilityManagement() {
                 </button>
               );
             })}
+            <div className="ml-auto flex items-center px-2">
+              <button
+                onClick={() => setShowExportDialog(true)}
+                disabled={!selectedService}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors disabled:opacity-50"
+              >
+                <Download className="w-4 h-4" />
+                {t.export}
+              </button>
+            </div>
           </div>
         </div>
 

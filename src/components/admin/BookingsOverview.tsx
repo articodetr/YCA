@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, User, Mail, Phone, Search } from 'lucide-react';
-import { getBookingsForDateRange, formatTime } from '../../lib/booking-utils';
+import { Calendar, User, Mail, Phone, Search, UserCheck } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { supabase } from '../../lib/supabase';
+import { formatTime } from '../../lib/booking-utils';
 
 interface Booking {
   id: string;
@@ -12,6 +14,7 @@ interface Booking {
   phone: string;
   service_type: string;
   status: string;
+  assigned_admin_name?: string;
   members?: {
     first_name: string;
     last_name: string;
@@ -29,10 +32,48 @@ export default function BookingsOverview({
   startDate,
   endDate,
 }: BookingsOverviewProps) {
+  const { language } = useLanguage();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  const t = {
+    en: {
+      title: 'Upcoming Bookings',
+      search: 'Search by name, email or phone...',
+      allStatus: 'All Status',
+      pending_payment: 'Pending Payment',
+      submitted: 'Submitted',
+      in_progress: 'In Progress',
+      completed: 'Completed',
+      cancelled: 'Cancelled',
+      no_show: 'No Show',
+      incomplete: 'Incomplete',
+      showing: 'Showing',
+      of: 'of',
+      bookings: 'bookings',
+      loading: 'Loading bookings...',
+      noBookings: 'No bookings found',
+    },
+    ar: {
+      title: 'الحجوزات القادمة',
+      search: 'بحث بالاسم أو البريد أو الهاتف...',
+      allStatus: 'جميع الحالات',
+      pending_payment: 'بانتظار الدفع',
+      submitted: 'مقدّم',
+      in_progress: 'قيد المعالجة',
+      completed: 'مكتمل',
+      cancelled: 'ملغي',
+      no_show: 'لم يحضر',
+      incomplete: 'لم يكتمل',
+      showing: 'عرض',
+      of: 'من',
+      bookings: 'حجز',
+      loading: 'جاري تحميل الحجوزات...',
+      noBookings: 'لا توجد حجوزات',
+    },
+  }[language];
 
   useEffect(() => {
     loadBookings();
@@ -41,8 +82,28 @@ export default function BookingsOverview({
   const loadBookings = async () => {
     setLoading(true);
     try {
-      const data = await getBookingsForDateRange(serviceId, startDate, endDate);
-      setBookings(data);
+      const { data, error } = await supabase
+        .from('wakala_applications')
+        .select(`
+          *,
+          members(first_name, last_name),
+          availability_slots!inner(service_id),
+          admins:assigned_admin_id(full_name)
+        `)
+        .gte('booking_date', startDate)
+        .lte('booking_date', endDate)
+        .not('booking_date', 'is', null)
+        .eq('availability_slots.service_id', serviceId)
+        .order('booking_date')
+        .order('start_time');
+
+      if (error) throw error;
+
+      const formatted = (data || []).map((b: any) => ({
+        ...b,
+        assigned_admin_name: b.admins?.full_name || null,
+      }));
+      setBookings(formatted);
     } catch (error) {
       console.error('Error loading bookings:', error);
     } finally {
@@ -67,39 +128,38 @@ export default function BookingsOverview({
       case 'pending_payment':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'submitted':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'in_progress':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
+        return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'completed':
         return 'bg-green-100 text-green-800 border-green-200';
       case 'rejected':
       case 'cancelled':
         return 'bg-red-100 text-red-800 border-red-200';
+      case 'no_show':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'incomplete':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  const getStatusLabel = (status: string) => {
-    return status
-      .split('_')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+  const getStatusLabel = (status: string): string => {
+    return (t as Record<string, string>)[status] || status.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-GB', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    return new Date(dateStr + 'T00:00:00').toLocaleDateString(
+      language === 'ar' ? 'ar-SA' : 'en-GB',
+      { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }
+    );
   };
 
   return (
     <div>
       <div className="pb-3 border-b border-gray-200 mb-3">
-        <h3 className="text-base font-semibold text-gray-900 mb-3">Upcoming Bookings</h3>
+        <h3 className="text-base font-semibold text-gray-900 mb-3">{t.title}</h3>
 
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="flex-1 relative">
@@ -108,7 +168,7 @@ export default function BookingsOverview({
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by name, email or phone..."
+              placeholder={t.search}
               className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -118,17 +178,19 @@ export default function BookingsOverview({
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="all">All Status</option>
-            <option value="pending_payment">Pending Payment</option>
-            <option value="submitted">Submitted</option>
-            <option value="in_progress">In Progress</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
+            <option value="all">{t.allStatus}</option>
+            <option value="pending_payment">{t.pending_payment}</option>
+            <option value="submitted">{t.submitted}</option>
+            <option value="in_progress">{t.in_progress}</option>
+            <option value="completed">{t.completed}</option>
+            <option value="cancelled">{t.cancelled}</option>
+            <option value="no_show">{t.no_show}</option>
+            <option value="incomplete">{t.incomplete}</option>
           </select>
         </div>
 
         <div className="mt-2 text-xs text-gray-600">
-          Showing {filteredBookings.length} of {bookings.length} bookings
+          {t.showing} {filteredBookings.length} {t.of} {bookings.length} {t.bookings}
         </div>
       </div>
 
@@ -136,12 +198,12 @@ export default function BookingsOverview({
         {loading ? (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="text-sm text-gray-600 mt-2">Loading bookings...</p>
+            <p className="text-sm text-gray-600 mt-2">{t.loading}</p>
           </div>
         ) : filteredBookings.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <Calendar className="w-10 h-10 text-gray-400 mx-auto mb-2" />
-            <p className="text-sm">No bookings found</p>
+            <p className="text-sm">{t.noBookings}</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
@@ -163,7 +225,7 @@ export default function BookingsOverview({
                         <span className="text-xs text-gray-600">
                           {formatDate(booking.booking_date)}
                         </span>
-                        <span className="text-gray-400 text-xs">•</span>
+                        <span className="text-gray-400 text-xs">|</span>
                         <span className="text-xs font-medium text-gray-700">
                           {formatTime(booking.start_time)} -{' '}
                           {formatTime(booking.end_time)}
@@ -189,7 +251,13 @@ export default function BookingsOverview({
                     <Phone className="w-3 h-3" />
                     <span>{booking.phone}</span>
                   </div>
-                  {booking.service_type && (
+                  {booking.assigned_admin_name && (
+                    <div className="flex items-center gap-1.5 text-teal-600 col-span-2">
+                      <UserCheck className="w-3 h-3" />
+                      <span>{booking.assigned_admin_name}</span>
+                    </div>
+                  )}
+                  {!booking.assigned_admin_name && booking.service_type && (
                     <div className="flex items-center gap-1.5 text-gray-600 col-span-2">
                       <User className="w-3 h-3" />
                       <span className="capitalize">

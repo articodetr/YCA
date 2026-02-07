@@ -19,6 +19,8 @@ interface Booking {
   service_name_en?: string;
   service_name_ar?: string;
   created_at: string;
+  assigned_admin_id?: string;
+  assigned_admin_name?: string;
 }
 
 interface CalendarViewProps {
@@ -102,6 +104,8 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
           status,
           additional_notes,
           created_at,
+          assigned_admin_id,
+          admins:assigned_admin_id (full_name),
           availability_slots!inner (
             service_id
           )
@@ -110,7 +114,6 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
         .gte('booking_date', startDate)
         .lte('booking_date', endDate)
         .not('booking_date', 'is', null)
-        .neq('status', 'cancelled')
         .order('booking_date', { ascending: true })
         .order('start_time', { ascending: true });
 
@@ -136,6 +139,8 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
         service_name_en: service?.name_en,
         service_name_ar: service?.name_ar,
         created_at: booking.created_at,
+        assigned_admin_id: booking.assigned_admin_id,
+        assigned_admin_name: booking.admins?.full_name || null,
       }));
 
       setBookings(formattedBookings);
@@ -209,6 +214,10 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
   const handleBookingClick = useCallback((booking: Booking) => {
     setSelectedBooking(booking);
   }, []);
+
+  const handleBookingUpdate = useCallback(() => {
+    loadBookings();
+  }, [weekStart, selectedServiceId]);
 
   const stableBookings = useMemo(() => bookings, [bookings]);
 
@@ -330,6 +339,7 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
         <BookingDetailsModal
           booking={selectedBooking}
           onClose={() => setSelectedBooking(null)}
+          onUpdate={handleBookingUpdate}
         />
       )}
     </div>

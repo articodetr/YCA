@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Loader2, Globe, Building, BarChart3, Palette } from 'lucide-react';
+import { Save, Loader2, Globe, Building, BarChart3, Palette, Lock, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useSiteSettings } from '../../contexts/SiteSettingsContext';
 import ImageUploader from '../../components/admin/ImageUploader';
@@ -61,7 +61,47 @@ export default function Settings() {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordMessage, setPasswordMessage] = useState('');
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [showCurrentPw, setShowCurrentPw] = useState(false);
+  const [showNewPw, setShowNewPw] = useState(false);
+
+  const handlePasswordChange = async () => {
+    if (!newPassword || !confirmPassword) {
+      setPasswordMessage('Please fill in all fields');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordMessage('New password must be at least 6 characters');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordMessage('Passwords do not match');
+      return;
+    }
+
+    setSavingPassword(true);
+    setPasswordMessage('');
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      setPasswordMessage('Password updated successfully!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(() => setPasswordMessage(''), 3000);
+    } catch (error: any) {
+      setPasswordMessage(error.message || 'Failed to update password');
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
   const sections = [
+    { id: 'password', label: 'Password', icon: Lock },
     { id: 'branding', label: 'Branding', icon: Palette },
     { id: 'organization', label: 'Organization', icon: Building },
     { id: 'contact', label: 'Contact Info', icon: Globe },
@@ -124,6 +164,59 @@ export default function Settings() {
         </div>
 
         <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          {activeSection === 'password' && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Change Password</h2>
+              <p className="text-sm text-gray-500 mb-6">Update your password to keep your account secure.</p>
+
+              {passwordMessage && (
+                <div className={`p-3 rounded-lg text-sm ${passwordMessage.includes('successfully') ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                  {passwordMessage}
+                </div>
+              )}
+
+              <div className="max-w-md space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                  <div className="relative">
+                    <input
+                      type={showNewPw ? 'text' : 'password'}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      placeholder="Minimum 6 characters"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPw(!showNewPw)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
+                    >
+                      {showNewPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    placeholder="Re-enter new password"
+                  />
+                </div>
+                <button
+                  onClick={handlePasswordChange}
+                  disabled={savingPassword}
+                  className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50"
+                >
+                  {savingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+                  {savingPassword ? 'Updating...' : 'Update Password'}
+                </button>
+              </div>
+            </div>
+          )}
+
           {activeSection === 'branding' && (
             <div className="space-y-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Branding</h2>

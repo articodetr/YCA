@@ -64,6 +64,7 @@ import EventGalleriesManagement from './pages/admin/EventGalleriesManagement';
 import ContentManagement from './pages/admin/ContentManagement';
 import AvailabilityManagement from './pages/admin/AvailabilityManagement';
 import PageImagesManagement from './pages/admin/PageImagesManagement';
+import AdminManagement from './pages/admin/AdminManagement';
 
 function App() {
   return (
@@ -107,6 +108,7 @@ function App() {
                     <Route path="content" element={<ContentManagement />} />
                     <Route path="page-images" element={<PageImagesManagement />} />
                     <Route path="availability" element={<AvailabilityManagement />} />
+                    <Route path="admins" element={<AdminManagement />} />
                     <Route path="settings" element={<Settings />} />
                   </Routes>
                 </AdminLayout>

@@ -13,10 +13,12 @@ interface AdminData {
 interface AdminAuthContextType {
   user: User | null;
   adminData: AdminData | null;
+  permissions: string[];
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateLastLogin: () => Promise<void>;
+  hasPermission: (key: string) => boolean;
 }
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
@@ -24,6 +26,7 @@ const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefin
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [adminData, setAdminData] = useState<AdminData | null>(null);
+  const [permissions, setPermissions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,6 +39,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
           await fetchAdminData(session.user.id);
         } else {
           setAdminData(null);
+          setPermissions([]);
         }
       })();
     });
@@ -70,10 +74,27 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
       if (error) throw error;
       setAdminData(data);
+
+      if (data) {
+        const { data: perms } = await supabase
+          .from('admin_permissions')
+          .select('permission_key')
+          .eq('admin_id', userId);
+        setPermissions(perms?.map((p) => p.permission_key) || []);
+      } else {
+        setPermissions([]);
+      }
     } catch (error) {
       console.error('Error fetching admin data:', error);
       setAdminData(null);
+      setPermissions([]);
     }
+  };
+
+  const hasPermission = (key: string): boolean => {
+    if (!adminData) return false;
+    if (adminData.role === 'super_admin') return true;
+    return permissions.includes(key);
   };
 
   const signIn = async (email: string, password: string) => {
@@ -106,6 +127,12 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
       setAdminData(adminResult.data);
 
+      const { data: perms } = await supabase
+        .from('admin_permissions')
+        .select('permission_key')
+        .eq('admin_id', data.user.id);
+      setPermissions(perms?.map((p) => p.permission_key) || []);
+
       await supabase
         .from('admins')
         .update({ last_login_at: new Date().toISOString() })
@@ -118,6 +145,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
     setUser(null);
     setAdminData(null);
+    setPermissions([]);
   };
 
   const updateLastLogin = async () => {
@@ -136,10 +164,12 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const value = {
     user,
     adminData,
+    permissions,
     loading,
     signIn,
     signOut,
     updateLastLogin,
+    hasPermission,
   };
 
   return (

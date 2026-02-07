@@ -1,5 +1,6 @@
 import { X, Calendar, Clock, Mail, Phone, User, FileText, CheckCircle, XCircle } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import CaseTimeline from './CaseTimeline';
 
 interface BookingDetails {
   id: string;
@@ -194,6 +195,8 @@ export default function BookingDetailsModal({ booking, onClose }: BookingDetails
               <p className="text-gray-900 whitespace-pre-wrap">{booking.notes}</p>
             </div>
           )}
+
+          <CaseTimeline entityType="booking" entityId={booking.id} />
 
           <div className="text-xs text-gray-500 pt-4 border-t border-gray-200">
             {t.createdAt}: {new Date(booking.created_at).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-GB')}

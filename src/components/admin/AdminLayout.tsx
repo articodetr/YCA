@@ -28,6 +28,7 @@ import {
   PanelLeftOpen,
   ExternalLink,
   ChevronLeft,
+  Shield,
 } from 'lucide-react';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
 import { useSiteSettings } from '../../contexts/SiteSettingsContext';
@@ -50,7 +51,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const userMenuRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
-  const { adminData, signOut } = useAdminAuth();
+  const { adminData, signOut, hasPermission } = useAdminAuth();
   const { getSetting } = useSiteSettings();
 
   useEffect(() => {
@@ -127,6 +128,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       items: [
         { icon: Calendar, label: 'Availability', path: '/admin/availability' },
         { icon: FileText, label: 'Wakala Applications', path: '/admin/wakala' },
+        ...(hasPermission('admin.manage') ? [{ icon: Shield, label: 'Admin Management', path: '/admin/admins' }] : []),
         { icon: Settings, label: 'Settings', path: '/admin/settings' },
       ],
     },

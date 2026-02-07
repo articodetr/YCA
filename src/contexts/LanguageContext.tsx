@@ -73,6 +73,7 @@ const translations: Record<Language, Record<string, string>> = {
     'button.close': 'Close',
     'button.back': 'Back',
     'button.apply': 'Apply',
+    'button.book': 'Book',
     'button.download': 'Download',
 
     // Home page
@@ -385,6 +386,7 @@ const translations: Record<Language, Record<string, string>> = {
     'button.close': 'إغلاق',
     'button.back': 'رجوع',
     'button.apply': 'تقديم',
+    'button.book': 'حجز موعد',
     'button.download': 'تحميل',
 
     // Home page

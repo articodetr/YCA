@@ -113,22 +113,13 @@ export default function OverviewTab({ memberRecord, membershipApp, wakalaApps, p
       </motion.div>
 
       <motion.div variants={staggerItem} className="flex flex-wrap gap-3">
-        <button
-          onClick={onNewWakala}
+        <Link
+          to="/book"
           className="flex items-center gap-2 bg-primary hover:bg-secondary text-white font-medium py-2.5 px-5 rounded-lg transition-colors"
         >
           <Plus className="w-4 h-4" />
-          {t.newWakalaApp}
-        </button>
-        {onNewAdvisory && (
-          <button
-            onClick={onNewAdvisory}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-5 rounded-lg transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            {language === 'ar' ? 'حجز استشارة' : 'Book Advisory'}
-          </button>
-        )}
+          {language === 'ar' ? 'حجز موعد جديد' : 'Book an Appointment'}
+        </Link>
         {!membershipApp && (
           <Link
             to="/get-involved/membership"

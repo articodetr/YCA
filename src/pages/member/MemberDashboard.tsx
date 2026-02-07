@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, FileText, CreditCard, LogOut, Loader2,
@@ -10,8 +9,6 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import Layout from '../../components/Layout';
 import PageHeader from '../../components/PageHeader';
-import WakalaBookingModal from '../../components/modals/WakalaBookingModal';
-import AdvisoryBookingModal from '../../components/modals/AdvisoryBookingModal';
 import { cancelBooking } from '../../lib/booking-utils';
 import OverviewTab from './dashboard/OverviewTab';
 import ApplicationsTab from './dashboard/ApplicationsTab';
@@ -145,7 +142,6 @@ const tabs: { id: TabId; icon: typeof LayoutDashboard; labelKey: string }[] = [
 export default function MemberDashboard() {
   const { user, signOut } = useMemberAuth();
   const { language } = useLanguage();
-  const location = useLocation();
   const isRTL = language === 'ar';
   const t = translations[language];
 
@@ -153,9 +149,6 @@ export default function MemberDashboard() {
   const [membershipApp, setMembershipApp] = useState<any>(null);
   const [wakalaApps, setWakalaApps] = useState<any[]>([]);
   const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
-  const [showWakalaModal, setShowWakalaModal] = useState(false);
-  const [showAdvisoryModal, setShowAdvisoryModal] = useState(false);
-  const [userData, setUserData] = useState<any>(null);
   const [memberRecord, setMemberRecord] = useState<any>(null);
   const [editingProfile, setEditingProfile] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
@@ -171,13 +164,6 @@ export default function MemberDashboard() {
   useEffect(() => {
     fetchData();
   }, [user]);
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    if (params.get('openWakala') === 'true') {
-      setShowWakalaModal(true);
-    }
-  }, [location]);
 
   const fetchData = async () => {
     if (!user) return;
@@ -198,7 +184,6 @@ export default function MemberDashboard() {
         .eq('email', user.email)
         .maybeSingle();
       setMemberRecord(memberData);
-      setUserData(memberData || membership);
 
       const src = memberData || membership;
       if (src) {
@@ -360,8 +345,7 @@ export default function MemberDashboard() {
                 membershipApp={membershipApp}
                 wakalaApps={wakalaApps}
                 paymentHistory={paymentHistory}
-                onNewWakala={() => setShowWakalaModal(true)}
-                onNewAdvisory={() => setShowAdvisoryModal(true)}
+                onNewWakala={() => {}}
                 t={t}
               />
             )}
@@ -411,24 +395,6 @@ export default function MemberDashboard() {
         )}
       </AnimatePresence>
 
-      <WakalaBookingModal
-        isOpen={showWakalaModal}
-        onClose={() => setShowWakalaModal(false)}
-        userData={userData}
-        onSuccess={() => {
-          setShowWakalaModal(false);
-          fetchData();
-        }}
-      />
-
-      <AdvisoryBookingModal
-        isOpen={showAdvisoryModal}
-        onClose={() => setShowAdvisoryModal(false)}
-        onSuccess={() => {
-          setShowAdvisoryModal(false);
-          fetchData();
-        }}
-      />
     </Layout>
   );
 }

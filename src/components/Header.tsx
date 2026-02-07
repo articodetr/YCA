@@ -114,10 +114,10 @@ export default function Header() {
             </motion.button>
 
             <Link
-              to="/get-involved/membership"
+              to="/book"
               className="hidden sm:inline-flex bg-accent text-primary px-5 py-2 hover:bg-hover transition-colors font-semibold text-xs uppercase tracking-wider whitespace-nowrap"
             >
-              {t('button.apply')}
+              {t('button.book')}
             </Link>
 
             <motion.button
@@ -251,10 +251,10 @@ export default function Header() {
 
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
-                to="/get-involved/membership"
+                to="/book"
                 className="bg-accent text-primary px-8 py-2.5 hover:bg-hover transition-colors font-semibold text-sm uppercase tracking-wider whitespace-nowrap"
               >
-                {t('button.apply')}
+                {t('button.book')}
               </Link>
             </motion.div>
 
@@ -344,13 +344,12 @@ export default function Header() {
                         {t('nav.getInvolved.partnerships')}
                       </Link>
 
-                      {/* Mobile Join Now inside dropdown (optional but useful) */}
                       <Link
-                        to="/get-involved/membership"
+                        to="/book"
                         onClick={() => setIsOpen(false)}
                         className="inline-flex mt-2 bg-accent text-primary px-4 py-2 rounded-md hover:bg-hover transition-colors font-semibold text-xs uppercase tracking-wider whitespace-nowrap"
                       >
-                        {t('button.apply')}
+                        {t('button.book')}
                       </Link>
                     </motion.div>
                   )}
@@ -409,13 +408,12 @@ export default function Header() {
                   {t('nav.contact')}
                 </Link>
 
-                {/* Mobile Join Now button (always visible in menu) */}
                 <Link
-                  to="/get-involved/membership"
+                  to="/book"
                   onClick={() => setIsOpen(false)}
                   className="block mt-3 bg-white/10 text-white px-6 py-3 rounded-lg hover:bg-white/15 transition-colors font-semibold text-center whitespace-nowrap"
                 >
-                  {t('button.apply')}
+                  {t('button.book')}
                 </Link>
               </motion.div>
             </motion.nav>

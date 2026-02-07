@@ -92,6 +92,8 @@ export default function Footer() {
               <motion.li whileHover={{ x: 5 }}><Link to="/services" className="text-gray-300 hover:text-accent transition-colors">{t('nav.services')}</Link></motion.li>
               <motion.li whileHover={{ x: 5 }}><Link to="/events" className="text-gray-300 hover:text-accent transition-colors">{t('nav.events')}</Link></motion.li>
               <motion.li whileHover={{ x: 5 }}><Link to="/news" className="text-gray-300 hover:text-accent transition-colors">{t('nav.news')}</Link></motion.li>
+              <motion.li whileHover={{ x: 5 }}><Link to="/book" className="text-gray-300 hover:text-accent transition-colors">{t('button.book')}</Link></motion.li>
+              <motion.li whileHover={{ x: 5 }}><Link to="/book/track" className="text-gray-300 hover:text-accent transition-colors">{language === 'ar' ? 'تتبع حجزك' : 'Track Your Booking'}</Link></motion.li>
               <motion.li whileHover={{ x: 5 }}><Link to="/get-involved/volunteer" className="text-gray-300 hover:text-accent transition-colors">{t('nav.getInvolved.volunteer')}</Link></motion.li>
               <motion.li whileHover={{ x: 5 }}><Link to="/contact" className="text-gray-300 hover:text-accent transition-colors">{t('nav.contact')}</Link></motion.li>
             </ul>

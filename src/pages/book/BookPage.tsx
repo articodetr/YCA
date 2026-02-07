@@ -113,6 +113,12 @@ export default function BookPage() {
     setPendingService(null);
   };
 
+  const handleMemberRegister = () => {
+    setShowGateModal(false);
+    setPendingService(null);
+    navigate('/get-involved/membership');
+  };
+
   const handleContinueAsGuest = () => {
     setShowGateModal(false);
     if (pendingService) {
@@ -305,6 +311,7 @@ export default function BookPage() {
         isOpen={showGateModal}
         onClose={handleContinueAsGuest}
         onMemberLogin={handleMemberLogin}
+        onMemberRegister={handleMemberRegister}
         onContinueAsGuest={handleContinueAsGuest}
       />
     </Layout>

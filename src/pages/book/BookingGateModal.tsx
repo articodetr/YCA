@@ -1,4 +1,4 @@
-import { X, User, Users } from 'lucide-react';
+import { X, User, UserPlus, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -6,6 +6,7 @@ interface BookingGateModalProps {
   isOpen: boolean;
   onClose: () => void;
   onMemberLogin: () => void;
+  onMemberRegister: () => void;
   onContinueAsGuest: () => void;
 }
 
@@ -14,6 +15,8 @@ const translations = {
     title: 'How would you like to proceed?',
     memberTitle: 'I am a registered member',
     memberDesc: 'Sign in to auto-fill your details and get member benefits',
+    registerTitle: 'Register for membership',
+    registerDesc: 'Create an account and enjoy exclusive member benefits',
     guestTitle: 'Continue as guest',
     guestDesc: 'Proceed without signing in',
   },
@@ -21,12 +24,14 @@ const translations = {
     title: 'كيف تريد المتابعة؟',
     memberTitle: 'أنا عضو مسجل',
     memberDesc: 'سجّل دخولك لتعبئة بياناتك تلقائياً والحصول على مزايا العضوية',
+    registerTitle: 'التسجيل في العضوية',
+    registerDesc: 'أنشئ حساباً واستمتع بمزايا العضوية الحصرية',
     guestTitle: 'المتابعة كضيف',
     guestDesc: 'المتابعة بدون تسجيل الدخول',
   },
 };
 
-export default function BookingGateModal({ isOpen, onClose, onMemberLogin, onContinueAsGuest }: BookingGateModalProps) {
+export default function BookingGateModal({ isOpen, onClose, onMemberLogin, onMemberRegister, onContinueAsGuest }: BookingGateModalProps) {
   const { language } = useLanguage();
   const isRTL = language === 'ar';
   const t = translations[language];
@@ -74,6 +79,23 @@ export default function BookingGateModal({ isOpen, onClose, onMemberLogin, onCon
                       {t.memberTitle}
                     </h3>
                     <p className="text-sm text-gray-600">{t.memberDesc}</p>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                onClick={onMemberRegister}
+                className="w-full group p-5 rounded-xl border-2 border-sky-200 hover:border-sky-500 bg-sky-50 hover:bg-sky-100 transition-all text-left"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-sky-500 text-white flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                    <UserPlus className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-lg mb-1">
+                      {t.registerTitle}
+                    </h3>
+                    <p className="text-sm text-gray-600">{t.registerDesc}</p>
                   </div>
                 </div>
               </button>

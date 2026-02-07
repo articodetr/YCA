@@ -10,8 +10,9 @@ import Calendar from '../../components/booking/Calendar';
 import TimeSlotGrid from '../../components/booking/TimeSlotGrid';
 import BookingSummaryCard from '../../components/booking/BookingSummaryCard';
 import {
-  getAvailableSlotsForDuration, reserveSlots, getUnavailableDates,
+  getAvailableSlotsForDuration, reserveSlots, getUnavailableDatesWithReasons,
   getEffectiveWorkingHours, checkSlotStillAvailable, findNearestAvailableSlot,
+  getPublicSlotCounts,
 } from '../../lib/booking-utils';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import type { BookingResult } from './BookPage';
@@ -141,6 +142,8 @@ export default function AdvisoryBookingForm({ onComplete }: AdvisoryBookingFormP
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [maxDaysAhead, setMaxDaysAhead] = useState(30);
   const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
+  const [fullyBookedDates, setFullyBookedDates] = useState<string[]>([]);
+  const [slotCounts, setSlotCounts] = useState<Record<string, number>>({});
   const [workingHours, setWorkingHours] = useState<{ startTime: string; endTime: string; breakTimes: { start: string; end: string }[] } | null>(null);
   const [recentlyBookedSlotIds, setRecentlyBookedSlotIds] = useState<Set<string>>(new Set());
   const [slotWarning, setSlotWarning] = useState('');
@@ -214,6 +217,7 @@ export default function AdvisoryBookingForm({ onComplete }: AdvisoryBookingFormP
           }
           return prev;
         });
+        loadUnavailableDates();
       })
       .subscribe();
     realtimeChannelRef.current = channel;
@@ -223,7 +227,8 @@ export default function AdvisoryBookingForm({ onComplete }: AdvisoryBookingFormP
     if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
     pollingIntervalRef.current = setInterval(() => {
       if (advisoryService && selectedDate && selectedDuration) loadSlots();
-    }, 25000);
+      loadUnavailableDates();
+    }, 10000);
   };
 
   const loadUserData = async () => {
@@ -261,11 +266,28 @@ export default function AdvisoryBookingForm({ onComplete }: AdvisoryBookingFormP
 
   const loadUnavailableDates = async () => {
     try {
-      const today = new Date();
-      const endDate = new Date(today);
+      const todayStr = new Date().toISOString().split('T')[0];
+      const endDate = new Date();
       endDate.setDate(endDate.getDate() + maxDaysAhead);
-      const dates = await getUnavailableDates(today.toISOString().split('T')[0], endDate.toISOString().split('T')[0]);
-      setUnavailableDates(dates);
+      const endStr = endDate.toISOString().split('T')[0];
+
+      const datesWithReasons = await getUnavailableDatesWithReasons(todayStr, endStr);
+      const unavailable: string[] = [];
+      const fullyBooked: string[] = [];
+      for (const item of datesWithReasons) {
+        if (item.reason === 'fully_booked') {
+          fullyBooked.push(item.date);
+        } else {
+          unavailable.push(item.date);
+        }
+      }
+      setUnavailableDates(unavailable);
+      setFullyBookedDates(fullyBooked);
+
+      if (advisoryService) {
+        const counts = await getPublicSlotCounts(advisoryService.id, todayStr, endStr);
+        setSlotCounts(counts);
+      }
     } catch (err) { console.error('Error loading unavailable dates:', err); }
   };
 
@@ -455,7 +477,9 @@ export default function AdvisoryBookingForm({ onComplete }: AdvisoryBookingFormP
                 <div className="max-w-md mx-auto">
                   <Calendar selectedDate={selectedDate}
                     onDateSelect={date => { setSelectedDate(date); setSelectedDuration(null); setSelectedSlot(null); }}
-                    maxDaysAhead={maxDaysAhead} unavailableDates={unavailableDates} />
+                    maxDaysAhead={maxDaysAhead} unavailableDates={unavailableDates}
+                    fullyBookedDates={fullyBookedDates} slotCounts={slotCounts}
+                    autoSelectNearest />
                 </div>
               </div>
               {selectedDate && (

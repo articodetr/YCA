@@ -618,6 +618,59 @@ export async function toggleSlotBlock(
   }
 }
 
+export async function getPublicSlotCounts(
+  serviceId: string,
+  startDate: string,
+  endDate: string
+): Promise<Record<string, number>> {
+  try {
+    const { data, error } = await supabase.rpc('get_public_slot_counts', {
+      p_service_id: serviceId,
+      p_start_date: startDate,
+      p_end_date: endDate,
+    });
+
+    if (error) {
+      console.error('Error fetching slot counts:', error);
+      return {};
+    }
+
+    const counts: Record<string, number> = {};
+    for (const row of data || []) {
+      counts[row.slot_date] = Number(row.available_count);
+    }
+    return counts;
+  } catch (error) {
+    console.error('Error calling slot counts function:', error);
+    return {};
+  }
+}
+
+export async function getUnavailableDatesWithReasons(
+  startDate: string,
+  endDate: string
+): Promise<{ date: string; reason: string }[]> {
+  try {
+    const { data, error } = await supabase.rpc('get_unavailable_dates', {
+      p_start_date: startDate,
+      p_end_date: endDate,
+    });
+
+    if (error) {
+      console.error('Error fetching unavailable dates:', error);
+      return [];
+    }
+
+    return (data || []).map((row: { unavailable_date: string; reason: string }) => ({
+      date: row.unavailable_date,
+      reason: row.reason,
+    }));
+  } catch (error) {
+    console.error('Error calling unavailable dates function:', error);
+    return [];
+  }
+}
+
 export async function getBookingsForDateRange(
   serviceId: string,
   startDate: string,

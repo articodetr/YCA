@@ -182,14 +182,53 @@ export async function getAvailableSlotsForDuration(
   return availableSlots;
 }
 
+export async function checkSlotStillAvailable(slotId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('availability_slots')
+    .select('is_available')
+    .eq('id', slotId)
+    .maybeSingle();
+
+  if (error || !data) return false;
+  return data.is_available === true;
+}
+
+export async function findNearestAvailableSlot(
+  serviceId: string,
+  date: string,
+  targetTime: string,
+  durationMinutes: 30 | 60
+): Promise<TimeSlot | null> {
+  const slots = await getAvailableSlotsForDuration(serviceId, date, durationMinutes);
+  if (slots.length === 0) return null;
+
+  const targetMinutes = timeToMinutes(targetTime);
+  let nearest: TimeSlot | null = null;
+  let minDiff = Infinity;
+
+  for (const slot of slots) {
+    const diff = Math.abs(timeToMinutes(slot.start_time) - targetMinutes);
+    if (diff < minDiff) {
+      minDiff = diff;
+      nearest = slot;
+    }
+  }
+
+  return nearest;
+}
+
+function timeToMinutes(time: string): number {
+  const [h, m] = time.split(':').map(Number);
+  return h * 60 + m;
+}
+
 export async function reserveSlots(
   bookingData: BookingData
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { slot_id, service_id, duration_minutes, booking_date, start_time } = bookingData;
+    const { slot_id, service_id, duration_minutes, booking_date } = bookingData;
 
     if (duration_minutes === 30) {
-      // Use atomic reservation function with row-level locking
       const { data, error } = await supabase.rpc('reserve_availability_slot', {
         p_slot_id: slot_id,
       });
@@ -198,12 +237,10 @@ export async function reserveSlots(
         return { success: false, error: error.message };
       }
 
-      // Check the result from the function
       if (!data.success) {
         return { success: false, error: data.error || 'Slot is no longer available' };
       }
     } else {
-      // For 60-minute bookings, we need to reserve two consecutive slots
       const allSlots = await getAvailableSlotsForDate(service_id, booking_date);
       const currentSlotIndex = allSlots.findIndex(s => s.id === slot_id);
 
@@ -213,23 +250,17 @@ export async function reserveSlots(
 
       const nextSlot = allSlots[currentSlotIndex + 1];
 
-      // Reserve both slots atomically
-      const { data: firstData, error: firstError } = await supabase.rpc('reserve_availability_slot', {
-        p_slot_id: slot_id,
+      const { data, error } = await supabase.rpc('reserve_two_consecutive_slots', {
+        p_slot_id_1: slot_id,
+        p_slot_id_2: nextSlot.id,
       });
 
-      if (firstError || !firstData?.success) {
-        return { success: false, error: firstData?.error || 'First slot is no longer available' };
+      if (error) {
+        return { success: false, error: error.message };
       }
 
-      const { data: secondData, error: secondError } = await supabase.rpc('reserve_availability_slot', {
-        p_slot_id: nextSlot.id,
-      });
-
-      if (secondError || !secondData?.success) {
-        // If second slot fails, release the first slot
-        await supabase.rpc('release_availability_slot', { p_slot_id: slot_id });
-        return { success: false, error: secondData?.error || 'Second slot is no longer available' };
+      if (!data.success) {
+        return { success: false, error: data.error || 'Slots are no longer available' };
       }
     }
 

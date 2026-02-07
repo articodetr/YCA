@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Loader2, CheckCircle, AlertCircle, X, User, Phone, Mail } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -6,7 +6,8 @@ import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import Calendar from '../booking/Calendar';
 import TimeSlotGrid from '../booking/TimeSlotGrid';
 import BookingSummaryCard from '../booking/BookingSummaryCard';
-import { getAvailableSlotsForDuration, reserveSlots, getUnavailableDates, getEffectiveWorkingHours } from '../../lib/booking-utils';
+import { getAvailableSlotsForDuration, reserveSlots, getUnavailableDates, getEffectiveWorkingHours, checkSlotStillAvailable, findNearestAvailableSlot } from '../../lib/booking-utils';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 interface TimeSlot {
   id: string;
@@ -44,6 +45,11 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
   const [maxDaysAhead, setMaxDaysAhead] = useState(30);
   const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
   const [workingHours, setWorkingHours] = useState<{ startTime: string; endTime: string; breakTimes: { start: string; end: string }[] } | null>(null);
+
+  const [recentlyBookedSlotIds, setRecentlyBookedSlotIds] = useState<Set<string>>(new Set());
+  const [slotWarning, setSlotWarning] = useState('');
+  const realtimeChannelRef = useRef<RealtimeChannel | null>(null);
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [isMember, setIsMember] = useState(false);
   const [memberData, setMemberData] = useState<{ fullName: string; phone: string; email: string; membershipNumber: string } | null>(null);
@@ -99,6 +105,10 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
     email: 'البريد الإلكتروني',
     memberBadge: 'عضو مسجل',
     membershipNumber: 'رقم العضوية',
+    slotTaken: 'الوقت الذي اخترته تم حجزه للتو من قبل شخص آخر. يرجى اختيار وقت آخر.',
+    slotTakenSuggestion: 'أقرب وقت متاح هو',
+    slotNoLongerAvailable: 'هذا الوقت لم يعد متاحاً. تم تحديث الأوقات المتاحة.',
+    tryDifferentDate: 'لا توجد أوقات متاحة لهذا التاريخ. يرجى اختيار تاريخ آخر.',
   } : {
     title: 'Advisory Bureau Appointment',
     subtitle: 'Select a date and time for your appointment',
@@ -142,7 +152,22 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
     email: 'Email Address',
     memberBadge: 'Registered Member',
     membershipNumber: 'Membership Number',
+    slotTaken: 'The time you selected was just booked by someone else. Please choose a different time.',
+    slotTakenSuggestion: 'The nearest available time is',
+    slotNoLongerAvailable: 'This time slot is no longer available. Available times have been updated.',
+    tryDifferentDate: 'No available times for this date. Please try a different date.',
   };
+
+  const cleanupRealtimeAndPolling = useCallback(() => {
+    if (realtimeChannelRef.current) {
+      supabase.removeChannel(realtimeChannelRef.current);
+      realtimeChannelRef.current = null;
+    }
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -153,16 +178,84 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
+      cleanupRealtimeAndPolling();
       resetForm();
     }
-    return () => { document.body.style.overflow = 'unset'; };
+    return () => {
+      document.body.style.overflow = 'unset';
+      cleanupRealtimeAndPolling();
+    };
   }, [isOpen]);
 
   useEffect(() => {
     if (advisoryService && selectedDate && selectedDuration) {
       loadSlots();
+      setupRealtimeSubscription();
+      setupPolling();
+    } else {
+      cleanupRealtimeAndPolling();
     }
+    return cleanupRealtimeAndPolling;
   }, [advisoryService, selectedDate, selectedDuration]);
+
+  const setupRealtimeSubscription = () => {
+    if (!advisoryService || !selectedDate) return;
+    cleanupRealtimeAndPolling();
+
+    const dateStr = selectedDate.toISOString().split('T')[0];
+    const channel = supabase
+      .channel(`slots-${dateStr}-${advisoryService.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'availability_slots',
+          filter: `service_id=eq.${advisoryService.id}`,
+        },
+        (payload) => {
+          const updated = payload.new as { id: string; is_available: boolean; date: string };
+          if (updated.date !== dateStr) return;
+
+          if (!updated.is_available) {
+            setRecentlyBookedSlotIds(prev => new Set([...prev, updated.id]));
+            setTimeout(() => {
+              setRecentlyBookedSlotIds(prev => {
+                const next = new Set(prev);
+                next.delete(updated.id);
+                return next;
+              });
+            }, 3000);
+          }
+
+          setSlots(prev => prev.map(s =>
+            s.id === updated.id ? { ...s, isAvailable: updated.is_available } : s
+          ));
+
+          setSelectedSlot(prev => {
+            if (prev && prev.id === updated.id && !updated.is_available) {
+              setSlotWarning(t.slotTaken);
+              return null;
+            }
+            return prev;
+          });
+        }
+      )
+      .subscribe();
+
+    realtimeChannelRef.current = channel;
+  };
+
+  const setupPolling = () => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+    }
+    pollingIntervalRef.current = setInterval(() => {
+      if (advisoryService && selectedDate && selectedDuration) {
+        loadSlots();
+      }
+    }, 25000);
+  };
 
   const loadUserData = async () => {
     if (!user) {
@@ -273,6 +366,7 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSlotWarning('');
 
     if (!selectedDate || !selectedSlot) {
       setError(t.selectDateTime);
@@ -294,6 +388,29 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
     try {
       const dateStr = selectedDate.toISOString().split('T')[0];
 
+      const stillAvailable = await checkSlotStillAvailable(selectedSlot.id);
+      if (!stillAvailable) {
+        await loadSlots();
+        const nearest = await findNearestAvailableSlot(
+          advisoryService.id, dateStr, selectedSlot.startTime, selectedDuration!
+        );
+        setSelectedSlot(null);
+        if (nearest) {
+          const formatT = (time: string) => {
+            const [h, m] = time.split(':');
+            const hour = parseInt(h);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const h12 = hour % 12 || 12;
+            return `${h12}:${m} ${ampm}`;
+          };
+          setSlotWarning(`${t.slotNoLongerAvailable} ${t.slotTakenSuggestion} ${formatT(nearest.start_time)}.`);
+        } else {
+          setSlotWarning(t.tryDifferentDate);
+        }
+        setLoading(false);
+        return;
+      }
+
       const reserveResult = await reserveSlots({
         slot_id: selectedSlot.id,
         service_id: advisoryService.id,
@@ -304,9 +421,23 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
       });
 
       if (!reserveResult.success) {
-        setError(reserveResult.error || t.errorMsg);
         await loadSlots();
+        const nearest = await findNearestAvailableSlot(
+          advisoryService.id, dateStr, selectedSlot.startTime, selectedDuration!
+        );
         setSelectedSlot(null);
+        if (nearest) {
+          const formatT = (time: string) => {
+            const [h, m] = time.split(':');
+            const hour = parseInt(h);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const h12 = hour % 12 || 12;
+            return `${h12}:${m} ${ampm}`;
+          };
+          setSlotWarning(`${t.slotTaken} ${t.slotTakenSuggestion} ${formatT(nearest.start_time)}.`);
+        } else {
+          setSlotWarning(t.tryDifferentDate);
+        }
         setLoading(false);
         return;
       }
@@ -334,6 +465,7 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
       }]);
 
       if (insertError) throw insertError;
+      cleanupRealtimeAndPolling();
       setStep('success');
     } catch (err: any) {
       console.error('Booking error:', err);
@@ -363,6 +495,8 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
     setSelectedDuration(null);
     setSelectedSlot(null);
     setError('');
+    setSlotWarning('');
+    setRecentlyBookedSlotIds(new Set());
     setStep('booking');
   };
 
@@ -407,6 +541,16 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
             <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-red-800">{error}</p>
             <button onClick={() => setError('')} className="text-red-600 hover:text-red-800 ml-auto">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {slotWarning && (
+          <div className="mx-6 mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-amber-800">{slotWarning}</p>
+            <button onClick={() => setSlotWarning('')} className="text-amber-600 hover:text-amber-800 ml-auto">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -530,8 +674,9 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
                       selectedDate={selectedDate}
                       slots={slots}
                       selectedSlot={selectedSlot}
-                      onSlotSelect={setSelectedSlot}
+                      onSlotSelect={(slot) => { setSlotWarning(''); setSelectedSlot(slot); }}
                       workingHours={workingHours}
+                      recentlyBookedSlotIds={recentlyBookedSlotIds}
                     />
                   </div>
                 )}

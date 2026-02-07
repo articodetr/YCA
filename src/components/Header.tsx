@@ -144,8 +144,8 @@ export default function Header() {
             </motion.button>
           </div>
 
-          {/* Desktop Nav */}
-          <nav className="hidden xl:flex items-center gap-3 2xl:gap-5">
+          {/* روابط التنقل - في المنتصف */}
+          <nav className="hidden xl:flex items-center justify-center flex-1 gap-3 2xl:gap-5">
             <Link to="/" className="text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
               {t('nav.home')}
             </Link>
@@ -251,7 +251,10 @@ export default function Header() {
             <Link to="/contact" className="text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
               {t('nav.contact')}
             </Link>
+          </nav>
 
+          {/* ازرار الاجراءات - على اليمين */}
+          <div className="hidden xl:flex items-center gap-3 flex-shrink-0">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 to="/book"
@@ -281,7 +284,7 @@ export default function Header() {
               <Globe size={16} />
               <span>{language === 'en' ? 'AR' : 'EN'}</span>
             </motion.button>
-          </nav>
+          </div>
         </div>
 
         {/* Mobile Menu */}

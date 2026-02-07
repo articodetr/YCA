@@ -1,7 +1,21 @@
 import { useState, useEffect } from 'react';
-import { Users, Heart, Calendar, TrendingUp, UserCheck, Mail, Loader2 } from 'lucide-react';
+import {
+  Users,
+  Heart,
+  Calendar,
+  UserCheck,
+  Mail,
+  Loader2,
+  ArrowUpRight,
+  FileText,
+  Newspaper,
+  MessageSquare,
+  Clock,
+  TrendingUp,
+} from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Link } from 'react-router-dom';
+import { useAdminAuth } from '../../contexts/AdminAuthContext';
 
 interface Stats {
   totalDonations: number;
@@ -10,11 +24,26 @@ interface Stats {
   totalRegistrations: number;
   totalMemberships: number;
   totalSubscribers: number;
+  totalContacts: number;
+  totalWakala: number;
+  pendingMemberships: number;
+  pendingWakala: number;
   recentDonations: any[];
   recentRegistrations: any[];
+  recentContacts: any[];
 }
 
+const quickActions = [
+  { label: 'Events', path: '/admin/events', icon: Calendar, color: 'bg-blue-500' },
+  { label: 'News', path: '/admin/news', icon: Newspaper, color: 'bg-amber-500' },
+  { label: 'Memberships', path: '/admin/memberships', icon: UserCheck, color: 'bg-emerald-500' },
+  { label: 'Messages', path: '/admin/contacts', icon: MessageSquare, color: 'bg-cyan-500' },
+  { label: 'Donations', path: '/admin/donations', icon: Heart, color: 'bg-rose-500' },
+  { label: 'Wakala', path: '/admin/wakala', icon: FileText, color: 'bg-teal-500' },
+];
+
 export default function Dashboard() {
+  const { adminData } = useAdminAuth();
   const [stats, setStats] = useState<Stats>({
     totalDonations: 0,
     totalDonationAmount: 0,
@@ -22,8 +51,13 @@ export default function Dashboard() {
     totalRegistrations: 0,
     totalMemberships: 0,
     totalSubscribers: 0,
+    totalContacts: 0,
+    totalWakala: 0,
+    pendingMemberships: 0,
+    pendingWakala: 0,
     recentDonations: [],
     recentRegistrations: [],
+    recentContacts: [],
   });
   const [loading, setLoading] = useState(true);
 
@@ -41,24 +75,26 @@ export default function Dashboard() {
         registrationsRes,
         membershipsRes,
         subscribersRes,
+        contactsRes,
+        wakalaRes,
+        pendingMembershipsRes,
+        pendingWakalaRes,
         recentDonationsRes,
         recentRegistrationsRes,
+        recentContactsRes,
       ] = await Promise.all([
         supabase.from('donations').select('amount', { count: 'exact' }),
         supabase.from('events').select('*', { count: 'exact' }),
         supabase.from('event_registrations').select('*', { count: 'exact' }),
         supabase.from('membership_applications').select('*', { count: 'exact' }),
         supabase.from('newsletter_subscribers').select('*', { count: 'exact' }),
-        supabase
-          .from('donations')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(5),
-        supabase
-          .from('event_registrations')
-          .select('*, events(title)')
-          .order('created_at', { ascending: false })
-          .limit(5),
+        supabase.from('contact_submissions').select('*', { count: 'exact' }),
+        supabase.from('wakala_applications').select('*', { count: 'exact' }),
+        supabase.from('membership_applications').select('*', { count: 'exact' }).eq('status', 'pending'),
+        supabase.from('wakala_applications').select('*', { count: 'exact' }).eq('status', 'submitted'),
+        supabase.from('donations').select('*').order('created_at', { ascending: false }).limit(5),
+        supabase.from('event_registrations').select('*, events(title)').order('created_at', { ascending: false }).limit(5),
+        supabase.from('contact_submissions').select('*').order('created_at', { ascending: false }).limit(4),
       ]);
 
       const totalAmount = donationsRes.data?.reduce((sum, d) => sum + (d.amount || 0), 0) || 0;
@@ -70,8 +106,13 @@ export default function Dashboard() {
         totalRegistrations: registrationsRes.count || 0,
         totalMemberships: membershipsRes.count || 0,
         totalSubscribers: subscribersRes.count || 0,
+        totalContacts: contactsRes.count || 0,
+        totalWakala: wakalaRes.count || 0,
+        pendingMemberships: pendingMembershipsRes.count || 0,
+        pendingWakala: pendingWakalaRes.count || 0,
         recentDonations: recentDonationsRes.data || [],
         recentRegistrations: recentRegistrationsRes.data || [],
+        recentContacts: recentContactsRes.data || [],
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -80,10 +121,32 @@ export default function Dashboard() {
     }
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  const formatRelativeTime = (dateStr: string) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d ago`;
+    return new Date(dateStr).toLocaleDateString();
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-12 h-12 animate-spin text-emerald-600" />
+        <div className="text-center">
+          <Loader2 className="w-10 h-10 animate-spin text-emerald-600 mx-auto mb-3" />
+          <p className="text-sm text-slate-500">Loading dashboard...</p>
+        </div>
       </div>
     );
   }
@@ -91,145 +154,223 @@ export default function Dashboard() {
   const statCards = [
     {
       title: 'Total Donations',
-      value: `£${stats.totalDonationAmount.toLocaleString()}`,
+      value: `\u00A3${stats.totalDonationAmount.toLocaleString()}`,
       subtitle: `${stats.totalDonations} donations`,
       icon: Heart,
-      color: 'bg-rose-500',
+      iconBg: 'bg-rose-100',
+      iconColor: 'text-rose-600',
       link: '/admin/donations',
-    },
-    {
-      title: 'Events',
-      value: stats.totalEvents.toString(),
-      subtitle: 'Active events',
-      icon: Calendar,
-      color: 'bg-blue-500',
-      link: '/admin/events',
-    },
-    {
-      title: 'Event Registrations',
-      value: stats.totalRegistrations.toString(),
-      subtitle: 'Total registrations',
-      icon: Users,
-      color: 'bg-emerald-500',
-      link: '/admin/registrations',
     },
     {
       title: 'Memberships',
       value: stats.totalMemberships.toString(),
-      subtitle: 'Applications',
+      subtitle: stats.pendingMemberships > 0 ? `${stats.pendingMemberships} pending` : 'Applications',
       icon: UserCheck,
-      color: 'bg-amber-500',
+      iconBg: 'bg-emerald-100',
+      iconColor: 'text-emerald-600',
       link: '/admin/memberships',
+      badge: stats.pendingMemberships > 0 ? stats.pendingMemberships : undefined,
     },
     {
-      title: 'Newsletter Subscribers',
+      title: 'Events',
+      value: stats.totalEvents.toString(),
+      subtitle: `${stats.totalRegistrations} registrations`,
+      icon: Calendar,
+      iconBg: 'bg-blue-100',
+      iconColor: 'text-blue-600',
+      link: '/admin/events',
+    },
+    {
+      title: 'Wakala',
+      value: stats.totalWakala.toString(),
+      subtitle: stats.pendingWakala > 0 ? `${stats.pendingWakala} pending` : 'Applications',
+      icon: FileText,
+      iconBg: 'bg-teal-100',
+      iconColor: 'text-teal-600',
+      link: '/admin/wakala',
+      badge: stats.pendingWakala > 0 ? stats.pendingWakala : undefined,
+    },
+    {
+      title: 'Subscribers',
       value: stats.totalSubscribers.toString(),
-      subtitle: 'Active subscribers',
+      subtitle: 'Newsletter',
       icon: Mail,
-      color: 'bg-purple-500',
+      iconBg: 'bg-amber-100',
+      iconColor: 'text-amber-600',
       link: '/admin/subscribers',
+    },
+    {
+      title: 'Messages',
+      value: stats.totalContacts.toString(),
+      subtitle: 'Contact messages',
+      icon: MessageSquare,
+      iconBg: 'bg-cyan-100',
+      iconColor: 'text-cyan-600',
+      link: '/admin/contacts',
     },
   ];
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Welcome back! Here's what's happening.</p>
+          <h1 className="text-2xl font-bold text-slate-900">
+            {getGreeting()}, {adminData?.full_name?.split(' ')[0] || 'Admin'}
+          </h1>
+          <p className="text-slate-500 mt-0.5 text-sm">
+            Here is what is happening across your site today.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-slate-400">
+          <Clock className="w-3.5 h-3.5" />
+          {new Date().toLocaleDateString('en-GB', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+          })}
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 lg:gap-4">
         {statCards.map((card, index) => {
           const Icon = card.icon;
           return (
             <Link
               key={index}
               to={card.link}
-              className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+              className="relative bg-white rounded-xl p-4 border border-slate-200/80 hover:border-slate-300 hover:shadow-md transition-all duration-200 group"
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className={`${card.color} p-3 rounded-lg`}>
-                  <Icon className="w-6 h-6 text-white" />
-                </div>
+              {card.badge && (
+                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                  {card.badge}
+                </span>
+              )}
+              <div className={`${card.iconBg} w-10 h-10 rounded-lg flex items-center justify-center mb-3`}>
+                <Icon className={`w-5 h-5 ${card.iconColor}`} />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-1">{card.value}</h3>
-              <p className="text-sm text-gray-600">{card.title}</p>
-              <p className="text-xs text-gray-500 mt-1">{card.subtitle}</p>
+              <p className="text-xl font-bold text-slate-900 leading-tight">{card.value}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{card.title}</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">{card.subtitle}</p>
+              <ArrowUpRight className="w-4 h-4 text-slate-300 group-hover:text-emerald-500 absolute top-4 right-4 transition-colors" />
             </Link>
           );
         })}
       </div>
 
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Donations */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Donations</h2>
+      <div>
+        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Quick Actions</h2>
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+          {quickActions.map((action) => {
+            const Icon = action.icon;
+            return (
+              <Link
+                key={action.path}
+                to={action.path}
+                className="flex flex-col items-center gap-2 py-3 px-2 rounded-xl border border-slate-200/80 bg-white hover:border-slate-300 hover:shadow-sm transition-all duration-200 group"
+              >
+                <div className={`${action.color} w-9 h-9 rounded-lg flex items-center justify-center`}>
+                  <Icon className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-xs font-medium text-slate-600 group-hover:text-slate-900 transition-colors text-center">
+                  {action.label}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+        <div className="bg-white rounded-xl border border-slate-200/80 overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-slate-900">Recent Donations</h2>
+            <Link to="/admin/donations" className="text-xs text-emerald-600 hover:text-emerald-700 font-medium">
+              View all
+            </Link>
           </div>
-          <div className="p-6">
+          <div className="divide-y divide-slate-100">
             {stats.recentDonations.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No donations yet</p>
-            ) : (
-              <div className="space-y-4">
-                {stats.recentDonations.map((donation) => (
-                  <div
-                    key={donation.id}
-                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                  >
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {donation.full_name || 'Anonymous'}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {new Date(donation.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-emerald-600">
-                        £{donation.amount.toLocaleString()}
-                      </p>
-                      <p className="text-xs text-gray-500 capitalize">{donation.donation_type}</p>
-                    </div>
-                  </div>
-                ))}
+              <div className="py-10 text-center">
+                <Heart className="w-8 h-8 text-slate-200 mx-auto mb-2" />
+                <p className="text-sm text-slate-400">No donations yet</p>
               </div>
+            ) : (
+              stats.recentDonations.map((donation) => (
+                <div key={donation.id} className="px-5 py-3 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-slate-800 truncate">
+                      {donation.full_name || 'Anonymous'}
+                    </p>
+                    <p className="text-[11px] text-slate-400">
+                      {formatRelativeTime(donation.created_at)}
+                    </p>
+                  </div>
+                  <span className="text-sm font-semibold text-emerald-600 ml-3 flex-shrink-0">
+                    {'\u00A3'}{donation.amount?.toLocaleString()}
+                  </span>
+                </div>
+              ))
             )}
           </div>
         </div>
 
-        {/* Recent Event Registrations */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Registrations</h2>
+        <div className="bg-white rounded-xl border border-slate-200/80 overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-slate-900">Recent Registrations</h2>
+            <Link to="/admin/registrations" className="text-xs text-emerald-600 hover:text-emerald-700 font-medium">
+              View all
+            </Link>
           </div>
-          <div className="p-6">
+          <div className="divide-y divide-slate-100">
             {stats.recentRegistrations.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No registrations yet</p>
-            ) : (
-              <div className="space-y-4">
-                {stats.recentRegistrations.map((registration) => (
-                  <div
-                    key={registration.id}
-                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                  >
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{registration.full_name}</p>
-                      <p className="text-sm text-gray-500">
-                        {registration.events?.title || 'Event'}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-500">
-                        {new Date(registration.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+              <div className="py-10 text-center">
+                <Users className="w-8 h-8 text-slate-200 mx-auto mb-2" />
+                <p className="text-sm text-slate-400">No registrations yet</p>
               </div>
+            ) : (
+              stats.recentRegistrations.map((reg) => (
+                <div key={reg.id} className="px-5 py-3 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-slate-800 truncate">{reg.full_name}</p>
+                    <p className="text-[11px] text-slate-400 truncate">
+                      {reg.events?.title || 'Event'}
+                    </p>
+                  </div>
+                  <span className="text-[11px] text-slate-400 ml-3 flex-shrink-0">
+                    {formatRelativeTime(reg.created_at)}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-slate-200/80 overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-slate-900">Recent Messages</h2>
+            <Link to="/admin/contacts" className="text-xs text-emerald-600 hover:text-emerald-700 font-medium">
+              View all
+            </Link>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {stats.recentContacts.length === 0 ? (
+              <div className="py-10 text-center">
+                <MessageSquare className="w-8 h-8 text-slate-200 mx-auto mb-2" />
+                <p className="text-sm text-slate-400">No messages yet</p>
+              </div>
+            ) : (
+              stats.recentContacts.map((contact) => (
+                <div key={contact.id} className="px-5 py-3 hover:bg-slate-50/50 transition-colors">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <p className="text-sm font-medium text-slate-800 truncate">{contact.name}</p>
+                    <span className="text-[11px] text-slate-400 ml-3 flex-shrink-0">
+                      {formatRelativeTime(contact.created_at)}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 truncate">{contact.subject}</p>
+                </div>
+              ))
             )}
           </div>
         </div>

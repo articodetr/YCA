@@ -303,7 +303,7 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
         <div className="p-6 sm:p-8">
           <button type="button" onClick={() => setStep('form')} className="mb-4 text-sm text-gray-500 hover:text-gray-700 underline">{t.backToForm}</button>
           <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#059669' } } }}>
-            <WakalaCheckoutForm amount={paymentAmount} onSuccess={handlePaymentSuccess} onBack={() => setStep('form')} />
+            <WakalaCheckoutForm amount={paymentAmount} wakalaId={applicationId || undefined} onSuccess={handlePaymentSuccess} onBack={() => setStep('form')} />
           </Elements>
         </div>
       </div>

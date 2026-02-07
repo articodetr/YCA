@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CreditCard, Mail, Phone, User, MessageSquare, Check, AlertCircle, Loader2, Heart } from 'lucide-react';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { supabase } from '../lib/supabase';
 import { fadeInUp, scaleIn } from '../lib/animations';
 
 interface FormData {
@@ -138,10 +139,23 @@ export default function DonationForm() {
       );
 
       if (stripeError) {
+        if (data.donationId) {
+          await supabase
+            .from('donations')
+            .update({ payment_status: 'failed' })
+            .eq('id', data.donationId);
+        }
         throw new Error(stripeError.message || 'Payment failed');
       }
 
       if (paymentIntent?.status === 'succeeded') {
+        if (data.donationId) {
+          await supabase
+            .from('donations')
+            .update({ payment_status: 'succeeded' })
+            .eq('id', data.donationId);
+        }
+
         setPaymentStatus({
           status: 'success',
           message: `Thank you for your £${formData.amount} donation!`,

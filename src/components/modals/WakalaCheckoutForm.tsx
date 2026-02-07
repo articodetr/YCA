@@ -2,14 +2,16 @@ import { useState } from 'react';
 import { Loader2, AlertCircle, CreditCard, ArrowLeft } from 'lucide-react';
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { supabase } from '../../lib/supabase';
 
 interface WakalaCheckoutFormProps {
   amount: number;
+  wakalaId?: string;
   onSuccess: () => void;
   onBack: () => void;
 }
 
-export default function WakalaCheckoutForm({ amount, onSuccess, onBack }: WakalaCheckoutFormProps) {
+export default function WakalaCheckoutForm({ amount, wakalaId, onSuccess, onBack }: WakalaCheckoutFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const { language } = useLanguage();
@@ -44,13 +46,21 @@ export default function WakalaCheckoutForm({ amount, onSuccess, onBack }: Wakala
       const { error: submitError } = await elements.submit();
       if (submitError) throw submitError;
 
-      const { error: confirmError } = await stripe.confirmPayment({
+      const { error: confirmError, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: { return_url: `${window.location.origin}/member/dashboard` },
         redirect: 'if_required',
       });
 
       if (confirmError) throw confirmError;
+
+      if (wakalaId && paymentIntent?.status === 'succeeded') {
+        await supabase
+          .from('wakala_applications')
+          .update({ payment_status: 'paid', status: 'submitted' })
+          .eq('id', wakalaId);
+      }
+
       onSuccess();
     } catch (err: any) {
       setError(err.message || (isRTL ? 'فشل الدفع. يرجى المحاولة مرة أخرى.' : 'Payment failed. Please try again.'));

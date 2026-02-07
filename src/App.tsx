@@ -28,6 +28,7 @@ import Partnerships from './pages/get-involved/Partnerships';
 import Resources from './pages/Resources';
 import BookPage from './pages/book/BookPage';
 import BookingTracker from './pages/book/BookingTracker';
+import PaymentResult from './pages/PaymentResult';
 
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import { MemberAuthProvider } from './contexts/MemberAuthContext';
@@ -82,6 +83,7 @@ function App() {
             <Route path="/member/signup" element={<MemberSignup />} />
             <Route path="/book" element={<BookPage />} />
             <Route path="/book/track" element={<BookingTracker />} />
+            <Route path="/payment/result" element={<PaymentResult />} />
             <Route path="/apply" element={<BookPage />} />
 
           <Route

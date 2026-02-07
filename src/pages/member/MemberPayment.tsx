@@ -5,12 +5,20 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Loader2, CheckCircle, CreditCard, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
+import { supabase } from '../../lib/supabase';
 import Layout from '../../components/Layout';
 import PageHeader from '../../components/PageHeader';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
-function CheckoutForm({ amount, type }: { amount: number; type: string }) {
+interface CheckoutFormProps {
+  amount: number;
+  type: string;
+  applicationId: string | null;
+  wakalaId: string | null;
+}
+
+function CheckoutForm({ amount, type, applicationId, wakalaId }: CheckoutFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const { language } = useLanguage();
@@ -62,16 +70,31 @@ function CheckoutForm({ amount, type }: { amount: number; type: string }) {
         throw submitError;
       }
 
-      const { error: confirmError } = await stripe.confirmPayment({
+      const { error: confirmError, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: `${window.location.origin}/member/payment/success`,
+          return_url: `${window.location.origin}/member/dashboard`,
         },
         redirect: 'if_required',
       });
 
       if (confirmError) {
         throw confirmError;
+      }
+
+      if (paymentIntent?.status === 'succeeded') {
+        if (applicationId) {
+          await supabase
+            .from('membership_applications')
+            .update({ payment_status: 'paid' })
+            .eq('id', applicationId);
+        }
+        if (wakalaId) {
+          await supabase
+            .from('wakala_applications')
+            .update({ payment_status: 'paid', status: 'submitted' })
+            .eq('id', wakalaId);
+        }
       }
 
       setSuccess(true);
@@ -195,17 +218,6 @@ export default function MemberPayment() {
 
   const createPaymentIntent = async () => {
     try {
-      console.log('Creating payment intent with:', {
-        amount: Math.round(amount * 100),
-        currency: 'gbp',
-        metadata: {
-          user_id: user?.id,
-          application_id: applicationId,
-          wakala_id: wakalaId,
-          type,
-        },
-      });
-
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`,
         {
@@ -227,10 +239,7 @@ export default function MemberPayment() {
         }
       );
 
-      console.log('Response status:', response.status);
-
       const data = await response.json();
-      console.log('Response data:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to create payment intent');
@@ -298,7 +307,7 @@ export default function MemberPayment() {
                 },
               }}
             >
-              <CheckoutForm amount={amount} type={type} />
+              <CheckoutForm amount={amount} type={type} applicationId={applicationId} wakalaId={wakalaId} />
             </Elements>
           )}
         </div>

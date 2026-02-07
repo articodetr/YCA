@@ -461,7 +461,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
           </div>
           <div className="p-6">
             <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#059669' } } }}>
-              <WakalaCheckoutForm amount={paymentAmount} onSuccess={() => setStep('success')} onBack={() => setStep('form')} />
+              <WakalaCheckoutForm amount={paymentAmount} wakalaId={applicationId || undefined} onSuccess={() => setStep('success')} onBack={() => setStep('form')} />
             </Elements>
           </div>
         </div>

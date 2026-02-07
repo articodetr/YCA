@@ -8,6 +8,19 @@ const corsHeaders = {
     "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+const jsonHeaders = { ...corsHeaders, "Content-Type": "application/json" };
+
+function errorResponse(message: string, status = 400) {
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: jsonHeaders,
+  });
+}
+
+function successResponse(data: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify(data), { status, headers: jsonHeaders });
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -16,10 +29,7 @@ Deno.serve(async (req: Request) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Missing authorization header" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return errorResponse("Missing authorization header", 401);
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -34,13 +44,12 @@ Deno.serve(async (req: Request) => {
       data: { user },
     } = await userClient.auth.getUser();
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return errorResponse("Unauthorized", 401);
     }
 
-    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
 
     const { data: callerAdmin } = await adminClient
       .from("admins")
@@ -50,31 +59,22 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
 
     if (!callerAdmin || callerAdmin.role !== "super_admin") {
-      return new Response(
-        JSON.stringify({ error: "Only super admins can manage admin accounts" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return errorResponse("Only super admins can manage admin accounts", 403);
     }
 
     const body = await req.json();
     const { action } = body;
 
     if (action === "create") {
-      const { email, password, full_name, role } = body;
+      const { email, password, full_name, role, permissions } = body;
 
       if (!email || !password || !full_name) {
-        return new Response(
-          JSON.stringify({ error: "Email, password, and full name are required" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return errorResponse("Email, password, and full name are required");
       }
 
       const validRoles = ["super_admin", "admin", "editor"];
       if (role && !validRoles.includes(role)) {
-        return new Response(
-          JSON.stringify({ error: "Invalid role" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return errorResponse("Invalid role");
       }
 
       const { data: authUser, error: authError } =
@@ -85,10 +85,7 @@ Deno.serve(async (req: Request) => {
         });
 
       if (authError) {
-        return new Response(
-          JSON.stringify({ error: authError.message }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return errorResponse(authError.message);
       }
 
       const { error: insertError } = await adminClient.from("admins").insert({
@@ -101,26 +98,25 @@ Deno.serve(async (req: Request) => {
 
       if (insertError) {
         await adminClient.auth.admin.deleteUser(authUser.user.id);
-        return new Response(
-          JSON.stringify({ error: insertError.message }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return errorResponse(insertError.message);
       }
 
-      return new Response(
-        JSON.stringify({ success: true, user_id: authUser.user.id }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      if (permissions && Array.isArray(permissions) && permissions.length > 0) {
+        const permRows = permissions.map((key: string) => ({
+          admin_id: authUser.user.id,
+          permission_key: key,
+        }));
+        await adminClient.from("admin_permissions").insert(permRows);
+      }
+
+      return successResponse({ success: true, user_id: authUser.user.id });
     }
 
     if (action === "update") {
       const { admin_id, full_name, role, is_active } = body;
 
       if (!admin_id) {
-        return new Response(
-          JSON.stringify({ error: "admin_id is required" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return errorResponse("admin_id is required");
       }
 
       const updates: Record<string, unknown> = {};
@@ -134,26 +130,16 @@ Deno.serve(async (req: Request) => {
         .eq("id", admin_id);
 
       if (error) {
-        return new Response(
-          JSON.stringify({ error: error.message }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return errorResponse(error.message);
       }
 
-      return new Response(
-        JSON.stringify({ success: true }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return successResponse({ success: true });
     }
 
-    return new Response(
-      JSON.stringify({ error: "Invalid action" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  } catch (err) {
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return errorResponse("Invalid action");
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error ? err.message : "Internal server error";
+    return errorResponse(message, 500);
   }
 });

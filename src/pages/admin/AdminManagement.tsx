@@ -4,12 +4,13 @@ import {
   Plus,
   X,
   Loader2,
-  UserCheck,
-  UserX,
   Eye,
   EyeOff,
   Save,
   Users,
+  Type,
+  Settings,
+  Lock,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
@@ -29,15 +30,85 @@ interface AdminPermission {
   permission_key: string;
 }
 
-const ALL_PERMISSIONS = [
-  { key: 'wakala.view', label: 'View Wakala Applications' },
-  { key: 'wakala.edit', label: 'Edit Wakala Applications' },
-  { key: 'availability.view', label: 'View Availability' },
-  { key: 'availability.manage', label: 'Manage Availability' },
-  { key: 'content.manage', label: 'Manage Content' },
-  { key: 'admin.manage', label: 'Manage Admins' },
-  { key: 'export.data', label: 'Export Data' },
+interface PermissionGroup {
+  title: string;
+  icon: typeof Shield;
+  items: { key: string; label: string; description: string }[];
+}
+
+const PERMISSION_GROUPS: PermissionGroup[] = [
+  {
+    title: 'Site Management',
+    icon: Type,
+    items: [
+      {
+        key: 'content.manage',
+        label: 'Content',
+        description: 'Page Content, Hero, Images, Team, Services, Programmes, Resources',
+      },
+      {
+        key: 'news_events.manage',
+        label: 'News & Events',
+        description: 'News, Events, Event Galleries',
+      },
+      {
+        key: 'submissions.view',
+        label: 'Submissions',
+        description: 'Registrations, Memberships, Volunteers, Partnerships, Messages, Donations, Subscribers',
+      },
+    ],
+  },
+  {
+    title: 'Operations',
+    icon: Settings,
+    items: [
+      {
+        key: 'availability.manage',
+        label: 'Availability',
+        description: 'Manage booking availability and slots',
+      },
+      {
+        key: 'wakala.manage',
+        label: 'Wakala Applications',
+        description: 'View and manage Wakala applications',
+      },
+      {
+        key: 'admin.manage',
+        label: 'Admin Management',
+        description: 'Manage admin accounts and permissions',
+      },
+      {
+        key: 'settings.manage',
+        label: 'Settings',
+        description: 'Site settings and configuration',
+      },
+    ],
+  },
 ];
+
+const ALL_PERMISSION_KEYS = PERMISSION_GROUPS.flatMap((g) =>
+  g.items.map((i) => i.key)
+);
+
+async function callManageAdmin(body: Record<string, unknown>) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-admin`;
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${session?.access_token}`,
+      'Content-Type': 'application/json',
+      apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify(body),
+  });
+
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(result.error || result.msg || 'Request failed');
+  }
+  return result;
+}
 
 export default function AdminManagement() {
   const [admins, setAdmins] = useState<AdminUser[]>([]);
@@ -55,11 +126,11 @@ export default function AdminManagement() {
   const fetchAdmins = async () => {
     setLoading(true);
     try {
-      const [{ data: adminData }, { data: permData }] = await Promise.all([
+      const [{ data: adminList }, { data: permData }] = await Promise.all([
         supabase.from('admins').select('*').order('created_at', { ascending: true }),
         supabase.from('admin_permissions').select('admin_id, permission_key'),
       ]);
-      setAdmins(adminData || []);
+      setAdmins(adminList || []);
       setPermissions(permData || []);
     } catch (error) {
       console.error('Error fetching admins:', error);
@@ -145,49 +216,61 @@ export default function AdminManagement() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {admins.map((admin) => (
-                  <tr key={admin.id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold">
-                          {admin.full_name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)}
+                {admins.map((admin) => {
+                  const permCount = admin.role === 'super_admin'
+                    ? ALL_PERMISSION_KEYS.length
+                    : getAdminPermissions(admin.id).length;
+                  return (
+                    <tr key={admin.id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold">
+                            {admin.full_name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)}
+                          </div>
+                          <span className="text-sm font-medium text-gray-900">{admin.full_name}</span>
                         </div>
-                        <span className="text-sm font-medium text-gray-900">{admin.full_name}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 text-sm text-gray-600">{admin.email}</td>
-                    <td className="px-5 py-4">{getRoleBadge(admin.role)}</td>
-                    <td className="px-5 py-4">
-                      <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${admin.is_active ? 'text-green-700' : 'text-red-600'}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${admin.is_active ? 'bg-green-500' : 'bg-red-500'}`} />
-                        {admin.is_active ? 'Active' : 'Disabled'}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 text-xs text-gray-500">
-                      {admin.last_login_at
-                        ? new Date(admin.last_login_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-                        : 'Never'}
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => setShowPermissions(showPermissions === admin.id ? null : admin.id)}
-                          className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-700 transition-colors"
-                          title="Permissions"
-                        >
-                          <Shield className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => setEditingAdmin(admin)}
-                          className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-700 transition-colors"
-                          title="Edit"
-                        >
-                          <Users className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-5 py-4 text-sm text-gray-600">{admin.email}</td>
+                      <td className="px-5 py-4">{getRoleBadge(admin.role)}</td>
+                      <td className="px-5 py-4">
+                        <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${admin.is_active ? 'text-green-700' : 'text-red-600'}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${admin.is_active ? 'bg-green-500' : 'bg-red-500'}`} />
+                          {admin.is_active ? 'Active' : 'Disabled'}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-xs text-gray-500">
+                        {admin.last_login_at
+                          ? new Date(admin.last_login_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                          : 'Never'}
+                      </td>
+                      <td className="px-5 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => setShowPermissions(showPermissions === admin.id ? null : admin.id)}
+                            className={`p-2 rounded-lg transition-colors relative ${
+                              showPermissions === admin.id
+                                ? 'bg-emerald-50 text-emerald-700'
+                                : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
+                            }`}
+                            title="Permissions"
+                          >
+                            <Shield className="w-4 h-4" />
+                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                              {permCount}
+                            </span>
+                          </button>
+                          <button
+                            onClick={() => setEditingAdmin(admin)}
+                            className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 hover:text-gray-700 transition-colors"
+                            title="Edit"
+                          >
+                            <Users className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -225,6 +308,78 @@ export default function AdminManagement() {
   );
 }
 
+function PermissionToggle({
+  checked,
+  disabled,
+  label,
+  description,
+  onChange,
+}: {
+  checked: boolean;
+  disabled: boolean;
+  label: string;
+  description: string;
+  onChange: () => void;
+}) {
+  return (
+    <button
+      onClick={() => !disabled && onChange()}
+      disabled={disabled}
+      className={`flex items-start gap-3 p-3 rounded-lg border text-left transition-all w-full ${
+        checked
+          ? 'bg-emerald-50/80 border-emerald-200'
+          : 'bg-white border-gray-200 hover:border-gray-300'
+      } ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+    >
+      <div className={`mt-0.5 w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+        checked ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300'
+      }`}>
+        {checked && <span className="text-white text-[8px] font-bold">&#10003;</span>}
+      </div>
+      <div className="min-w-0">
+        <p className={`text-sm font-medium ${checked ? 'text-emerald-800' : 'text-gray-700'}`}>
+          {label}
+        </p>
+        <p className="text-[11px] text-gray-400 mt-0.5 leading-relaxed">{description}</p>
+      </div>
+    </button>
+  );
+}
+
+function PermissionGroupView({
+  group,
+  currentPermissions,
+  isSuperAdmin,
+  onToggle,
+}: {
+  group: PermissionGroup;
+  currentPermissions: string[];
+  isSuperAdmin: boolean;
+  onToggle: (key: string) => void;
+}) {
+  const GroupIcon = group.icon;
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-2.5">
+        <GroupIcon className="w-4 h-4 text-gray-400" />
+        <h5 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{group.title}</h5>
+      </div>
+      <div className="space-y-2">
+        {group.items.map((item) => (
+          <PermissionToggle
+            key={item.key}
+            checked={isSuperAdmin || currentPermissions.includes(item.key)}
+            disabled={isSuperAdmin}
+            label={item.label}
+            description={item.description}
+            onChange={() => onToggle(item.key)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function PermissionsPanel({
   adminId,
   adminName,
@@ -244,42 +399,34 @@ function PermissionsPanel({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <h4 className="text-sm font-semibold text-gray-900">
-          Permissions for {adminName}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h4 className="text-sm font-semibold text-gray-900">
+            Permissions for {adminName}
+          </h4>
           {isSuperAdmin && (
-            <span className="ml-2 text-xs text-gray-500 font-normal">
-              (Super admins have all permissions by default)
-            </span>
+            <div className="flex items-center gap-1.5 mt-1">
+              <Lock className="w-3 h-3 text-gray-400" />
+              <span className="text-xs text-gray-500">
+                Super admins have full access to all sections
+              </span>
+            </div>
           )}
-        </h4>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+        </div>
+        <button onClick={onClose} className="p-1.5 hover:bg-gray-200 rounded-lg text-gray-400 hover:text-gray-600 transition-colors">
           <X className="w-4 h-4" />
         </button>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-        {ALL_PERMISSIONS.map((perm) => {
-          const hasIt = isSuperAdmin || currentPermissions.includes(perm.key);
-          return (
-            <button
-              key={perm.key}
-              onClick={() => !isSuperAdmin && onToggle(adminId, perm.key)}
-              disabled={isSuperAdmin}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
-                hasIt
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                  : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
-              } ${isSuperAdmin ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-            >
-              <div className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center ${
-                hasIt ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300'
-              }`}>
-                {hasIt && <span className="text-white text-[8px] font-bold">&#10003;</span>}
-              </div>
-              {perm.label}
-            </button>
-          );
-        })}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {PERMISSION_GROUPS.map((group) => (
+          <PermissionGroupView
+            key={group.title}
+            group={group}
+            currentPermissions={currentPermissions}
+            isSuperAdmin={isSuperAdmin}
+            onToggle={(key) => onToggle(adminId, key)}
+          />
+        ))}
       </div>
     </div>
   );
@@ -290,9 +437,18 @@ function CreateAdminModal({ onClose, onCreated }: { onClose: () => void; onCreat
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('admin');
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  const isSuperAdmin = role === 'super_admin';
+
+  const togglePerm = (key: string) => {
+    setSelectedPermissions((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    );
+  };
 
   const handleCreate = async () => {
     if (!fullName.trim() || !email.trim() || !password.trim()) {
@@ -307,32 +463,18 @@ function CreateAdminModal({ onClose, onCreated }: { onClose: () => void; onCreat
     setSaving(true);
     setError('');
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-admin`;
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session?.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'create',
-          email: email.trim(),
-          password,
-          full_name: fullName.trim(),
-          role,
-        }),
+      await callManageAdmin({
+        action: 'create',
+        email: email.trim(),
+        password,
+        full_name: fullName.trim(),
+        role,
+        permissions: isSuperAdmin ? [] : selectedPermissions,
       });
-
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to create admin');
-      }
-
       onCreated();
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to create admin');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to create admin');
     } finally {
       setSaving(false);
     }
@@ -340,75 +482,100 @@ function CreateAdminModal({ onClose, onCreated }: { onClose: () => void; onCreat
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
-        <div className="flex items-center justify-between mb-5">
+      <div className="bg-white rounded-2xl max-w-2xl w-full shadow-xl max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between p-6 pb-0">
           <h3 className="text-lg font-bold text-gray-900">Add New Admin</h3>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg">
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-            {error}
-          </div>
-        )}
+        <div className="overflow-y-auto p-6 pt-4 flex-1">
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              {error}
+            </div>
+          )}
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-              placeholder="Enter full name"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-              placeholder="admin@example.com"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <div className="relative">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
               <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 pr-10 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                placeholder="Minimum 6 characters"
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                placeholder="Enter full name"
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                placeholder="admin@example.com"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-3 py-2 pr-10 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  placeholder="Minimum 6 characters"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
+                <option value="editor">Editor</option>
+                <option value="admin">Admin</option>
+                <option value="super_admin">Super Admin</option>
+              </select>
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-            >
-              <option value="editor">Editor</option>
-              <option value="admin">Admin</option>
-              <option value="super_admin">Super Admin</option>
-            </select>
+
+          <div className="border-t border-gray-200 pt-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Shield className="w-4 h-4 text-gray-500" />
+              <h4 className="text-sm font-semibold text-gray-900">Permissions</h4>
+              {isSuperAdmin && (
+                <span className="text-[11px] text-gray-400 ml-1">
+                  (Super admins have full access)
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {PERMISSION_GROUPS.map((group) => (
+                <PermissionGroupView
+                  key={group.title}
+                  group={group}
+                  currentPermissions={selectedPermissions}
+                  isSuperAdmin={isSuperAdmin}
+                  onToggle={togglePerm}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="flex gap-3 mt-6">
+        <div className="flex gap-3 p-6 pt-4 border-t border-gray-100">
           <button
             onClick={onClose}
             className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
@@ -448,32 +615,17 @@ function EditAdminModal({
     setSaving(true);
     setError('');
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-admin`;
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session?.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'update',
-          admin_id: admin.id,
-          full_name: fullName.trim(),
-          role,
-          is_active: isActive,
-        }),
+      await callManageAdmin({
+        action: 'update',
+        admin_id: admin.id,
+        full_name: fullName.trim(),
+        role,
+        is_active: isActive,
       });
-
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to update admin');
-      }
-
       onUpdated();
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to update');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to update');
     } finally {
       setSaving(false);
     }

@@ -86,8 +86,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     setExpandedSections((prev) => ({ ...prev, [title]: !prev[title] }));
   };
 
+  const operationsItems = [
+    ...(hasPermission('availability.manage') ? [{ icon: Calendar, label: 'Availability', path: '/admin/availability' }] : []),
+    ...(hasPermission('wakala.manage') ? [{ icon: FileText, label: 'Wakala Applications', path: '/admin/wakala' }] : []),
+    ...(hasPermission('admin.manage') ? [{ icon: Shield, label: 'Admin Management', path: '/admin/admins' }] : []),
+    ...(hasPermission('settings.manage') ? [{ icon: Settings, label: 'Settings', path: '/admin/settings' }] : []),
+  ];
+
   const menuSections: MenuSection[] = [
-    {
+    ...(hasPermission('content.manage') ? [{
       title: 'Content',
       icon: Type,
       items: [
@@ -99,8 +106,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         { icon: BookOpen, label: 'Programmes', path: '/admin/programmes' },
         { icon: FolderOpen, label: 'Resources', path: '/admin/resources' },
       ],
-    },
-    {
+    }] : []),
+    ...(hasPermission('news_events.manage') ? [{
       title: 'News & Events',
       icon: Calendar,
       items: [
@@ -108,8 +115,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         { icon: Calendar, label: 'Events', path: '/admin/events' },
         { icon: Award, label: 'Event Galleries', path: '/admin/event-galleries' },
       ],
-    },
-    {
+    }] : []),
+    ...(hasPermission('submissions.view') ? [{
       title: 'Submissions',
       icon: Users,
       items: [
@@ -121,17 +128,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         { icon: Heart, label: 'Donations', path: '/admin/donations' },
         { icon: Mail, label: 'Subscribers', path: '/admin/subscribers' },
       ],
-    },
-    {
+    }] : []),
+    ...(operationsItems.length > 0 ? [{
       title: 'Operations',
       icon: Settings,
-      items: [
-        { icon: Calendar, label: 'Availability', path: '/admin/availability' },
-        { icon: FileText, label: 'Wakala Applications', path: '/admin/wakala' },
-        ...(hasPermission('admin.manage') ? [{ icon: Shield, label: 'Admin Management', path: '/admin/admins' }] : []),
-        { icon: Settings, label: 'Settings', path: '/admin/settings' },
-      ],
-    },
+      items: operationsItems,
+    }] : []),
   ];
 
   const getPageTitle = () => {

@@ -1,14 +1,31 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
 import ManagementTable from './ManagementTable';
-import { FileText, Download, Eye, CheckCircle, XCircle, Clock, Calendar } from 'lucide-react';
+import { FileText, Download, CheckCircle, XCircle, Clock, Calendar, BarChart3, TrendingUp } from 'lucide-react';
 import { formatTimeRange } from '../../lib/booking-utils';
+
+interface Stats {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+}
 
 export default function WakalaManagement() {
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedApp, setSelectedApp] = useState<any>(null);
   const [showModal, setShowModal] = useState(false);
+
+  const stats: Stats = useMemo(() => {
+    const s = { total: applications.length, pending: 0, approved: 0, rejected: 0 };
+    for (const app of applications) {
+      if (app.status === 'pending') s.pending++;
+      else if (app.status === 'approved') s.approved++;
+      else if (app.status === 'rejected') s.rejected++;
+    }
+    return s;
+  }, [applications]);
 
   useEffect(() => {
     fetchApplications();
@@ -148,14 +165,83 @@ export default function WakalaManagement() {
     },
   ];
 
+  const statCards = [
+    {
+      label: 'Total Applications',
+      value: stats.total,
+      icon: BarChart3,
+      bg: 'bg-slate-50',
+      border: 'border-slate-200',
+      iconBg: 'bg-slate-100',
+      iconColor: 'text-slate-600',
+      valueColor: 'text-slate-900',
+    },
+    {
+      label: 'Pending Review',
+      value: stats.pending,
+      icon: Clock,
+      bg: 'bg-amber-50',
+      border: 'border-amber-200',
+      iconBg: 'bg-amber-100',
+      iconColor: 'text-amber-600',
+      valueColor: 'text-amber-700',
+    },
+    {
+      label: 'Approved',
+      value: stats.approved,
+      icon: CheckCircle,
+      bg: 'bg-emerald-50',
+      border: 'border-emerald-200',
+      iconBg: 'bg-emerald-100',
+      iconColor: 'text-emerald-600',
+      valueColor: 'text-emerald-700',
+    },
+    {
+      label: 'Rejected',
+      value: stats.rejected,
+      icon: XCircle,
+      bg: 'bg-red-50',
+      border: 'border-red-200',
+      iconBg: 'bg-red-100',
+      iconColor: 'text-red-600',
+      valueColor: 'text-red-700',
+    },
+  ];
+
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-          <FileText className="w-8 h-8" />
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+          <FileText className="w-7 h-7" />
           Wakala Applications
         </h1>
-        <p className="text-gray-600 mt-2">Manage Wakala service applications</p>
+        <p className="text-gray-600 text-sm mt-1">Manage Wakala service applications and appointments</p>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        {statCards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <div
+              key={card.label}
+              className={`${card.bg} border ${card.border} rounded-xl p-4 transition-all duration-200 hover:shadow-sm`}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className={`${card.iconBg} p-2 rounded-lg`}>
+                  <Icon className={`w-4 h-4 ${card.iconColor}`} />
+                </div>
+                {card.value > 0 && card.label === 'Pending Review' && (
+                  <span className="flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-2.5 w-2.5 rounded-full bg-amber-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500" />
+                  </span>
+                )}
+              </div>
+              <p className={`text-2xl font-bold ${card.valueColor}`}>{card.value}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{card.label}</p>
+            </div>
+          );
+        })}
       </div>
 
       <ManagementTable
@@ -188,6 +274,12 @@ export default function WakalaManagement() {
                   <label className="text-sm font-medium text-gray-500">Full Name</label>
                   <p className="text-gray-900">{selectedApp.full_name}</p>
                 </div>
+                {selectedApp.applicant_name_ar && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Name (Arabic)</label>
+                    <p className="text-gray-900 font-arabic" dir="rtl">{selectedApp.applicant_name_ar}</p>
+                  </div>
+                )}
                 <div>
                   <label className="text-sm font-medium text-gray-500">Passport Number</label>
                   <p className="text-gray-900">{selectedApp.passport_number}</p>
@@ -198,7 +290,7 @@ export default function WakalaManagement() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Date of Birth</label>
-                  <p className="text-gray-900">{new Date(selectedApp.date_of_birth).toLocaleDateString()}</p>
+                  <p className="text-gray-900">{selectedApp.date_of_birth ? new Date(selectedApp.date_of_birth).toLocaleDateString() : '-'}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Phone</label>
@@ -210,12 +302,32 @@ export default function WakalaManagement() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Service Type</label>
-                  <p className="text-gray-900 capitalize">{selectedApp.service_type.replace(/_/g, ' ')}</p>
+                  <p className="text-gray-900 capitalize">{selectedApp.service_type?.replace(/_/g, ' ') || '-'}</p>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Requested Date</label>
-                  <p className="text-gray-900">{selectedApp.requested_date ? new Date(selectedApp.requested_date).toLocaleDateString() : '-'}</p>
-                </div>
+                {selectedApp.agent_name && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Agent Name</label>
+                    <p className="text-gray-900">{selectedApp.agent_name}</p>
+                  </div>
+                )}
+                {selectedApp.wakala_type && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Wakala Type</label>
+                    <p className="text-gray-900 capitalize">{selectedApp.wakala_type.replace(/_/g, ' ')}</p>
+                  </div>
+                )}
+                {selectedApp.wakala_format && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Wakala Format</label>
+                    <p className="text-gray-900 capitalize">{selectedApp.wakala_format.replace(/_/g, ' ')}</p>
+                  </div>
+                )}
+                {selectedApp.booking_reference && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Booking Reference</label>
+                    <p className="text-gray-900 font-mono text-sm">{selectedApp.booking_reference}</p>
+                  </div>
+                )}
               </div>
 
               {selectedApp.booking_date && (

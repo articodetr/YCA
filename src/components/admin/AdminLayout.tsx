@@ -114,7 +114,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       items: [
         { icon: Users, label: 'Event Registrations', path: '/admin/registrations' },
         { icon: UserCheck, label: 'Memberships', path: '/admin/memberships' },
-        { icon: FileText, label: 'Wakala', path: '/admin/wakala' },
         { icon: HandHeart, label: 'Volunteers', path: '/admin/volunteers' },
         { icon: Briefcase, label: 'Partnerships', path: '/admin/partnerships' },
         { icon: MessageSquare, label: 'Messages', path: '/admin/contacts' },
@@ -123,10 +122,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       ],
     },
     {
-      title: 'System',
+      title: 'Operations',
       icon: Settings,
       items: [
         { icon: Calendar, label: 'Availability', path: '/admin/availability' },
+        { icon: FileText, label: 'Wakala Applications', path: '/admin/wakala' },
         { icon: Settings, label: 'Settings', path: '/admin/settings' },
       ],
     },

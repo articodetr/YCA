@@ -24,9 +24,8 @@ export default function AvailabilityManagement() {
 
   const t = {
     en: {
-      title: 'Availability Management',
-      subtitle: 'Manage bookings calendar and working hours configuration',
-      selectService: 'Select Service',
+      title: 'Advisory Office - Availability',
+      subtitle: 'Manage advisory office bookings calendar and working hours',
       calendarTab: 'Calendar',
       configTab: 'Working Hours',
       bookingsTab: 'Bookings List',
@@ -34,9 +33,8 @@ export default function AvailabilityManagement() {
       days: 'days ahead',
     },
     ar: {
-      title: 'إدارة الأوقات المتاحة',
-      subtitle: 'إدارة تقويم الحجوزات وإعدادات ساعات العمل',
-      selectService: 'اختر الخدمة',
+      title: 'المكتب الاستشاري - الأوقات المتاحة',
+      subtitle: 'إدارة تقويم حجوزات المكتب الاستشاري وساعات العمل',
       calendarTab: 'التقويم',
       configTab: 'ساعات العمل',
       bookingsTab: 'قائمة الحجوزات',
@@ -55,7 +53,8 @@ export default function AvailabilityManagement() {
       const { data, error } = await supabase
         .from('booking_services')
         .select('id, name_en, name_ar')
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .ilike('name_en', '%Advisory%');
 
       if (error) throw error;
 
@@ -118,42 +117,18 @@ export default function AvailabilityManagement() {
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 p-3 mb-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                {t.selectService}
-              </label>
-              <select
-                value={selectedService?.id || ''}
-                onChange={(e) => {
-                  const service = services.find((s) => s.id === e.target.value);
-                  setSelectedService(service || null);
-                }}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                {services.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {language === 'ar' ? service.name_ar : service.name_en}
-                  </option>
-                ))}
-              </select>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span className="text-sm font-medium text-gray-900">
+                {selectedService
+                  ? (language === 'ar' ? selectedService.name_ar : selectedService.name_en)
+                  : '...'}
+              </span>
             </div>
-
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                {t.maxDays}
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min="1"
-                  max="365"
-                  value={maxDaysAhead}
-                  readOnly
-                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
-                />
-                <span className="text-xs text-gray-600 whitespace-nowrap">{t.days}</span>
-              </div>
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <span>{t.maxDays}:</span>
+              <span className="font-medium text-gray-700">{maxDaysAhead} {t.days}</span>
             </div>
           </div>
         </div>

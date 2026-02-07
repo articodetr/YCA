@@ -84,7 +84,8 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
         email,
         password,
         options: {
-          data: metadata
+          data: metadata,
+          emailRedirectTo: `${window.location.origin}/member/login`,
         }
       });
       if (error) throw error;

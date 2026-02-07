@@ -49,7 +49,10 @@ export default function MemberSignup() {
       passwordMismatch: 'Passwords do not match',
       passwordMinLength: 'Password must be at least 6 characters',
       errorMessage: 'Failed to create account. Please try again.',
-      userExists: 'An account with this email already exists.',
+      userExists: 'An account with this email already exists. Please sign in instead.',
+      rateLimited: 'Too many signup attempts. Please wait a few minutes and try again.',
+      signupsDisabled: 'Registration is currently unavailable. Please try again later.',
+      weakPassword: 'Password is too weak. Please use a stronger password.',
     },
     ar: {
       title: 'إنشاء حساب',
@@ -68,7 +71,10 @@ export default function MemberSignup() {
       passwordMismatch: 'كلمات المرور غير متطابقة',
       passwordMinLength: 'يجب أن تكون كلمة المرور 6 أحرف على الأقل',
       errorMessage: 'فشل إنشاء الحساب. يرجى المحاولة مرة أخرى.',
-      userExists: 'يوجد حساب بهذا البريد الإلكتروني بالفعل.',
+      userExists: 'يوجد حساب بهذا البريد الإلكتروني بالفعل. يرجى تسجيل الدخول بدلاً من ذلك.',
+      rateLimited: 'محاولات تسجيل كثيرة جداً. يرجى الانتظار بضع دقائق والمحاولة مرة أخرى.',
+      signupsDisabled: 'التسجيل غير متاح حالياً. يرجى المحاولة لاحقاً.',
+      weakPassword: 'كلمة المرور ضعيفة جداً. يرجى استخدام كلمة مرور أقوى.',
     },
   };
 
@@ -96,11 +102,23 @@ export default function MemberSignup() {
       });
 
       if (error) {
-        if (error.message.includes('already registered')) {
+        const msg = error.message.toLowerCase();
+        if (msg.includes('already registered') || msg.includes('already been registered') || msg.includes('user already exists')) {
           setError(t.userExists);
+        } else if (msg.includes('rate limit') || msg.includes('too many requests') || msg.includes('429')) {
+          setError(t.rateLimited);
+        } else if (msg.includes('signup') && msg.includes('disabled') || msg.includes('signups not allowed')) {
+          setError(t.signupsDisabled);
+        } else if (msg.includes('weak') || msg.includes('password')) {
+          setError(t.weakPassword);
         } else {
-          throw error;
+          setError(t.errorMessage);
         }
+        return;
+      }
+
+      if (data?.user && (!data.user.identities || data.user.identities.length === 0)) {
+        setError(t.userExists);
         return;
       }
 

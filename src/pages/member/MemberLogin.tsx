@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Lock, Mail, AlertCircle, Loader2 } from 'lucide-react';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function MemberLogin() {
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -12,6 +13,9 @@ export default function MemberLogin() {
   const { signIn } = useMemberAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
+
+  const redirectPath = searchParams.get('redirect');
+  const serviceType = searchParams.get('service');
 
   const isRTL = language === 'ar';
 
@@ -54,7 +58,18 @@ export default function MemberLogin() {
     try {
       const { error } = await signIn(email, password);
       if (error) throw error;
-      navigate('/member/dashboard');
+
+      if (redirectPath === '/apply' && serviceType) {
+        if (serviceType === 'wakala') {
+          navigate('/member/dashboard?openWakala=true');
+        } else if (serviceType === 'in_person') {
+          navigate('/member/dashboard?openAdvisory=true');
+        } else {
+          navigate('/member/dashboard');
+        }
+      } else {
+        navigate('/member/dashboard');
+      }
     } catch (err: any) {
       console.error('Login error:', err);
       setError(t.errorMessage);

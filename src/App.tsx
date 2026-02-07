@@ -26,6 +26,7 @@ import Donate from './pages/get-involved/Donate';
 import Jobs from './pages/get-involved/Jobs';
 import Partnerships from './pages/get-involved/Partnerships';
 import Resources from './pages/Resources';
+import BookingLanding from './pages/BookingLanding';
 
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import { MemberAuthProvider } from './contexts/MemberAuthContext';
@@ -75,6 +76,7 @@ function App() {
             <Routes>
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/member/login" element={<MemberLogin />} />
+            <Route path="/apply" element={<BookingLanding />} />
 
           <Route
             path="/admin/*"

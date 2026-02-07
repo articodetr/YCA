@@ -254,7 +254,7 @@ export default function Header() {
           </nav>
 
           {/* ازرار الاجراءات - على اليمين */}
-          <div className="hidden xl:flex items-center gap-3 flex-shrink-0">
+          <div className="hidden xl:flex items-center gap-4 flex-shrink-0">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 to="/book"
@@ -267,7 +267,7 @@ export default function Header() {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 to={user ? '/member/dashboard' : '/member/login'}
-                className="hover:text-accent transition-colors p-2.5 border border-white/30 rounded-lg"
+                className="hover:text-accent transition-colors p-2.5"
                 title={user ? (language === 'ar' ? 'حسابي' : 'My Account') : (language === 'ar' ? 'دخول' : 'Login')}
               >
                 {user ? <UserCircle size={20} /> : <LogIn size={20} />}

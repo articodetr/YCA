@@ -251,7 +251,7 @@ export default function Team() {
           title="Our Team"
           description=""
           breadcrumbs={[{ label: 'About', path: '/about/team' }, { label: 'Team' }]}
-          image="https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&w=1920"
+          pageKey="about_team"
         />
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -267,7 +267,7 @@ export default function Team() {
           title="Our Team"
           description=""
           breadcrumbs={[{ label: 'About', path: '/about/team' }, { label: 'Team' }]}
-          image="https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&w=1920"
+          pageKey="about_team"
         />
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
@@ -295,7 +295,7 @@ export default function Team() {
         title="Our Team"
         description="Meet the People Behind YCA Birmingham"
         breadcrumbs={[{ label: 'About', path: '/about/team' }, { label: 'Team' }]}
-        image="https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&w=1920"
+        pageKey="about_team"
       />
 
       <div className="pt-20">

@@ -11,7 +11,7 @@ export default function MenProgramme() {
         title="Men's Programme"
         description=""
         breadcrumbs={[{ label: 'Programmes', path: '/programmes/men' }, { label: 'Men' }]}
-        image="https://images.pexels.com/photos/3766210/pexels-photo-3766210.jpeg?auto=compress&cs=tinysrgb&w=1920"
+        pageKey="programmes_men"
       />
 
       <div className="pt-20">

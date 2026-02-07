@@ -17,7 +17,7 @@ export default function History() {
         title="Our History"
         description=""
         breadcrumbs={[{ label: 'About', path: '/about/history' }, { label: 'History' }]}
-        image="https://images.pexels.com/photos/3183197/pexels-photo-3183197.jpeg?auto=compress&cs=tinysrgb&w=1920"
+        pageKey="about_history"
       />
 
       <div className="pt-20">

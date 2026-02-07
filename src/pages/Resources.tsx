@@ -35,7 +35,7 @@ export default function Resources() {
         title="Resources & Downloads"
         description=""
         breadcrumbs={[{ label: 'Resources' }]}
-        image="https://images.pexels.com/photos/267569/pexels-photo-267569.jpeg?auto=compress&cs=tinysrgb&w=1920"
+        pageKey="resources"
       />
 
       <div className="pt-20">

@@ -11,7 +11,7 @@ export default function Partners() {
         title="Partners & Funders"
         description=""
         breadcrumbs={[{ label: 'About', path: '/about/partners' }, { label: 'Partners' }]}
-        image="https://images.pexels.com/photos/3184639/pexels-photo-3184639.jpeg?auto=compress&cs=tinysrgb&w=1920"
+        pageKey="about_partners"
       />
 
       <div className="pt-20">

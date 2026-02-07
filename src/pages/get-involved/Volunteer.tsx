@@ -84,7 +84,7 @@ export default function Volunteer() {
         title="Volunteering Opportunities"
         description=""
         breadcrumbs={[{ label: 'Get Involved', path: '/get-involved/volunteer' }, { label: 'Volunteer' }]}
-        image="https://images.pexels.com/photos/6646918/pexels-photo-6646918.jpeg?auto=compress&cs=tinysrgb&w=1920"
+        pageKey="volunteer"
       />
 
       <section className="py-20 bg-white">

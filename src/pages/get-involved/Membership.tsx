@@ -169,7 +169,7 @@ export default function Membership() {
             { label: t('nav.getInvolved'), path: '/get-involved/membership' },
             { label: t('nav.getInvolved.membership') }
           ]}
-          image="https://images.pexels.com/photos/1595385/pexels-photo-1595385.jpeg?auto=compress&cs=tinysrgb&w=1920"
+          pageKey="membership"
         />
 
         {/* Membership Types Grid */}

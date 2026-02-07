@@ -94,7 +94,7 @@ export default function Partnerships() {
         title={t('partnerships.title')}
         description=""
         breadcrumbs={[{ label: t('nav.getInvolved'), path: '/get-involved/partnerships' }, { label: t('nav.getInvolved.partnerships') }]}
-        image="https://images.pexels.com/photos/3184306/pexels-photo-3184306.jpeg?auto=compress&cs=tinysrgb&w=1920"
+        pageKey="partnerships"
       />
 
       <section className="py-20 bg-white">

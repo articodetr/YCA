@@ -75,7 +75,7 @@ export default function JourneyWithinProgramme() {
         title={content.title}
         description=""
         breadcrumbs={[{ label: language === 'ar' ? 'البرامج' : 'Programmes', path: '/programmes/journey-within' }, { label: content.title }]}
-        image="https://images.pexels.com/photos/3560044/pexels-photo-3560044.jpeg?auto=compress&cs=tinysrgb&w=1920"
+        pageKey="programmes_journey"
       />
 
       <div className="pt-20">

@@ -161,7 +161,7 @@ export default function Events() {
         title="Events"
         description=""
         breadcrumbs={[{ label: 'Events' }]}
-        image="https://images.pexels.com/photos/1190297/pexels-photo-1190297.jpeg?auto=compress&cs=tinysrgb&w=1920"
+        pageKey="events"
       />
 
       <div className="pt-20">

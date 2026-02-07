@@ -11,7 +11,7 @@ export default function YouthProgramme() {
         title="YCA Youth Club"
         description=""
         breadcrumbs={[{ label: 'Programmes', path: '/programmes/youth' }, { label: 'Youth' }]}
-        image="https://images.pexels.com/photos/3184339/pexels-photo-3184339.jpeg?auto=compress&cs=tinysrgb&w=1920"
+        pageKey="programmes_youth"
       />
 
       <div className="pt-20">

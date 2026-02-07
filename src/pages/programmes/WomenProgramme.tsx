@@ -9,7 +9,7 @@ export default function WomenProgramme() {
         title="Women's Programme"
         description=""
         breadcrumbs={[{ label: 'Programmes', path: '/programmes/women' }, { label: 'Women' }]}
-        image="https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=1920"
+        pageKey="programmes_women"
       />
 
       <div className="pt-20">

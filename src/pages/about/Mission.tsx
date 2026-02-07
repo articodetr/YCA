@@ -33,7 +33,7 @@ export default function Mission() {
         title="Mission & Vision"
         description=""
         breadcrumbs={[{ label: 'About', path: '/about/mission' }, { label: 'Mission & Vision' }]}
-        image="https://images.pexels.com/photos/3184432/pexels-photo-3184432.jpeg?auto=compress&cs=tinysrgb&w=1920"
+        pageKey="about_mission"
       />
 
       <div className="pt-20">

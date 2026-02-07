@@ -2,16 +2,19 @@ import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { fadeInUp, fadeInDown, staggerContainer, staggerItem } from '../lib/animations';
+import { useSiteSettings } from '../contexts/SiteSettingsContext';
 
 interface PageHeaderProps {
   title: string;
   description?: string;
   breadcrumbs?: Array<{ label: string; path?: string }>;
   image?: string;
+  pageKey?: string;
 }
 
-export default function PageHeader({ title, description, breadcrumbs, image }: PageHeaderProps) {
-  const backgroundImage = image || '/image.png';
+export default function PageHeader({ title, description, breadcrumbs, image, pageKey }: PageHeaderProps) {
+  const { getPageImage } = useSiteSettings();
+  const backgroundImage = image || (pageKey ? getPageImage(pageKey, 'header_bg', '/image.png') : '/image.png');
 
   return (
     <section className="relative h-80 flex items-center justify-center overflow-hidden">

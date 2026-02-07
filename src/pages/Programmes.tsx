@@ -99,7 +99,7 @@ export default function Programmes() {
         title={selectedCategory === 'All' ? 'Our Programmes' : `${selectedCategory} Programme`}
         description={getHeaderDescription()}
         breadcrumbs={[{ label: 'Programmes' }]}
-        image={getHeaderImage()}
+        pageKey="programmes"
       />
 
       <div className="pt-20">

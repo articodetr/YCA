@@ -11,7 +11,7 @@ export default function ElderlyProgramme() {
         title="Elderly's Programme"
         description=""
         breadcrumbs={[{ label: 'Programmes', path: '/programmes/elderly' }, { label: 'Elderly' }]}
-        image="https://images.pexels.com/photos/7551663/pexels-photo-7551663.jpeg?auto=compress&cs=tinysrgb&w=1920"
+        pageKey="programmes_elderly"
       />
 
       <div className="pt-20">

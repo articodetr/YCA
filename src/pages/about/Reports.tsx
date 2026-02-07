@@ -16,7 +16,7 @@ export default function Reports() {
         title="Annual Reports & Documents"
         description=""
         breadcrumbs={[{ label: 'About', path: '/about/reports' }, { label: 'Reports' }]}
-        image="https://images.pexels.com/photos/6954186/pexels-photo-6954186.jpeg?auto=compress&cs=tinysrgb&w=1920"
+        pageKey="about_reports"
       />
 
       <div className="pt-20">

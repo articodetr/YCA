@@ -4,10 +4,23 @@ import { motion } from 'framer-motion';
 import { fadeInUp, staggerContainer, staggerItem } from '../lib/animations';
 import { useContent } from '../contexts/ContentContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useSiteSettings } from '../contexts/SiteSettingsContext';
 
 export default function Footer() {
   const { getContent } = useContent();
   const { t, language } = useLanguage();
+  const { getSetting } = useSiteSettings();
+
+  const logoText = getSetting('site_logo_text', '/logo_text.png');
+  const orgName = language === 'ar'
+    ? getSetting('org_name_ar', 'جمعية الجالية اليمنية')
+    : getSetting('org_name_en', 'Yemeni Community Association');
+  const charityNumber = getSetting('charity_number', '1057470');
+
+  const facebookUrl = getSetting('social_facebook', '#');
+  const instagramUrl = getSetting('social_instagram', '#');
+  const tiktokUrl = getSetting('social_tiktok', '#');
+
   return (
     <footer className="bg-primary text-white">
       <div className="container mx-auto px-4 py-12">
@@ -21,23 +34,25 @@ export default function Footer() {
           <motion.div variants={staggerItem}>
             <div className="mb-4">
               <img
-                src="/logo_text.png"
-                alt="Yemeni Community Association"
+                src={logoText}
+                alt={orgName}
                 className="h-10 w-auto max-w-fit"
               />
             </div>
             <p className="text-accent font-semibold text-lg mb-2">
-              {language === 'ar' ? 'جمعية الجالية اليمنية ترحب بكم جميعاً' : 'YCA Welcomes You All'}
+              {getContent('footer', 'welcome_message', language === 'ar' ? 'جمعية الجالية اليمنية ترحب بكم جميعاً' : 'YCA Welcomes You All')}
             </p>
             <p className="text-gray-300 mb-4">
               {getContent('footer', 'description', 'Empowering the Yemeni community in Birmingham through support, guidance, and cultural celebration.')}
             </p>
             <p className="text-gray-400 text-sm mb-3">
-              {language === 'ar' ? 'تابعونا على وسائل التواصل الاجتماعي للبقاء على اطلاع' : 'Follow us on social media to stay updated'}
+              {getContent('footer', 'social_cta', language === 'ar' ? 'تابعونا على وسائل التواصل الاجتماعي للبقاء على اطلاع' : 'Follow us on social media to stay updated')}
             </p>
             <div className="flex gap-4">
               <motion.a
-                href="#"
+                href={facebookUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center hover:bg-accent hover:text-primary transition-colors"
                 whileHover={{ scale: 1.2, rotate: 360 }}
                 transition={{ duration: 0.4 }}
@@ -46,7 +61,9 @@ export default function Footer() {
                 <Facebook size={20} />
               </motion.a>
               <motion.a
-                href="#"
+                href={instagramUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center hover:bg-accent hover:text-primary transition-colors"
                 whileHover={{ scale: 1.2, rotate: 360 }}
                 transition={{ duration: 0.4 }}
@@ -55,7 +72,9 @@ export default function Footer() {
                 <Instagram size={20} />
               </motion.a>
               <motion.a
-                href="#"
+                href={tiktokUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center hover:bg-accent hover:text-primary transition-colors"
                 whileHover={{ scale: 1.2, rotate: 360 }}
                 transition={{ duration: 0.4 }}
@@ -123,7 +142,7 @@ export default function Footer() {
           viewport={{ once: true }}
           transition={{ delay: 0.5 }}
         >
-          <p>&copy; {new Date().getFullYear()} {getContent('footer', 'copyright', 'Yemeni Community Association Birmingham. Charity Number: 1057470. All rights reserved.')}</p>
+          <p>&copy; {new Date().getFullYear()} {getContent('footer', 'copyright', `${orgName} Birmingham. Charity Number: ${charityNumber}. All rights reserved.`)}</p>
         </motion.div>
       </div>
     </footer>

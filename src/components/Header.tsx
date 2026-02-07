@@ -3,9 +3,14 @@ import { Link } from 'react-router-dom';
 import { Menu, X, ChevronDown, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useSiteSettings } from '../contexts/SiteSettingsContext';
 
 export default function Header() {
   const { language, setLanguage, t } = useLanguage();
+  const { getSetting } = useSiteSettings();
+  const logoMain = getSetting('site_logo', '/logo.png');
+  const logoText = getSetting('site_logo_text', '/logo_text.png');
+  const orgName = getSetting('org_name_en', 'Yemeni Community Association');
   const [isOpen, setIsOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [activeDesktopMenu, setActiveDesktopMenu] = useState<string | null>(null);
@@ -76,15 +81,14 @@ export default function Header() {
           <Link to="/" className="flex items-center gap-3 group flex-shrink-0">
             <div className="flex items-center gap-3">
               <img
-                src="/logo.png"
-                alt="YCA Birmingham Logo"
+                src={logoMain}
+                alt={orgName}
                 className="h-10 sm:h-12 md:h-14 lg:h-16 w-auto transition-transform group-hover:scale-105 duration-300"
               />
 
-              {/* مهم: النص بجانب الشعار يظهر فقط في الشاشات الكبيرة (XL+) حتى لا يتكرر */}
               <img
-                src="/logo_text.png"
-                alt="Yemeni Community Association"
+                src={logoText}
+                alt={orgName}
                 className="h-8 sm:h-10 md:h-12 w-auto transition-opacity group-hover:opacity-80 duration-300 hidden xl:block"
               />
             </div>
@@ -93,8 +97,8 @@ export default function Header() {
           {/* Mobile Center Text Logo (يظهر فقط تحت XL) */}
 <div className="absolute left-1/2 -translate-x-1/2 xl:hidden flex items-center justify-center pointer-events-none">
   <img
-    src="/logo_text.png"
-    alt="الجالية اليمنية"
+    src={logoText}
+    alt={getSetting('org_name_ar', 'الجالية اليمنية')}
     className="h-7 sm:h-8 md:h-12 w-auto opacity-95"
   />
 </div>

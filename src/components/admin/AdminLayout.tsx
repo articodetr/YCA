@@ -26,6 +26,7 @@ import {
   Award,
 } from 'lucide-react';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
+import { useSiteSettings } from '../../contexts/SiteSettingsContext';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -37,6 +38,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { adminData, signOut } = useAdminAuth();
+  const { getSetting } = useSiteSettings();
 
   const handleSignOut = async () => {
     try {
@@ -66,6 +68,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         { icon: Newspaper, label: 'News', path: '/admin/news' },
         { icon: Calendar, label: 'Events', path: '/admin/events' },
         { icon: Award, label: 'Event Galleries', path: '/admin/event-galleries' },
+        { icon: Image, label: 'Page Images', path: '/admin/page-images' },
       ]
     },
     {
@@ -114,8 +117,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </button>
             <div className="flex items-center gap-2">
               <img
-                src="/logo.png"
-                alt="YCA Birmingham"
+                src={getSetting('site_logo', '/logo.png')}
+                alt={getSetting('org_name_en', 'YCA Birmingham')}
                 className="h-10 w-auto"
               />
               <div className="border-l border-gray-300 h-8 mx-2"></div>

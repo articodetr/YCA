@@ -108,7 +108,7 @@ export default function Services() {
         title={t.pageTitle}
         description=""
         breadcrumbs={[{ label: t.pageTitle }]}
-        image="https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&w=1920"
+        pageKey="services"
       />
 
       <div className="pt-20">

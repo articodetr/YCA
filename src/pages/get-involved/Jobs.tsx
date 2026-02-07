@@ -11,7 +11,7 @@ export default function Jobs() {
         title="Jobs / Roles / Opportunities"
         description=""
         breadcrumbs={[{ label: 'Get Involved', path: '/get-involved/jobs' }, { label: 'Jobs' }]}
-        image="https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=1920"
+        pageKey="jobs"
       />
 
       <div className="pt-20">

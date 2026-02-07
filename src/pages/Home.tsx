@@ -7,9 +7,11 @@ import { useScrollReveal } from '../hooks/useScrollReveal';
 import CounterStat from '../components/CounterStat';
 import { supabase } from '../lib/supabase';
 import { useContent } from '../contexts/ContentContext';
+import { useSiteSettings } from '../contexts/SiteSettingsContext';
 
 export default function Home() {
   const { getContent } = useContent();
+  const { getSetting, getPageImage } = useSiteSettings();
   const [stats, setStats] = useState({
     members: 850,
     events: 0,
@@ -216,27 +218,27 @@ export default function Home() {
           >
             <CounterStat
               icon={<Users size={32} className="text-primary" />}
-              value={850}
+              value={parseInt(getSetting('stat_members', '850')) || 850}
               suffix="+"
               label={getContent('home', 'stats_members_label', 'Active Members')}
               delay={0.1}
             />
             <CounterStat
               icon={<GraduationCap size={32} className="text-primary" />}
-              value={5}
+              value={parseInt(getSetting('stat_programmes', '5')) || 5}
               label={getContent('home', 'stats_programmes_label', 'Core Programmes')}
               delay={0.2}
             />
             <CounterStat
               icon={<Trophy size={32} className="text-primary" />}
-              value={30}
+              value={parseInt(getSetting('stat_years', '30')) || 30}
               suffix="+"
               label={getContent('home', 'stats_years_label', 'Years of Service')}
               delay={0.3}
             />
             <CounterStat
               icon={<Heart size={32} className="text-primary" />}
-              value={1000}
+              value={parseInt(getSetting('stat_impact', '1000')) || 1000}
               suffix="+"
               label={getContent('home', 'stats_impact_label', 'Lives Impacted')}
               delay={0.4}
@@ -271,7 +273,7 @@ export default function Home() {
               variants={fadeInLeft}
             >
               <motion.img
-                src="https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=800"
+                src={getPageImage('home', 'welcome_section', 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=800')}
                 alt="Community gathering"
                 className="rounded-lg shadow-xl"
                 whileHover={{ scale: 1.05 }}
@@ -426,14 +428,14 @@ export default function Home() {
               variants={staggerContainer}
             >
               <motion.img
-                src="https://images.pexels.com/photos/3184430/pexels-photo-3184430.jpeg?auto=compress&cs=tinysrgb&w=400"
+                src={getPageImage('home', 'events_1', 'https://images.pexels.com/photos/3184430/pexels-photo-3184430.jpeg?auto=compress&cs=tinysrgb&w=400')}
                 alt="Community event"
                 className="rounded-lg shadow-lg"
                 variants={staggerItem}
                 whileHover={{ scale: 1.05, rotate: 2 }}
               />
               <motion.img
-                src="https://images.pexels.com/photos/3184632/pexels-photo-3184632.jpeg?auto=compress&cs=tinysrgb&w=400"
+                src={getPageImage('home', 'events_2', 'https://images.pexels.com/photos/3184632/pexels-photo-3184632.jpeg?auto=compress&cs=tinysrgb&w=400')}
                 alt="Community gathering"
                 className="rounded-lg shadow-lg mt-8"
                 variants={staggerItem}

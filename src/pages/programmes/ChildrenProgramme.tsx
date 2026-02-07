@@ -11,7 +11,7 @@ export default function ChildrenProgramme() {
         title="Children's Programme"
         description=""
         breadcrumbs={[{ label: 'Programmes', path: '/programmes/children' }, { label: 'Children' }]}
-        image="https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg?auto=compress&cs=tinysrgb&w=1920"
+        pageKey="programmes_children"
       />
 
       <div className="pt-20">

@@ -57,7 +57,7 @@ export default function Contact() {
         title="Contact Us"
         description=""
         breadcrumbs={[{ label: 'Contact' }]}
-        image="https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=1920"
+        pageKey="contact"
       />
 
       <div className="pt-20">

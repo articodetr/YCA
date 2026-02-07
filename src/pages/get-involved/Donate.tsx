@@ -17,7 +17,7 @@ export default function Donate() {
         title={t('donate.title')}
         description=""
         breadcrumbs={[{ label: t('nav.getInvolved'), path: '/get-involved/donate' }, { label: t('nav.getInvolved.donate') }]}
-        image="https://images.pexels.com/photos/6646917/pexels-photo-6646917.jpeg?auto=compress&cs=tinysrgb&w=1920"
+        pageKey="donate"
       />
 
       <div className="pt-20">

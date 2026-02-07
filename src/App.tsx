@@ -31,6 +31,7 @@ import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import { MemberAuthProvider } from './contexts/MemberAuthContext';
 import { ContentProvider } from './contexts/ContentContext';
 import { LanguageProvider } from './contexts/LanguageContext';
+import { SiteSettingsProvider } from './contexts/SiteSettingsContext';
 import AdminLogin from './pages/admin/AdminLogin';
 import ProtectedRoute from './components/admin/ProtectedRoute';
 import ProtectedMemberRoute from './components/member/ProtectedMemberRoute';
@@ -60,12 +61,14 @@ import ResourcesManagement from './pages/admin/ResourcesManagement';
 import EventGalleriesManagement from './pages/admin/EventGalleriesManagement';
 import ContentManagement from './pages/admin/ContentManagement';
 import AvailabilityManagement from './pages/admin/AvailabilityManagement';
+import PageImagesManagement from './pages/admin/PageImagesManagement';
 
 function App() {
   return (
     <LanguageProvider>
       <AdminAuthProvider>
         <MemberAuthProvider>
+          <SiteSettingsProvider>
           <ContentProvider>
             <Router>
             <ScrollToTop />
@@ -97,6 +100,7 @@ function App() {
                     <Route path="programmes" element={<ProgrammesManagement />} />
                     <Route path="resources" element={<ResourcesManagement />} />
                     <Route path="content" element={<ContentManagement />} />
+                    <Route path="page-images" element={<PageImagesManagement />} />
                     <Route path="availability" element={<AvailabilityManagement />} />
                     <Route path="settings" element={<Settings />} />
                   </Routes>
@@ -159,6 +163,7 @@ function App() {
           </Routes>
           </Router>
           </ContentProvider>
+          </SiteSettingsProvider>
         </MemberAuthProvider>
       </AdminAuthProvider>
     </LanguageProvider>

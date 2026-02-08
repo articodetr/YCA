@@ -43,14 +43,14 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
     const userId = user.id;
     const userEmail = user.email;
 
-    const { data: adminCheck } = await adminClient
+    const { data: adminCheck } = await supabase
       .from("admins")
       .select("id")
       .eq("id", userId)
@@ -63,98 +63,98 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const { data: memberRecord } = await adminClient
+    const errors: string[] = [];
+
+    const { data: memberRecord } = await supabase
       .from("members")
       .select("id")
       .eq("email", userEmail)
       .maybeSingle();
 
     if (memberRecord) {
-      await adminClient
-        .from("membership_notifications")
-        .delete()
-        .eq("member_id", memberRecord.id);
+      const memberDeps = [
+        { table: "wakala_applications", col: "member_id" },
+        { table: "membership_notifications", col: "member_id" },
+        { table: "membership_renewals", col: "member_id" },
+        { table: "family_members", col: "member_id" },
+        { table: "service_bookings", col: "member_id" },
+        { table: "member_payments", col: "member_id" },
+      ];
 
-      await adminClient
-        .from("membership_renewals")
-        .delete()
-        .eq("member_id", memberRecord.id);
+      for (const dep of memberDeps) {
+        const { error } = await supabase
+          .from(dep.table)
+          .delete()
+          .eq(dep.col, memberRecord.id);
+        if (error) errors.push(`${dep.table}: ${error.message}`);
+      }
 
-      await adminClient
-        .from("family_members")
-        .delete()
-        .eq("member_id", memberRecord.id);
-
-      await adminClient
-        .from("service_bookings")
-        .delete()
-        .eq("member_id", memberRecord.id);
-
-      await adminClient
-        .from("member_payments")
-        .delete()
-        .eq("member_id", memberRecord.id);
-
-      await adminClient
+      const { error: memberErr } = await supabase
         .from("members")
         .delete()
         .eq("id", memberRecord.id);
+      if (memberErr) errors.push(`members: ${memberErr.message}`);
     }
 
-    const { data: apps } = await adminClient
+    const { data: apps } = await supabase
       .from("membership_applications")
       .select("id")
       .eq("user_id", userId);
 
     if (apps && apps.length > 0) {
       const appIds = apps.map((a: { id: string }) => a.id);
-      await adminClient
+      await supabase
         .from("membership_application_family_members")
         .delete()
         .in("application_id", appIds);
     }
 
-    await adminClient
-      .from("membership_applications")
-      .delete()
-      .eq("user_id", userId);
+    const noActionTables = [
+      { table: "membership_applications", col: "user_id", val: userId },
+      { table: "wakala_applications", col: "user_id", val: userId },
+      { table: "stripe_customers", col: "user_id", val: userId },
+    ];
 
-    await adminClient
-      .from("wakala_applications")
-      .delete()
-      .eq("user_id", userId);
+    for (const item of noActionTables) {
+      const { error } = await supabase
+        .from(item.table)
+        .delete()
+        .eq(item.col, item.val);
+      if (error) errors.push(`${item.table}: ${error.message}`);
+    }
 
-    await adminClient
-      .from("bookings")
-      .delete()
-      .eq("user_id", userId);
+    const cascadeTables = [
+      { table: "bookings", col: "user_id" },
+      { table: "notifications", col: "user_id" },
+      { table: "login_history", col: "user_id" },
+      { table: "member_profiles", col: "id" },
+    ];
 
-    await adminClient
-      .from("notifications")
-      .delete()
-      .eq("user_id", userId);
+    for (const item of cascadeTables) {
+      const { error } = await supabase
+        .from(item.table)
+        .delete()
+        .eq(item.col, userId);
+      if (error) errors.push(`${item.table}: ${error.message}`);
+    }
 
-    await adminClient
-      .from("login_history")
-      .delete()
-      .eq("user_id", userId);
-
-    await adminClient
-      .from("member_profiles")
-      .delete()
-      .eq("id", userId);
-
-    await adminClient
-      .from("stripe_customers")
-      .delete()
-      .eq("user_id", userId);
+    if (errors.length > 0) {
+      return new Response(
+        JSON.stringify({
+          error: `Data cleanup errors: ${errors.join("; ")}`,
+        }),
+        { status: 500, headers: jsonHeaders }
+      );
+    }
 
     const { error: deleteError } =
-      await adminClient.auth.admin.deleteUser(userId);
+      await supabase.auth.admin.deleteUser(userId);
 
     if (deleteError) {
       return new Response(
-        JSON.stringify({ error: `Failed to delete auth user: ${deleteError.message}` }),
+        JSON.stringify({
+          error: `Failed to delete user: ${deleteError.message}`,
+        }),
         { status: 500, headers: jsonHeaders }
       );
     }

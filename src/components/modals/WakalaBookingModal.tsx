@@ -7,6 +7,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import FileUploadField from '../booking/FileUploadField';
 import WakalaCheckoutForm from './WakalaCheckoutForm';
+import type { WakalaFormPayload } from './WakalaCheckoutForm';
 
 interface WakalaBookingModalProps {
   isOpen: boolean;
@@ -25,9 +26,9 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
   const [error, setError] = useState('');
   const [step, setStep] = useState<'form' | 'payment' | 'success'>('form');
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [applicationId, setApplicationId] = useState<string | null>(null);
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [consent, setConsent] = useState(false);
+  const [formPayload, setFormPayload] = useState<WakalaFormPayload | null>(null);
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -84,15 +85,12 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
     attorneyPassport: 'جواز سفر الوكيل',
     witnessPassports: 'جوازات الشهود (اختياري)',
     pricingInfo: 'معلومات التسعير',
-    priceFree: 'مجاناً - أول وكالة للأعضاء المؤهلين (عضوية 10 أيام فأكثر)',
-    priceMember: '20 جنيه - وكالة إضافية للأعضاء المؤهلين',
-    priceNonMember: '40 جنيه - سعر غير الأعضاء',
+    priceMember: '20 جنيه - أول وكالة للأعضاء المؤهلين (عضوية 10 أيام فأكثر)',
+    priceStandard: '40 جنيه - السعر الأساسي',
     yourPrice: 'السعر الخاص بك',
-    free: 'مجاناً',
     specialRequests: 'ملاحظات إضافية (اختياري)',
     membershipNumber: 'رقم العضوية',
     consentLabel: 'أؤكد موافقتي على استخدام معلوماتي وفقاً لسياسات جمعية الجالية اليمنية في برمنغهام',
-    submit: 'تقديم الطلب',
     submitAndPay: 'تقديم الطلب والدفع',
     submitting: 'جاري المعالجة...',
     successTitle: 'تم تقديم الطلب بنجاح!',
@@ -141,15 +139,12 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
     attorneyPassport: 'Attorney Passport Copy',
     witnessPassports: 'Witness Passports (Optional)',
     pricingInfo: 'Pricing Information',
-    priceFree: 'Free - First wakala for eligible members (10+ days membership)',
-    priceMember: '\u00A320 - Additional wakala for eligible members',
-    priceNonMember: '\u00A340 - Non-member rate',
+    priceMember: '\u00A320 - First wakala for eligible members (10+ days membership)',
+    priceStandard: '\u00A340 - Standard rate',
     yourPrice: 'Your Price',
-    free: 'Free',
     specialRequests: 'Additional Notes (Optional)',
     membershipNumber: 'Membership Number',
     consentLabel: 'I confirm that I agree to the use of my information in line with YCA Birmingham policies',
-    submit: 'Submit Application',
     submitAndPay: 'Submit & Proceed to Payment',
     submitting: 'Processing...',
     successTitle: 'Application Submitted!',
@@ -263,7 +258,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
         .from('wakala_applications')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', user.id)
-        .neq('status', 'cancelled');
+        .in('status', ['submitted', 'in_progress', 'completed', 'approved']);
 
       setPreviousWakalaCount(count || 0);
     } catch (err) {
@@ -273,12 +268,12 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
 
   const calculatePrice = () => {
     if (membershipStatus === 'active' && memberDaysSinceJoin >= 10) {
-      return previousWakalaCount === 0 ? 0 : 20;
+      return previousWakalaCount === 0 ? 20 : 40;
     }
     return 40;
   };
 
-  const createPaymentIntent = async (wakalaId: string, amount: number) => {
+  const createPaymentIntent = async (amount: number) => {
     try {
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`,
@@ -291,7 +286,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
           body: JSON.stringify({
             amount: Math.round(amount * 100),
             currency: 'gbp',
-            metadata: { user_id: user?.id, wakala_id: wakalaId, type: 'wakala' },
+            metadata: { user_id: user?.id, type: 'wakala' },
           }),
         }
       );
@@ -337,16 +332,14 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
     try {
       const price = calculatePrice();
 
-      const applicationData = {
-        user_id: user?.id,
+      const payload: WakalaFormPayload = {
+        user_id: user?.id || null,
         full_name: formData.fullName,
         phone: formData.phone,
         email: formData.email,
         service_type: `wakala_${formData.wakalaType}`,
         special_requests: formData.specialRequests,
         fee_amount: price,
-        payment_status: price === 0 ? 'paid' : 'pending',
-        status: price === 0 ? 'submitted' : 'pending_payment',
         applicant_name: formData.applicantName,
         agent_name: formData.agentName,
         wakala_type: formData.wakalaType,
@@ -358,28 +351,19 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
         witness_passports_url: witnessPassportUrls.length > 0 ? witnessPassportUrls.join(',') : null,
       };
 
-      const { data: application, error: appError } = await supabase
-        .from('wakala_applications')
-        .insert([applicationData])
-        .select()
-        .maybeSingle();
-
-      if (appError) throw appError;
-
-      setApplicationId(application.id);
+      setFormPayload(payload);
       setPaymentAmount(price);
-
-      if (price === 0) {
-        setStep('success');
-      } else {
-        await createPaymentIntent(application.id, price);
-        setStep('payment');
-      }
+      await createPaymentIntent(price);
+      setStep('payment');
     } catch (err: any) {
       setError(err.message || t.errorMessage);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePaymentSuccess = () => {
+    setStep('success');
   };
 
   const handleClose = () => {
@@ -408,9 +392,9 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
     setError('');
     setStep('form');
     setClientSecret(null);
-    setApplicationId(null);
     setPaymentAmount(0);
     setConsent(false);
+    setFormPayload(null);
   };
 
   useEffect(() => {
@@ -430,7 +414,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
           <div className="text-center">
             <CheckCircle className="w-16 h-16 text-emerald-600 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              {paymentAmount > 0 ? t.paymentSuccess : t.successTitle}
+              {t.paymentSuccess}
             </h2>
             <p className="text-gray-600 mb-6">{t.successMsg}</p>
             <button
@@ -445,7 +429,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
     );
   }
 
-  if (step === 'payment' && clientSecret) {
+  if (step === 'payment' && clientSecret && formPayload) {
     return (
       <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4"
         onClick={e => { if (e.target === e.currentTarget) handleClose(); }}>
@@ -459,7 +443,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
           </div>
           <div className="p-6">
             <Elements key={clientSecret} stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#059669' } } }}>
-              <WakalaCheckoutForm amount={paymentAmount} wakalaId={applicationId || undefined} onSuccess={() => setStep('success')} onBack={() => setStep('form')} />
+              <WakalaCheckoutForm amount={paymentAmount} formPayload={formPayload} onSuccess={handlePaymentSuccess} onBack={() => setStep('form')} />
             </Elements>
           </div>
         </div>
@@ -661,12 +645,11 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
             <h4 className="text-md font-bold text-gray-900 mb-3">{t.pricingInfo}</h4>
             <div className="space-y-2 text-sm">
-              <p className={currentPrice === 0 ? 'font-bold text-emerald-700' : 'text-gray-600'}>{t.priceFree}</p>
               <p className={currentPrice === 20 ? 'font-bold text-emerald-700' : 'text-gray-600'}>{t.priceMember}</p>
-              <p className={currentPrice === 40 ? 'font-bold text-emerald-700' : 'text-gray-600'}>{t.priceNonMember}</p>
+              <p className={currentPrice === 40 ? 'font-bold text-emerald-700' : 'text-gray-600'}>{t.priceStandard}</p>
               <div className="border-t border-blue-300 pt-2 mt-2">
                 <span className="font-bold text-lg text-emerald-700">
-                  {t.yourPrice}: {currentPrice === 0 ? t.free : `\u00A3${currentPrice}`}
+                  {t.yourPrice}: {`\u00A3${currentPrice}`}
                 </span>
               </div>
             </div>
@@ -699,7 +682,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
               {loading ? (
                 <><Loader2 className="w-5 h-5 animate-spin" /> {t.submitting}</>
               ) : (
-                <><Send className="w-5 h-5" /> {currentPrice > 0 ? t.submitAndPay : t.submit}</>
+                <><Send className="w-5 h-5" /> {t.submitAndPay}</>
               )}
             </button>
           </div>

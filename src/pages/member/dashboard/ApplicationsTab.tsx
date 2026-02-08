@@ -12,7 +12,6 @@ interface Props {
 
 const statusConfig: Record<string, { bg: string; text: string; icon: typeof CheckCircle }> = {
   submitted: { bg: 'bg-blue-50 border-blue-200', text: 'text-blue-700', icon: CheckCircle },
-  pending_payment: { bg: 'bg-amber-50 border-amber-200', text: 'text-amber-700', icon: CreditCard },
   in_progress: { bg: 'bg-sky-50 border-sky-200', text: 'text-sky-700', icon: Clock },
   completed: { bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700', icon: CheckCircle },
   approved: { bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700', icon: CheckCircle },
@@ -149,12 +148,11 @@ function AdvisoryCard({ app, onCancel, t, language }: { app: any; onCancel: (a: 
 
 function WakalaCard({ app, t, language }: { app: any; t: Record<string, string>; language: string }) {
   const isCancelled = app.status === 'cancelled';
-  const isPendingPayment = app.status === 'pending_payment';
 
   return (
     <motion.div
       variants={staggerItem}
-      className={`bg-white rounded-xl border p-5 transition-shadow hover:shadow-md ${isCancelled ? 'border-red-200 bg-red-50/30' : isPendingPayment ? 'border-amber-200' : 'border-divider'}`}
+      className={`bg-white rounded-xl border p-5 transition-shadow hover:shadow-md ${isCancelled ? 'border-red-200 bg-red-50/30' : 'border-divider'}`}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
@@ -225,16 +223,6 @@ function WakalaCard({ app, t, language }: { app: any; t: Record<string, string>;
                   {language === 'ar' ? 'جواز الوكيل' : 'Attorney Passport'}
                 </a>
               )}
-            </div>
-          )}
-
-          {isPendingPayment && (
-            <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-              <p className="text-xs text-amber-800 font-medium">
-                {language === 'ar'
-                  ? 'هذا الطلب بانتظار الدفع. يرجى إكمال الدفع لمتابعة المعالجة.'
-                  : 'This application is awaiting payment. Please complete payment to proceed.'}
-              </p>
             </div>
           )}
         </div>

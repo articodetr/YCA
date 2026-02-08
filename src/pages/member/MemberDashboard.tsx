@@ -210,25 +210,25 @@ export default function MemberDashboard() {
         const { paymentIntent } = await stripe.retrievePaymentIntent(piClientSecret);
         if (!paymentIntent) return;
 
-        const wakalaId = sessionStorage.getItem('pending_wakala_payment');
-
         if (paymentIntent.status === 'succeeded') {
-          if (wakalaId) {
-            await supabase
-              .from('wakala_applications')
-              .update({ payment_status: 'paid', status: 'submitted' })
-              .eq('id', wakalaId);
-            sessionStorage.removeItem('pending_wakala_payment');
+          const pendingFormDataStr = sessionStorage.getItem('pending_wakala_form_data');
+          if (pendingFormDataStr) {
+            try {
+              const formPayload = JSON.parse(pendingFormDataStr);
+              await supabase
+                .from('wakala_applications')
+                .insert([{
+                  ...formPayload,
+                  payment_status: 'paid',
+                  status: 'submitted',
+                }]);
+              sessionStorage.removeItem('pending_wakala_form_data');
+            } catch (insertErr) {
+              console.error('Error creating wakala application after redirect:', insertErr);
+            }
           }
 
           const meta = paymentIntent.metadata as Record<string, string> | undefined;
-          if (meta?.wakala_id && meta.wakala_id !== wakalaId) {
-            await supabase
-              .from('wakala_applications')
-              .update({ payment_status: 'paid', status: 'submitted' })
-              .eq('id', meta.wakala_id);
-          }
-
           const membershipAppId = sessionStorage.getItem('pending_membership_payment') || meta?.application_id;
           if (membershipAppId) {
             await supabase
@@ -260,6 +260,7 @@ export default function MemberDashboard() {
           showToast(language === 'ar' ? 'تم الدفع بنجاح!' : 'Payment completed successfully!', 'success');
           fetchData();
         } else if (paymentIntent.status === 'requires_payment_method' || redirectStatus === 'failed') {
+          sessionStorage.removeItem('pending_wakala_form_data');
           showToast(language === 'ar' ? 'فشل الدفع. يرجى المحاولة مرة أخرى.' : 'Payment failed. Please try again.', 'error');
         }
 
@@ -301,6 +302,7 @@ export default function MemberDashboard() {
           .from('wakala_applications')
           .select('*, availability_slots(service_id)')
           .eq('user_id', user.id)
+          .neq('status', 'pending_payment')
           .order('created_at', { ascending: false }),
         supabase
           .from('donations')

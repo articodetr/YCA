@@ -4,14 +4,34 @@ import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 
+export interface WakalaFormPayload {
+  user_id: string | null;
+  full_name: string;
+  phone: string;
+  email: string;
+  service_type: string;
+  special_requests: string;
+  fee_amount: number;
+  applicant_name: string;
+  agent_name: string;
+  wakala_type: string;
+  wakala_format: string;
+  membership_status: string;
+  is_first_wakala: boolean;
+  applicant_passport_url: string | null;
+  attorney_passport_url: string | null;
+  witness_passports_url: string | null;
+  membership_number?: string;
+}
+
 interface WakalaCheckoutFormProps {
   amount: number;
-  wakalaId?: string;
-  onSuccess: () => void;
+  formPayload: WakalaFormPayload;
+  onSuccess: (applicationId: string, bookingReference: string) => void;
   onBack: () => void;
 }
 
-export default function WakalaCheckoutForm({ amount, wakalaId, onSuccess, onBack }: WakalaCheckoutFormProps) {
+export default function WakalaCheckoutForm({ amount, formPayload, onSuccess, onBack }: WakalaCheckoutFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const { language } = useLanguage();
@@ -35,6 +55,21 @@ export default function WakalaCheckoutForm({ amount, wakalaId, onSuccess, onBack
     backToForm: 'Back to Form',
   };
 
+  const createApplication = async (): Promise<{ id: string; booking_reference: string }> => {
+    const { data, error: dbError } = await supabase
+      .from('wakala_applications')
+      .insert([{
+        ...formPayload,
+        payment_status: 'paid',
+        status: 'submitted',
+      }])
+      .select('id, booking_reference')
+      .maybeSingle();
+
+    if (dbError) throw dbError;
+    return { id: data.id, booking_reference: data.booking_reference || '' };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!stripe || !elements) return;
@@ -46,9 +81,7 @@ export default function WakalaCheckoutForm({ amount, wakalaId, onSuccess, onBack
       const { error: submitError } = await elements.submit();
       if (submitError) throw submitError;
 
-      if (wakalaId) {
-        sessionStorage.setItem('pending_wakala_payment', wakalaId);
-      }
+      sessionStorage.setItem('pending_wakala_form_data', JSON.stringify(formPayload));
 
       const { error: confirmError, paymentIntent } = await stripe.confirmPayment({
         elements,
@@ -58,15 +91,11 @@ export default function WakalaCheckoutForm({ amount, wakalaId, onSuccess, onBack
 
       if (confirmError) throw confirmError;
 
-      if (wakalaId && paymentIntent?.status === 'succeeded') {
-        sessionStorage.removeItem('pending_wakala_payment');
-        await supabase
-          .from('wakala_applications')
-          .update({ payment_status: 'paid', status: 'submitted' })
-          .eq('id', wakalaId);
+      if (paymentIntent?.status === 'succeeded') {
+        sessionStorage.removeItem('pending_wakala_form_data');
+        const app = await createApplication();
+        onSuccess(app.id, app.booking_reference);
       }
-
-      onSuccess();
     } catch (err: any) {
       setError(err.message || (isRTL ? 'فشل الدفع. يرجى المحاولة مرة أخرى.' : 'Payment failed. Please try again.'));
     } finally {

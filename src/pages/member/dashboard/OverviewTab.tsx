@@ -25,7 +25,6 @@ function StatusBadge({ status, t }: { status: string; t: Record<string, string> 
     paid: { bg: 'bg-emerald-50', text: 'text-emerald-700', label: t.paid },
     submitted: { bg: 'bg-blue-50', text: 'text-blue-700', label: t.submitted || 'Submitted' },
     pending: { bg: 'bg-amber-50', text: 'text-amber-700', label: t.pending },
-    pending_payment: { bg: 'bg-amber-50', text: 'text-amber-700', label: t.pending_payment || t.pending },
     in_progress: { bg: 'bg-sky-50', text: 'text-sky-700', label: t.in_progress || 'In Progress' },
     completed: { bg: 'bg-emerald-50', text: 'text-emerald-700', label: t.completed || t.approved },
     rejected: { bg: 'bg-red-50', text: 'text-red-700', label: t.rejected },

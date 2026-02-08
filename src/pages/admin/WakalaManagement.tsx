@@ -44,8 +44,8 @@ export default function WakalaManagement() {
   const stats: Stats = useMemo(() => {
     const s = { total: applications.length, pending: 0, approved: 0, rejected: 0, myCases: 0 };
     for (const app of applications) {
-      if (app.status === 'pending') s.pending++;
-      else if (app.status === 'approved') s.approved++;
+      if (app.status === 'pending' || app.status === 'submitted') s.pending++;
+      else if (app.status === 'approved' || app.status === 'completed' || app.status === 'in_progress') s.approved++;
       else if (app.status === 'rejected') s.rejected++;
       if (app.assigned_admin_id === user?.id) s.myCases++;
     }
@@ -76,6 +76,7 @@ export default function WakalaManagement() {
       const { data, error } = await supabase
         .from('wakala_applications')
         .select('*')
+        .neq('status', 'pending_payment')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -233,12 +234,16 @@ export default function WakalaManagement() {
   };
 
   const getStatusBadge = (status: string) => {
-    const badges = {
+    const badges: Record<string, { color: string; icon: typeof Clock; text: string }> = {
+      submitted: { color: 'bg-blue-100 text-blue-800', icon: FileText, text: 'Submitted' },
       pending: { color: 'bg-amber-100 text-amber-800', icon: Clock, text: 'Pending' },
+      in_progress: { color: 'bg-sky-100 text-sky-800', icon: Clock, text: 'In Progress' },
+      completed: { color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle, text: 'Completed' },
       approved: { color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle, text: 'Approved' },
       rejected: { color: 'bg-red-100 text-red-800', icon: XCircle, text: 'Rejected' },
+      cancelled: { color: 'bg-red-100 text-red-800', icon: XCircle, text: 'Cancelled' },
     };
-    const badge = badges[status as keyof typeof badges] || badges.pending;
+    const badge = badges[status] || { color: 'bg-gray-100 text-gray-800', icon: Clock, text: status };
     const Icon = badge.icon;
     return (
       <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${badge.color}`}>
@@ -623,14 +628,21 @@ export default function WakalaManagement() {
               <CaseTimeline entityType="wakala_application" entityId={selectedApp.id} />
 
               <div className="flex gap-3 pt-6 border-t border-gray-200">
-                {selectedApp.status === 'pending' && (
+                {(selectedApp.status === 'pending' || selectedApp.status === 'submitted') && (
                   <>
                     <button
-                      onClick={() => updateStatus(selectedApp.id, 'approved')}
+                      onClick={() => updateStatus(selectedApp.id, 'in_progress')}
+                      className="flex-1 bg-sky-600 hover:bg-sky-700 text-white py-3 px-6 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Clock className="w-5 h-5" />
+                      In Progress
+                    </button>
+                    <button
+                      onClick={() => updateStatus(selectedApp.id, 'completed')}
                       className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-6 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
                     >
                       <CheckCircle className="w-5 h-5" />
-                      Approve
+                      Complete
                     </button>
                     <button
                       onClick={() => updateStatus(selectedApp.id, 'rejected')}
@@ -641,13 +653,22 @@ export default function WakalaManagement() {
                     </button>
                   </>
                 )}
-                {selectedApp.status !== 'pending' && (
+                {selectedApp.status === 'in_progress' && (
                   <button
-                    onClick={() => updateStatus(selectedApp.id, 'pending')}
+                    onClick={() => updateStatus(selectedApp.id, 'completed')}
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-6 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle className="w-5 h-5" />
+                    Complete
+                  </button>
+                )}
+                {!['pending', 'submitted'].includes(selectedApp.status) && (
+                  <button
+                    onClick={() => updateStatus(selectedApp.id, 'submitted')}
                     className="flex-1 bg-amber-600 hover:bg-amber-700 text-white py-3 px-6 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
                   >
                     <Clock className="w-5 h-5" />
-                    Reset to Pending
+                    Reset to Submitted
                   </button>
                 )}
               </div>

@@ -151,16 +151,6 @@ Deno.serve(async (req: Request) => {
         .eq("id", metadata.application_id);
     }
 
-    if (metadata?.wakala_id) {
-      await supabase
-        .from("wakala_applications")
-        .update({
-          payment_status: "pending",
-          payment_intent_id: paymentIntent.id,
-        })
-        .eq("id", metadata.wakala_id);
-    }
-
     if (metadata?.event_registration_id) {
       await supabase
         .from("event_registrations")

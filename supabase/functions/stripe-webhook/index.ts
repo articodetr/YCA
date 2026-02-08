@@ -123,15 +123,70 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
   }
 
   if (metadata.application_id) {
-    const { error } = await supabase
+    const { data: application, error: appError } = await supabase
       .from("membership_applications")
-      .update({ payment_status: "paid" })
-      .eq("id", metadata.application_id);
+      .select("*")
+      .eq("id", metadata.application_id)
+      .single();
 
-    if (error) {
-      console.error("Error updating membership application:", error);
+    if (appError) {
+      console.error("Error fetching membership application:", appError);
     } else {
-      console.info(`Updated membership application ${metadata.application_id} to paid`);
+      const { error: updateError } = await supabase
+        .from("membership_applications")
+        .update({ payment_status: "paid" })
+        .eq("id", metadata.application_id);
+
+      if (updateError) {
+        console.error("Error updating membership application:", updateError);
+      } else {
+        console.info(`Updated membership application ${metadata.application_id} to paid`);
+
+        const startDate = new Date();
+        const expiryDate = new Date();
+        expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+
+        const { data: newMember, error: memberError } = await supabase
+          .from("members")
+          .insert({
+            id: application.user_id || metadata.user_id,
+            membership_type: application.membership_type,
+            first_name: application.first_name,
+            last_name: application.last_name,
+            email: application.email,
+            phone: application.phone,
+            address: application.address,
+            postcode: application.postcode,
+            date_of_birth: application.date_of_birth,
+            business_name: application.business_name,
+            business_support_tier: application.business_support_tier,
+            custom_amount: application.custom_amount,
+            status: "active",
+            start_date: startDate.toISOString().split('T')[0],
+            expiry_date: expiryDate.toISOString().split('T')[0],
+            auto_renewal: false,
+          })
+          .select()
+          .single();
+
+        if (memberError) {
+          console.error("Error creating member record:", memberError);
+        } else {
+          console.info(`Created member record with number: ${newMember.member_number}`);
+
+          await supabase
+            .from("membership_applications")
+            .update({
+              payment_status: "paid",
+              metadata: {
+                ...application.metadata,
+                member_number: newMember.member_number,
+                member_created_at: new Date().toISOString()
+              }
+            })
+            .eq("id", metadata.application_id);
+        }
+      }
     }
   }
 

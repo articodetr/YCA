@@ -2,15 +2,31 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
+interface Member {
+  id: string;
+  member_number: string;
+  membership_type: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  status: string;
+  start_date: string;
+  expiry_date: string | null;
+  auto_renewal: boolean;
+}
+
 interface MemberAuthContextType {
   user: User | null;
   session: Session | null;
+  member: Member | null;
   loading: boolean;
+  isPaidMember: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, metadata?: any) => Promise<{ data: { user: User | null } | null; error: Error | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  refreshMember: () => Promise<void>;
 }
 
 const MemberAuthContext = createContext<MemberAuthContextType | undefined>(undefined);
@@ -27,19 +43,61 @@ function recordLoginActivity(userId: string, method: string, status: 'success' |
 export function MemberAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [member, setMember] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isPaidMember, setIsPaidMember] = useState(false);
+
+  const fetchMemberData = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('members')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (!error && data) {
+        setMember(data);
+        setIsPaidMember(true);
+      } else {
+        setMember(null);
+        setIsPaidMember(false);
+      }
+    } catch (error) {
+      console.error('Error fetching member data:', error);
+      setMember(null);
+      setIsPaidMember(false);
+    }
+  };
+
+  const refreshMember = async () => {
+    if (user?.id) {
+      await fetchMemberData(user.id);
+    }
+  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false);
+      if (session?.user) {
+        fetchMemberData(session.user.id).finally(() => setLoading(false));
+      } else {
+        setLoading(false);
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       (() => {
         setSession(session);
         setUser(session?.user ?? null);
+
+        if (session?.user) {
+          fetchMemberData(session.user.id);
+        } else {
+          setMember(null);
+          setIsPaidMember(false);
+        }
+
         setLoading(false);
 
         if (event === 'SIGNED_IN' && session?.user) {
@@ -110,7 +168,7 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <MemberAuthContext.Provider value={{ user, session, loading, signIn, signInWithGoogle, signUp, signOut, resetPassword }}>
+    <MemberAuthContext.Provider value={{ user, session, member, loading, isPaidMember, signIn, signInWithGoogle, signUp, signOut, resetPassword, refreshMember }}>
       {children}
     </MemberAuthContext.Provider>
   );

@@ -28,6 +28,7 @@ import {
   PanelLeftOpen,
   ExternalLink,
   ChevronLeft,
+  Clock,
   Shield,
 } from 'lucide-react';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
@@ -122,6 +123,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       items: [
         { icon: Users, label: 'Event Registrations', path: '/admin/registrations' },
         { icon: UserCheck, label: 'Memberships', path: '/admin/memberships' },
+        { icon: Clock, label: 'Membership Expiry', path: '/admin/membership-expiry' },
         { icon: HandHeart, label: 'Volunteers', path: '/admin/volunteers' },
         { icon: Briefcase, label: 'Partnerships', path: '/admin/partnerships' },
         { icon: MessageSquare, label: 'Messages', path: '/admin/contacts' },

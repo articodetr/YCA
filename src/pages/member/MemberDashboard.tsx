@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, FileText, CreditCard, LogOut, Loader2,
   LayoutDashboard, CheckCircle, XCircle, Bell, ShieldCheck,
+  AlertCircle,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -345,6 +346,34 @@ export default function MemberDashboard() {
   return (
     <Layout>
       <PageHeader title={t.title} description={t.subtitle} />
+
+      {membershipApp && !memberRecord && membershipApp.payment_status !== 'paid' && (
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+          <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-lg mb-6" dir={isRTL ? 'rtl' : 'ltr'}>
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="text-sm font-bold text-amber-900 mb-1">
+                  {isRTL ? 'يجب إكمال الدفع' : 'Payment Required'}
+                </h3>
+                <p className="text-sm text-amber-800 mb-3">
+                  {isRTL
+                    ? 'يرجى إكمال دفع رسوم العضوية للوصول إلى جميع الخدمات. سيتم تفعيل حسابك فوراً بعد الدفع وسيتم منحك رقم عضوية YCA.'
+                    : 'Please complete your membership payment to access all services. Your account will be activated immediately after payment and you will receive your YCA membership number.'
+                  }
+                </p>
+                <a
+                  href={`/member/payment?amount=${membershipApp.membership_type === 'individual' ? '10' : membershipApp.membership_type === 'family' ? '20' : membershipApp.membership_type === 'student' ? '5' : membershipApp.custom_amount || '50'}&application_id=${membershipApp.id}`}
+                  className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm"
+                >
+                  <CreditCard className="w-4 h-4" />
+                  {isRTL ? 'ادفع الآن' : 'Pay Now'}
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8" dir={isRTL ? 'rtl' : 'ltr'}>
         <div className="bg-white rounded-xl border border-divider p-4 sm:p-5 mb-6">

@@ -31,6 +31,9 @@ interface Stats {
   recentDonations: any[];
   recentRegistrations: any[];
   recentContacts: any[];
+  expiringMembers: any[];
+  expiredMembers: number;
+  urgentExpiry: number;
 }
 
 const quickActions = [
@@ -58,6 +61,9 @@ export default function Dashboard() {
     recentDonations: [],
     recentRegistrations: [],
     recentContacts: [],
+    expiringMembers: [],
+    expiredMembers: 0,
+    urgentExpiry: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -82,6 +88,9 @@ export default function Dashboard() {
         recentDonationsRes,
         recentRegistrationsRes,
         recentContactsRes,
+        expiringMembersRes,
+        expiredMembersRes,
+        urgentExpiryRes,
       ] = await Promise.all([
         supabase.from('donations').select('amount', { count: 'exact' }),
         supabase.from('events').select('*', { count: 'exact' }),
@@ -95,6 +104,9 @@ export default function Dashboard() {
         supabase.from('donations').select('*').order('created_at', { ascending: false }).limit(5),
         supabase.from('event_registrations').select('*, events(title)').order('created_at', { ascending: false }).limit(5),
         supabase.from('contact_submissions').select('*').order('created_at', { ascending: false }).limit(4),
+        supabase.from('expiring_memberships').select('*').order('days_until_expiry', { ascending: true }).limit(5),
+        supabase.from('expiring_memberships').select('*', { count: 'exact' }).eq('expiry_status', 'expired'),
+        supabase.from('expiring_memberships').select('*', { count: 'exact' }).eq('expiry_status', 'urgent'),
       ]);
 
       const totalAmount = donationsRes.data?.reduce((sum, d) => sum + (d.amount || 0), 0) || 0;
@@ -113,6 +125,9 @@ export default function Dashboard() {
         recentDonations: recentDonationsRes.data || [],
         recentRegistrations: recentRegistrationsRes.data || [],
         recentContacts: recentContactsRes.data || [],
+        expiringMembers: expiringMembersRes.data || [],
+        expiredMembers: expiredMembersRes.count || 0,
+        urgentExpiry: urgentExpiryRes.count || 0,
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -280,6 +295,75 @@ export default function Dashboard() {
           })}
         </div>
       </div>
+
+      {(stats.expiringMembers.length > 0 || stats.expiredMembers > 0) && (
+        <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border-2 border-amber-200 overflow-hidden">
+          <div className="px-5 py-4 bg-white/50 border-b border-amber-200 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center">
+                <Clock className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900">Membership Expiry Alerts</h2>
+                <p className="text-xs text-slate-600">
+                  {stats.expiredMembers > 0 && `${stats.expiredMembers} expired`}
+                  {stats.expiredMembers > 0 && stats.urgentExpiry > 0 && ', '}
+                  {stats.urgentExpiry > 0 && `${stats.urgentExpiry} expiring soon`}
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/admin/membership-expiry"
+              className="text-xs text-amber-700 hover:text-amber-800 font-medium flex items-center gap-1"
+            >
+              View all
+              <ArrowUpRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <div className="divide-y divide-amber-100">
+            {stats.expiringMembers.map((member) => (
+              <div key={member.id} className="px-5 py-3 flex items-center justify-between hover:bg-white/30 transition-colors">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-slate-900">
+                    {member.first_name} {member.last_name}
+                    <span className="text-slate-500 ml-2 text-xs">({member.member_number})</span>
+                  </p>
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    {member.email}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 ml-3">
+                  <div className="text-right">
+                    <p className={`text-sm font-semibold ${
+                      member.days_until_expiry < 0 ? 'text-red-600' :
+                      member.days_until_expiry <= 7 ? 'text-red-600' :
+                      member.days_until_expiry <= 30 ? 'text-amber-600' : 'text-slate-600'
+                    }`}>
+                      {member.days_until_expiry < 0 ? 'Expired' : `${member.days_until_expiry} days`}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {new Date(member.expiry_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                    </p>
+                  </div>
+                  {member.days_until_expiry < 0 ? (
+                    <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
+                      Expired
+                    </span>
+                  ) : member.days_until_expiry <= 7 ? (
+                    <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
+                      Urgent
+                    </span>
+                  ) : (
+                    <span className="px-2 py-1 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full">
+                      Soon
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
         <div className="bg-white rounded-xl border border-slate-200/80 overflow-hidden">

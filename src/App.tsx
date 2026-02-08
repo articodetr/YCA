@@ -67,6 +67,7 @@ import ContentManagement from './pages/admin/ContentManagement';
 import AvailabilityManagement from './pages/admin/AvailabilityManagement';
 import PageImagesManagement from './pages/admin/PageImagesManagement';
 import AdminManagement from './pages/admin/AdminManagement';
+import MembershipExpiryMonitoring from './pages/admin/MembershipExpiryMonitoring';
 
 function App() {
   return (
@@ -98,6 +99,7 @@ function App() {
                     <Route path="event-galleries" element={<EventGalleriesManagement />} />
                     <Route path="registrations" element={<RegistrationsManagement />} />
                     <Route path="memberships" element={<MembershipsManagement />} />
+                    <Route path="membership-expiry" element={<MembershipExpiryMonitoring />} />
                     <Route path="wakala" element={<WakalaManagement />} />
                     <Route path="volunteers" element={<VolunteersManagement />} />
                     <Route path="partnerships" element={<PartnershipsManagement />} />

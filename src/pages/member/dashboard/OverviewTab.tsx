@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { staggerContainer, staggerItem } from '../../../lib/animations';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import MembershipCard from '../../../components/member/MembershipCard';
 
 interface Props {
   memberRecord: any;
@@ -80,6 +81,12 @@ export default function OverviewTab({ memberRecord, membershipApp, wakalaApps, p
 
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
+      {memberRecord && (
+        <motion.div variants={staggerItem}>
+          <MembershipCard />
+        </motion.div>
+      )}
+
       <motion.div variants={staggerItem} className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl border border-divider p-5">
           <div className="flex items-center gap-3 mb-3">

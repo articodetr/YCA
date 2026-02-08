@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import Stripe from "npm:stripe@17.6.0";
-import { createClient } from "npm:@supabase/supabase-js@2.57.4";
+import Stripe from "npm:stripe@17.7.0";
+import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,6 +8,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, X-Client-Info, Apikey",
 };
+
+const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY")!;
+const stripe = new Stripe(stripeSecretKey, {
+  appInfo: { name: "YCA Birmingham", version: "1.0.0" },
+});
+
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+);
 
 function errorResponse(message: string, status = 500) {
   return new Response(JSON.stringify({ error: message }), {
@@ -29,26 +39,6 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeSecretKey) {
-      throw new Error("STRIPE_SECRET_KEY not configured");
-    }
-
-    if (
-      !stripeSecretKey.startsWith("sk_test_") &&
-      !stripeSecretKey.startsWith("sk_live_")
-    ) {
-      throw new Error("Invalid STRIPE_SECRET_KEY format");
-    }
-
-    const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: "2024-12-18.acacia",
-    });
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
     if (req.method !== "POST") {
       return errorResponse("Method not allowed", 405);
     }

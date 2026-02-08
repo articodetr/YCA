@@ -206,33 +206,24 @@ function PaymentForm({ amount, applicationId, onSuccess, onError }: PaymentFormP
       if (confirmError) throw confirmError;
 
       if (paymentIntent?.status === 'succeeded') {
-        await supabase
-          .from('membership_applications')
-          .update({ payment_status: 'paid' })
-          .eq('id', applicationId);
-
-        try {
-          const activateResponse = await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/activate-membership`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-              },
-              body: JSON.stringify({
-                application_id: applicationId,
-                user_id: user?.id,
-              }),
-            }
-          );
-
-          const activateData = await activateResponse.json();
-          if (!activateResponse.ok) {
-            console.error('Activation failed:', activateData.error);
+        const activateResponse = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/activate-membership`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({
+              application_id: applicationId,
+              user_id: user?.id,
+            }),
           }
-        } catch (activateErr) {
-          console.error('Failed to activate membership:', activateErr);
+        );
+
+        const activateData = await activateResponse.json();
+        if (!activateResponse.ok || !activateData.success) {
+          console.error('Activation failed:', activateData.error);
         }
 
         onSuccess();

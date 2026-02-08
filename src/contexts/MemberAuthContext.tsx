@@ -95,14 +95,27 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
       setMember(null);
       setIsPaidMember(false);
 
-      if (userEmail) {
-        const { data: appData } = await supabase
+      {
+        const { data: appByUserId } = await supabase
           .from('membership_applications')
           .select('id, membership_type, payment_status, custom_amount')
-          .eq('email', userEmail)
+          .eq('user_id', userId)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
+
+        let appData = appByUserId;
+
+        if (!appData && userEmail) {
+          const { data: appByEmail } = await supabase
+            .from('membership_applications')
+            .select('id, membership_type, payment_status, custom_amount')
+            .eq('email', userEmail)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          appData = appByEmail;
+        }
 
         if (appData) {
           const isPaid = appData.payment_status === 'paid' || appData.payment_status === 'completed';
@@ -147,9 +160,6 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
           setPendingApplication(null);
           setNeedsOnboarding(true);
         }
-      } else {
-        setPendingApplication(null);
-        setNeedsOnboarding(true);
       }
     } catch (error) {
       console.error('Error fetching member data:', error);

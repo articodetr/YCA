@@ -49,6 +49,15 @@ Deno.serve(async (req: Request) => {
 
     console.info(`Activating membership for application: ${application_id}`);
 
+    const { error: payUpdateError } = await supabase
+      .from("membership_applications")
+      .update({ payment_status: "paid" })
+      .eq("id", application_id);
+
+    if (payUpdateError) {
+      console.error("Error updating payment status:", payUpdateError);
+    }
+
     const { data: application, error: appError } = await supabase
       .from("membership_applications")
       .select("*")
@@ -60,13 +69,6 @@ Deno.serve(async (req: Request) => {
       return Response.json(
         { success: false, error: "Application not found" },
         { status: 404, headers: corsHeaders }
-      );
-    }
-
-    if (application.payment_status !== "paid") {
-      return Response.json(
-        { success: false, error: "Application payment not completed" },
-        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -120,7 +122,7 @@ Deno.serve(async (req: Request) => {
         durationMonths = 12;
         break;
       case 'business_support':
-        switch (application.frequency) {
+        switch (application.payment_frequency) {
           case 'monthly':
             durationMonths = 1;
             break;
@@ -156,7 +158,7 @@ Deno.serve(async (req: Request) => {
         business_name: application.business_name,
         business_support_tier: application.business_support_tier,
         custom_amount: application.custom_amount,
-        payment_frequency: application.frequency,
+        payment_frequency: application.payment_frequency,
         status: "active",
         start_date: startDate.toISOString().split("T")[0],
         expiry_date: expiryDate.toISOString().split("T")[0],

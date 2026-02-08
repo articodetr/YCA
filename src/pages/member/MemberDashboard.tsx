@@ -176,12 +176,9 @@ export default function MemberDashboard() {
       return;
     }
 
-    if (pendingApplication && pendingApplication.payment_status === 'pending') {
-      const amount = pendingApplication.custom_amount ||
-        ({ individual: 20, family: 30, associate: 20, business_support: 0 } as Record<string, number>)[pendingApplication.membership_type] || 20;
-      navigate(`/member/payment?application_id=${pendingApplication.id}&amount=${amount}`, { replace: true });
-    }
-  }, [authLoading, user, needsOnboarding, pendingApplication, navigate]);
+    // لا نعيد التوجيه تلقائياً إلى صفحة الدفع بعد الآن
+    // سيتم عرض رسالة في الـ dashboard بدلاً من ذلك
+  }, [authLoading, user, needsOnboarding, navigate]);
 
   const [loading, setLoading] = useState(true);
   const [membershipApp, setMembershipApp] = useState<any>(null);

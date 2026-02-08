@@ -354,12 +354,12 @@ export default function MembershipPaymentModal({
 
   const pollForMember = async () => {
     setPollingMember(true);
-    for (let i = 0; i < 10; i++) {
-      await new Promise(r => setTimeout(r, 2000));
+    for (let i = 0; i < 5; i++) {
+      await new Promise(r => setTimeout(r, 500));
       const { data } = await supabase
         .from('members')
         .select('member_number, start_date, expiry_date')
-        .eq('id', user?.id)
+        .eq('user_id', user?.id)
         .maybeSingle();
 
       if (data) {
@@ -380,6 +380,7 @@ export default function MembershipPaymentModal({
   };
 
   const handleGoToProfile = async () => {
+    await new Promise(r => setTimeout(r, 500));
     await refreshMember();
     navigate('/member/dashboard?tab=profile');
   };

@@ -7,6 +7,7 @@ import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import Layout from '../../components/Layout';
 import PageHeader from '../../components/PageHeader';
 import BusinessSupportSelector from '../../components/BusinessSupportSelector';
+import MembershipPaymentModal from '../../components/member/MembershipPaymentModal';
 
 const translations = {
   en: {
@@ -119,6 +120,8 @@ export default function MembershipApplication() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [applicationData, setApplicationData] = useState<{ id: string; amount: number } | null>(null);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -277,7 +280,8 @@ export default function MembershipApplication() {
         await refreshMember();
         setSuccess(true);
         setTimeout(() => {
-          navigate(`/member/payment?application_id=${application.id}&amount=${finalAmount}`);
+          setApplicationData({ id: application.id, amount: finalAmount });
+          setShowPaymentModal(true);
         }, 1500);
       } else {
         const { data: authData, error: signUpError } = await signUp(formData.email, formData.password, {
@@ -299,7 +303,8 @@ export default function MembershipApplication() {
         const { application, finalAmount } = await insertApplication(authData.user.id);
         setSuccess(true);
         setTimeout(() => {
-          navigate(`/member/payment?application_id=${application.id}&amount=${finalAmount}`);
+          setApplicationData({ id: application.id, amount: finalAmount });
+          setShowPaymentModal(true);
         }, 2000);
       }
     } catch (err: any) {
@@ -589,6 +594,16 @@ export default function MembershipApplication() {
           </form>
         </div>
       </div>
+
+      {showPaymentModal && applicationData && (
+        <MembershipPaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          applicationId={applicationData.id}
+          amount={applicationData.amount}
+          membershipType={membershipType}
+        />
+      )}
     </Layout>
   );
 }

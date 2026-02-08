@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -6,6 +6,7 @@ import {
   LayoutDashboard, CheckCircle, XCircle, Bell, ShieldCheck,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { stripePromise } from '../../lib/stripe';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import Layout from '../../components/Layout';
@@ -184,6 +185,7 @@ export default function MemberDashboard() {
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [showWelcome, setShowWelcome] = useState(false);
+  const paymentChecked = useRef(false);
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
@@ -193,6 +195,80 @@ export default function MemberDashboard() {
   useEffect(() => {
     fetchData();
   }, [user]);
+
+  useEffect(() => {
+    if (paymentChecked.current || !user) return;
+    const piClientSecret = searchParams.get('payment_intent_client_secret');
+    const redirectStatus = searchParams.get('redirect_status');
+    if (!piClientSecret) return;
+    paymentChecked.current = true;
+
+    (async () => {
+      try {
+        const stripe = await stripePromise;
+        if (!stripe) return;
+        const { paymentIntent } = await stripe.retrievePaymentIntent(piClientSecret);
+        if (!paymentIntent) return;
+
+        const wakalaId = sessionStorage.getItem('pending_wakala_payment');
+
+        if (paymentIntent.status === 'succeeded') {
+          if (wakalaId) {
+            await supabase
+              .from('wakala_applications')
+              .update({ payment_status: 'paid', status: 'submitted' })
+              .eq('id', wakalaId);
+            sessionStorage.removeItem('pending_wakala_payment');
+          }
+
+          const meta = paymentIntent.metadata as Record<string, string> | undefined;
+          if (meta?.wakala_id && meta.wakala_id !== wakalaId) {
+            await supabase
+              .from('wakala_applications')
+              .update({ payment_status: 'paid', status: 'submitted' })
+              .eq('id', meta.wakala_id);
+          }
+
+          const membershipAppId = sessionStorage.getItem('pending_membership_payment') || meta?.application_id;
+          if (membershipAppId) {
+            await supabase
+              .from('membership_applications')
+              .update({ payment_status: 'paid' })
+              .eq('id', membershipAppId);
+            sessionStorage.removeItem('pending_membership_payment');
+
+            try {
+              await fetch(
+                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/activate-membership`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+                  },
+                  body: JSON.stringify({
+                    application_id: membershipAppId,
+                    user_id: user.id,
+                  }),
+                }
+              );
+            } catch (activateErr) {
+              console.error('Error activating membership:', activateErr);
+            }
+          }
+
+          showToast(language === 'ar' ? 'تم الدفع بنجاح!' : 'Payment completed successfully!', 'success');
+          fetchData();
+        } else if (paymentIntent.status === 'requires_payment_method' || redirectStatus === 'failed') {
+          showToast(language === 'ar' ? 'فشل الدفع. يرجى المحاولة مرة أخرى.' : 'Payment failed. Please try again.', 'error');
+        }
+
+        window.history.replaceState({}, '', window.location.pathname);
+      } catch (err) {
+        console.error('Error verifying payment:', err);
+      }
+    })();
+  }, [user, searchParams]);
 
   const fetchData = async () => {
     if (!user) return;

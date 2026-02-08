@@ -195,6 +195,8 @@ function PaymentForm({ amount, applicationId, onSuccess, onError }: PaymentFormP
       const { error: submitError } = await elements.submit();
       if (submitError) throw submitError;
 
+      sessionStorage.setItem('pending_membership_payment', applicationId);
+
       const { error: confirmError, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
@@ -206,6 +208,7 @@ function PaymentForm({ amount, applicationId, onSuccess, onError }: PaymentFormP
       if (confirmError) throw confirmError;
 
       if (paymentIntent?.status === 'succeeded') {
+        sessionStorage.removeItem('pending_membership_payment');
         const activateResponse = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/activate-membership`,
           {

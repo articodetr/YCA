@@ -46,6 +46,10 @@ export default function WakalaCheckoutForm({ amount, wakalaId, onSuccess, onBack
       const { error: submitError } = await elements.submit();
       if (submitError) throw submitError;
 
+      if (wakalaId) {
+        sessionStorage.setItem('pending_wakala_payment', wakalaId);
+      }
+
       const { error: confirmError, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: { return_url: `${window.location.origin}/member/dashboard` },
@@ -55,6 +59,7 @@ export default function WakalaCheckoutForm({ amount, wakalaId, onSuccess, onBack
       if (confirmError) throw confirmError;
 
       if (wakalaId && paymentIntent?.status === 'succeeded') {
+        sessionStorage.removeItem('pending_wakala_payment');
         await supabase
           .from('wakala_applications')
           .update({ payment_status: 'paid', status: 'submitted' })

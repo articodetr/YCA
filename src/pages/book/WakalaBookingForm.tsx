@@ -4,15 +4,13 @@ import {
   Loader2, CheckCircle, AlertCircle, User, X, FileText, Send, Upload, Crown,
 } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
 import { supabase } from '../../lib/supabase';
+import { stripePromise } from '../../lib/stripe';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import FileUploadField from '../../components/booking/FileUploadField';
 import WakalaCheckoutForm from '../../components/modals/WakalaCheckoutForm';
 import type { BookingResult } from './BookPage';
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 interface WakalaBookingFormProps {
   onComplete: (result: BookingResult) => void;
@@ -302,7 +300,7 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
         </div>
         <div className="p-6 sm:p-8">
           <button type="button" onClick={() => setStep('form')} className="mb-4 text-sm text-gray-500 hover:text-gray-700 underline">{t.backToForm}</button>
-          <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#059669' } } }}>
+          <Elements key={clientSecret} stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#059669' } } }}>
             <WakalaCheckoutForm amount={paymentAmount} wakalaId={applicationId || undefined} onSuccess={handlePaymentSuccess} onBack={() => setStep('form')} />
           </Elements>
         </div>

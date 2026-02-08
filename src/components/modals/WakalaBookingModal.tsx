@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Loader2, CheckCircle, AlertCircle, User, X, FileText, Send, Upload } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
 import { supabase } from '../../lib/supabase';
+import { stripePromise } from '../../lib/stripe';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import FileUploadField from '../booking/FileUploadField';
 import WakalaCheckoutForm from './WakalaCheckoutForm';
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 interface WakalaBookingModalProps {
   isOpen: boolean;
@@ -460,7 +458,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
             </button>
           </div>
           <div className="p-6">
-            <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#059669' } } }}>
+            <Elements key={clientSecret} stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#059669' } } }}>
               <WakalaCheckoutForm amount={paymentAmount} wakalaId={applicationId || undefined} onSuccess={() => setStep('success')} onBack={() => setStep('form')} />
             </Elements>
           </div>

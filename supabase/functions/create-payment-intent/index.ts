@@ -77,6 +77,7 @@ Deno.serve(async (req: Request) => {
         amount: amountInPence,
         currency: "gbp",
         customer: customer.id,
+        automatic_payment_methods: { enabled: true },
         metadata: {
           type: "donation",
           full_name: fullName,
@@ -132,12 +133,10 @@ Deno.serve(async (req: Request) => {
 
     const { amount, currency, metadata } = body;
 
-    const amountInPence =
-      metadata?.type === "event_registration" ? amount : amount;
-
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: amountInPence,
+      amount,
       currency: currency || "gbp",
+      automatic_payment_methods: { enabled: true },
       metadata: metadata || {},
       description: `${metadata?.type || "Payment"} - ${metadata?.user_id || "guest"}`,
     });

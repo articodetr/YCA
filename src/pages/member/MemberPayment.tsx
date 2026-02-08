@@ -1,15 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
 import { Loader2, CheckCircle, CreditCard, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import { supabase } from '../../lib/supabase';
+import { stripePromise } from '../../lib/stripe';
 import Layout from '../../components/Layout';
 import PageHeader from '../../components/PageHeader';
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 interface CheckoutFormProps {
   amount: number;
@@ -296,6 +294,7 @@ export default function MemberPayment() {
 
           {clientSecret && !loading && !error && (
             <Elements
+              key={clientSecret}
               stripe={stripePromise}
               options={{
                 clientSecret,

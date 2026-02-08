@@ -116,7 +116,7 @@ export default function BookPage() {
   const handleMemberRegister = () => {
     setShowGateModal(false);
     setPendingService(null);
-    navigate('/get-involved/membership');
+    navigate('/membership');
   };
 
   const handleContinueAsGuest = () => {

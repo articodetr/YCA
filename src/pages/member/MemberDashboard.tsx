@@ -172,7 +172,7 @@ export default function MemberDashboard() {
     if (authLoading || !user) return;
 
     if (needsOnboarding) {
-      navigate('/member/choose-membership', { replace: true });
+      navigate('/membership', { replace: true });
       return;
     }
 

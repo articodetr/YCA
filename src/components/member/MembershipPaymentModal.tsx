@@ -4,6 +4,7 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import {
   X, Loader2, CreditCard, AlertCircle, CheckCircle, ArrowRight,
   User as UserIcon, Phone, MapPin, Calendar, ChevronLeft, UserPlus, Trash2,
+  Lock, Mail,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -23,6 +24,7 @@ interface MembershipPaymentModalProps {
     priceLabel: string;
   };
   onStepChange?: (step: number) => void;
+  preSelectedBusinessSupport?: { tier: string; amount: number; frequency: string } | null;
 }
 
 interface FamilyMember {
@@ -33,6 +35,7 @@ interface FamilyMember {
 
 const translations = {
   en: {
+    stepAuth: 'Sign In or Create Account',
     stepDetails: 'Complete Your Details',
     stepPayment: 'Make Payment',
     firstName: 'First Name',
@@ -73,8 +76,27 @@ const translations = {
     associate: 'Associate',
     business_support: 'Business Support',
     waitingConfirmation: 'Confirming membership...',
+    continueWithGoogle: 'Continue with Google',
+    or: 'OR',
+    email: 'Email Address',
+    password: 'Password',
+    confirmPassword: 'Confirm Password',
+    fullName: 'Full Name',
+    signIn: 'Sign In',
+    createAccount: 'Create Account',
+    signingIn: 'Signing in...',
+    creatingAccount: 'Creating account...',
+    noAccount: "Don't have an account?",
+    register: 'Register',
+    haveAccount: 'Already have an account?',
+    login: 'Sign In',
+    passwordMismatch: 'Passwords do not match',
+    passwordMinLength: 'Password must be at least 6 characters',
+    authError: 'Authentication failed. Please try again.',
+    userExists: 'An account with this email already exists. Please sign in instead.',
   },
   ar: {
+    stepAuth: 'تسجيل الدخول أو إنشاء حساب',
     stepDetails: 'أكمل بياناتك',
     stepPayment: 'ادفع الرسوم',
     firstName: 'الاسم الأول',
@@ -115,8 +137,39 @@ const translations = {
     associate: 'منتسب',
     business_support: 'دعم الأعمال',
     waitingConfirmation: 'جاري تأكيد العضوية...',
+    continueWithGoogle: 'المتابعة مع جوجل',
+    or: 'أو',
+    email: 'البريد الإلكتروني',
+    password: 'كلمة المرور',
+    confirmPassword: 'تأكيد كلمة المرور',
+    fullName: 'الاسم الكامل',
+    signIn: 'تسجيل الدخول',
+    createAccount: 'إنشاء حساب',
+    signingIn: 'جاري تسجيل الدخول...',
+    creatingAccount: 'جاري إنشاء الحساب...',
+    noAccount: 'ليس لديك حساب؟',
+    register: 'سجل الآن',
+    haveAccount: 'لديك حساب بالفعل؟',
+    login: 'تسجيل الدخول',
+    passwordMismatch: 'كلمات المرور غير متطابقة',
+    passwordMinLength: 'يجب أن تكون كلمة المرور 6 أحرف على الأقل',
+    authError: 'فشل التحقق. يرجى المحاولة مرة أخرى.',
+    userExists: 'يوجد حساب بهذا البريد الإلكتروني. يرجى تسجيل الدخول بدلاً من ذلك.',
   },
 };
+
+function GoogleIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)">
+        <path fill="#4285F4" d="M -3.264 51.509 C -3.264 50.719 -3.334 49.969 -3.454 49.239 L -14.754 49.239 L -14.754 53.749 L -8.284 53.749 C -8.574 55.229 -9.424 56.479 -10.684 57.329 L -10.684 60.329 L -6.824 60.329 C -4.564 58.239 -3.264 55.159 -3.264 51.509 Z"/>
+        <path fill="#34A853" d="M -14.754 63.239 C -11.514 63.239 -8.804 62.159 -6.824 60.329 L -10.684 57.329 C -11.764 58.049 -13.134 58.489 -14.754 58.489 C -17.884 58.489 -20.534 56.379 -21.484 53.529 L -25.464 53.529 L -25.464 56.619 C -23.494 60.539 -19.444 63.239 -14.754 63.239 Z"/>
+        <path fill="#FBBC05" d="M -21.484 53.529 C -21.734 52.809 -21.864 52.039 -21.864 51.239 C -21.864 50.439 -21.724 49.669 -21.484 48.949 L -21.484 45.859 L -25.464 45.859 C -26.284 47.479 -26.754 49.299 -26.754 51.239 C -26.754 53.179 -26.284 54.999 -25.464 56.619 L -21.484 53.529 Z"/>
+        <path fill="#EA4335" d="M -14.754 43.989 C -12.984 43.989 -11.404 44.599 -10.154 45.789 L -6.734 42.369 C -8.804 40.429 -11.514 39.239 -14.754 39.239 C -19.444 39.239 -23.494 41.939 -25.464 45.859 L -21.484 48.949 C -20.534 46.099 -17.884 43.989 -14.754 43.989 Z"/>
+      </g>
+    </svg>
+  );
+}
 
 interface PaymentFormProps {
   amount: number;
@@ -194,14 +247,17 @@ export default function MembershipPaymentModal({
   onClose,
   membershipType,
   onStepChange,
+  preSelectedBusinessSupport,
 }: MembershipPaymentModalProps) {
   const { language } = useLanguage();
-  const { user, refreshMember } = useMemberAuth();
+  const { user, refreshMember, signIn, signUp, signInWithGoogle } = useMemberAuth();
   const navigate = useNavigate();
   const isRTL = language === 'ar';
   const t = translations[language];
 
-  const [step, setStep] = useState<'details' | 'payment' | 'success'>('details');
+  type ModalStep = 'auth' | 'details' | 'payment' | 'success';
+
+  const [step, setStep] = useState<ModalStep>(!user ? 'auth' : 'details');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
@@ -210,7 +266,9 @@ export default function MembershipPaymentModal({
   const [city, setCity] = useState('');
   const [postcode, setPostcode] = useState('');
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
-  const [businessSupport, setBusinessSupport] = useState<{ tier: string; amount: number; frequency: string } | null>(null);
+  const [businessSupport, setBusinessSupport] = useState<{ tier: string; amount: number; frequency: string } | null>(
+    preSelectedBusinessSupport || null
+  );
   const [errors, setErrors] = useState<Record<string, boolean>>({});
   const [applicationId, setApplicationId] = useState<string | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
@@ -220,39 +278,116 @@ export default function MembershipPaymentModal({
   const [memberData, setMemberData] = useState<{ member_number: string; start_date: string; expiry_date: string } | null>(null);
   const [pollingMember, setPollingMember] = useState(false);
 
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authConfirmPassword, setAuthConfirmPassword] = useState('');
+  const [authFullName, setAuthFullName] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
   const paymentAmount = membershipType.id === 'business_support'
     ? (businessSupport?.amount || 0)
     : membershipType.price;
 
   useEffect(() => {
     if (isOpen && user) {
+      if (step === 'auth') {
+        setStep('details');
+      }
       const meta = user.user_metadata || {};
       const fullName = meta.full_name || meta.name || '';
       const parts = fullName.split(' ');
-      setFirstName(parts[0] || '');
-      setLastName(parts.slice(1).join(' ') || '');
+      if (!firstName) setFirstName(parts[0] || '');
+      if (!lastName) setLastName(parts.slice(1).join(' ') || '');
     }
   }, [isOpen, user]);
 
   useEffect(() => {
     if (!isOpen) {
-      setStep('details');
+      setStep(!user ? 'auth' : 'details');
       setErrors({});
       setApplicationId(null);
       setClientSecret(null);
       setPaymentError(null);
       setMemberData(null);
       setFamilyMembers([]);
-      setBusinessSupport(null);
+      setBusinessSupport(preSelectedBusinessSupport || null);
       setPollingMember(false);
+      setAuthError('');
+      setAuthEmail('');
+      setAuthPassword('');
+      setAuthConfirmPassword('');
+      setAuthFullName('');
+      setAuthMode('login');
+      setFirstName('');
+      setLastName('');
     }
   }, [isOpen]);
 
   useEffect(() => {
     if (onStepChange) {
-      onStepChange(step === 'details' ? 2 : step === 'payment' ? 2 : 3);
+      const stepMap: Record<ModalStep, number> = { auth: 1, details: 2, payment: 2, success: 3 };
+      onStepChange(stepMap[step]);
     }
   }, [step, onStepChange]);
+
+  const handleAuthSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    setAuthLoading(true);
+
+    try {
+      if (authMode === 'login') {
+        const { error } = await signIn(authEmail, authPassword);
+        if (error) throw error;
+      } else {
+        if (authPassword !== authConfirmPassword) {
+          setAuthError(t.passwordMismatch);
+          setAuthLoading(false);
+          return;
+        }
+        if (authPassword.length < 6) {
+          setAuthError(t.passwordMinLength);
+          setAuthLoading(false);
+          return;
+        }
+        const { data, error } = await signUp(authEmail, authPassword, { full_name: authFullName });
+        if (error) {
+          const msg = error.message.toLowerCase();
+          if (msg.includes('already registered') || msg.includes('user already exists')) {
+            setAuthError(t.userExists);
+          } else {
+            throw error;
+          }
+          setAuthLoading(false);
+          return;
+        }
+        if (data?.user && (!data.user.identities || data.user.identities.length === 0)) {
+          setAuthError(t.userExists);
+          setAuthLoading(false);
+          return;
+        }
+      }
+    } catch (err: any) {
+      setAuthError(err.message || t.authError);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleGoogleAuth = async () => {
+    setAuthError('');
+    setGoogleLoading(true);
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) throw error;
+    } catch (err: any) {
+      setAuthError(err.message || t.authError);
+      setGoogleLoading(false);
+    }
+  };
 
   const validate = () => {
     const errs: Record<string, boolean> = {};
@@ -410,6 +545,23 @@ export default function MembershipPaymentModal({
 
   if (!isOpen) return null;
 
+  const getStepTitle = () => {
+    switch (step) {
+      case 'auth': return t.stepAuth;
+      case 'details': return t.stepDetails;
+      case 'payment': return t.stepPayment;
+      default: return '';
+    }
+  };
+
+  const handleBack = () => {
+    if (step === 'payment') {
+      setStep('details');
+      setClientSecret(null);
+      setPaymentError(null);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
@@ -430,15 +582,13 @@ export default function MembershipPaymentModal({
             <div className="flex items-center gap-3">
               {step === 'payment' && (
                 <button
-                  onClick={() => setStep('details')}
+                  onClick={handleBack}
                   className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   <ChevronLeft className={`w-5 h-5 text-gray-500 ${isRTL ? 'rotate-180' : ''}`} />
                 </button>
               )}
-              <h2 className="text-lg font-bold text-gray-900">
-                {step === 'details' ? t.stepDetails : t.stepPayment}
-              </h2>
+              <h2 className="text-lg font-bold text-gray-900">{getStepTitle()}</h2>
             </div>
             <button
               onClick={onClose}
@@ -451,6 +601,161 @@ export default function MembershipPaymentModal({
 
         <div className="p-6">
           <AnimatePresence mode="wait">
+            {step === 'auth' && (
+              <motion.div
+                key="auth"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="space-y-5"
+              >
+                <div className="bg-emerald-50 rounded-xl p-4 text-center">
+                  <p className="text-sm text-emerald-700 font-medium">{t.membershipPlan}</p>
+                  <p className="font-bold text-emerald-800 text-lg">
+                    {language === 'ar' ? membershipType.nameAr : membershipType.nameEn}
+                    {membershipType.id !== 'business_support' && (
+                      <span className="text-emerald-600 mx-2">{membershipType.priceLabel}</span>
+                    )}
+                    {membershipType.id === 'business_support' && businessSupport && (
+                      <span className="text-emerald-600 mx-2">£{businessSupport.amount}</span>
+                    )}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleGoogleAuth}
+                  disabled={googleLoading || authLoading}
+                  className="w-full bg-white hover:bg-gray-50 text-gray-700 font-semibold py-3 px-6 rounded-lg border-2 border-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                >
+                  {googleLoading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      {t.signingIn}
+                    </>
+                  ) : (
+                    <>
+                      <GoogleIcon />
+                      {t.continueWithGoogle}
+                    </>
+                  )}
+                </button>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-4 bg-white text-gray-500 font-medium">{t.or}</span>
+                  </div>
+                </div>
+
+                {authError && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-red-700">{authError}</p>
+                  </div>
+                )}
+
+                <form onSubmit={handleAuthSubmit} className="space-y-4">
+                  {authMode === 'signup' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.fullName}</label>
+                      <div className="relative">
+                        <UserIcon className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400`} />
+                        <input
+                          type="text"
+                          value={authFullName}
+                          onChange={e => setAuthFullName(e.target.value)}
+                          className={`w-full ${isRTL ? 'pr-10 pl-3' : 'pl-10 pr-3'} py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm`}
+                          required
+                          disabled={authLoading}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.email}</label>
+                    <div className="relative">
+                      <Mail className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400`} />
+                      <input
+                        type="email"
+                        value={authEmail}
+                        onChange={e => setAuthEmail(e.target.value)}
+                        className={`w-full ${isRTL ? 'pr-10 pl-3' : 'pl-10 pr-3'} py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm`}
+                        placeholder="member@example.com"
+                        required
+                        disabled={authLoading}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.password}</label>
+                    <div className="relative">
+                      <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400`} />
+                      <input
+                        type="password"
+                        value={authPassword}
+                        onChange={e => setAuthPassword(e.target.value)}
+                        className={`w-full ${isRTL ? 'pr-10 pl-3' : 'pl-10 pr-3'} py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm`}
+                        placeholder="••••••••"
+                        required
+                        minLength={6}
+                        disabled={authLoading}
+                      />
+                    </div>
+                  </div>
+
+                  {authMode === 'signup' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.confirmPassword}</label>
+                      <div className="relative">
+                        <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400`} />
+                        <input
+                          type="password"
+                          value={authConfirmPassword}
+                          onChange={e => setAuthConfirmPassword(e.target.value)}
+                          className={`w-full ${isRTL ? 'pr-10 pl-3' : 'pl-10 pr-3'} py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm`}
+                          placeholder="••••••••"
+                          required
+                          minLength={6}
+                          disabled={authLoading}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={authLoading}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {authLoading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        {authMode === 'login' ? t.signingIn : t.creatingAccount}
+                      </>
+                    ) : (
+                      authMode === 'login' ? t.signIn : t.createAccount
+                    )}
+                  </button>
+                </form>
+
+                <p className="text-sm text-gray-600 text-center">
+                  {authMode === 'login' ? t.noAccount : t.haveAccount}{' '}
+                  <button
+                    type="button"
+                    onClick={() => { setAuthMode(authMode === 'login' ? 'signup' : 'login'); setAuthError(''); }}
+                    className="text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
+                  >
+                    {authMode === 'login' ? t.register : t.login}
+                  </button>
+                </p>
+              </motion.div>
+            )}
+
             {step === 'details' && (
               <motion.div
                 key="details"
@@ -468,6 +773,9 @@ export default function MembershipPaymentModal({
                   </div>
                   {membershipType.id !== 'business_support' && (
                     <span className="text-2xl font-bold text-emerald-600">{membershipType.priceLabel}</span>
+                  )}
+                  {membershipType.id === 'business_support' && businessSupport && (
+                    <span className="text-2xl font-bold text-emerald-600">£{businessSupport.amount}</span>
                   )}
                 </div>
 
@@ -614,7 +922,7 @@ export default function MembershipPaymentModal({
                   </div>
                 )}
 
-                {membershipType.id === 'business_support' && (
+                {membershipType.id === 'business_support' && !preSelectedBusinessSupport && (
                   <div className={`border rounded-xl p-4 ${errors.businessSupport ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}>
                     <BusinessSupportSelector
                       onSelect={(data) => {

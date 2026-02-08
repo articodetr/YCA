@@ -183,7 +183,7 @@ export default function Header() {
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <Link to="/get-involved/membership" className="block px-6 py-3 hover:bg-sand transition-colors">
+                    <Link to="/membership" className="block px-6 py-3 hover:bg-sand transition-colors">
                       {t('nav.getInvolved.membership')}
                     </Link>
                     <Link to="/get-involved/volunteer" className="block px-6 py-3 hover:bg-sand transition-colors">
@@ -266,7 +266,7 @@ export default function Header() {
 
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
-                to={user ? '/member/dashboard' : '/member/login'}
+                to={user ? '/member/dashboard' : '/membership'}
                 className="hover:text-accent transition-colors p-2.5"
                 title={user ? (language === 'ar' ? 'حسابي' : 'My Account') : (language === 'ar' ? 'دخول' : 'Login')}
               >
@@ -344,7 +344,7 @@ export default function Header() {
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <Link to="/get-involved/membership" onClick={() => setIsOpen(false)} className="block py-1 text-sm">
+                      <Link to="/membership" onClick={() => setIsOpen(false)} className="block py-1 text-sm">
                         {t('nav.getInvolved.membership')}
                       </Link>
                       <Link to="/get-involved/volunteer" onClick={() => setIsOpen(false)} className="block py-1 text-sm">
@@ -433,7 +433,7 @@ export default function Header() {
                 </Link>
 
                 <Link
-                  to={user ? '/member/dashboard' : '/member/login'}
+                  to={user ? '/member/dashboard' : '/membership'}
                   onClick={() => setIsOpen(false)}
                   className="flex items-center justify-center gap-2 mt-3 border border-white/30 text-white px-6 py-3 rounded-lg hover:bg-white/10 transition-colors font-semibold whitespace-nowrap"
                 >

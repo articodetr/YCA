@@ -367,7 +367,7 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
               <Crown className="w-5 h-5 text-amber-600" />
               <p className="text-sm text-amber-800 font-medium">{t.memberPromo}</p>
             </div>
-            <Link to="/get-involved/membership" className="text-sm font-semibold text-amber-700 hover:text-amber-900 underline">{t.joinNow}</Link>
+            <Link to="/membership" className="text-sm font-semibold text-amber-700 hover:text-amber-900 underline">{t.joinNow}</Link>
           </div>
         )}
 

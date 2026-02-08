@@ -162,7 +162,7 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/member/choose-membership`,
+          redirectTo: `${window.location.origin}/membership`,
         },
       });
       if (error) throw error;

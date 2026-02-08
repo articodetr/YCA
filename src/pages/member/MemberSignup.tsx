@@ -122,7 +122,7 @@ export default function MemberSignup() {
         return;
       }
 
-      navigate('/member/choose-membership');
+      navigate('/membership');
     } catch (err: any) {
       console.error('Signup error:', err);
       setError(t.errorMessage);

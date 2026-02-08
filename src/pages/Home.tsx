@@ -472,7 +472,7 @@ export default function Home() {
             viewport={{ once: true }}
           >
             <motion.div variants={staggerItem} whileHover={{ y: -10, scale: 1.03 }}>
-              <Link to="/get-involved/membership" className="bg-white p-6 rounded-lg hover:shadow-xl transition-all text-center group block">
+              <Link to="/membership" className="bg-white p-6 rounded-lg hover:shadow-xl transition-all text-center group block">
                 <motion.div
                   className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4"
                   whileHover={{ rotate: 360 }}

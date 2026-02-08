@@ -174,7 +174,7 @@ export default function OverviewTab({ memberRecord, membershipApp, wakalaApps, p
 
           {!membershipApp ? (
             <Link
-              to="/get-involved/membership"
+              to="/membership"
               className="flex flex-col items-center gap-2 bg-white rounded-xl border border-divider p-4 hover:border-primary hover:shadow-md transition-all group"
             >
               <div className="w-10 h-10 rounded-lg bg-primary/5 group-hover:bg-primary/10 flex items-center justify-center transition-colors">

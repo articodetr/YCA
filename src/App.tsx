@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
@@ -20,7 +20,6 @@ import History from './pages/about/History';
 import Team from './pages/about/Team';
 import Partners from './pages/about/Partners';
 import Reports from './pages/about/Reports';
-import Membership from './pages/get-involved/Membership';
 import Volunteer from './pages/get-involved/Volunteer';
 import Donate from './pages/get-involved/Donate';
 import Jobs from './pages/get-involved/Jobs';
@@ -29,6 +28,7 @@ import Resources from './pages/Resources';
 import BookPage from './pages/book/BookPage';
 import BookingTracker from './pages/book/BookingTracker';
 import PaymentResult from './pages/PaymentResult';
+import UnifiedMembership from './pages/UnifiedMembership';
 
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import { MemberAuthProvider } from './contexts/MemberAuthContext';
@@ -41,10 +41,8 @@ import ProtectedMemberRoute from './components/member/ProtectedMemberRoute';
 import MemberLogin from './pages/member/MemberLogin';
 import MemberSignup from './pages/member/MemberSignup';
 import MemberDashboard from './pages/member/MemberDashboard';
-import MembershipApplication from './pages/member/MembershipApplication';
 import WakalaApplication from './pages/member/WakalaApplication';
 import MemberPayment from './pages/member/MemberPayment';
-import ChooseMembership from './pages/member/ChooseMembership';
 import AdminLayout from './components/admin/AdminLayout';
 import Dashboard from './pages/admin/Dashboard';
 import NewsManagement from './pages/admin/NewsManagement';
@@ -83,6 +81,7 @@ function App() {
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/member/login" element={<MemberLogin />} />
             <Route path="/member/signup" element={<MemberSignup />} />
+            <Route path="/membership" element={<UnifiedMembership />} />
             <Route path="/book" element={<BookPage />} />
             <Route path="/book/track" element={<BookingTracker />} />
             <Route path="/payment/result" element={<PaymentResult />} />
@@ -123,7 +122,8 @@ function App() {
             }
           />
 
-          <Route path="/member/membership/apply" element={<MembershipApplication />} />
+          <Route path="/member/membership/apply" element={<Navigate to="/membership" replace />} />
+          <Route path="/member/choose-membership" element={<Navigate to="/membership" replace />} />
 
           <Route
             path="/member/*"
@@ -131,7 +131,6 @@ function App() {
               <ProtectedMemberRoute>
                 <Routes>
                   <Route path="dashboard" element={<MemberDashboard />} />
-                  <Route path="choose-membership" element={<ChooseMembership />} />
                   <Route path="wakala/apply" element={<WakalaApplication />} />
                   <Route path="payment" element={<MemberPayment />} />
                 </Routes>
@@ -165,7 +164,7 @@ function App() {
                 <Route path="/about/partners" element={<Partners />} />
                 <Route path="/about/reports" element={<Reports />} />
 
-                <Route path="/get-involved/membership" element={<Membership />} />
+                <Route path="/get-involved/membership" element={<Navigate to="/membership" replace />} />
                 <Route path="/get-involved/volunteer" element={<Volunteer />} />
                 <Route path="/get-involved/donate" element={<Donate />} />
                 <Route path="/get-involved/jobs" element={<Jobs />} />

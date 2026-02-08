@@ -34,7 +34,7 @@ const steps = {
       icon: Shield,
       title: 'Membership Benefits',
       desc: 'Join as a member for reduced fees and priority appointments.',
-      link: '/get-involved/membership',
+      link: '/membership',
       color: 'bg-amber-50 text-amber-600',
     },
     {
@@ -78,7 +78,7 @@ const steps = {
       icon: Shield,
       title: 'مزايا العضوية',
       desc: 'انضم كعضو للحصول على رسوم مخفضة ومواعيد ذات أولوية.',
-      link: '/get-involved/membership',
+      link: '/membership',
       color: 'bg-amber-50 text-amber-600',
     },
     {

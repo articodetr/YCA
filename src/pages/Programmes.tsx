@@ -223,7 +223,7 @@ export default function Programmes() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Link
-                  to="/get-involved/membership"
+                  to="/membership"
                   className="bg-primary text-white px-8 py-3 rounded-lg hover:bg-secondary transition-colors font-semibold inline-block"
                 >
                   {isRTL ? 'كن عضواً' : 'Become a Member'}

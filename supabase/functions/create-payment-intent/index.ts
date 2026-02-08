@@ -175,7 +175,7 @@ Deno.serve(async (req: Request) => {
       event_type: "payment_intent_created",
       payload: {
         payment_intent_id: paymentIntent.id,
-        amount: amountInPence,
+        amount: amount,
         type: metadata?.type || "general",
       },
     });

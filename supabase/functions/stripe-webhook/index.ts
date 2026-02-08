@@ -123,69 +123,40 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
   }
 
   if (metadata.application_id) {
-    const { data: application, error: appError } = await supabase
+    const { error: updateError } = await supabase
       .from("membership_applications")
-      .select("*")
-      .eq("id", metadata.application_id)
-      .single();
+      .update({ payment_status: "paid" })
+      .eq("id", metadata.application_id);
 
-    if (appError) {
-      console.error("Error fetching membership application:", appError);
+    if (updateError) {
+      console.error("Error updating membership application:", updateError);
     } else {
-      const { error: updateError } = await supabase
-        .from("membership_applications")
-        .update({ payment_status: "paid" })
-        .eq("id", metadata.application_id);
+      console.info(`Updated membership application ${metadata.application_id} to paid`);
 
-      if (updateError) {
-        console.error("Error updating membership application:", updateError);
-      } else {
-        console.info(`Updated membership application ${metadata.application_id} to paid`);
+      try {
+        const activateResponse = await fetch(
+          `${Deno.env.get("SUPABASE_URL")}/functions/v1/activate-membership`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+            },
+            body: JSON.stringify({
+              application_id: metadata.application_id,
+              user_id: metadata.user_id,
+            }),
+          }
+        );
 
-        const startDate = new Date();
-        const expiryDate = new Date();
-        expiryDate.setFullYear(expiryDate.getFullYear() + 1);
-
-        const { data: newMember, error: memberError } = await supabase
-          .from("members")
-          .insert({
-            id: application.user_id || metadata.user_id,
-            membership_type: application.membership_type,
-            first_name: application.first_name,
-            last_name: application.last_name,
-            email: application.email,
-            phone: application.phone,
-            address: application.address,
-            postcode: application.postcode,
-            date_of_birth: application.date_of_birth,
-            business_name: application.business_name,
-            business_support_tier: application.business_support_tier,
-            custom_amount: application.custom_amount,
-            status: "active",
-            start_date: startDate.toISOString().split('T')[0],
-            expiry_date: expiryDate.toISOString().split('T')[0],
-            auto_renewal: false,
-          })
-          .select()
-          .single();
-
-        if (memberError) {
-          console.error("Error creating member record:", memberError);
+        const activateData = await activateResponse.json();
+        if (activateResponse.ok && activateData.success) {
+          console.info(`Activated membership for application ${metadata.application_id}, member number: ${activateData.member.member_number}`);
         } else {
-          console.info(`Created member record with number: ${newMember.member_number}`);
-
-          await supabase
-            .from("membership_applications")
-            .update({
-              payment_status: "paid",
-              metadata: {
-                ...application.metadata,
-                member_number: newMember.member_number,
-                member_created_at: new Date().toISOString()
-              }
-            })
-            .eq("id", metadata.application_id);
+          console.error("Failed to activate membership:", activateData.error);
         }
+      } catch (activateErr: any) {
+        console.error("Error calling activate-membership function:", activateErr.message);
       }
     }
   }

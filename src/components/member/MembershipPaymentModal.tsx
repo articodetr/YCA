@@ -182,6 +182,7 @@ function PaymentForm({ amount, applicationId, onSuccess, onError }: PaymentFormP
   const stripe = useStripe();
   const elements = useElements();
   const { language } = useLanguage();
+  const { user } = useMemberAuth();
   const [processing, setProcessing] = useState(false);
   const t = translations[language];
 
@@ -209,6 +210,31 @@ function PaymentForm({ amount, applicationId, onSuccess, onError }: PaymentFormP
           .from('membership_applications')
           .update({ payment_status: 'paid' })
           .eq('id', applicationId);
+
+        try {
+          const activateResponse = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/activate-membership`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+              },
+              body: JSON.stringify({
+                application_id: applicationId,
+                user_id: user?.id,
+              }),
+            }
+          );
+
+          const activateData = await activateResponse.json();
+          if (!activateResponse.ok) {
+            console.error('Activation failed:', activateData.error);
+          }
+        } catch (activateErr) {
+          console.error('Failed to activate membership:', activateErr);
+        }
+
         onSuccess();
       }
     } catch (err: any) {

@@ -87,6 +87,36 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
           .maybeSingle();
 
         if (appData) {
+          if (appData.payment_status === 'paid') {
+            try {
+              const activateResponse = await fetch(
+                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/activate-membership`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+                  },
+                  body: JSON.stringify({
+                    application_id: appData.id,
+                    user_id: userId,
+                  }),
+                }
+              );
+
+              const activateData = await activateResponse.json();
+              if (activateResponse.ok && activateData.success) {
+                setMember(activateData.member);
+                setIsPaidMember(true);
+                setNeedsOnboarding(false);
+                setPendingApplication(null);
+                return;
+              }
+            } catch (activateErr) {
+              console.error('Failed to auto-activate membership:', activateErr);
+            }
+          }
+
           setPendingApplication(appData);
           setNeedsOnboarding(false);
         } else {

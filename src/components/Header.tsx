@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, ChevronDown, Globe, UserCircle, LogIn, UserPlus, LogOut } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Menu, X, ChevronDown, Globe, UserCircle, LogIn, UserPlus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSiteSettings } from '../contexts/SiteSettingsContext';
@@ -10,8 +10,7 @@ export default function Header() {
   const { language, setLanguage, t } = useLanguage();
   const isRTL = language === 'ar';
   const { getSetting } = useSiteSettings();
-  const { user, signOut } = useMemberAuth();
-  const navigate = useNavigate();
+  const { user } = useMemberAuth();
   const logoMain = getSetting('site_logo', '/logo.png');
   const logoText = getSetting('site_logo_text', '/logo_text.png');
   const orgName = getSetting('org_name_en', 'Yemeni Community Association');
@@ -31,14 +30,6 @@ export default function Header() {
 
   const handleMouseLeave = () => {
     setActiveDesktopMenu(null);
-  };
-
-  const handleLogout = async () => {
-    await signOut();
-    setActiveDesktopMenu(null);
-    setOpenDropdown(null);
-    setIsOpen(false);
-    navigate('/');
   };
 
   useEffect(() => {
@@ -273,67 +264,58 @@ export default function Header() {
               </Link>
             </motion.div>
 
-            <div
-              className="relative"
-              onMouseEnter={() => handleMouseEnter('account')}
-              onMouseLeave={handleMouseLeave}
-            >
-              <motion.button
-                className="hover:text-accent transition-colors p-2.5"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                title={user ? (language === 'ar' ? 'حسابي' : 'My Account') : (language === 'ar' ? 'العضوية' : 'Membership')}
+            {user ? (
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Link
+                  to="/member/dashboard"
+                  className="hover:text-accent transition-colors p-2.5 block"
+                  title={language === 'ar' ? 'حسابي' : 'My Account'}
+                >
+                  <UserCircle size={20} />
+                </Link>
+              </motion.div>
+            ) : (
+              <div
+                className="relative"
+                onMouseEnter={() => handleMouseEnter('account')}
+                onMouseLeave={handleMouseLeave}
               >
-                {user ? <UserCircle size={20} /> : <LogIn size={20} />}
-              </motion.button>
-              <AnimatePresence>
-                {activeDesktopMenu === 'account' && (
-                  <motion.div
-                    className={`absolute top-full ${isRTL ? 'left-0' : 'right-0'} mt-2 w-56 bg-white text-primary shadow-xl rounded-lg overflow-hidden`}
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {user ? (
-                      <>
-                        <Link
-                          to="/member/dashboard"
-                          className="flex items-center gap-3 px-6 py-3 hover:bg-sand transition-colors"
-                        >
-                          <UserCircle size={18} />
-                          <span>{language === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</span>
-                        </Link>
-                        <button
-                          onClick={handleLogout}
-                          className="flex items-center gap-3 px-6 py-3 hover:bg-sand transition-colors w-full text-left"
-                        >
-                          <LogOut size={18} />
-                          <span>{language === 'ar' ? 'تسجيل الخروج' : 'Logout'}</span>
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <Link
-                          to="/member/login"
-                          className="flex items-center gap-3 px-6 py-3 hover:bg-sand transition-colors"
-                        >
-                          <LogIn size={18} />
-                          <span>{language === 'ar' ? 'لديك عضوية؟ تسجيل الدخول' : 'Have Membership? Login'}</span>
-                        </Link>
-                        <Link
-                          to="/membership"
-                          className="flex items-center gap-3 px-6 py-3 hover:bg-sand transition-colors"
-                        >
-                          <UserPlus size={18} />
-                          <span>{language === 'ar' ? 'تسجيل عضوية جديدة' : 'Register New Membership'}</span>
-                        </Link>
-                      </>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                <motion.button
+                  className="hover:text-accent transition-colors p-2.5"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  title={language === 'ar' ? 'العضوية' : 'Membership'}
+                >
+                  <LogIn size={20} />
+                </motion.button>
+                <AnimatePresence>
+                  {activeDesktopMenu === 'account' && (
+                    <motion.div
+                      className={`absolute top-full ${isRTL ? 'left-0' : 'right-0'} mt-2 w-56 bg-white text-primary shadow-xl rounded-lg overflow-hidden`}
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Link
+                        to="/member/login"
+                        className="flex items-center gap-3 px-6 py-3 hover:bg-sand transition-colors"
+                      >
+                        <LogIn size={18} />
+                        <span>{language === 'ar' ? 'لديك عضوية؟ تسجيل الدخول' : 'Have Membership? Login'}</span>
+                      </Link>
+                      <Link
+                        to="/membership"
+                        className="flex items-center gap-3 px-6 py-3 hover:bg-sand transition-colors"
+                      >
+                        <UserPlus size={18} />
+                        <span>{language === 'ar' ? 'تسجيل عضوية جديدة' : 'Register New Membership'}</span>
+                      </Link>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
 
             <motion.button
               onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
@@ -493,46 +475,37 @@ export default function Header() {
                   {t('button.book')}
                 </Link>
 
-                <button
-                  onClick={() => toggleDropdown('account')}
-                  className="flex items-center justify-between w-full mt-3 border border-white/30 text-white px-6 py-3 rounded-lg hover:bg-white/10 transition-colors font-semibold"
-                >
-                  <div className="flex items-center gap-2">
-                    {user ? <UserCircle size={18} /> : <LogIn size={18} />}
-                    {user ? (language === 'ar' ? 'حسابي' : 'My Account') : (language === 'ar' ? 'العضوية' : 'Membership')}
-                  </div>
-                  <ChevronDown size={16} className={`transition-transform duration-300 ${openDropdown === 'account' ? 'rotate-180' : ''}`} />
-                </button>
-
-                <AnimatePresence>
-                  {openDropdown === 'account' && (
-                    <motion.div
-                      className={`${isRTL ? 'pr-4' : 'pl-4'} space-y-2 mt-2`}
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
+                {user ? (
+                  <Link
+                    to="/member/dashboard"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center justify-center gap-2 w-full mt-3 border border-white/30 text-white px-6 py-3 rounded-lg hover:bg-white/10 transition-colors font-semibold"
+                  >
+                    <UserCircle size={18} />
+                    {language === 'ar' ? 'حسابي' : 'My Account'}
+                  </Link>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => toggleDropdown('account')}
+                      className="flex items-center justify-between w-full mt-3 border border-white/30 text-white px-6 py-3 rounded-lg hover:bg-white/10 transition-colors font-semibold"
                     >
-                      {user ? (
-                        <>
-                          <Link
-                            to="/member/dashboard"
-                            onClick={() => setIsOpen(false)}
-                            className="flex items-center gap-2 py-2 text-sm hover:text-accent transition-colors"
-                          >
-                            <UserCircle size={16} />
-                            {language === 'ar' ? 'لوحة التحكم' : 'Dashboard'}
-                          </Link>
-                          <button
-                            onClick={handleLogout}
-                            className="flex items-center gap-2 py-2 text-sm hover:text-accent transition-colors w-full text-left"
-                          >
-                            <LogOut size={16} />
-                            {language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
-                          </button>
-                        </>
-                      ) : (
-                        <>
+                      <div className="flex items-center gap-2">
+                        <LogIn size={18} />
+                        {language === 'ar' ? 'العضوية' : 'Membership'}
+                      </div>
+                      <ChevronDown size={16} className={`transition-transform duration-300 ${openDropdown === 'account' ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    <AnimatePresence>
+                      {openDropdown === 'account' && (
+                        <motion.div
+                          className={`${isRTL ? 'pr-4' : 'pl-4'} space-y-2 mt-2`}
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                        >
                           <Link
                             to="/member/login"
                             onClick={() => setIsOpen(false)}
@@ -549,11 +522,11 @@ export default function Header() {
                             <UserPlus size={16} />
                             {language === 'ar' ? 'تسجيل عضوية جديدة' : 'Register New Membership'}
                           </Link>
-                        </>
+                        </motion.div>
                       )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                    </AnimatePresence>
+                  </>
+                )}
               </motion.div>
             </motion.nav>
           )}

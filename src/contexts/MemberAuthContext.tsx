@@ -105,7 +105,8 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
           .maybeSingle();
 
         if (appData) {
-          if (appData.payment_status === 'paid') {
+          const isPaid = appData.payment_status === 'paid' || appData.payment_status === 'completed';
+          if (isPaid) {
             try {
               const activateResponse = await fetch(
                 `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/activate-membership`,

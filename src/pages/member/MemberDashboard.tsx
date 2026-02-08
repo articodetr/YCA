@@ -208,7 +208,7 @@ export default function MemberDashboard() {
   useEffect(() => {
     if (!membershipApp || memberRecord || activatingMembership || loading) return;
 
-    if (membershipApp.payment_status === 'paid' && !memberRecord) {
+    if ((membershipApp.payment_status === 'paid' || membershipApp.payment_status === 'completed') && !memberRecord) {
       activateMembershipAutomatically();
     }
   }, [membershipApp, memberRecord, loading]);
@@ -433,7 +433,7 @@ export default function MemberDashboard() {
         </div>
       )}
 
-      {membershipApp && !memberRecord && !activatingMembership && membershipApp.payment_status !== 'paid' && (
+      {membershipApp && !memberRecord && !activatingMembership && !isPaidMember && membershipApp.payment_status !== 'paid' && membershipApp.payment_status !== 'completed' && (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
           <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-lg mb-6" dir={isRTL ? 'rtl' : 'ltr'}>
             <div className="flex items-start gap-3">

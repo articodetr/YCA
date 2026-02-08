@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Lock, Mail, AlertCircle, Loader2 } from 'lucide-react';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
@@ -24,7 +24,7 @@ export default function MemberLogin() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { signIn, signInWithGoogle } = useMemberAuth();
+  const { user, loading: authLoading, isPaidMember, needsOnboarding, signIn, signInWithGoogle } = useMemberAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
 
@@ -32,6 +32,18 @@ export default function MemberLogin() {
   const serviceType = searchParams.get('service');
 
   const isRTL = language === 'ar';
+
+  useEffect(() => {
+    if (authLoading || !user) return;
+
+    if (isPaidMember) {
+      navigate('/member/dashboard', { replace: true });
+    } else if (needsOnboarding) {
+      navigate('/membership', { replace: true });
+    } else {
+      navigate('/member/dashboard', { replace: true });
+    }
+  }, [user, authLoading, isPaidMember, needsOnboarding, navigate]);
 
   const translations = {
     en: {
@@ -101,6 +113,9 @@ export default function MemberLogin() {
   const handleGoogleSignIn = async () => {
     setError('');
     setGoogleLoading(true);
+
+    if (redirectPath) sessionStorage.setItem('auth_redirect_path', redirectPath);
+    if (serviceType) sessionStorage.setItem('auth_redirect_service', serviceType);
 
     try {
       const { error } = await signInWithGoogle();

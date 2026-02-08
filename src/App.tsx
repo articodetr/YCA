@@ -40,6 +40,7 @@ import ProtectedRoute from './components/admin/ProtectedRoute';
 import ProtectedMemberRoute from './components/member/ProtectedMemberRoute';
 import MemberLogin from './pages/member/MemberLogin';
 import MemberSignup from './pages/member/MemberSignup';
+import AuthCallback from './pages/member/AuthCallback';
 import MemberDashboard from './pages/member/MemberDashboard';
 import WakalaApplication from './pages/member/WakalaApplication';
 import MemberPayment from './pages/member/MemberPayment';
@@ -81,6 +82,7 @@ function App() {
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/member/login" element={<MemberLogin />} />
             <Route path="/member/signup" element={<MemberSignup />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/membership" element={<UnifiedMembership />} />
             <Route path="/book" element={<BookPage />} />
             <Route path="/book/track" element={<BookingTracker />} />

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, FileText, CreditCard, LogOut, Loader2,
@@ -164,6 +164,7 @@ export default function MemberDashboard() {
   const { user, signOut, needsOnboarding, pendingApplication, loading: authLoading } = useMemberAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const isRTL = language === 'ar';
   const t = translations[language];
 
@@ -193,7 +194,10 @@ export default function MemberDashboard() {
   const [editingProfile, setEditingProfile] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({ full_name: '', phone: '', address: '', city: '', postcode: '' });
-  const [activeTab, setActiveTab] = useState<TabId>('overview');
+  const tabParam = searchParams.get('tab') as TabId | null;
+  const validTabs: TabId[] = ['overview', 'applications', 'payments', 'profile', 'notifications', 'security'];
+  const initialTab = tabParam && validTabs.includes(tabParam) ? tabParam : 'overview';
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [showWelcome, setShowWelcome] = useState(false);
 

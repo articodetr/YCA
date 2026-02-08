@@ -1,9 +1,11 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Users, Heart, Globe2, Building2, ArrowRight, Check, X, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import Layout from '../../components/Layout';
+import MembershipPaymentModal from '../../components/member/MembershipPaymentModal';
 
 const membershipTypes = [
   {
@@ -97,9 +99,8 @@ const translations = {
     flexible: 'Flexible',
     validInfo: 'All memberships valid from 1 January to 31 December',
     step1: 'Choose Plan',
-    step2: 'Complete Details',
-    step3: 'Make Payment',
-    step4: 'Get Member ID',
+    step2: 'Complete Details & Pay',
+    step3: 'Get Member ID',
     secureNote: 'Secure payment powered by Stripe',
   },
   ar: {
@@ -110,27 +111,39 @@ const translations = {
     flexible: 'مرن',
     validInfo: 'جميع العضويات صالحة من 1 يناير إلى 31 ديسمبر',
     step1: 'اختر الخطة',
-    step2: 'أكمل البيانات',
-    step3: 'ادفع الرسوم',
-    step4: 'احصل على رقم العضوية',
+    step2: 'أكمل البيانات والدفع',
+    step3: 'احصل على رقم العضوية',
     secureNote: 'دفع آمن مدعوم من Stripe',
   },
 };
 
 export default function ChooseMembership() {
   const { language } = useLanguage();
-  const { user } = useMemberAuth();
+  const { user, isPaidMember } = useMemberAuth();
   const navigate = useNavigate();
   const isRTL = language === 'ar';
   const t = translations[language];
 
+  const [selectedType, setSelectedType] = useState<typeof membershipTypes[0] | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [activeStepFromModal, setActiveStepFromModal] = useState(1);
+
+  useEffect(() => {
+    if (isPaidMember) {
+      navigate('/member/dashboard', { replace: true });
+    }
+  }, [isPaidMember, navigate]);
+
   const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || '';
 
-  const handleSelect = (typeId: string) => {
-    navigate(`/member/membership/apply?type=${typeId}&oauth=true`);
+  const handleSelect = (type: typeof membershipTypes[0]) => {
+    setSelectedType(type);
+    setModalOpen(true);
   };
 
-  const steps = [t.step1, t.step2, t.step3, t.step4];
+  const currentStep = modalOpen ? activeStepFromModal : 1;
+
+  const steps = [t.step1, t.step2, t.step3];
 
   return (
     <Layout>
@@ -152,20 +165,26 @@ export default function ChooseMembership() {
           </motion.div>
 
           <motion.div
-            className="flex items-center justify-center gap-2 sm:gap-4 mb-12"
+            className="flex items-center justify-center gap-3 sm:gap-6 mb-12"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.15 }}
           >
             {steps.map((step, i) => (
-              <div key={i} className="flex items-center gap-2 sm:gap-3">
-                <div className="flex flex-col items-center gap-1">
-                  <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm font-bold ${
-                    i === 0 ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-500'
+              <div key={i} className="flex items-center gap-3 sm:gap-4">
+                <div className="flex flex-col items-center gap-1.5">
+                  <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm font-bold transition-colors duration-300 ${
+                    i + 1 <= currentStep ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-500'
                   }`}>
-                    {i + 1}
+                    {i + 1 < currentStep ? (
+                      <Check size={18} />
+                    ) : (
+                      i + 1
+                    )}
                   </div>
-                  <span className="text-[10px] sm:text-xs font-medium text-gray-600 text-center whitespace-nowrap">
+                  <span className={`text-[10px] sm:text-xs font-medium text-center whitespace-nowrap transition-colors ${
+                    i + 1 <= currentStep ? 'text-emerald-700' : 'text-gray-500'
+                  }`}>
                     {step}
                   </span>
                 </div>
@@ -255,7 +274,7 @@ export default function ChooseMembership() {
 
                     <div className="px-6 pb-6">
                       <button
-                        onClick={() => handleSelect(type.id)}
+                        onClick={() => handleSelect(type)}
                         className={`w-full py-3 rounded-lg font-semibold transition-all text-sm ${
                           type.popular
                             ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm'
@@ -285,6 +304,18 @@ export default function ChooseMembership() {
           </motion.div>
         </div>
       </div>
+
+      {selectedType && (
+        <MembershipPaymentModal
+          isOpen={modalOpen}
+          onClose={() => {
+            setModalOpen(false);
+            setActiveStepFromModal(1);
+          }}
+          membershipType={selectedType}
+          onStepChange={setActiveStepFromModal}
+        />
+      )}
     </Layout>
   );
 }

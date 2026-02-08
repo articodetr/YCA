@@ -112,6 +112,38 @@ export default function UnifiedMembership() {
     }
   }, [isPaidMember, navigate]);
 
+  useEffect(() => {
+    if (!user || isPaidMember || modalOpen) return;
+
+    const saved = sessionStorage.getItem('pendingMembershipSelection');
+    if (!saved) return;
+
+    try {
+      const { planId, businessSupport: savedBS, timestamp } = JSON.parse(saved);
+
+      if (Date.now() - timestamp > 30 * 60 * 1000) {
+        sessionStorage.removeItem('pendingMembershipSelection');
+        return;
+      }
+
+      const plan = membershipPlans.find(p => p.id === planId);
+      if (!plan) {
+        sessionStorage.removeItem('pendingMembershipSelection');
+        return;
+      }
+
+      sessionStorage.removeItem('pendingMembershipSelection');
+      setSelectedType(plan);
+      setTermsAccepted(true);
+      if (savedBS) {
+        setBusinessSupport(savedBS);
+      }
+      setModalOpen(true);
+    } catch {
+      sessionStorage.removeItem('pendingMembershipSelection');
+    }
+  }, [user, isPaidMember]);
+
   const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || '';
 
   const handleSelect = (type: MembershipPlan) => {
@@ -120,6 +152,12 @@ export default function UnifiedMembership() {
       document.getElementById('terms-section')?.scrollIntoView({ behavior: 'smooth' });
       return;
     }
+
+    sessionStorage.setItem('pendingMembershipSelection', JSON.stringify({
+      planId: type.id,
+      businessSupport: null,
+      timestamp: Date.now(),
+    }));
 
     if (type.id === 'business_support') {
       setSelectedType(type);
@@ -138,6 +176,11 @@ export default function UnifiedMembership() {
       setBusinessSelectorError(true);
       return;
     }
+    sessionStorage.setItem('pendingMembershipSelection', JSON.stringify({
+      planId: 'business_support',
+      businessSupport,
+      timestamp: Date.now(),
+    }));
     setModalOpen(true);
   };
 
@@ -490,6 +533,7 @@ export default function UnifiedMembership() {
           onClose={() => {
             setModalOpen(false);
             setActiveStepFromModal(1);
+            sessionStorage.removeItem('pendingMembershipSelection');
           }}
           membershipType={selectedType}
           onStepChange={setActiveStepFromModal}

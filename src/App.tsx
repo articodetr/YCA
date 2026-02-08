@@ -67,7 +67,6 @@ import ContentManagement from './pages/admin/ContentManagement';
 import AvailabilityManagement from './pages/admin/AvailabilityManagement';
 import PageImagesManagement from './pages/admin/PageImagesManagement';
 import AdminManagement from './pages/admin/AdminManagement';
-import AuthCallback from './pages/auth/AuthCallback';
 
 function App() {
   return (
@@ -80,7 +79,6 @@ function App() {
             <ScrollToTop />
             <Routes>
             <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/member/login" element={<MemberLogin />} />
             <Route path="/member/signup" element={<MemberSignup />} />
             <Route path="/book" element={<BookPage />} />

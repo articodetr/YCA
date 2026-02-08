@@ -14,7 +14,7 @@ function hasOAuthParams() {
 }
 
 export default function ProtectedMemberRoute({ children }: ProtectedMemberRouteProps) {
-  const { user, loading } = useMemberAuth();
+  const { user, loading, isPaidMember } = useMemberAuth();
   const { language } = useLanguage();
   const location = useLocation();
   const isRTL = language === 'ar';
@@ -32,6 +32,10 @@ export default function ProtectedMemberRoute({ children }: ProtectedMemberRouteP
 
   if (!user) {
     return <Navigate to="/member/login" replace />;
+  }
+
+  if (!isPaidMember) {
+    return <Navigate to="/membership" replace />;
   }
 
   return <>{children}</>;

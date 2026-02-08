@@ -43,7 +43,6 @@ import MemberSignup from './pages/member/MemberSignup';
 import AuthCallback from './pages/member/AuthCallback';
 import MemberDashboard from './pages/member/MemberDashboard';
 import WakalaApplication from './pages/member/WakalaApplication';
-import MemberPayment from './pages/member/MemberPayment';
 import AdminLayout from './components/admin/AdminLayout';
 import Dashboard from './pages/admin/Dashboard';
 import NewsManagement from './pages/admin/NewsManagement';
@@ -134,7 +133,6 @@ function App() {
                 <Routes>
                   <Route path="dashboard" element={<MemberDashboard />} />
                   <Route path="wakala/apply" element={<WakalaApplication />} />
-                  <Route path="payment" element={<MemberPayment />} />
                 </Routes>
               </ProtectedMemberRoute>
             }

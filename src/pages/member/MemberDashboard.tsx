@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, FileText, CreditCard, LogOut, Loader2,
   LayoutDashboard, CheckCircle, XCircle, Bell, ShieldCheck,
-  AlertCircle,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -168,15 +167,6 @@ export default function MemberDashboard() {
   const isRTL = language === 'ar';
   const t = translations[language];
 
-  useEffect(() => {
-    if (authLoading || !user) return;
-
-    if (needsOnboarding && !isPaidMember) {
-      navigate('/membership', { replace: true });
-      return;
-    }
-  }, [authLoading, user, needsOnboarding, isPaidMember, navigate]);
-
   const [loading, setLoading] = useState(true);
   const [membershipApp, setMembershipApp] = useState<any>(null);
   const [wakalaApps, setWakalaApps] = useState<any[]>([]);
@@ -194,7 +184,6 @@ export default function MemberDashboard() {
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [showWelcome, setShowWelcome] = useState(false);
-  const [activatingMembership, setActivatingMembership] = useState(false);
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
@@ -204,49 +193,6 @@ export default function MemberDashboard() {
   useEffect(() => {
     fetchData();
   }, [user]);
-
-  useEffect(() => {
-    if (!membershipApp || memberRecord || activatingMembership || loading) return;
-
-    if ((membershipApp.payment_status === 'paid' || membershipApp.payment_status === 'completed') && !memberRecord) {
-      activateMembershipAutomatically();
-    }
-  }, [membershipApp, memberRecord, loading]);
-
-  const activateMembershipAutomatically = async () => {
-    if (!user || !membershipApp) return;
-
-    setActivatingMembership(true);
-    try {
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/activate-membership`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({
-          application_id: membershipApp.id,
-          user_id: user.id,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        showToast(
-          isRTL ? 'تم تفعيل عضويتك بنجاح!' : 'Your membership has been activated successfully!',
-          'success'
-        );
-        await fetchData();
-      } else {
-        console.error('Auto-activation failed:', result.error);
-      }
-    } catch (error) {
-      console.error('Error auto-activating membership:', error);
-    } finally {
-      setActivatingMembership(false);
-    }
-  };
 
   const fetchData = async () => {
     if (!user) return;
@@ -411,55 +357,6 @@ export default function MemberDashboard() {
   return (
     <Layout>
       <PageHeader title={t.title} description={t.subtitle} />
-
-      {membershipApp && !memberRecord && activatingMembership && (
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg mb-6" dir={isRTL ? 'rtl' : 'ltr'}>
-            <div className="flex items-start gap-3">
-              <Loader2 className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5 animate-spin" />
-              <div className="flex-1">
-                <h3 className="text-sm font-bold text-blue-900 mb-1">
-                  {isRTL ? 'جاري تفعيل العضوية' : 'Activating Membership'}
-                </h3>
-                <p className="text-sm text-blue-800">
-                  {isRTL
-                    ? 'جاري تفعيل عضويتك وإنشاء رقم العضوية الخاص بك. يرجى الانتظار...'
-                    : 'Activating your membership and generating your membership number. Please wait...'
-                  }
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {membershipApp && !memberRecord && !activatingMembership && !isPaidMember && membershipApp.payment_status !== 'paid' && membershipApp.payment_status !== 'completed' && (
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-          <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-lg mb-6" dir={isRTL ? 'rtl' : 'ltr'}>
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <h3 className="text-sm font-bold text-amber-900 mb-1">
-                  {isRTL ? 'يجب إكمال الدفع' : 'Payment Required'}
-                </h3>
-                <p className="text-sm text-amber-800 mb-3">
-                  {isRTL
-                    ? 'يرجى إكمال دفع رسوم العضوية للوصول إلى جميع الخدمات. سيتم تفعيل حسابك فوراً بعد الدفع وسيتم منحك رقم عضوية YCA.'
-                    : 'Please complete your membership payment to access all services. Your account will be activated immediately after payment and you will receive your YCA membership number.'
-                  }
-                </p>
-                <a
-                  href={`/member/payment?amount=${membershipApp.membership_type === 'individual' ? '10' : membershipApp.membership_type === 'family' ? '20' : membershipApp.membership_type === 'student' ? '5' : membershipApp.custom_amount || '50'}&application_id=${membershipApp.id}`}
-                  className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm"
-                >
-                  <CreditCard className="w-4 h-4" />
-                  {isRTL ? 'ادفع الآن' : 'Pay Now'}
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8" dir={isRTL ? 'rtl' : 'ltr'}>
         <div className="bg-white rounded-xl border border-divider p-4 sm:p-5 mb-6">

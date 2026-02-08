@@ -111,15 +111,7 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchMemberData(session.user.id, session.user.email || undefined).finally(() => setLoading(false));
-      } else {
-        setLoading(false);
-      }
-    });
+    let initialSessionHandled = false;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       (() => {
@@ -127,15 +119,22 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          fetchMemberData(session.user.id, session.user.email || undefined);
+          fetchMemberData(session.user.id, session.user.email || undefined).finally(() => {
+            if (!initialSessionHandled) {
+              initialSessionHandled = true;
+              setLoading(false);
+            }
+          });
         } else {
           setMember(null);
           setIsPaidMember(false);
           setNeedsOnboarding(false);
           setPendingApplication(null);
+          if (!initialSessionHandled) {
+            initialSessionHandled = true;
+          }
+          setLoading(false);
         }
-
-        setLoading(false);
 
         if (event === 'SIGNED_IN' && session?.user) {
           const provider = session.user.app_metadata?.provider;

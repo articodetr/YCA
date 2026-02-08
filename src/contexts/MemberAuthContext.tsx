@@ -60,14 +60,32 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
 
   const fetchMemberData = async (userId: string, userEmail?: string) => {
     try {
-      const { data, error } = await supabase
+      const { data: memberById } = await supabase
         .from('members')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
 
-      if (!error && data) {
-        setMember(data);
+      if (memberById) {
+        setMember(memberById);
+        setIsPaidMember(true);
+        setNeedsOnboarding(false);
+        setPendingApplication(null);
+        return;
+      }
+
+      let memberByEmail = null;
+      if (userEmail) {
+        const { data } = await supabase
+          .from('members')
+          .select('*')
+          .eq('email', userEmail)
+          .maybeSingle();
+        memberByEmail = data;
+      }
+
+      if (memberByEmail) {
+        setMember(memberByEmail);
         setIsPaidMember(true);
         setNeedsOnboarding(false);
         setPendingApplication(null);
@@ -115,6 +133,11 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
             } catch (activateErr) {
               console.error('Failed to auto-activate membership:', activateErr);
             }
+
+            setIsPaidMember(true);
+            setNeedsOnboarding(false);
+            setPendingApplication(appData);
+            return;
           }
 
           setPendingApplication(appData);
@@ -149,11 +172,14 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
 
         if (session?.user) {
+          if (initialSessionHandled) {
+            setLoading(true);
+          }
           fetchMemberData(session.user.id, session.user.email || undefined).finally(() => {
             if (!initialSessionHandled) {
               initialSessionHandled = true;
-              setLoading(false);
             }
+            setLoading(false);
           });
         } else {
           setMember(null);

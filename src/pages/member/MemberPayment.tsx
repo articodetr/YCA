@@ -20,7 +20,7 @@ function CheckoutForm({ amount, type, applicationId, wakalaId }: CheckoutFormPro
   const stripe = useStripe();
   const elements = useElements();
   const { language } = useLanguage();
-  const { refreshMember } = useMemberAuth();
+  const { user, refreshMember } = useMemberAuth();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
@@ -83,10 +83,31 @@ function CheckoutForm({ amount, type, applicationId, wakalaId }: CheckoutFormPro
 
       if (paymentIntent?.status === 'succeeded') {
         if (applicationId) {
-          await supabase
+          const { error: updateError } = await supabase
             .from('membership_applications')
             .update({ payment_status: 'paid' })
             .eq('id', applicationId);
+
+          if (!updateError) {
+            try {
+              await fetch(
+                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/activate-membership`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+                  },
+                  body: JSON.stringify({
+                    application_id: applicationId,
+                    user_id: user?.id,
+                  }),
+                }
+              );
+            } catch (activateErr) {
+              console.error('Activation call failed:', activateErr);
+            }
+          }
         }
         if (wakalaId) {
           await supabase
@@ -102,7 +123,7 @@ function CheckoutForm({ amount, type, applicationId, wakalaId }: CheckoutFormPro
       setTimeout(async () => {
         await refreshMember();
         navigate('/member/dashboard');
-      }, 2000);
+      }, 2500);
     } catch (err: any) {
       console.error('Payment error:', err);
       setError(err.message || t.error);

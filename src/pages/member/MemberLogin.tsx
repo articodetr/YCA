@@ -24,7 +24,7 @@ export default function MemberLogin() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { user, loading: authLoading, isPaidMember, needsOnboarding, signIn, signInWithGoogle } = useMemberAuth();
+  const { user, loading: authLoading, isPaidMember, needsOnboarding, pendingApplication, signIn, signInWithGoogle } = useMemberAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
 
@@ -38,12 +38,14 @@ export default function MemberLogin() {
 
     if (isPaidMember) {
       navigate('/member/dashboard', { replace: true });
+    } else if (pendingApplication?.payment_status === 'paid') {
+      navigate('/member/dashboard', { replace: true });
     } else if (needsOnboarding) {
       navigate('/membership', { replace: true });
     } else {
       navigate('/member/dashboard', { replace: true });
     }
-  }, [user, authLoading, isPaidMember, needsOnboarding, navigate]);
+  }, [user, authLoading, isPaidMember, needsOnboarding, pendingApplication, navigate]);
 
   const translations = {
     en: {

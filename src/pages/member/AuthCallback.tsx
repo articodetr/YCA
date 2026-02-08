@@ -52,8 +52,8 @@ export default function AuthCallback() {
 
     if (isPaidMember) {
       navigate('/member/dashboard', { replace: true });
-    } else if (pendingApplication) {
-      navigate('/membership', { replace: true });
+    } else if (pendingApplication && pendingApplication.payment_status === 'paid') {
+      navigate('/member/dashboard', { replace: true });
     } else if (needsOnboarding) {
       navigate('/membership', { replace: true });
     } else {

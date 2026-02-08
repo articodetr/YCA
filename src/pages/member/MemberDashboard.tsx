@@ -161,7 +161,7 @@ const tabs: { id: TabId; icon: typeof LayoutDashboard; labelKey: string }[] = [
 ];
 
 export default function MemberDashboard() {
-  const { user, signOut, needsOnboarding, pendingApplication, loading: authLoading } = useMemberAuth();
+  const { user, signOut, needsOnboarding, isPaidMember, pendingApplication, loading: authLoading } = useMemberAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -171,14 +171,11 @@ export default function MemberDashboard() {
   useEffect(() => {
     if (authLoading || !user) return;
 
-    if (needsOnboarding) {
+    if (needsOnboarding && !isPaidMember) {
       navigate('/membership', { replace: true });
       return;
     }
-
-    // لا نعيد التوجيه تلقائياً إلى صفحة الدفع بعد الآن
-    // سيتم عرض رسالة في الـ dashboard بدلاً من ذلك
-  }, [authLoading, user, needsOnboarding, navigate]);
+  }, [authLoading, user, needsOnboarding, isPaidMember, navigate]);
 
   const [loading, setLoading] = useState(true);
   const [membershipApp, setMembershipApp] = useState<any>(null);
@@ -255,13 +252,18 @@ export default function MemberDashboard() {
     if (!user) return;
     setLoading(true);
     try {
-      const [membershipRes, memberRes, profileRes, wakalaRes, paymentsRes, notifRes] = await Promise.all([
+      const [membershipRes, memberByIdRes, memberByEmailRes, profileRes, wakalaRes, paymentsRes, notifRes] = await Promise.all([
         supabase
           .from('membership_applications')
           .select('*')
           .eq('email', user.email)
           .order('created_at', { ascending: false })
           .limit(1)
+          .maybeSingle(),
+        supabase
+          .from('members')
+          .select('*')
+          .eq('id', user.id)
           .maybeSingle(),
         supabase
           .from('members')
@@ -291,8 +293,9 @@ export default function MemberDashboard() {
           .limit(50),
       ]);
 
+      const resolvedMember = memberByIdRes.data || memberByEmailRes.data;
       setMembershipApp(membershipRes.data);
-      setMemberRecord(memberRes.data);
+      setMemberRecord(resolvedMember);
       setMemberProfile(profileRes.data);
       setWakalaApps(wakalaRes.data || []);
       setPaymentHistory(paymentsRes.data || []);
@@ -304,7 +307,7 @@ export default function MemberDashboard() {
       }
 
       const profile = profileRes.data;
-      const member = memberRes.data;
+      const member = resolvedMember;
       const membership = membershipRes.data;
 
       const nameSource = profile?.full_name || user.user_metadata?.full_name ||

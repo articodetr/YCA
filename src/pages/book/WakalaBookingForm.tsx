@@ -183,8 +183,25 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
         }
         return;
       }
-      const meta = user.user_metadata || {};
-      setFormData(prev => ({ ...prev, fullName: meta.full_name || meta.name || prev.fullName, phone: meta.phone || prev.phone, email: user.email || prev.email }));
+      const { data: application } = await supabase
+        .from('membership_applications')
+        .select('first_name, last_name, email, phone')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (application) {
+        const fullName = `${application.first_name || ''} ${application.last_name || ''}`.trim();
+        setFormData(prev => ({
+          ...prev,
+          fullName: fullName || prev.fullName,
+          phone: application.phone || prev.phone,
+          email: application.email || user.email || prev.email,
+        }));
+      } else {
+        const meta = user.user_metadata || {};
+        setFormData(prev => ({ ...prev, fullName: meta.full_name || meta.name || prev.fullName, phone: meta.phone || prev.phone, email: user.email || prev.email }));
+      }
     } catch (err) { console.error('Error loading user data:', err); }
     finally { setDataLoading(false); }
   };

@@ -242,8 +242,25 @@ export default function AdvisoryBookingForm({ onComplete }: AdvisoryBookingFormP
       setFormData(prev => ({ ...prev, fullName, phone: member.phone || '', email: member.email || user.email || '' }));
     } else {
       setIsMember(false); setMemberData(null);
-      const meta = user.user_metadata || {};
-      setFormData(prev => ({ ...prev, fullName: meta.full_name || meta.name || '', phone: meta.phone || '', email: user.email || '' }));
+      const { data: application } = await supabase
+        .from('membership_applications')
+        .select('first_name, last_name, email, phone')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (application) {
+        const fullName = `${application.first_name || ''} ${application.last_name || ''}`.trim();
+        setFormData(prev => ({
+          ...prev,
+          fullName: fullName || prev.fullName,
+          phone: application.phone || prev.phone,
+          email: application.email || user.email || prev.email,
+        }));
+      } else {
+        const meta = user.user_metadata || {};
+        setFormData(prev => ({ ...prev, fullName: meta.full_name || meta.name || '', phone: meta.phone || '', email: user.email || '' }));
+      }
     }
   };
 
@@ -316,8 +333,7 @@ export default function AdvisoryBookingForm({ onComplete }: AdvisoryBookingFormP
     e.preventDefault();
     setError(''); setSlotWarning('');
     if (!selectedDate || !selectedSlot) { setError(t.selectDateTime); return; }
-    if (!formData.reason) { setError(t.fillRequired); return; }
-    if (!isMember && (!formData.fullName || !formData.phone || !formData.email)) { setError(t.fillRequired); return; }
+    if (!formData.reason || !formData.fullName || !formData.phone || !formData.email) { setError(t.fillRequired); return; }
     if (!advisoryService) return;
 
     setLoading(true);
@@ -345,9 +361,9 @@ export default function AdvisoryBookingForm({ onComplete }: AdvisoryBookingFormP
         setLoading(false); return;
       }
 
-      const contactName = isMember ? memberData?.fullName : formData.fullName;
-      const contactPhone = isMember ? memberData?.phone : formData.phone;
-      const contactEmail = isMember ? memberData?.email : formData.email;
+      const contactName = formData.fullName;
+      const contactPhone = formData.phone;
+      const contactEmail = formData.email;
 
       const { data: inserted, error: insertError } = await supabase.from('wakala_applications').insert([{
         user_id: user?.id || null,
@@ -416,60 +432,47 @@ export default function AdvisoryBookingForm({ onComplete }: AdvisoryBookingFormP
               <p className="text-emerald-800 font-medium text-sm">{t.freeService}</p>
             </div>
 
-            {isMember && memberData ? (
-              <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-emerald-100 rounded-lg"><User className="w-5 h-5 text-emerald-600" /></div>
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900">{t.memberInfo}</h3>
+            <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+              <div className="flex items-start gap-3 mb-4">
+                <div className={`p-2 rounded-lg ${isMember ? 'bg-emerald-100' : 'bg-blue-100'}`}>
+                  <User className={`w-5 h-5 ${isMember ? 'text-emerald-600' : 'text-blue-600'}`} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">{t.contactInfo}</h3>
+                  {isMember && memberData ? (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full mt-1">
                       <CheckCircle className="w-3 h-3" /> {t.memberBadge}
+                      {memberData.membershipNumber && <span className="mx-1">#{memberData.membershipNumber}</span>}
                     </span>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="flex items-center gap-2 text-sm"><User className="w-4 h-4 text-gray-400" /><span className="text-gray-900 font-medium">{memberData.fullName}</span></div>
-                  <div className="flex items-center gap-2 text-sm"><Phone className="w-4 h-4 text-gray-400" /><span className="text-gray-900">{memberData.phone || '-'}</span></div>
-                  <div className="flex items-center gap-2 text-sm"><Mail className="w-4 h-4 text-gray-400" /><span className="text-gray-900">{memberData.email}</span></div>
-                  {memberData.membershipNumber && (
-                    <div className="flex items-center gap-2 text-sm"><span className="text-gray-500">{t.membershipNumber}:</span><span className="text-gray-900 font-medium">#{memberData.membershipNumber}</span></div>
+                  ) : (
+                    <p className="text-sm text-gray-600 mt-0.5">{t.contactInfoDesc}</p>
                   )}
                 </div>
               </div>
-            ) : (
-              <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                <div className="flex items-start gap-3 mb-4">
-                  <div className="p-2 bg-blue-100 rounded-lg"><User className="w-5 h-5 text-blue-600" /></div>
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900">{t.contactInfo}</h3>
-                    <p className="text-sm text-gray-600 mt-0.5">{t.contactInfoDesc}</p>
-                  </div>
+              {!user && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between flex-wrap gap-2">
+                  <p className="text-sm text-blue-800">{t.memberPromo}</p>
+                  <Link to="/member/login?redirect=/book" className="text-sm font-semibold text-blue-700 hover:text-blue-900 underline">{t.signIn}</Link>
                 </div>
-                {!user && (
-                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between flex-wrap gap-2">
-                    <p className="text-sm text-blue-800">{t.memberPromo}</p>
-                    <Link to="/member/login?redirect=/book" className="text-sm font-semibold text-blue-700 hover:text-blue-900 underline">{t.signIn}</Link>
-                  </div>
-                )}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.fullName} *</label>
-                    <input type="text" value={formData.fullName} onChange={e => setFormData(p => ({ ...p, fullName: e.target.value }))}
-                      className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" required />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.phone} *</label>
-                    <input type="tel" value={formData.phone} onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
-                      className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" required />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.email} *</label>
-                    <input type="email" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))}
-                      className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" required />
-                  </div>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.fullName} *</label>
+                  <input type="text" value={formData.fullName} onChange={e => setFormData(p => ({ ...p, fullName: e.target.value }))}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.phone} *</label>
+                  <input type="tel" value={formData.phone} onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.email} *</label>
+                  <input type="email" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" required />
                 </div>
               </div>
-            )}
+            </div>
 
             <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
               <div className="mb-6">
@@ -535,7 +538,7 @@ export default function AdvisoryBookingForm({ onComplete }: AdvisoryBookingFormP
               selectedTime={selectedSlot}
               totalPrice={0}
               serviceType={formData.reason}
-              isFormComplete={!!formData.reason && (isMember || (!!formData.fullName && !!formData.phone && !!formData.email))}
+              isFormComplete={!!formData.reason && !!formData.fullName && !!formData.phone && !!formData.email}
               onSubmit={() => {}}
               isSubmitting={loading}
             />

@@ -197,6 +197,7 @@ export default function MemberDashboard() {
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [activatingMembership, setActivatingMembership] = useState(false);
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
@@ -206,6 +207,49 @@ export default function MemberDashboard() {
   useEffect(() => {
     fetchData();
   }, [user]);
+
+  useEffect(() => {
+    if (!membershipApp || memberRecord || activatingMembership || loading) return;
+
+    if (membershipApp.payment_status === 'paid' && !memberRecord) {
+      activateMembershipAutomatically();
+    }
+  }, [membershipApp, memberRecord, loading]);
+
+  const activateMembershipAutomatically = async () => {
+    if (!user || !membershipApp) return;
+
+    setActivatingMembership(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/activate-membership`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          application_id: membershipApp.id,
+          user_id: user.id,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        showToast(
+          isRTL ? 'تم تفعيل عضويتك بنجاح!' : 'Your membership has been activated successfully!',
+          'success'
+        );
+        await fetchData();
+      } else {
+        console.error('Auto-activation failed:', result.error);
+      }
+    } catch (error) {
+      console.error('Error auto-activating membership:', error);
+    } finally {
+      setActivatingMembership(false);
+    }
+  };
 
   const fetchData = async () => {
     if (!user) return;
@@ -365,7 +409,28 @@ export default function MemberDashboard() {
     <Layout>
       <PageHeader title={t.title} description={t.subtitle} />
 
-      {membershipApp && !memberRecord && membershipApp.payment_status !== 'paid' && (
+      {membershipApp && !memberRecord && activatingMembership && (
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg mb-6" dir={isRTL ? 'rtl' : 'ltr'}>
+            <div className="flex items-start gap-3">
+              <Loader2 className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5 animate-spin" />
+              <div className="flex-1">
+                <h3 className="text-sm font-bold text-blue-900 mb-1">
+                  {isRTL ? 'جاري تفعيل العضوية' : 'Activating Membership'}
+                </h3>
+                <p className="text-sm text-blue-800">
+                  {isRTL
+                    ? 'جاري تفعيل عضويتك وإنشاء رقم العضوية الخاص بك. يرجى الانتظار...'
+                    : 'Activating your membership and generating your membership number. Please wait...'
+                  }
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {membershipApp && !memberRecord && !activatingMembership && membershipApp.payment_status !== 'paid' && (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
           <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-lg mb-6" dir={isRTL ? 'rtl' : 'ltr'}>
             <div className="flex items-start gap-3">

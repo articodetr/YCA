@@ -86,6 +86,19 @@ Deno.serve(async (req: Request) => {
 
     if (existingMember) {
       console.info(`Member already exists with number: ${existingMember.member_number}`);
+
+      await supabase
+        .from("membership_applications")
+        .update({
+          status: "approved",
+          metadata: {
+            ...application.metadata,
+            member_number: existingMember.member_number,
+            already_existed: true,
+          },
+        })
+        .eq("id", application_id);
+
       return Response.json(
         {
           success: true,
@@ -97,8 +110,36 @@ Deno.serve(async (req: Request) => {
     }
 
     const startDate = new Date();
-    const expiryDate = new Date();
-    expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+    let durationMonths = 12;
+
+    switch (application.membership_type) {
+      case 'individual':
+      case 'family':
+      case 'student':
+      case 'associate':
+        durationMonths = 12;
+        break;
+      case 'business_support':
+        switch (application.frequency) {
+          case 'monthly':
+            durationMonths = 1;
+            break;
+          case 'yearly':
+            durationMonths = 12;
+            break;
+          case 'one-time':
+            durationMonths = 60;
+            break;
+          default:
+            durationMonths = 12;
+        }
+        break;
+      default:
+        durationMonths = 12;
+    }
+
+    const expiryDate = new Date(startDate);
+    expiryDate.setMonth(expiryDate.getMonth() + durationMonths);
 
     const { data: newMember, error: memberError } = await supabase
       .from("members")
@@ -115,6 +156,7 @@ Deno.serve(async (req: Request) => {
         business_name: application.business_name,
         business_support_tier: application.business_support_tier,
         custom_amount: application.custom_amount,
+        payment_frequency: application.frequency,
         status: "active",
         start_date: startDate.toISOString().split("T")[0],
         expiry_date: expiryDate.toISOString().split("T")[0],

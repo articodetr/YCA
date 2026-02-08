@@ -20,6 +20,7 @@ function CheckoutForm({ amount, type, applicationId, wakalaId }: CheckoutFormPro
   const stripe = useStripe();
   const elements = useElements();
   const { language } = useLanguage();
+  const { refreshMember } = useMemberAuth();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
@@ -93,10 +94,13 @@ function CheckoutForm({ amount, type, applicationId, wakalaId }: CheckoutFormPro
             .update({ payment_status: 'paid', status: 'submitted' })
             .eq('id', wakalaId);
         }
+
+        await refreshMember();
       }
 
       setSuccess(true);
-      setTimeout(() => {
+      setTimeout(async () => {
+        await refreshMember();
         navigate('/member/dashboard');
       }, 2000);
     } catch (err: any) {

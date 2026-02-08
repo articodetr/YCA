@@ -373,12 +373,14 @@ export default function MembershipPaymentModal({
     setPollingMember(false);
   };
 
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = async () => {
     setStep('success');
+    await refreshMember();
     pollForMember();
   };
 
-  const handleGoToProfile = () => {
+  const handleGoToProfile = async () => {
+    await refreshMember();
     navigate('/member/dashboard?tab=profile');
   };
 

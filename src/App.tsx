@@ -44,6 +44,7 @@ import MemberDashboard from './pages/member/MemberDashboard';
 import MembershipApplication from './pages/member/MembershipApplication';
 import WakalaApplication from './pages/member/WakalaApplication';
 import MemberPayment from './pages/member/MemberPayment';
+import ChooseMembership from './pages/member/ChooseMembership';
 import AdminLayout from './components/admin/AdminLayout';
 import Dashboard from './pages/admin/Dashboard';
 import NewsManagement from './pages/admin/NewsManagement';
@@ -130,6 +131,7 @@ function App() {
               <ProtectedMemberRoute>
                 <Routes>
                   <Route path="dashboard" element={<MemberDashboard />} />
+                  <Route path="choose-membership" element={<ChooseMembership />} />
                   <Route path="wakala/apply" element={<WakalaApplication />} />
                   <Route path="payment" element={<MemberPayment />} />
                 </Routes>

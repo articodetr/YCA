@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, FileText, CreditCard, LogOut, Loader2,
@@ -160,10 +161,26 @@ const tabs: { id: TabId; icon: typeof LayoutDashboard; labelKey: string }[] = [
 ];
 
 export default function MemberDashboard() {
-  const { user, signOut } = useMemberAuth();
+  const { user, signOut, needsOnboarding, pendingApplication, loading: authLoading } = useMemberAuth();
   const { language } = useLanguage();
+  const navigate = useNavigate();
   const isRTL = language === 'ar';
   const t = translations[language];
+
+  useEffect(() => {
+    if (authLoading || !user) return;
+
+    if (needsOnboarding) {
+      navigate('/member/choose-membership', { replace: true });
+      return;
+    }
+
+    if (pendingApplication && pendingApplication.payment_status === 'pending') {
+      const amount = pendingApplication.custom_amount ||
+        ({ individual: 20, family: 30, associate: 20, business_support: 0 } as Record<string, number>)[pendingApplication.membership_type] || 20;
+      navigate(`/member/payment?application_id=${pendingApplication.id}&amount=${amount}`, { replace: true });
+    }
+  }, [authLoading, user, needsOnboarding, pendingApplication, navigate]);
 
   const [loading, setLoading] = useState(true);
   const [membershipApp, setMembershipApp] = useState<any>(null);

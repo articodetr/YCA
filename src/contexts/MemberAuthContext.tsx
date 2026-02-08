@@ -15,12 +15,21 @@ interface Member {
   auto_renewal: boolean;
 }
 
+interface PendingApplication {
+  id: string;
+  membership_type: string;
+  payment_status: string;
+  custom_amount: number | null;
+}
+
 interface MemberAuthContextType {
   user: User | null;
   session: Session | null;
   member: Member | null;
   loading: boolean;
   isPaidMember: boolean;
+  needsOnboarding: boolean;
+  pendingApplication: PendingApplication | null;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, metadata?: any) => Promise<{ data: { user: User | null } | null; error: Error | null }>;
@@ -46,8 +55,10 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
   const [member, setMember] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPaidMember, setIsPaidMember] = useState(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [pendingApplication, setPendingApplication] = useState<PendingApplication | null>(null);
 
-  const fetchMemberData = async (userId: string) => {
+  const fetchMemberData = async (userId: string, userEmail?: string) => {
     try {
       const { data, error } = await supabase
         .from('members')
@@ -58,9 +69,33 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
       if (!error && data) {
         setMember(data);
         setIsPaidMember(true);
+        setNeedsOnboarding(false);
+        setPendingApplication(null);
+        return;
+      }
+
+      setMember(null);
+      setIsPaidMember(false);
+
+      if (userEmail) {
+        const { data: appData } = await supabase
+          .from('membership_applications')
+          .select('id, membership_type, payment_status, custom_amount')
+          .eq('email', userEmail)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (appData) {
+          setPendingApplication(appData);
+          setNeedsOnboarding(false);
+        } else {
+          setPendingApplication(null);
+          setNeedsOnboarding(true);
+        }
       } else {
-        setMember(null);
-        setIsPaidMember(false);
+        setPendingApplication(null);
+        setNeedsOnboarding(true);
       }
     } catch (error) {
       console.error('Error fetching member data:', error);
@@ -71,7 +106,7 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
 
   const refreshMember = async () => {
     if (user?.id) {
-      await fetchMemberData(user.id);
+      await fetchMemberData(user.id, user.email || undefined);
     }
   };
 
@@ -80,7 +115,7 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchMemberData(session.user.id).finally(() => setLoading(false));
+        fetchMemberData(session.user.id, session.user.email || undefined).finally(() => setLoading(false));
       } else {
         setLoading(false);
       }
@@ -92,10 +127,12 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          fetchMemberData(session.user.id);
+          fetchMemberData(session.user.id, session.user.email || undefined);
         } else {
           setMember(null);
           setIsPaidMember(false);
+          setNeedsOnboarding(false);
+          setPendingApplication(null);
         }
 
         setLoading(false);
@@ -168,7 +205,7 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <MemberAuthContext.Provider value={{ user, session, member, loading, isPaidMember, signIn, signInWithGoogle, signUp, signOut, resetPassword, refreshMember }}>
+    <MemberAuthContext.Provider value={{ user, session, member, loading, isPaidMember, needsOnboarding, pendingApplication, signIn, signInWithGoogle, signUp, signOut, resetPassword, refreshMember }}>
       {children}
     </MemberAuthContext.Provider>
   );

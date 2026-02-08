@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2, CheckCircle, User, Mail, Phone, MapPin, Calendar, Users, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -8,13 +8,113 @@ import Layout from '../../components/Layout';
 import PageHeader from '../../components/PageHeader';
 import BusinessSupportSelector from '../../components/BusinessSupportSelector';
 
+const translations = {
+  en: {
+    title: 'Membership Application',
+    subtitle: 'Join our community',
+    personalInfo: 'Personal Information',
+    accountInfo: 'Account Information',
+    contactInfo: 'Contact Information',
+    emergencyContact: 'Emergency Contact',
+    organizationInfo: 'Organization Information',
+    familyInfo: 'Family Members',
+    firstName: 'First Name',
+    lastName: 'Last Name',
+    email: 'Email Address',
+    password: 'Password',
+    confirmPassword: 'Confirm Password',
+    phone: 'Phone Number',
+    dateOfBirth: 'Date of Birth',
+    address: 'Address',
+    city: 'City',
+    postcode: 'Postcode',
+    emergencyName: 'Emergency Contact Name',
+    emergencyPhone: 'Emergency Contact Phone',
+    organizationName: 'Organization Name',
+    organizationType: 'Organization Type',
+    numberOfMembers: 'Number of Members',
+    addFamilyMember: 'Add Family Member',
+    memberName: 'Member Name',
+    relationship: 'Relationship',
+    remove: 'Remove',
+    submit: 'Submit Application',
+    submitting: 'Submitting...',
+    successMessage: 'Application submitted successfully!',
+    redirecting: 'Redirecting to payment...',
+    passwordMismatch: 'Passwords do not match',
+    errorMessage: 'Failed to submit application. Please try again.',
+    required: 'This field is required',
+    userExists: 'An account with this email already exists. Please ',
+    loginHere: 'login here',
+    toAccess: ' to access your account.',
+    loggedInAs: 'Logged in as',
+    chooseSupportType: 'Choose Support Type',
+    selectedAmount: 'Selected Amount:',
+    selectSupport: 'Please select a support type',
+  },
+  ar: {
+    title: 'طلب عضوية',
+    subtitle: 'انضم إلى مجتمعنا',
+    personalInfo: 'المعلومات الشخصية',
+    accountInfo: 'معلومات الحساب',
+    contactInfo: 'معلومات الاتصال',
+    emergencyContact: 'جهة الاتصال في حالات الطوارئ',
+    organizationInfo: 'معلومات المنظمة',
+    familyInfo: 'أفراد العائلة',
+    firstName: 'الاسم الأول',
+    lastName: 'اسم العائلة',
+    email: 'البريد الإلكتروني',
+    password: 'كلمة المرور',
+    confirmPassword: 'تأكيد كلمة المرور',
+    phone: 'رقم الهاتف',
+    dateOfBirth: 'تاريخ الميلاد',
+    address: 'العنوان',
+    city: 'المدينة',
+    postcode: 'الرمز البريدي',
+    emergencyName: 'اسم جهة الاتصال الطارئة',
+    emergencyPhone: 'هاتف جهة الاتصال الطارئة',
+    organizationName: 'اسم المنظمة',
+    organizationType: 'نوع المنظمة',
+    numberOfMembers: 'عدد الأعضاء',
+    addFamilyMember: 'إضافة فرد من العائلة',
+    memberName: 'اسم الفرد',
+    relationship: 'القرابة',
+    remove: 'إزالة',
+    submit: 'إرسال الطلب',
+    submitting: 'جاري الإرسال...',
+    successMessage: 'تم إرسال الطلب بنجاح!',
+    redirecting: 'جاري التحويل للدفع...',
+    passwordMismatch: 'كلمات المرور غير متطابقة',
+    errorMessage: 'فشل إرسال الطلب. يرجى المحاولة مرة أخرى.',
+    required: 'هذا الحقل مطلوب',
+    userExists: 'يوجد حساب بالفعل بهذا البريد الإلكتروني. يرجى ',
+    loginHere: 'تسجيل الدخول هنا',
+    toAccess: ' للوصول إلى حسابك.',
+    loggedInAs: 'مسجل الدخول كـ',
+    chooseSupportType: 'اختر نوع الدعم',
+    selectedAmount: 'المبلغ المختار:',
+    selectSupport: 'يرجى اختيار نوع الدعم',
+  },
+};
+
+const membershipPrices: Record<string, number> = {
+  individual: 20,
+  family: 30,
+  associate: 20,
+  business_support: 0,
+};
+
 export default function MembershipApplication() {
   const [searchParams] = useSearchParams();
   const membershipType = searchParams.get('type') || 'individual';
+  const isOAuth = searchParams.get('oauth') === 'true';
   const { language } = useLanguage();
-  const { signUp } = useMemberAuth();
+  const { user, signUp, refreshMember } = useMemberAuth();
   const navigate = useNavigate();
   const isRTL = language === 'ar';
+  const t = translations[language];
+
+  const isPreAuthenticated = isOAuth && !!user;
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -45,95 +145,21 @@ export default function MembershipApplication() {
     frequency: 'annual' | 'monthly' | 'one_time';
   } | null>(null);
 
-  const translations = {
-    en: {
-      title: 'Membership Application',
-      subtitle: 'Join our community',
-      personalInfo: 'Personal Information',
-      accountInfo: 'Account Information',
-      contactInfo: 'Contact Information',
-      emergencyContact: 'Emergency Contact',
-      organizationInfo: 'Organization Information',
-      familyInfo: 'Family Members',
-      firstName: 'First Name',
-      lastName: 'Last Name',
-      email: 'Email Address',
-      password: 'Password',
-      confirmPassword: 'Confirm Password',
-      phone: 'Phone Number',
-      dateOfBirth: 'Date of Birth',
-      address: 'Address',
-      city: 'City',
-      postcode: 'Postcode',
-      emergencyName: 'Emergency Contact Name',
-      emergencyPhone: 'Emergency Contact Phone',
-      organizationName: 'Organization Name',
-      organizationType: 'Organization Type',
-      numberOfMembers: 'Number of Members',
-      addFamilyMember: 'Add Family Member',
-      memberName: 'Member Name',
-      relationship: 'Relationship',
-      remove: 'Remove',
-      submit: 'Submit Application',
-      submitting: 'Submitting...',
-      successMessage: 'Application submitted successfully!',
-      redirecting: 'Redirecting to payment...',
-      passwordMismatch: 'Passwords do not match',
-      errorMessage: 'Failed to submit application. Please try again.',
-      required: 'This field is required',
-      userExists: 'An account with this email already exists. Please ',
-      loginHere: 'login here',
-      toAccess: ' to access your account.',
-    },
-    ar: {
-      title: 'طلب عضوية',
-      subtitle: 'انضم إلى مجتمعنا',
-      personalInfo: 'المعلومات الشخصية',
-      accountInfo: 'معلومات الحساب',
-      contactInfo: 'معلومات الاتصال',
-      emergencyContact: 'جهة الاتصال في حالات الطوارئ',
-      organizationInfo: 'معلومات المنظمة',
-      familyInfo: 'أفراد العائلة',
-      firstName: 'الاسم الأول',
-      lastName: 'اسم العائلة',
-      email: 'البريد الإلكتروني',
-      password: 'كلمة المرور',
-      confirmPassword: 'تأكيد كلمة المرور',
-      phone: 'رقم الهاتف',
-      dateOfBirth: 'تاريخ الميلاد',
-      address: 'العنوان',
-      city: 'المدينة',
-      postcode: 'الرمز البريدي',
-      emergencyName: 'اسم جهة الاتصال الطارئة',
-      emergencyPhone: 'هاتف جهة الاتصال الطارئة',
-      organizationName: 'اسم المنظمة',
-      organizationType: 'نوع المنظمة',
-      numberOfMembers: 'عدد الأعضاء',
-      addFamilyMember: 'إضافة فرد من العائلة',
-      memberName: 'اسم الفرد',
-      relationship: 'القرابة',
-      remove: 'إزالة',
-      submit: 'إرسال الطلب',
-      submitting: 'جاري الإرسال...',
-      successMessage: 'تم إرسال الطلب بنجاح!',
-      redirecting: 'جاري التحويل للدفع...',
-      passwordMismatch: 'كلمات المرور غير متطابقة',
-      errorMessage: 'فشل إرسال الطلب. يرجى المحاولة مرة أخرى.',
-      required: 'هذا الحقل مطلوب',
-      userExists: 'يوجد حساب بالفعل بهذا البريد الإلكتروني. يرجى ',
-      loginHere: 'تسجيل الدخول هنا',
-      toAccess: ' للوصول إلى حسابك.',
-    },
-  };
+  useEffect(() => {
+    if (isPreAuthenticated && user) {
+      const fullName = user.user_metadata?.full_name || user.user_metadata?.name || '';
+      const nameParts = fullName.split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
 
-  const t = translations[language];
-
-  const membershipPrices: Record<string, number> = {
-    individual: 20,
-    family: 30,
-    associate: 20,
-    business_support: 0,
-  };
+      setFormData(prev => ({
+        ...prev,
+        firstName: prev.firstName || firstName,
+        lastName: prev.lastName || lastName,
+        email: user.email || '',
+      }));
+    }
+  }, [isPreAuthenticated, user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData(prev => ({
@@ -165,103 +191,117 @@ export default function MembershipApplication() {
     }));
   };
 
+  const insertApplication = async (userId: string) => {
+    const finalAmount = membershipType === 'business_support' && businessSupport
+      ? businessSupport.amount
+      : membershipPrices[membershipType];
+
+    const applicationData = {
+      user_id: userId,
+      membership_type: membershipType,
+      first_name: formData.firstName,
+      last_name: formData.lastName,
+      full_name: `${formData.firstName} ${formData.lastName}`,
+      email: isPreAuthenticated ? user!.email : formData.email,
+      phone: formData.phone,
+      date_of_birth: formData.dateOfBirth || null,
+      address: formData.address,
+      city: formData.city,
+      postcode: formData.postcode,
+      emergency_contact_name: formData.emergencyContactName,
+      emergency_contact_phone: formData.emergencyContactPhone,
+      organization_name: membershipType === 'organization' ? formData.organizationName : null,
+      organization_type: membershipType === 'organization' ? formData.organizationType : null,
+      number_of_members: membershipType === 'organization' ? parseInt(formData.numberOfMembers) : null,
+      business_support_tier: membershipType === 'business_support' && businessSupport ? businessSupport.tier : null,
+      custom_amount: membershipType === 'business_support' && businessSupport ? businessSupport.amount : null,
+      payment_frequency: membershipType === 'business_support' && businessSupport ? businessSupport.frequency : null,
+      status: 'pending',
+      payment_status: 'pending',
+    };
+
+    const { data: application, error: appError } = await supabase
+      .from('membership_applications')
+      .insert([applicationData])
+      .select()
+      .maybeSingle();
+
+    if (appError) throw appError;
+    if (!application) throw new Error('Application creation failed');
+
+    if (membershipType === 'family' && formData.familyMembers.length > 0) {
+      const familyMembersData = formData.familyMembers.map(member => ({
+        application_id: application.id,
+        name: member.name,
+        relationship: member.relationship,
+        date_of_birth: member.dateOfBirth,
+      }));
+
+      await supabase
+        .from('membership_application_family_members')
+        .insert(familyMembersData);
+    }
+
+    return { application, finalAmount };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (formData.password !== formData.confirmPassword) {
+    if (!isPreAuthenticated && formData.password !== formData.confirmPassword) {
       setError(t.passwordMismatch);
       return;
     }
 
     if (membershipType === 'business_support' && !businessSupport) {
-      setError(language === 'ar' ? 'يرجى اختيار نوع الدعم' : 'Please select a support type');
+      setError(t.selectSupport);
       return;
     }
 
     setLoading(true);
 
     try {
-      // Sign up the user
-      const { data: authData, error: signUpError } = await signUp(formData.email, formData.password, {
-        full_name: `${formData.firstName} ${formData.lastName}`,
-        phone: formData.phone,
-      });
+      if (isPreAuthenticated && user) {
+        await supabase.from('member_profiles').upsert({
+          id: user.id,
+          full_name: `${formData.firstName} ${formData.lastName}`,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          postcode: formData.postcode,
+          updated_at: new Date().toISOString(),
+        });
 
-      if (signUpError) {
-        if (signUpError.message.includes('User already registered') ||
-            signUpError.message.includes('user_already_exists')) {
-          setError('userExists');
-          setLoading(false);
-          return;
+        const { application, finalAmount } = await insertApplication(user.id);
+        await refreshMember();
+        setSuccess(true);
+        setTimeout(() => {
+          navigate(`/member/payment?application_id=${application.id}&amount=${finalAmount}`);
+        }, 1500);
+      } else {
+        const { data: authData, error: signUpError } = await signUp(formData.email, formData.password, {
+          full_name: `${formData.firstName} ${formData.lastName}`,
+          phone: formData.phone,
+        });
+
+        if (signUpError) {
+          if (signUpError.message.includes('User already registered') ||
+              signUpError.message.includes('user_already_exists')) {
+            setError('userExists');
+            setLoading(false);
+            return;
+          }
+          throw signUpError;
         }
-        throw signUpError;
+        if (!authData?.user) throw new Error('User creation failed');
+
+        const { application, finalAmount } = await insertApplication(authData.user.id);
+        setSuccess(true);
+        setTimeout(() => {
+          navigate(`/member/payment?application_id=${application.id}&amount=${finalAmount}`);
+        }, 2000);
       }
-      if (!authData?.user) throw new Error('User creation failed');
-
-      // Calculate final amount
-      const finalAmount = membershipType === 'business_support' && businessSupport
-        ? businessSupport.amount
-        : membershipPrices[membershipType];
-
-      // Create application data with all required fields
-      const applicationData = {
-        user_id: authData.user.id,
-        membership_type: membershipType,
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        full_name: `${formData.firstName} ${formData.lastName}`,
-        email: formData.email,
-        phone: formData.phone,
-        date_of_birth: formData.dateOfBirth || null,
-        address: formData.address,
-        city: formData.city,
-        postcode: formData.postcode,
-        emergency_contact_name: formData.emergencyContactName,
-        emergency_contact_phone: formData.emergencyContactPhone,
-        organization_name: membershipType === 'organization' ? formData.organizationName : null,
-        organization_type: membershipType === 'organization' ? formData.organizationType : null,
-        number_of_members: membershipType === 'organization' ? parseInt(formData.numberOfMembers) : null,
-        business_support_tier: membershipType === 'business_support' && businessSupport ? businessSupport.tier : null,
-        custom_amount: membershipType === 'business_support' && businessSupport ? businessSupport.amount : null,
-        payment_frequency: membershipType === 'business_support' && businessSupport ? businessSupport.frequency : null,
-        status: 'pending',
-        payment_status: 'pending',
-      };
-
-      // Insert the membership application
-      const { data: application, error: appError } = await supabase
-        .from('membership_applications')
-        .insert([applicationData])
-        .select()
-        .maybeSingle();
-
-      if (appError) throw appError;
-      if (!application) throw new Error('Application creation failed');
-
-      // If family membership, insert family members
-      if (membershipType === 'family' && formData.familyMembers.length > 0) {
-        const familyMembersData = formData.familyMembers.map(member => ({
-          application_id: application.id,
-          name: member.name,
-          relationship: member.relationship,
-          date_of_birth: member.dateOfBirth,
-        }));
-
-        const { error: familyError } = await supabase
-          .from('membership_application_family_members')
-          .insert(familyMembersData);
-
-        if (familyError) {
-          console.error('Family members insert error:', familyError);
-          // Continue anyway - the main application was successful
-        }
-      }
-
-      setSuccess(true);
-      setTimeout(() => {
-        navigate(`/member/payment?application_id=${application.id}&amount=${finalAmount}`);
-      }, 2000);
     } catch (err: any) {
       console.error('Application error:', err);
       setError(t.errorMessage);
@@ -289,10 +329,7 @@ export default function MembershipApplication() {
 
   return (
     <Layout>
-      <PageHeader
-        title={t.title}
-        subtitle={t.subtitle}
-      />
+      <PageHeader title={t.title} subtitle={t.subtitle} />
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12" dir={isRTL ? 'rtl' : 'ltr'}>
         <div className="bg-white rounded-2xl shadow-lg p-8">
@@ -314,123 +351,96 @@ export default function MembershipApplication() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-8">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <User className="w-5 h-5" />
-                {t.accountInfo}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t.email} *
-                  </label>
-                  <div className="relative">
-                    <Mail className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400`} />
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent`}
-                      required
-                    />
-                  </div>
+            {isPreAuthenticated ? (
+              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                  <User className="w-5 h-5 text-emerald-700" />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t.password} *
-                  </label>
-                  <input
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t.confirmPassword} *
-                  </label>
-                  <input
-                    type="password"
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    required
-                  />
+                  <p className="text-sm font-medium text-emerald-800">{t.loggedInAs}</p>
+                  <p className="text-sm text-emerald-700">{user?.email}</p>
                 </div>
               </div>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                {t.personalInfo}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t.firstName} *
-                  </label>
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t.lastName} *
-                  </label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t.phone} *
-                  </label>
-                  <div className="relative">
-                    <Phone className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400`} />
+            ) : (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <User className="w-5 h-5" />
+                  {t.accountInfo}
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {t.email} *
+                    </label>
+                    <div className="relative">
+                      <Mail className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400`} />
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent`}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {t.password} *
+                    </label>
                     <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
+                      type="password"
+                      name="password"
+                      value={formData.password}
                       onChange={handleInputChange}
-                      className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent`}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {t.confirmPassword} *
+                    </label>
+                    <input
+                      type="password"
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                       required
                     />
                   </div>
                 </div>
+              </div>
+            )}
 
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t.personalInfo}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t.dateOfBirth} *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.firstName} *</label>
+                  <input type="text" name="firstName" value={formData.firstName} onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.lastName} *</label>
+                  <input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.phone} *</label>
+                  <div className="relative">
+                    <Phone className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400`} />
+                    <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange}
+                      className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent`} required />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.dateOfBirth} *</label>
                   <div className="relative">
                     <Calendar className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400`} />
-                    <input
-                      type="date"
-                      name="dateOfBirth"
-                      value={formData.dateOfBirth}
-                      onChange={handleInputChange}
-                      className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent`}
-                      required
-                    />
+                    <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleInputChange}
+                      className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent`} required />
                   </div>
                 </div>
               </div>
@@ -443,82 +453,37 @@ export default function MembershipApplication() {
               </h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t.address} *
-                  </label>
-                  <input
-                    type="text"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    required
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.address} *</label>
+                  <input type="text" name="address" value={formData.address} onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" required />
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t.city} *
-                    </label>
-                    <input
-                      type="text"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                      required
-                    />
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.city} *</label>
+                    <input type="text" name="city" value={formData.city} onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" required />
                   </div>
-
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t.postcode} *
-                    </label>
-                    <input
-                      type="text"
-                      name="postcode"
-                      value={formData.postcode}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                      required
-                    />
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.postcode} *</label>
+                    <input type="text" name="postcode" value={formData.postcode} onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" required />
                   </div>
                 </div>
               </div>
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                {t.emergencyContact}
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t.emergencyContact}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t.emergencyName} *
-                  </label>
-                  <input
-                    type="text"
-                    name="emergencyContactName"
-                    value={formData.emergencyContactName}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    required
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.emergencyName} *</label>
+                  <input type="text" name="emergencyContactName" value={formData.emergencyContactName} onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" required />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t.emergencyPhone} *
-                  </label>
-                  <input
-                    type="tel"
-                    name="emergencyContactPhone"
-                    value={formData.emergencyContactPhone}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    required
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.emergencyPhone} *</label>
+                  <input type="tel" name="emergencyContactPhone" value={formData.emergencyContactPhone} onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" required />
                 </div>
               </div>
             </div>
@@ -531,46 +496,20 @@ export default function MembershipApplication() {
                 </h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t.organizationName} *
-                    </label>
-                    <input
-                      type="text"
-                      name="organizationName"
-                      value={formData.organizationName}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                      required
-                    />
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.organizationName} *</label>
+                    <input type="text" name="organizationName" value={formData.organizationName} onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" required />
                   </div>
-
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {t.organizationType} *
-                      </label>
-                      <input
-                        type="text"
-                        name="organizationType"
-                        value={formData.organizationType}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                        required
-                      />
+                      <label className="block text-sm font-medium text-gray-700 mb-2">{t.organizationType} *</label>
+                      <input type="text" name="organizationType" value={formData.organizationType} onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" required />
                     </div>
-
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        {t.numberOfMembers} *
-                      </label>
-                      <input
-                        type="number"
-                        name="numberOfMembers"
-                        value={formData.numberOfMembers}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                        required
-                      />
+                      <label className="block text-sm font-medium text-gray-700 mb-2">{t.numberOfMembers} *</label>
+                      <input type="number" name="numberOfMembers" value={formData.numberOfMembers} onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" required />
                     </div>
                   </div>
                 </div>
@@ -588,57 +527,27 @@ export default function MembershipApplication() {
                     <div key={index} className="p-4 border border-gray-200 rounded-lg space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            {t.memberName}
-                          </label>
-                          <input
-                            type="text"
-                            value={member.name}
-                            onChange={(e) => updateFamilyMember(index, 'name', e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                          />
+                          <label className="block text-sm font-medium text-gray-700 mb-2">{t.memberName}</label>
+                          <input type="text" value={member.name} onChange={(e) => updateFamilyMember(index, 'name', e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
                         </div>
-
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            {t.relationship}
-                          </label>
-                          <input
-                            type="text"
-                            value={member.relationship}
-                            onChange={(e) => updateFamilyMember(index, 'relationship', e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                          />
+                          <label className="block text-sm font-medium text-gray-700 mb-2">{t.relationship}</label>
+                          <input type="text" value={member.relationship} onChange={(e) => updateFamilyMember(index, 'relationship', e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
                         </div>
-
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            {t.dateOfBirth}
-                          </label>
-                          <input
-                            type="date"
-                            value={member.dateOfBirth}
-                            onChange={(e) => updateFamilyMember(index, 'dateOfBirth', e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                          />
+                          <label className="block text-sm font-medium text-gray-700 mb-2">{t.dateOfBirth}</label>
+                          <input type="date" value={member.dateOfBirth} onChange={(e) => updateFamilyMember(index, 'dateOfBirth', e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
                         </div>
                       </div>
-
-                      <button
-                        type="button"
-                        onClick={() => removeFamilyMember(index)}
-                        className="text-sm text-red-600 hover:text-red-700"
-                      >
+                      <button type="button" onClick={() => removeFamilyMember(index)} className="text-sm text-red-600 hover:text-red-700">
                         {t.remove}
                       </button>
                     </div>
                   ))}
-
-                  <button
-                    type="button"
-                    onClick={addFamilyMember}
-                    className="text-emerald-600 hover:text-emerald-700 font-medium"
-                  >
+                  <button type="button" onClick={addFamilyMember} className="text-emerald-600 hover:text-emerald-700 font-medium">
                     + {t.addFamilyMember}
                   </button>
                 </div>
@@ -647,14 +556,12 @@ export default function MembershipApplication() {
 
             {membershipType === 'business_support' && (
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  {language === 'ar' ? 'اختر نوع الدعم' : 'Choose Support Type'}
-                </h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t.chooseSupportType}</h3>
                 <BusinessSupportSelector onSelect={setBusinessSupport} />
                 {businessSupport && (
                   <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
                     <p className="text-emerald-800 font-medium">
-                      {language === 'ar' ? 'المبلغ المختار:' : 'Selected Amount:'} £{businessSupport.amount}
+                      {t.selectedAmount} £{businessSupport.amount}
                       {' '}
                       {businessSupport.frequency === 'annual' && (language === 'ar' ? '/سنوياً' : '/year')}
                       {businessSupport.frequency === 'monthly' && (language === 'ar' ? '/شهرياً' : '/month')}

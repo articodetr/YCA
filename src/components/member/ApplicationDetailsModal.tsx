@@ -244,21 +244,21 @@ export default function ApplicationDetailsModal({ isOpen, onClose, application, 
     <>
       <AnimatePresence>
         {isOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={handleClose}
-              className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm"
-            />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-2xl z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={handleClose}
+            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
           >
-            <div className="bg-white rounded-2xl shadow-2xl h-full flex flex-col max-h-[90vh]">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-2xl"
+            >
+            <div className="bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
               <div className={`flex items-center justify-between p-5 border-b ${isCancelled ? 'bg-red-50' : 'bg-gradient-to-r from-primary/5 to-sand'}`}>
                 <div className="flex items-center gap-3">
                   {isAdvisoryApp ? (
@@ -715,26 +715,26 @@ export default function ApplicationDetailsModal({ isOpen, onClose, application, 
                 )}
               </div>
             </div>
+            </motion.div>
           </motion.div>
-          </>
         )}
       </AnimatePresence>
 
       <AnimatePresence>
         {imageToView && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setImageToView(null)}
-              className="fixed inset-0 bg-black/80 z-[60] backdrop-blur-sm"
-            />
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setImageToView(null)}
+            className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] h-[90vh] z-[60]"
+              onClick={(e) => e.stopPropagation()}
+              className="w-[90vw] h-[90vh]"
             >
               <div className="relative w-full h-full bg-white rounded-lg overflow-hidden">
                 <button
@@ -752,7 +752,7 @@ export default function ApplicationDetailsModal({ isOpen, onClose, application, 
                 </div>
               </div>
             </motion.div>
-          </>
+          </motion.div>
         )}
       </AnimatePresence>
     </>

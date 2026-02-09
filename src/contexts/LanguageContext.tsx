@@ -326,6 +326,26 @@ const translations: Record<Language, Record<string, string>> = {
     'months.october': 'October',
     'months.november': 'November',
     'months.december': 'December',
+
+    // Application Details
+    'app.viewDetails': 'View Details',
+    'app.editApplication': 'Edit Application',
+    'app.saveChanges': 'Save Changes',
+    'app.saving': 'Saving...',
+    'app.changesSaved': 'Changes saved successfully',
+    'app.saveFailed': 'Failed to save changes',
+    'app.unsavedChanges': 'You have unsaved changes. Do you want to continue?',
+    'app.contactInfo': 'Contact Information',
+    'app.wakalaDetails': 'Wakala Details',
+    'app.additionalNotes': 'Additional Notes',
+    'app.appointmentDate': 'Appointment Date',
+    'app.consultationType': 'Consultation Type',
+    'app.wakalaType': 'Wakala Type',
+    'app.status': 'Status',
+    'app.applicantName': 'Applicant Name',
+    'app.agentName': 'Agent Name',
+    'app.fee': 'Fee',
+    'app.createdAt': 'Created at',
   },
   ar: {
     // Header
@@ -641,6 +661,26 @@ const translations: Record<Language, Record<string, string>> = {
     'months.october': 'أكتوبر',
     'months.november': 'نوفمبر',
     'months.december': 'ديسمبر',
+
+    // Application Details
+    'app.viewDetails': 'عرض التفاصيل',
+    'app.editApplication': 'تعديل الطلب',
+    'app.saveChanges': 'حفظ التغييرات',
+    'app.saving': 'جاري الحفظ...',
+    'app.changesSaved': 'تم حفظ التغييرات بنجاح',
+    'app.saveFailed': 'فشل في حفظ التغييرات',
+    'app.unsavedChanges': 'لديك تغييرات غير محفوظة. هل تريد المتابعة؟',
+    'app.contactInfo': 'معلومات الاتصال',
+    'app.wakalaDetails': 'تفاصيل الوكالة',
+    'app.additionalNotes': 'ملاحظات إضافية',
+    'app.appointmentDate': 'موعد الحجز',
+    'app.consultationType': 'نوع الاستشارة',
+    'app.wakalaType': 'نوع الوكالة',
+    'app.status': 'الحالة',
+    'app.applicantName': 'اسم الموكل',
+    'app.agentName': 'اسم الوكيل',
+    'app.fee': 'الرسوم',
+    'app.createdAt': 'تم الإنشاء في',
   },
 };
 

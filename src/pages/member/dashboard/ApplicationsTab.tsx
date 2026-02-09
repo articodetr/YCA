@@ -1,35 +1,25 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Clock, FileText, CheckCircle, XCircle, CreditCard, ExternalLink, MessageSquare } from 'lucide-react';
+import { Calendar, Clock, FileText, MessageSquare } from 'lucide-react';
 import { staggerContainer, staggerItem } from '../../../lib/animations';
-import { formatTimeRange } from '../../../lib/booking-utils';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import ApplicationDetailsModal from '../../../components/member/ApplicationDetailsModal';
 
 interface Props {
   wakalaApps: any[];
-  onCancelAppointment: (app: any) => void;
+  onRefresh?: () => void;
   t: Record<string, string>;
 }
 
-const statusConfig: Record<string, { bg: string; text: string; icon: typeof CheckCircle }> = {
-  submitted: { bg: 'bg-blue-50 border-blue-200', text: 'text-blue-700', icon: CheckCircle },
+const statusConfig: Record<string, { bg: string; text: string; icon: any }> = {
+  submitted: { bg: 'bg-blue-50 border-blue-200', text: 'text-blue-700', icon: Clock },
   in_progress: { bg: 'bg-sky-50 border-sky-200', text: 'text-sky-700', icon: Clock },
-  completed: { bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700', icon: CheckCircle },
-  approved: { bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700', icon: CheckCircle },
-  rejected: { bg: 'bg-red-50 border-red-200', text: 'text-red-700', icon: XCircle },
-  cancelled: { bg: 'bg-red-50 border-red-200', text: 'text-red-700', icon: XCircle },
+  completed: { bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700', icon: Clock },
+  approved: { bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700', icon: Clock },
+  rejected: { bg: 'bg-red-50 border-red-200', text: 'text-red-700', icon: Clock },
+  cancelled: { bg: 'bg-red-50 border-red-200', text: 'text-red-700', icon: Clock },
   pending: { bg: 'bg-amber-50 border-amber-200', text: 'text-amber-700', icon: Clock },
 };
-
-function StatusBadge({ status, t }: { status: string; t: Record<string, string> }) {
-  const c = statusConfig[status] || { bg: 'bg-gray-50 border-gray-200', text: 'text-gray-600', icon: Clock };
-  const Icon = c.icon;
-  const label = t[status] || status.replace(/_/g, ' ');
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${c.bg} ${c.text}`}>
-      <Icon className="w-3.5 h-3.5" /> {label}
-    </span>
-  );
-}
 
 function isAdvisory(serviceType: string) {
   return serviceType?.startsWith('advisory_');
@@ -82,157 +72,96 @@ function getWakalaTypeLabel(wakalaType: string, language: string) {
   return labels[language]?.[wakalaType] || wakalaType;
 }
 
-function AdvisoryCard({ app, onCancel, t, language }: { app: any; onCancel: (a: any) => void; t: Record<string, string>; language: string }) {
+function CompactApplicationCard({ app, onClick, language }: { app: any; onClick: () => void; language: string }) {
   const isCancelled = app.status === 'cancelled' || app.cancelled_at;
-  const isPast = app.booking_date && new Date(app.booking_date) < new Date();
-  const canCancel = app.booking_date && !isCancelled && !isPast;
+  const isAdvisoryApp = isAdvisory(app.service_type);
+  const statusConf = statusConfig[app.status] || { bg: 'bg-gray-50 border-gray-200', text: 'text-gray-600', icon: Clock };
+  const StatusIcon = statusConf.icon;
 
   return (
     <motion.div
       variants={staggerItem}
-      className={`bg-white rounded-xl border p-5 transition-shadow hover:shadow-md ${isCancelled ? 'border-red-200 bg-red-50/30' : 'border-divider'}`}
+      onClick={onClick}
+      className={`group relative bg-white rounded-xl border p-4 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1 ${
+        isCancelled ? 'border-red-200 bg-red-50/30' : 'border-divider hover:border-primary/30'
+      }`}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 mb-3 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-full">
-              <MessageSquare className="w-3.5 h-3.5" />
-              {language === 'ar' ? 'موعد استشاري' : 'Advisory Appointment'}
-            </span>
-            <StatusBadge status={isCancelled ? 'cancelled' : app.status} t={t} />
+      <div className="absolute top-3 right-3">
+        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border ${statusConf.bg} ${statusConf.text}`}>
+          <StatusIcon className="w-3 h-3" />
+        </span>
+      </div>
+
+      <div className="flex items-start gap-3 mb-3">
+        {isAdvisoryApp ? (
+          <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-200 transition-colors">
+            <MessageSquare className="w-6 h-6 text-blue-600" />
           </div>
-
-          <div className="mb-2">
-            <span className="text-sm text-gray-600">
-              {language === 'ar' ? 'السبب: ' : 'Reason: '}
-            </span>
-            <span className="text-sm font-semibold text-gray-900">
-              {getAdvisoryReasonLabel(app.service_type, language)}
-            </span>
+        ) : (
+          <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-200 transition-colors">
+            <FileText className="w-6 h-6 text-emerald-600" />
           </div>
-
-          {app.booking_date && app.start_time && app.end_time && (
-            <div className="flex flex-wrap items-center gap-4 text-sm text-muted">
-              <span className="inline-flex items-center gap-1.5">
-                <Calendar className="w-4 h-4" />
-                {new Date(app.booking_date).toLocaleDateString()}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Clock className="w-4 h-4" />
-                {formatTimeRange(app.start_time, app.end_time)}
-                {app.duration_minutes && (
-                  <span className="text-xs font-medium text-primary/60">
-                    ({app.duration_minutes} {t.minutes})
-                  </span>
-                )}
-              </span>
-            </div>
-          )}
-
-          {isCancelled && app.cancelled_at && (
-            <p className="text-xs text-red-500 mt-2">
-              {t.cancelled} - {new Date(app.cancelled_at).toLocaleString()}
-            </p>
-          )}
-        </div>
-        {canCancel && (
-          <button onClick={() => onCancel(app)}
-            className="text-xs px-3 py-1.5 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors font-medium flex-shrink-0">
-            {t.cancelAppointment}
-          </button>
         )}
+        <div className="flex-1 min-w-0 pt-1">
+          <h3 className="font-bold text-gray-900 text-sm mb-1 truncate">
+            {isAdvisoryApp
+              ? getAdvisoryReasonLabel(app.service_type, language)
+              : (app.wakala_type ? getWakalaTypeLabel(app.wakala_type, language) : (language === 'ar' ? 'طلب وكالة' : 'Wakala'))}
+          </h3>
+          <p className="text-xs text-gray-500">
+            {app.booking_reference || app.full_name || (language === 'ar' ? 'طلب' : 'Application')}
+          </p>
+        </div>
       </div>
-    </motion.div>
-  );
-}
 
-function WakalaCard({ app, t, language }: { app: any; t: Record<string, string>; language: string }) {
-  const isCancelled = app.status === 'cancelled';
-
-  return (
-    <motion.div
-      variants={staggerItem}
-      className={`bg-white rounded-xl border p-5 transition-shadow hover:shadow-md ${isCancelled ? 'border-red-200 bg-red-50/30' : 'border-divider'}`}
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 mb-3 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
-              <FileText className="w-3.5 h-3.5" />
-              {language === 'ar' ? 'طلب وكالة' : 'Wakala Application'}
-            </span>
-            <StatusBadge status={isCancelled ? 'cancelled' : app.status} t={t} />
-          </div>
-
-          {app.wakala_type && (
-            <div className="mb-2">
-              <span className="text-sm text-gray-600">
-                {language === 'ar' ? 'نوع الوكالة: ' : 'Wakala Type: '}
-              </span>
-              <span className="text-sm font-semibold text-gray-900">
-                {getWakalaTypeLabel(app.wakala_type, language)}
-              </span>
-            </div>
+      {app.booking_date && (
+        <div className="flex items-center gap-2 text-xs text-gray-600 mt-3 pt-3 border-t border-gray-200">
+          <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+          <span className="truncate">
+            {new Date(app.booking_date).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-GB', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            })}
+          </span>
+          {app.start_time && (
+            <>
+              <Clock className="w-3.5 h-3.5 flex-shrink-0 ml-1" />
+              <span>{app.start_time.substring(0, 5)}</span>
+            </>
           )}
+        </div>
+      )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 text-sm">
-            {app.applicant_name && (
-              <div>
-                <span className="text-gray-500">{language === 'ar' ? 'الموكّل: ' : 'Applicant: '}</span>
-                <span className="text-gray-900 font-medium">{app.applicant_name}</span>
-              </div>
-            )}
-            {app.agent_name && (
-              <div>
-                <span className="text-gray-500">{language === 'ar' ? 'الوكيل: ' : 'Agent: '}</span>
-                <span className="text-gray-900 font-medium">{app.agent_name}</span>
-              </div>
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-4 mt-3 text-sm">
-            {app.fee_amount !== null && app.fee_amount !== undefined && (
-              <span className="inline-flex items-center gap-1.5 text-gray-600">
-                <CreditCard className="w-4 h-4" />
-                {app.fee_amount === 0
-                  ? (language === 'ar' ? 'مجاناً' : 'Free')
-                  : `\u00A3${app.fee_amount}`}
-                {app.payment_status === 'paid' && (
-                  <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
-                )}
-              </span>
-            )}
-            <span className="text-xs text-gray-400">
-              {new Date(app.created_at).toLocaleDateString()}
-            </span>
-          </div>
-
-          {(app.applicant_passport_url || app.attorney_passport_url) && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {app.applicant_passport_url && (
-                <a href={app.applicant_passport_url} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium">
-                  <ExternalLink className="w-3 h-3" />
-                  {language === 'ar' ? 'جواز الموكل' : 'Applicant Passport'}
-                </a>
-              )}
-              {app.attorney_passport_url && (
-                <a href={app.attorney_passport_url} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium">
-                  <ExternalLink className="w-3 h-3" />
-                  {language === 'ar' ? 'جواز الوكيل' : 'Attorney Passport'}
-                </a>
-              )}
-            </div>
-          )}
+      <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+          <svg className="w-3 h-3 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
         </div>
       </div>
     </motion.div>
   );
 }
 
-export default function ApplicationsTab({ wakalaApps, onCancelAppointment, t }: Props) {
+export default function ApplicationsTab({ wakalaApps, onRefresh, t }: Props) {
   const { language } = useLanguage();
+  const [selectedApp, setSelectedApp] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleCardClick = (app: any) => {
+    setSelectedApp(app);
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setTimeout(() => setSelectedApp(null), 300);
+  };
+
+  const handleUpdate = () => {
+    if (onRefresh) onRefresh();
+  };
 
   if (wakalaApps.length === 0) {
     return (
@@ -249,28 +178,59 @@ export default function ApplicationsTab({ wakalaApps, onCancelAppointment, t }: 
   const wakalaOnlyApps = wakalaApps.filter(a => !isAdvisory(a.service_type));
 
   return (
-    <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
-      {advisoryApps.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">
-            {language === 'ar' ? 'المواعيد الاستشارية' : 'Advisory Appointments'}
-          </h3>
-          {advisoryApps.map(app => (
-            <AdvisoryCard key={app.id} app={app} onCancel={onCancelAppointment} t={t} language={language} />
-          ))}
-        </div>
-      )}
+    <>
+      <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
+        {advisoryApps.length > 0 && (
+          <div className="space-y-4">
+            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" />
+              {language === 'ar' ? 'المواعيد الاستشارية' : 'Advisory Appointments'}
+              <span className="ml-auto text-xs bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full font-semibold">
+                {advisoryApps.length}
+              </span>
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {advisoryApps.map(app => (
+                <CompactApplicationCard
+                  key={app.id}
+                  app={app}
+                  onClick={() => handleCardClick(app)}
+                  language={language}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
-      {wakalaOnlyApps.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">
-            {language === 'ar' ? 'طلبات الوكالة' : 'Wakala Applications'}
-          </h3>
-          {wakalaOnlyApps.map(app => (
-            <WakalaCard key={app.id} app={app} t={t} language={language} />
-          ))}
-        </div>
-      )}
-    </motion.div>
+        {wakalaOnlyApps.length > 0 && (
+          <div className="space-y-4">
+            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              {language === 'ar' ? 'طلبات الوكالة' : 'Wakala Applications'}
+              <span className="ml-auto text-xs bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full font-semibold">
+                {wakalaOnlyApps.length}
+              </span>
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {wakalaOnlyApps.map(app => (
+                <CompactApplicationCard
+                  key={app.id}
+                  app={app}
+                  onClick={() => handleCardClick(app)}
+                  language={language}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </motion.div>
+
+      <ApplicationDetailsModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        application={selectedApp}
+        onUpdate={handleUpdate}
+      />
+    </>
   );
 }

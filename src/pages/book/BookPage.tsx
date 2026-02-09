@@ -51,6 +51,9 @@ const translations = {
     trackBooking: 'Track Your Booking',
     trackDesc: 'Already have a booking? Enter your reference number to check the status.',
     trackButton: 'Track Booking',
+    step1: 'Choose Service',
+    step2: 'Fill Details',
+    step3: 'Confirmation',
   },
   ar: {
     title: 'حجز موعد',
@@ -70,6 +73,9 @@ const translations = {
     trackBooking: 'تتبع حجزك',
     trackDesc: 'لديك حجز بالفعل؟ أدخل الرقم المرجعي للتحقق من الحالة.',
     trackButton: 'تتبع الحجز',
+    step1: 'اختر الخدمة',
+    step2: 'أدخل البيانات',
+    step3: 'التأكيد',
   },
 };
 
@@ -144,6 +150,14 @@ export default function BookPage() {
     );
   }
 
+  const currentStep = !selectedService ? 0 : 1;
+
+  const steps = [
+    { label: t.step1 },
+    { label: t.step2 },
+    { label: t.step3 },
+  ];
+
   const services = [
     {
       id: 'advisory' as ServiceType,
@@ -151,7 +165,6 @@ export default function BookPage() {
       title: t.advisoryTitle,
       description: t.advisoryDesc,
       features: t.advisoryFeatures,
-      accent: 'emerald',
     },
     {
       id: 'wakala' as ServiceType,
@@ -159,89 +172,119 @@ export default function BookPage() {
       title: t.wakalaTitle,
       description: t.wakalaDesc,
       features: t.wakalaFeatures,
-      accent: 'blue',
     },
   ];
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white" dir={isRTL ? 'rtl' : 'ltr'}>
-        <div className="relative bg-gradient-to-br from-[#1b2b45] via-[#1e3a5c] to-[#0f2439] py-16 sm:py-20">
-          <div className="absolute inset-0 bg-[url('https://images.pexels.com/photos/7176026/pexels-photo-7176026.jpeg?auto=compress&cs=tinysrgb&w=1920')] bg-cover bg-center opacity-10" />
-          <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full mb-6">
-              <Clock className="w-4 h-4 text-amber-300" />
-              <span className="text-sm text-gray-200">{orgName}</span>
+      <div className="min-h-screen bg-white" dir={isRTL ? 'rtl' : 'ltr'}>
+        <div className="bg-gray-50 border-b border-gray-100">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 text-center">
+            <div className="inline-flex items-center gap-2 bg-white border border-gray-200 px-4 py-2 rounded-full mb-6">
+              <Clock className="w-4 h-4 text-[#0d9488]" />
+              <span className="text-sm text-[#64748b]">{orgName}</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4">
+            <h1 className="text-3xl sm:text-4xl font-bold text-[#0f1c2e] mb-3">
               {t.title}
             </h1>
-            <p className="text-lg text-gray-300 max-w-2xl mx-auto">
+            <p className="text-base text-[#64748b] max-w-xl mx-auto">
               {t.subtitle}
             </p>
+
+            <div className="flex items-center justify-center gap-0 mt-8 max-w-md mx-auto">
+              {steps.map((step, idx) => (
+                <div key={idx} className="flex items-center flex-1 last:flex-none">
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
+                        idx < currentStep
+                          ? 'bg-[#0d9488] text-white'
+                          : idx === currentStep
+                            ? 'bg-[#0d9488] text-white'
+                            : 'bg-gray-200 text-[#64748b]'
+                      }`}
+                    >
+                      {idx < currentStep ? (
+                        <CheckCircle className="w-4 h-4" />
+                      ) : (
+                        idx + 1
+                      )}
+                    </div>
+                    <span
+                      className={`text-xs mt-1.5 whitespace-nowrap ${
+                        idx <= currentStep ? 'text-[#0f1c2e] font-medium' : 'text-[#64748b]'
+                      }`}
+                    >
+                      {step.label}
+                    </span>
+                  </div>
+                  {idx < steps.length - 1 && (
+                    <div
+                      className={`h-0.5 flex-1 mx-2 mt-[-1rem] ${
+                        idx < currentStep ? 'bg-[#0d9488]' : 'bg-gray-200'
+                      }`}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10 pb-16">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
           {!selectedService ? (
-            <div className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-5">
+              <div className="grid md:grid-cols-2 gap-5">
                 {services.map((service, idx) => (
                   <motion.button
                     key={service.id}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.1, duration: 0.4 }}
+                    transition={{ delay: idx * 0.08, duration: 0.35 }}
                     onClick={() => handleServiceSelect(service.id)}
-                    className="group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 sm:p-8 text-left border-2 border-transparent hover:border-emerald-500"
+                    className={`group bg-white rounded-2xl border border-gray-100 hover:shadow-md transition-all duration-200 p-6 sm:p-8 ${isRTL ? 'text-right' : 'text-left'}`}
                   >
-                    <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-5 ${
-                      service.accent === 'emerald'
-                        ? 'bg-emerald-100 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white'
-                        : 'bg-blue-100 text-blue-600 group-hover:bg-blue-600 group-hover:text-white'
-                    } transition-colors`}>
-                      <service.icon className="w-7 h-7" />
+                    <div className="w-12 h-12 rounded-xl bg-[#0d9488]/10 text-[#0d9488] flex items-center justify-center mb-5 transition-colors group-hover:bg-[#0d9488] group-hover:text-white">
+                      <service.icon className="w-6 h-6" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-emerald-700 transition-colors">
+                    <h3 className="text-lg font-bold text-[#0f1c2e] mb-2">
                       {service.title}
                     </h3>
-                    <p className="text-gray-600 mb-5 leading-relaxed">
+                    <p className="text-[#64748b] text-sm mb-5 leading-relaxed">
                       {service.description}
                     </p>
                     <ul className="space-y-2 mb-6">
                       {service.features.map((feature, fidx) => (
-                        <li key={fidx} className="flex items-center gap-2 text-sm text-gray-500">
-                          <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                        <li key={fidx} className="flex items-center gap-2 text-sm text-[#64748b]">
+                          <CheckCircle className="w-4 h-4 text-[#0d9488] flex-shrink-0" />
                           {feature}
                         </li>
                       ))}
                     </ul>
-                    <div className={`inline-flex items-center gap-2 font-semibold ${
-                      service.accent === 'emerald' ? 'text-emerald-600' : 'text-blue-600'
-                    }`}>
+                    <div className="inline-flex items-center gap-2 text-sm font-semibold text-[#0d9488]">
                       {t.selectService}
-                      <ChevronRight className={`w-5 h-5 transition-transform group-hover:translate-x-1 ${isRTL ? 'rotate-180 group-hover:-translate-x-1' : ''}`} />
+                      <ChevronRight className={`w-4 h-4 transition-transform group-hover:translate-x-0.5 ${isRTL ? 'rotate-180 group-hover:-translate-x-0.5' : ''}`} />
                     </div>
                   </motion.button>
                 ))}
               </div>
 
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.4 }}
-                className="bg-white rounded-2xl shadow-lg p-6 sm:p-8"
+                transition={{ delay: 0.16, duration: 0.35 }}
+                className="bg-white rounded-2xl border border-gray-100 hover:shadow-md transition-shadow duration-200 p-6 sm:p-8"
               >
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
-                    <Search className="w-6 h-6" />
+                  <div className="w-10 h-10 rounded-xl bg-[#0d9488]/10 text-[#0d9488] flex items-center justify-center flex-shrink-0">
+                    <Search className="w-5 h-5" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">{t.trackBooking}</h3>
-                    <p className="text-gray-600 mb-4">{t.trackDesc}</p>
+                    <h3 className="text-base font-bold text-[#0f1c2e] mb-1">{t.trackBooking}</h3>
+                    <p className="text-sm text-[#64748b] mb-4">{t.trackDesc}</p>
                     <Link
                       to="/book/track"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1b2b45] hover:bg-[#253d5e] text-white rounded-lg transition-colors text-sm font-medium"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0d9488] hover:bg-[#0b7f74] text-white rounded-lg transition-colors text-sm font-medium"
                     >
                       {t.trackButton}
                       <ChevronRight className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
@@ -251,28 +294,28 @@ export default function BookPage() {
               </motion.div>
 
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.4 }}
-                className="bg-white rounded-2xl shadow-lg p-6 sm:p-8"
+                transition={{ delay: 0.24, duration: 0.35 }}
+                className="bg-white rounded-2xl border border-gray-100 hover:shadow-md transition-shadow duration-200 p-6 sm:p-8"
               >
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-gray-100 text-gray-600 flex items-center justify-center flex-shrink-0">
-                    <HelpCircle className="w-6 h-6" />
+                  <div className="w-10 h-10 rounded-xl bg-gray-100 text-[#64748b] flex items-center justify-center flex-shrink-0">
+                    <HelpCircle className="w-5 h-5" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">{t.otherTitle}</h3>
-                    <p className="text-gray-600 mb-4">{t.otherDesc}</p>
+                    <h3 className="text-base font-bold text-[#0f1c2e] mb-1">{t.otherTitle}</h3>
+                    <p className="text-sm text-[#64748b] mb-4">{t.otherDesc}</p>
                     <div className="flex flex-wrap gap-3">
                       <Link
                         to="/programmes"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium"
+                        className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 hover:border-[#0d9488] hover:text-[#0d9488] text-[#0f1c2e] rounded-lg transition-colors text-sm font-medium"
                       >
                         {t.viewProgrammes}
                       </Link>
                       <Link
                         to="/events"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium"
+                        className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 hover:border-[#0d9488] hover:text-[#0d9488] text-[#0f1c2e] rounded-lg transition-colors text-sm font-medium"
                       >
                         {t.viewEvents}
                       </Link>
@@ -283,13 +326,13 @@ export default function BookPage() {
             </div>
           ) : (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
               <button
                 onClick={() => setSelectedService(null)}
-                className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 transition-colors mb-6 bg-white rounded-lg px-4 py-2 shadow-sm"
+                className="inline-flex items-center gap-2 text-[#64748b] hover:text-[#0f1c2e] transition-colors mb-6 text-sm font-medium"
               >
                 <ChevronRight className={`w-4 h-4 ${isRTL ? '' : 'rotate-180'}`} />
                 {t.backToServices}

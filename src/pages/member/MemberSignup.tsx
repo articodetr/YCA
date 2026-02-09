@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Lock, Mail, AlertCircle, Loader2, User } from 'lucide-react';
+import { Lock, Mail, AlertCircle, Loader2, User, ArrowLeft, ArrowRight } from 'lucide-react';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -158,28 +158,23 @@ export default function MemberSignup() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center p-4" dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="max-w-md w-full">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4" dir={isRTL ? 'rtl' : 'ltr'}>
+      <div className="max-w-md w-full mx-auto">
+        <div className="bg-white border border-gray-100 rounded-2xl p-8">
           <div className="text-center mb-8">
-            <div className="flex justify-center items-center gap-3 mb-6">
+            <div className="flex justify-center mb-6">
               <img
                 src="/logo.png"
-                alt="YCA Birmingham Logo"
+                alt="Logo"
                 className="h-16 w-auto"
               />
-              <img
-                src="/logo_text.png"
-                alt="Yemeni Community Association"
-                className="h-10 w-auto"
-              />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{t.title}</h1>
-            <p className="text-gray-600">{t.subtitle}</p>
+            <h1 className="text-2xl font-bold text-[#0f1c2e] mb-1">{t.title}</h1>
+            <p className="text-[#64748b] text-sm">{t.subtitle}</p>
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-red-800">{error}</p>
             </div>
@@ -189,7 +184,7 @@ export default function MemberSignup() {
             type="button"
             onClick={handleGoogleSignUp}
             disabled={googleLoading || loading}
-            className="w-full bg-white hover:bg-gray-50 text-gray-700 font-semibold py-3 px-6 rounded-lg border-2 border-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 mb-6"
+            className="w-full bg-white hover:bg-gray-50 text-[#0f1c2e] font-medium py-3 px-6 rounded-xl border border-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 mb-6"
           >
             {googleLoading ? (
               <>
@@ -206,26 +201,26 @@ export default function MemberSignup() {
 
           <div className="relative mb-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
+              <div className="w-full border-t border-gray-200"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500 font-medium">{t.or}</span>
+              <span className="px-4 bg-white text-[#64748b]">{t.or}</span>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="fullName" className="block text-sm font-medium text-[#0f1c2e] mb-2">
                 {t.fullName}
               </label>
               <div className="relative">
-                <User className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400`} />
+                <User className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748b]`} />
                 <input
                   id="fullName"
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-shadow`}
+                  className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 border border-gray-200 rounded-xl focus:border-[#0d9488] focus:ring-1 focus:ring-[#0d9488] outline-none transition-all`}
                   placeholder={language === 'ar' ? 'أحمد محمد' : 'John Doe'}
                   required
                   disabled={loading}
@@ -234,17 +229,17 @@ export default function MemberSignup() {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-[#0f1c2e] mb-2">
                 {t.email}
               </label>
               <div className="relative">
-                <Mail className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400`} />
+                <Mail className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748b]`} />
                 <input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-shadow`}
+                  className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 border border-gray-200 rounded-xl focus:border-[#0d9488] focus:ring-1 focus:ring-[#0d9488] outline-none transition-all`}
                   placeholder="member@example.com"
                   required
                   disabled={loading}
@@ -253,17 +248,17 @@ export default function MemberSignup() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-[#0f1c2e] mb-2">
                 {t.password}
               </label>
               <div className="relative">
-                <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400`} />
+                <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748b]`} />
                 <input
                   id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-shadow`}
+                  className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 border border-gray-200 rounded-xl focus:border-[#0d9488] focus:ring-1 focus:ring-[#0d9488] outline-none transition-all`}
                   placeholder="••••••••"
                   required
                   minLength={6}
@@ -273,17 +268,17 @@ export default function MemberSignup() {
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-[#0f1c2e] mb-2">
                 {t.confirmPassword}
               </label>
               <div className="relative">
-                <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400`} />
+                <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748b]`} />
                 <input
                   id="confirmPassword"
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-shadow`}
+                  className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 border border-gray-200 rounded-xl focus:border-[#0d9488] focus:ring-1 focus:ring-[#0d9488] outline-none transition-all`}
                   placeholder="••••••••"
                   required
                   minLength={6}
@@ -295,7 +290,7 @@ export default function MemberSignup() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-[#0d9488] hover:bg-[#0f766e] text-white font-medium py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
@@ -309,20 +304,21 @@ export default function MemberSignup() {
           </form>
 
           <div className="mt-6 text-center space-y-3">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-[#64748b]">
               {t.haveAccount}{' '}
-              <Link to="/member/login" className="text-emerald-600 hover:text-emerald-700 font-medium transition-colors">
+              <Link to="/member/login" className="text-[#0d9488] hover:text-[#0f766e] font-medium transition-colors">
                 {t.signIn}
               </Link>
             </p>
-            <Link to="/" className="block text-sm text-emerald-600 hover:text-emerald-700 transition-colors">
-              {isRTL ? '→' : '←'} {t.backToWebsite}
+            <Link to="/" className="inline-flex items-center gap-1 text-sm text-[#64748b] hover:text-[#0f1c2e] transition-colors">
+              {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
+              {t.backToWebsite}
             </Link>
           </div>
         </div>
 
-        <p className="text-center text-sm text-gray-600 mt-6">
-          © {new Date().getFullYear()} {isRTL ? 'جمعية الجالية اليمنية برمنغهام. جميع الحقوق محفوظة.' : 'YCA Birmingham. All rights reserved.'}
+        <p className="text-center text-xs text-[#64748b] mt-6">
+          &copy; {new Date().getFullYear()} {isRTL ? 'جمعية الجالية اليمنية برمنغهام. جميع الحقوق محفوظة.' : 'YCA Birmingham. All rights reserved.'}
         </p>
       </div>
     </div>

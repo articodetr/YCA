@@ -8,10 +8,12 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useMemberAuth } from '../contexts/MemberAuthContext';
 import Layout from '../components/Layout';
+import PageHeader from '../components/PageHeader';
 import MembershipPaymentModal from '../components/member/MembershipPaymentModal';
 import BusinessSupportSelector from '../components/BusinessSupportSelector';
 import { membershipPlans } from '../data/membershipPlans';
 import type { MembershipPlan } from '../data/membershipPlans';
+import { fadeInUp, staggerContainer, staggerItem } from '../lib/animations';
 
 const translations = {
   en: {
@@ -189,40 +191,43 @@ export default function UnifiedMembership() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-b from-sand/30 to-white" dir={isRTL ? 'rtl' : 'ltr'}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-16">
+      <div className="min-h-screen bg-white" dir={isRTL ? 'rtl' : 'ltr'}>
+        <PageHeader
+          title={t.title}
+          description={t.subtitle}
+          pageKey="membership"
+        />
+
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          {displayName && (
+            <motion.p
+              className="text-center text-base text-accent font-medium mb-10"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4 }}
+            >
+              {isRTL ? `مرحباً، ${displayName}` : `Welcome, ${displayName}`}
+            </motion.p>
+          )}
 
           <motion.div
-            className="text-center mb-8"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            {displayName && (
-              <p className="text-lg text-emerald-700 font-medium mb-2">
-                {isRTL ? `مرحباً، ${displayName}` : `Welcome, ${displayName}`}
-              </p>
-            )}
-            <h1 className="text-3xl md:text-4xl font-bold text-primary mb-3">{t.title}</h1>
-            <p className="text-gray-600 max-w-2xl mx-auto">{t.subtitle}</p>
-          </motion.div>
-
-          <motion.div
-            className="flex items-center justify-center gap-3 sm:gap-6 mb-12"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.15 }}
+            className="flex items-center justify-center gap-4 sm:gap-8 mb-16"
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
           >
             {steps.map((step, i) => (
-              <div key={i} className="flex items-center gap-3 sm:gap-4">
-                <div className="flex flex-col items-center gap-1.5">
-                  <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm font-bold transition-colors duration-300 ${
-                    i + 1 <= currentStep ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-500'
+              <div key={i} className="flex items-center gap-4 sm:gap-6">
+                <div className="flex flex-col items-center gap-2">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-colors duration-300 ${
+                    i + 1 <= currentStep
+                      ? 'bg-accent text-white'
+                      : 'bg-gray-100 text-muted'
                   }`}>
                     {i + 1 < currentStep ? <Check size={18} /> : i + 1}
                   </div>
-                  <span className={`text-[10px] sm:text-xs font-medium text-center whitespace-nowrap transition-colors ${
-                    i + 1 <= currentStep ? 'text-emerald-700' : 'text-gray-500'
+                  <span className={`text-xs font-medium text-center whitespace-nowrap transition-colors ${
+                    i + 1 <= currentStep ? 'text-accent' : 'text-muted'
                   }`}>
                     {step}
                   </span>
@@ -234,10 +239,15 @@ export default function UnifiedMembership() {
             ))}
           </motion.div>
 
-          <motion.div className="text-center mb-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }}>
+          <motion.div
+            className="text-center mb-10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
             <button
               onClick={() => setShowComparison(!showComparison)}
-              className="inline-flex items-center gap-2 text-emerald-700 hover:text-emerald-800 font-semibold transition-colors"
+              className="inline-flex items-center gap-2 text-accent hover:text-accent/80 font-semibold transition-colors"
             >
               {showComparison ? t.hideComparison : t.compareTypes}
               {showComparison ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
@@ -250,17 +260,17 @@ export default function UnifiedMembership() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="max-w-6xl mx-auto mb-12 overflow-x-auto"
+                className="max-w-6xl mx-auto mb-14 overflow-x-auto"
               >
-                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                <div className="bg-white rounded-2xl border border-gray-100 p-6">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b-2 border-gray-200">
+                      <tr className="border-b border-gray-100">
                         <th className={`${isRTL ? 'text-right' : 'text-left'} py-4 px-4 text-primary font-bold`}>{t.features}</th>
                         {membershipPlans.map(type => (
                           <th key={type.id} className="text-center py-4 px-4">
                             <div className="font-bold text-primary">{language === 'ar' ? type.nameAr : type.nameEn}</div>
-                            <div className="text-emerald-600 font-bold text-xl mt-1">
+                            <div className="text-accent font-bold text-xl mt-1">
                               {type.id === 'business_support'
                                 ? (language === 'ar' ? 'مرن' : 'Flexible')
                                 : `${type.priceLabel}${type.period[language]}`}
@@ -271,14 +281,14 @@ export default function UnifiedMembership() {
                     </thead>
                     <tbody>
                       {membershipPlans[0].features.map((feature, idx) => (
-                        <tr key={idx} className="border-b border-gray-100">
-                          <td className={`py-3 px-4 text-gray-700 ${isRTL ? 'text-right' : 'text-left'}`}>
+                        <tr key={idx} className="border-b border-gray-50">
+                          <td className={`py-3 px-4 text-muted ${isRTL ? 'text-right' : 'text-left'}`}>
                             {language === 'ar' ? feature.ar : feature.en}
                           </td>
                           {membershipPlans.map(type => (
                             <td key={type.id} className="text-center py-3 px-4">
                               {type.features[idx]?.included
-                                ? <Check className="inline text-emerald-600" size={20} />
+                                ? <CheckCircle className="inline text-accent" size={20} />
                                 : <X className="inline text-gray-300" size={20} />}
                             </td>
                           ))}
@@ -293,58 +303,59 @@ export default function UnifiedMembership() {
 
           <motion.div
             className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6"
+            variants={staggerContainer}
             initial="hidden"
             animate="visible"
-            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
           >
             {membershipPlans.map((type) => {
               const Icon = type.icon;
               return (
                 <motion.div
                   key={type.id}
-                  variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-                  whileHover={{ y: -6, transition: { duration: 0.2 } }}
+                  variants={staggerItem}
                   className="relative"
                 >
                   {type.popular && (
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
-                      <span className="bg-emerald-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md">
+                      <span className="bg-accent text-white px-4 py-1 rounded-full text-xs font-bold tracking-wide">
                         {t.popular}
                       </span>
                     </div>
                   )}
-                  <div className={`h-full flex flex-col bg-white rounded-xl border-2 transition-all duration-200 overflow-hidden ${
-                    type.popular ? 'border-emerald-500 shadow-lg' : 'border-gray-200 hover:border-emerald-300 hover:shadow-lg'
+                  <div className={`h-full flex flex-col bg-white rounded-2xl border transition-all duration-200 overflow-hidden ${
+                    type.popular
+                      ? 'border-accent shadow-[0_0_24px_-6px_rgba(13,148,136,0.15)]'
+                      : 'border-gray-100 hover:border-gray-200 hover:shadow-md'
                   }`}>
                     <div className="p-6 flex-1 flex flex-col">
-                      <div className={`w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 ${
-                        type.popular ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-5 ${
+                        type.popular ? 'bg-accent/10 text-accent' : 'bg-gray-50 text-muted'
                       }`}>
-                        <Icon size={28} />
+                        <Icon size={24} />
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 text-center mb-1">
+                      <h3 className="text-lg font-bold text-primary text-center mb-1">
                         {language === 'ar' ? type.nameAr : type.nameEn}
                       </h3>
-                      <div className="text-center mb-3">
+                      <div className="text-center mb-4">
                         {type.id === 'business_support' ? (
-                          <span className="text-2xl font-bold text-emerald-600">{t.flexible}</span>
+                          <span className="text-2xl font-bold text-primary">{t.flexible}</span>
                         ) : (
                           <>
-                            <span className="text-3xl font-bold text-emerald-600">{type.priceLabel}</span>
-                            <span className="text-gray-500 text-sm">{type.period[language]}</span>
+                            <span className="text-3xl font-bold text-primary">{type.priceLabel}</span>
+                            <span className="text-muted text-sm ml-0.5">{type.period[language]}</span>
                           </>
                         )}
                       </div>
-                      <p className="text-gray-500 text-sm text-center mb-5">
+                      <p className="text-muted text-sm text-center mb-6">
                         {language === 'ar' ? type.descAr : type.descEn}
                       </p>
-                      <div className="space-y-2 flex-1">
+                      <div className="space-y-2.5 flex-1">
                         {type.features.map((feature, idx) => (
-                          <div key={idx} className="flex items-center gap-2 text-sm">
+                          <div key={idx} className="flex items-center gap-2.5 text-sm">
                             {feature.included
-                              ? <Check size={16} className="text-emerald-500 flex-shrink-0" />
+                              ? <CheckCircle size={16} className="text-accent flex-shrink-0" />
                               : <X size={16} className="text-gray-300 flex-shrink-0" />}
-                            <span className={feature.included ? 'text-gray-700' : 'text-gray-400'}>
+                            <span className={feature.included ? 'text-primary' : 'text-gray-400'}>
                               {language === 'ar' ? feature.ar : feature.en}
                             </span>
                           </div>
@@ -354,10 +365,10 @@ export default function UnifiedMembership() {
                     <div className="px-6 pb-6">
                       <button
                         onClick={() => handleSelect(type)}
-                        className={`w-full py-3 rounded-lg font-semibold transition-all text-sm ${
+                        className={`w-full py-3 rounded-xl font-semibold transition-all text-sm ${
                           type.popular
-                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm'
-                            : 'bg-gray-100 hover:bg-emerald-600 hover:text-white text-gray-700'
+                            ? 'bg-accent hover:bg-accent/90 text-white'
+                            : 'border border-gray-200 hover:border-accent hover:text-accent text-primary'
                         }`}
                       >
                         {t.selectPlan}
@@ -376,12 +387,12 @@ export default function UnifiedMembership() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="max-w-2xl mx-auto mt-10"
+                className="max-w-2xl mx-auto mt-12"
               >
-                <div className={`bg-white rounded-2xl shadow-lg border-2 p-6 ${
-                  businessSelectorError ? 'border-red-300' : 'border-emerald-200'
+                <div className={`bg-white rounded-2xl border p-8 ${
+                  businessSelectorError ? 'border-red-300' : 'border-gray-100'
                 }`}>
-                  <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">{t.selectBusinessTier}</h3>
+                  <h3 className="text-xl font-bold text-primary mb-6 text-center">{t.selectBusinessTier}</h3>
                   <BusinessSupportSelector
                     onSelect={(data) => {
                       setBusinessSupport(data);
@@ -394,7 +405,7 @@ export default function UnifiedMembership() {
                   <button
                     onClick={handleBusinessContinue}
                     disabled={!businessSupport || businessSupport.amount <= 0}
-                    className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3.5 px-6 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full mt-6 bg-accent hover:bg-accent/90 text-white font-semibold py-3.5 px-6 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {t.continueWithSelection}
                     <ArrowRight className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
@@ -406,23 +417,23 @@ export default function UnifiedMembership() {
 
           <motion.div
             id="terms-section"
-            className="max-w-3xl mx-auto mt-12"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            className="max-w-3xl mx-auto mt-14"
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
           >
-            <div className={`bg-white rounded-2xl shadow-sm border-2 p-6 transition-colors ${
-              showTermsError && !termsAccepted ? 'border-red-300' : 'border-gray-200'
+            <div className={`bg-gray-50 rounded-2xl p-6 transition-colors ${
+              showTermsError && !termsAccepted ? 'ring-2 ring-red-300' : ''
             }`}>
-              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <Shield size={20} className="text-emerald-600" />
+              <h3 className="text-lg font-bold text-primary mb-4 flex items-center gap-2">
+                <Shield size={20} className="text-accent" />
                 {t.termsTitle}
               </h3>
-              <div className="bg-gray-50 rounded-xl p-4 mb-5 max-h-48 overflow-y-auto">
-                <ul className="space-y-2.5 text-sm text-gray-700">
+              <div className="bg-white rounded-xl p-4 mb-5 max-h-48 overflow-y-auto border border-gray-100">
+                <ul className="space-y-2.5 text-sm text-muted">
                   {[t.term1, t.term2, t.term3, t.term4, t.term5, t.term6].map((term, i) => (
                     <li key={i} className="flex items-start gap-2">
-                      <span className="text-emerald-600 font-bold mt-0.5">{i + 1}.</span>
+                      <span className="text-accent font-bold mt-0.5">{i + 1}.</span>
                       <span>{term}</span>
                     </li>
                   ))}
@@ -436,9 +447,9 @@ export default function UnifiedMembership() {
                     setTermsAccepted(e.target.checked);
                     if (e.target.checked) setShowTermsError(false);
                   }}
-                  className="mt-1 w-5 h-5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                  className="mt-1 w-5 h-5 rounded border-gray-300 text-accent focus:ring-accent cursor-pointer"
                 />
-                <span className="text-sm font-medium text-gray-800 group-hover:text-emerald-700 transition-colors">
+                <span className="text-sm font-medium text-primary group-hover:text-accent transition-colors">
                   {t.termsAgree}
                 </span>
               </label>
@@ -455,48 +466,49 @@ export default function UnifiedMembership() {
             className="text-center mt-10 space-y-3"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
+            transition={{ delay: 0.4 }}
           >
-            <p className="text-sm text-gray-500">{t.validInfo}</p>
+            <p className="text-sm text-muted">{t.validInfo}</p>
             <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
               <Shield size={14} />
               <span>{t.secureNote}</span>
             </div>
           </motion.div>
 
-          <section className="mt-20">
+          <section className="mt-24">
             <motion.div
-              className="text-center mb-12"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              className="text-center mb-14"
+              variants={fadeInUp}
+              initial="hidden"
+              whileInView="visible"
               viewport={{ once: true }}
             >
               <h2 className="text-3xl md:text-4xl font-bold text-primary mb-3">{t.whyJoin}</h2>
-              <p className="text-lg text-gray-600">{t.whyJoinSubtitle}</p>
+              <p className="text-lg text-muted">{t.whyJoinSubtitle}</p>
             </motion.div>
 
             <motion.div
               className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto"
+              variants={staggerContainer}
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
-              variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }}
             >
               {benefits.map((benefit, index) => {
-                const Icon = benefit.icon;
+                const BenefitIcon = benefit.icon;
                 return (
                   <motion.div
                     key={index}
-                    variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-                    className="bg-white p-6 rounded-xl border border-gray-100 hover:shadow-lg transition-all hover:border-emerald-200"
+                    variants={staggerItem}
+                    className="bg-white p-6 rounded-2xl border border-gray-100 hover:shadow-md hover:border-gray-200 transition-all"
                   >
-                    <div className="w-12 h-12 bg-emerald-50 rounded-lg flex items-center justify-center mb-4">
-                      <Icon size={24} className="text-emerald-600" />
+                    <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center mb-4">
+                      <BenefitIcon size={24} className="text-accent" />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">
+                    <h3 className="text-lg font-bold text-primary mb-2">
                       {language === 'ar' ? benefit.titleAr : benefit.title}
                     </h3>
-                    <p className="text-gray-600 text-sm">
+                    <p className="text-muted text-sm leading-relaxed">
                       {language === 'ar' ? benefit.descAr : benefit.desc}
                     </p>
                   </motion.div>
@@ -506,20 +518,20 @@ export default function UnifiedMembership() {
           </section>
 
           <motion.div
-            className="max-w-xl mx-auto mt-16 text-center space-y-4"
+            className="max-w-xl mx-auto mt-20 text-center space-y-4"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
           >
-            <p className="text-gray-600">
+            <p className="text-muted">
               {t.existingMember}{' '}
-              <a href="/member/login" className="text-emerald-600 hover:text-emerald-700 font-semibold transition-colors">
+              <a href="/member/login" className="text-accent hover:text-accent/80 font-semibold transition-colors">
                 {t.loginLink}
               </a>
             </p>
             <a
               href="/contact"
-              className="inline-block bg-white hover:bg-gray-50 text-primary border-2 border-gray-200 px-8 py-3 rounded-lg font-semibold transition-colors"
+              className="inline-block border border-gray-200 hover:border-accent hover:text-accent text-primary px-8 py-3 rounded-xl font-semibold transition-colors"
             >
               {t.haveQuestions}
             </a>

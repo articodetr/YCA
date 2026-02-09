@@ -4,14 +4,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#22262D',
-        secondary: '#3A3F46',
-        accent: '#E4D4B5',
-        sand: '#F0EBDF',
-        muted: '#6A6A6A',
-        border: '#A4A19A',
-        hover: '#D6C3A1',
-        divider: '#E8E2D8',
+        primary: '#0f1c2e',
+        secondary: '#1a2d47',
+        accent: '#0d9488',
+        sand: '#f8fafb',
+        muted: '#64748b',
+        border: '#e2e8f0',
+        hover: '#0f766e',
+        divider: '#f1f5f9',
+      },
+      fontFamily: {
+        sans: ['Cairo', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
       },
     },
   },

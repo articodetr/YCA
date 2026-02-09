@@ -77,7 +77,6 @@ export default function Events() {
     }
   };
 
-  // Calendar helper functions
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -132,21 +131,19 @@ export default function Events() {
     const days = [];
     const monthName = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-    // Add empty cells for days before the first day of month
     for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} className="text-center py-2"></div>);
+      days.push(<div key={`empty-${i}`} className="text-center py-1.5"></div>);
     }
 
-    // Add days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const hasEvent = eventDates.includes(day);
       days.push(
         <div
           key={day}
-          className={`text-center py-2 rounded-lg transition-colors ${
+          className={`text-center py-1.5 text-sm rounded-lg transition-colors ${
             hasEvent
-              ? 'bg-primary text-white font-bold'
-              : 'text-gray-700 hover:bg-sand'
+              ? 'bg-accent text-white font-semibold'
+              : 'text-muted hover:bg-sand'
           }`}
         >
           {day}
@@ -168,25 +165,24 @@ export default function Events() {
         pageKey="events"
       />
 
-      <div className="pt-20">
-      <section className="py-20 bg-white">
+      <section className="py-16 bg-sand">
         <div className="container mx-auto px-4">
           <motion.div
-            className="text-center mb-12"
+            className="text-center mb-14"
             variants={fadeInUp}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold text-primary mb-4">{c('upcoming_title', 'Upcoming Events')}</h2>
+            <h2 className="text-3xl font-bold text-primary mb-3">{c('upcoming_title', 'Upcoming Events')}</h2>
             <motion.div
-              className="w-24 h-1 bg-accent mx-auto mb-6"
+              className="w-16 h-0.5 bg-accent mx-auto mb-5"
               variants={scaleIn}
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
             ></motion.div>
-            <p className="text-lg text-muted max-w-3xl mx-auto">
+            <p className="text-muted max-w-2xl mx-auto">
               {c('upcoming_desc', 'Stay informed and get involved in our next gathering')}
             </p>
           </motion.div>
@@ -198,50 +194,47 @@ export default function Events() {
               initial="hidden"
               animate="visible"
             >
-              <Loader2 size={48} className="text-primary animate-spin mb-4" />
-              <p className="text-lg text-muted">Loading events...</p>
+              <Loader2 size={40} className="text-accent animate-spin mb-4" />
+              <p className="text-muted">Loading events...</p>
             </motion.div>
           ) : error ? (
             <motion.div
-              className="text-center py-20 max-w-2xl mx-auto"
+              className="text-center py-20 max-w-md mx-auto"
               variants={fadeInUp}
               initial="hidden"
               animate="visible"
             >
-              <div className="inline-flex items-center justify-center w-24 h-24 bg-red-50 rounded-full mb-6">
-                <Calendar size={48} className="text-red-500" />
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-red-50 rounded-full mb-6">
+                <Calendar size={36} className="text-red-400" />
               </div>
-              <h3 className="text-2xl font-bold text-primary mb-4">Error Loading Events</h3>
-              <p className="text-lg text-muted mb-8">{error}</p>
-              <motion.button
+              <h3 className="text-xl font-semibold text-primary mb-3">Error Loading Events</h3>
+              <p className="text-muted mb-6">{error}</p>
+              <button
                 onClick={fetchEvents}
-                className="bg-primary text-white px-8 py-3 rounded-lg hover:bg-secondary transition-colors font-semibold"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                className="bg-accent text-white px-6 py-2.5 rounded-lg hover:shadow-md transition-shadow font-medium"
               >
                 Try Again
-              </motion.button>
+              </button>
             </motion.div>
           ) : upcomingEvents.length === 0 ? (
             <motion.div
-              className="text-center py-20 max-w-2xl mx-auto"
+              className="text-center py-20 max-w-md mx-auto"
               variants={fadeInUp}
               initial="hidden"
               animate="visible"
             >
-              <div className="inline-flex items-center justify-center w-24 h-24 bg-sand rounded-full mb-6">
-                <Calendar size={48} className="text-primary" />
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-white border border-gray-100 rounded-full mb-6">
+                <Calendar size={36} className="text-accent" />
               </div>
-              <h3 className="text-2xl font-bold text-primary mb-4">{c('no_events_title', 'No Upcoming Events')}</h3>
-              <p className="text-lg text-muted mb-8">
+              <h3 className="text-xl font-semibold text-primary mb-3">{c('no_events_title', 'No Upcoming Events')}</h3>
+              <p className="text-muted">
                 {c('no_events_desc', 'There are currently no upcoming events scheduled. Please check back later or contact us for more information.')}
               </p>
             </motion.div>
           ) : (
             <div className="grid lg:grid-cols-3 gap-8">
-              {/* Left Column - Events List */}
               <motion.div
-                className="lg:col-span-2 space-y-6"
+                className="lg:col-span-2 space-y-5"
                 variants={staggerContainer}
                 initial="hidden"
                 whileInView="visible"
@@ -250,141 +243,130 @@ export default function Events() {
                 {upcomingEvents.map((event) => (
                   <motion.div
                     key={event.id}
-                    className="bg-sand border-l-4 border-accent p-6 rounded-lg hover:shadow-xl transition-shadow"
+                    className="bg-white border border-gray-100 rounded-xl p-6 hover:shadow-md transition-shadow"
                     variants={staggerItem}
-                    whileHover={{ x: 8 }}
-                    transition={{ duration: 0.3 }}
                   >
-                    <div className="flex flex-col gap-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-shrink-0 bg-primary text-white text-center p-4 rounded-lg">
-                          <div className="text-3xl font-bold">{new Date(event.date).getDate()}</div>
-                          <div className="text-sm uppercase">{new Date(event.date).toLocaleDateString('en-US', { month: 'short' })}</div>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <span className="inline-block bg-accent text-primary px-3 py-1 rounded-full text-xs font-semibold">
-                              {event.category}
-                            </span>
-                            {event.is_paid_event && event.ticket_price_adult && (
-                              <span className="inline-block bg-primary text-white px-3 py-1 rounded-full text-xs font-semibold">
-                                From £{Number(event.ticket_price_adult).toFixed(0)}
-                              </span>
-                            )}
-                          </div>
-                          <h3 className="text-xl font-bold text-primary mb-2">{event.title}</h3>
-                          <p className="text-muted text-sm mb-3 leading-relaxed">{event.description}</p>
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2 text-sm text-muted">
-                              <Clock size={16} className="text-primary" />
-                              <span>{event.time}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm text-muted">
-                              <MapPin size={16} className="text-primary" />
-                              <span>{event.location}</span>
-                            </div>
-                          </div>
-                        </div>
+                    <div className="flex flex-col sm:flex-row gap-5">
+                      <div className="flex-shrink-0 bg-accent text-white text-center w-16 h-16 sm:w-18 sm:h-18 flex flex-col items-center justify-center rounded-xl">
+                        <div className="text-2xl font-bold leading-none">{new Date(event.date).getDate()}</div>
+                        <div className="text-xs uppercase mt-0.5 font-medium opacity-90">{new Date(event.date).toLocaleDateString('en-US', { month: 'short' })}</div>
                       </div>
-                      <div className="flex gap-2">
-                        <motion.button
-                          onClick={() => openRegistrationModal(event)}
-                          className="flex-1 bg-primary text-white px-4 py-2 rounded-lg hover:bg-secondary transition-colors font-semibold text-sm"
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          Register Now
-                        </motion.button>
-                        <AddToCalendar
-                          event={{
-                            title: event.title,
-                            description: event.description,
-                            location: event.location,
-                            date: event.date,
-                            time: event.time
-                          }}
-                        />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <span className="inline-block bg-accent/10 text-accent px-2.5 py-0.5 rounded-md text-xs font-medium">
+                            {event.category}
+                          </span>
+                          {event.is_paid_event && event.ticket_price_adult && (
+                            <span className="inline-block bg-primary/5 text-primary px-2.5 py-0.5 rounded-md text-xs font-medium">
+                              From £{Number(event.ticket_price_adult).toFixed(0)}
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="text-lg font-semibold text-primary mb-1.5">{event.title}</h3>
+                        <p className="text-muted text-sm mb-3 leading-relaxed line-clamp-2">{event.description}</p>
+                        <div className="flex flex-wrap items-center gap-4 text-sm text-muted mb-4">
+                          <div className="flex items-center gap-1.5">
+                            <Clock size={14} className="text-accent" />
+                            <span>{event.time}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <MapPin size={14} className="text-accent" />
+                            <span>{event.location}</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => openRegistrationModal(event)}
+                            className="bg-accent text-white px-5 py-2 rounded-lg hover:shadow-md transition-shadow font-medium text-sm"
+                          >
+                            Register Now
+                          </button>
+                          <AddToCalendar
+                            event={{
+                              title: event.title,
+                              description: event.description,
+                              location: event.location,
+                              date: event.date,
+                              time: event.time
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
                   </motion.div>
                 ))}
               </motion.div>
 
-              {/* Right Column - Calendar and Featured Event */}
-              <div className="space-y-6">
-                {/* Calendar */}
+              <div className="space-y-5">
                 <motion.div
-                  className="bg-white rounded-lg shadow-lg p-6"
+                  className="bg-white border border-gray-100 rounded-xl p-5"
                   variants={fadeInUp}
                   initial="hidden"
                   whileInView="visible"
                   viewport={{ once: true }}
                 >
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-bold text-primary">{calendar.monthName}</h3>
-                    <div className="flex gap-2">
+                    <h3 className="text-sm font-semibold text-primary">{calendar.monthName}</h3>
+                    <div className="flex gap-1">
                       <button
                         onClick={() => changeMonth(-1)}
-                        className="p-1 hover:bg-sand rounded transition-colors"
+                        className="p-1.5 hover:bg-sand rounded-lg transition-colors"
                       >
-                        <ChevronLeft size={20} className="text-primary" />
+                        <ChevronLeft size={16} className="text-muted" />
                       </button>
                       <button
                         onClick={() => changeMonth(1)}
-                        className="p-1 hover:bg-sand rounded transition-colors"
+                        className="p-1.5 hover:bg-sand rounded-lg transition-colors"
                       >
-                        <ChevronRight size={20} className="text-primary" />
+                        <ChevronRight size={16} className="text-muted" />
                       </button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-7 gap-2 mb-2">
+                  <div className="grid grid-cols-7 gap-1 mb-1">
                     {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
-                      <div key={day} className="text-center text-xs font-semibold text-muted">
+                      <div key={day} className="text-center text-xs font-medium text-muted/60 py-1">
                         {day}
                       </div>
                     ))}
                   </div>
-                  <div className="grid grid-cols-7 gap-2">
+                  <div className="grid grid-cols-7 gap-1">
                     {calendar.days}
                   </div>
                 </motion.div>
 
-                {/* Featured Event */}
                 {featuredEvent && (
                   <motion.div
-                    className="bg-white rounded-lg shadow-lg overflow-hidden"
+                    className="bg-white border border-gray-100 rounded-xl overflow-hidden"
                     variants={fadeInUp}
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true }}
                   >
-                    <div className="border-b-2 border-primary px-6 py-3">
-                      <h3 className="text-lg font-bold text-primary">Featured Event</h3>
-                    </div>
-                    <div className="relative overflow-hidden">
+                    <div className="relative">
                       <img
                         src={featuredEvent.image_url || 'https://images.pexels.com/photos/1190297/pexels-photo-1190297.jpeg?auto=compress&cs=tinysrgb&w=800'}
                         alt={featuredEvent.title}
-                        className="w-full h-48 object-cover"
+                        className="w-full h-40 object-cover"
                       />
+                      <span className="absolute top-3 left-3 bg-accent text-white text-xs font-medium px-2.5 py-1 rounded-md">
+                        Featured
+                      </span>
                     </div>
-                    <div className="p-6">
-                      <h4 className="text-xl font-bold text-primary mb-2">{featuredEvent.title}</h4>
-                      <div className="flex items-center gap-2 text-primary mb-3">
-                        <Calendar size={16} />
-                        <span className="text-sm font-semibold">{new Date(featuredEvent.date).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                    <div className="p-5">
+                      <h4 className="text-base font-semibold text-primary mb-2">{featuredEvent.title}</h4>
+                      <div className="flex items-center gap-1.5 text-muted mb-3">
+                        <Calendar size={14} className="text-accent" />
+                        <span className="text-sm">{new Date(featuredEvent.date).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                       </div>
-                      <p className="text-muted text-sm mb-4 leading-relaxed">
+                      <p className="text-muted text-sm mb-4 leading-relaxed line-clamp-3">
                         {featuredEvent.description}
                       </p>
-                      <motion.button
+                      <button
                         onClick={() => openRegistrationModal(featuredEvent)}
-                        className="w-full bg-primary text-white px-6 py-3 rounded-lg hover:bg-secondary transition-colors font-semibold"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                        className="w-full bg-accent text-white px-5 py-2.5 rounded-lg hover:shadow-md transition-shadow font-medium text-sm"
                       >
                         Register Now
-                      </motion.button>
+                      </button>
                     </div>
                   </motion.div>
                 )}
@@ -395,30 +377,30 @@ export default function Events() {
       </section>
 
       {!loading && pastEvents.length > 0 && (
-        <section className="py-20 bg-sand">
+        <section className="py-16 bg-white">
           <div className="container mx-auto px-4">
             <motion.div
-              className="text-center mb-12"
+              className="text-center mb-14"
               variants={fadeInUp}
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
             >
-              <h2 className="text-4xl font-bold text-primary mb-4">{c('past_events_title', 'Past Events & Photo Galleries')}</h2>
+              <h2 className="text-3xl font-bold text-primary mb-3">{c('past_events_title', 'Past Events & Photo Galleries')}</h2>
               <motion.div
-                className="w-24 h-1 bg-accent mx-auto mb-6"
+                className="w-16 h-0.5 bg-accent mx-auto mb-5"
                 variants={scaleIn}
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true }}
               ></motion.div>
-              <p className="text-lg text-muted max-w-3xl mx-auto">
+              <p className="text-muted max-w-2xl mx-auto">
                 {c('past_events_desc', 'Relive our favorite moments and see the impact of our community work')}
               </p>
             </motion.div>
 
             <motion.div
-              className="grid md:grid-cols-3 gap-8"
+              className="grid md:grid-cols-3 gap-6"
               variants={staggerContainer}
               initial="hidden"
               whileInView="visible"
@@ -427,25 +409,22 @@ export default function Events() {
               {pastEvents.map((event) => (
                 <motion.div
                   key={event.id}
-                  className="bg-white rounded-lg overflow-hidden hover:shadow-xl transition-shadow group"
+                  className="bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-shadow group"
                   variants={staggerItem}
-                  whileHover={{ y: -8 }}
-                  transition={{ duration: 0.3 }}
                 >
                   <div className="relative overflow-hidden">
                     <img
                       src={event.image_url || 'https://images.pexels.com/photos/1190297/pexels-photo-1190297.jpeg?auto=compress&cs=tinysrgb&w=800'}
                       alt={event.title}
-                      className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-700 ease-in-out"
+                      className="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-700 ease-in-out"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent transition-opacity duration-700 ease-in-out"></div>
-                    <div className="absolute bottom-4 left-4 right-4 text-white">
-                      <p className="text-sm mb-1">{new Date(event.date).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                    <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-primary text-xs font-medium px-2.5 py-1 rounded-md">
+                      {new Date(event.date).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' })}
                     </div>
                   </div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold text-primary mb-3">{event.title}</h3>
-                    <Link to={`/event-gallery/${event.id}`} className="text-primary font-semibold hover:text-accent transition-colors">
+                  <div className="p-5">
+                    <h3 className="text-base font-semibold text-primary mb-3">{event.title}</h3>
+                    <Link to={`/event-gallery/${event.id}`} className="text-accent text-sm font-medium hover:underline transition-colors">
                       View Gallery →
                     </Link>
                   </div>
@@ -455,40 +434,6 @@ export default function Events() {
           </div>
         </section>
       )}
-
-      <section className="py-16 bg-primary text-white">
-        <motion.div
-          className="container mx-auto px-4 text-center"
-          variants={fadeInUp}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-        >
-          <h2 className="text-3xl font-bold mb-4">{c('cta_title', 'Never Miss an Event')}</h2>
-          <p className="text-xl text-gray-300 mb-6 max-w-2xl mx-auto">
-            {c('cta_desc', 'Stay connected with us on your favorite platforms for real-time news and event updates')}
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <motion.a
-              href="#"
-              className="bg-accent text-primary px-8 py-4 rounded-lg hover:bg-hover transition-colors font-semibold"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {c('follow_instagram', 'Follow on Instagram')}
-            </motion.a>
-            <motion.a
-              href="#"
-              className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg hover:bg-white hover:text-primary transition-colors font-semibold"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {c('join_facebook', 'Join Facebook Group')}
-            </motion.a>
-          </div>
-        </motion.div>
-      </section>
-      </div>
 
       {selectedEvent && (
         <EventRegistrationModal

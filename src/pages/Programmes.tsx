@@ -25,7 +25,6 @@ export default function Programmes() {
       icon: Heart,
       link: '/programmes/women',
       image: 'https://images.pexels.com/photos/3184434/pexels-photo-3184434.jpeg?auto=compress&cs=tinysrgb&w=800',
-      color: 'from-rose-500 to-pink-500',
     },
     {
       id: 2,
@@ -35,7 +34,6 @@ export default function Programmes() {
       icon: Users,
       link: '/programmes/elderly',
       image: 'https://images.pexels.com/photos/7551613/pexels-photo-7551613.jpeg?auto=compress&cs=tinysrgb&w=800',
-      color: 'from-amber-500 to-orange-500',
     },
     {
       id: 3,
@@ -45,7 +43,6 @@ export default function Programmes() {
       icon: Sparkles,
       link: '/programmes/youth',
       image: 'https://images.pexels.com/photos/1516440/pexels-photo-1516440.jpeg?auto=compress&cs=tinysrgb&w=800',
-      color: 'from-blue-500 to-cyan-500',
     },
     {
       id: 4,
@@ -55,7 +52,6 @@ export default function Programmes() {
       icon: Baby,
       link: '/programmes/children',
       image: 'https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg?auto=compress&cs=tinysrgb&w=800',
-      color: 'from-green-500 to-emerald-500',
     },
     {
       id: 5,
@@ -65,7 +61,6 @@ export default function Programmes() {
       icon: Briefcase,
       link: '/programmes/men',
       image: 'https://images.pexels.com/photos/3184611/pexels-photo-3184611.jpeg?auto=compress&cs=tinysrgb&w=800',
-      color: 'from-slate-600 to-slate-700',
     },
   ];
 
@@ -88,41 +83,18 @@ export default function Programmes() {
     return programmes.filter(programme => programme.category === ic).length;
   };
 
-  const getHeaderImage = () => {
-    switch (internalCat) {
-      case "Women's":
-        return 'https://images.pexels.com/photos/3184434/pexels-photo-3184434.jpeg?auto=compress&cs=tinysrgb&w=1920';
-      case "Elderly's":
-        return 'https://images.pexels.com/photos/7551613/pexels-photo-7551613.jpeg?auto=compress&cs=tinysrgb&w=1920';
-      case 'Youth':
-        return 'https://images.pexels.com/photos/1516440/pexels-photo-1516440.jpeg?auto=compress&cs=tinysrgb&w=1920';
-      case "Children's":
-        return 'https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg?auto=compress&cs=tinysrgb&w=1920';
-      case "Men's":
-        return 'https://images.pexels.com/photos/3184611/pexels-photo-3184611.jpeg?auto=compress&cs=tinysrgb&w=1920';
-      default:
-        return 'https://images.pexels.com/photos/3184292/pexels-photo-3184292.jpeg?auto=compress&cs=tinysrgb&w=1920';
-    }
-  };
-
-  const getHeaderDescription = () => {
-    return '';
-  };
-
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'}>
       <PageHeader
         title={internalCat === 'All' ? t('nav.programmes') : `${selectedCategory}`}
-        description={getHeaderDescription()}
         breadcrumbs={[{ label: t('nav.programmes') }]}
         pageKey="programmes"
       />
 
-      <div className="pt-20">
-      <section className="py-20 bg-white">
+      <section className="py-24 bg-white">
         <div className="container mx-auto px-4">
           <motion.div
-            className="mb-12"
+            className="mb-16"
             variants={fadeInUp}
             initial="hidden"
             whileInView="visible"
@@ -132,26 +104,24 @@ export default function Programmes() {
               {categories.map((category, index) => {
                 const count = getCategoryCount(category);
                 return (
-                  <motion.button
+                  <button
                     key={index}
                     onClick={() => setSelectedCategory(category)}
-                    className={`px-6 py-2 rounded-full font-semibold transition-colors flex items-center gap-2 ${
+                    className={`px-6 py-2.5 rounded-full text-sm font-medium transition-colors flex items-center gap-2 ${
                       selectedCategory === category
-                        ? 'bg-primary text-white'
-                        : 'bg-sand text-primary hover:bg-accent'
+                        ? 'bg-[#0d9488] text-white'
+                        : 'bg-gray-100 text-[#64748b] hover:bg-gray-200'
                     }`}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
                   >
                     {category}
                     <span className={`text-xs px-2 py-0.5 rounded-full ${
                       selectedCategory === category
-                        ? 'bg-white bg-opacity-20'
-                        : 'bg-primary bg-opacity-10'
+                        ? 'bg-white/20'
+                        : 'bg-gray-200'
                     }`}>
                       {count}
                     </span>
-                  </motion.button>
+                  </button>
                 );
               })}
             </div>
@@ -168,36 +138,33 @@ export default function Programmes() {
               return (
                 <motion.div
                   key={programme.id}
-                  className="bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all group"
+                  className="bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-shadow duration-300"
                   variants={staggerItem}
-                  whileHover={{ y: -8 }}
-                  transition={{ duration: 0.3 }}
                 >
                   <div className="relative overflow-hidden">
                     <img
                       src={programme.image}
                       alt={programme.title}
-                      className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-700 ease-in-out"
+                      className="w-full h-56 object-cover"
                     />
-                    <div className={`absolute inset-0 bg-gradient-to-br ${programme.color} opacity-20 group-hover:opacity-30 transition-opacity duration-700 ease-in-out`}></div>
                     <div className="absolute top-4 left-4">
-                      <div className="bg-white p-3 rounded-lg shadow-lg">
-                        <IconComponent className="text-primary" size={24} />
+                      <div className="bg-white p-2.5 rounded-lg shadow-sm">
+                        <IconComponent className="text-[#0d9488]" size={22} />
                       </div>
                     </div>
                   </div>
                   <div className="p-6">
-                    <h3 className="text-2xl font-bold text-primary mb-3 group-hover:text-accent transition-colors">
+                    <h3 className="text-xl font-semibold text-[#0f1c2e] mb-3">
                       {programme.title}
                     </h3>
-                    <p className="text-muted mb-6 leading-relaxed">
+                    <p className="text-[#64748b] mb-6 leading-relaxed text-sm">
                       {programme.description}
                     </p>
                     <Link
                       to={programme.link}
-                      className="inline-flex items-center gap-2 text-primary font-semibold hover:text-accent transition-colors"
+                      className="inline-flex items-center gap-2 text-[#0d9488] font-medium text-sm hover:opacity-80 transition-opacity"
                     >
-                      {t('home.learnMore')} <Arrow size={18} />
+                      {t('home.learnMore')} <Arrow size={16} />
                     </Link>
                   </div>
                 </motion.div>
@@ -207,74 +174,38 @@ export default function Programmes() {
         </div>
       </section>
 
-      <section className="py-16 bg-sand">
+      <section className="py-24 bg-gray-50">
         <div className="container mx-auto px-4">
           <motion.div
-            className="max-w-4xl mx-auto bg-white p-10 rounded-lg shadow-lg text-center"
+            className="max-w-3xl mx-auto text-center"
             variants={scaleIn}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl font-bold text-primary mb-4">{c('join_title', 'Join Our Programmes')}</h2>
-            <p className="text-lg text-muted mb-6">
+            <h2 className="text-3xl font-bold text-[#0f1c2e] mb-4">
+              {c('join_title', 'Join Our Programmes')}
+            </h2>
+            <p className="text-lg text-[#64748b] mb-8 leading-relaxed">
               {c('join_desc', "Whether you're looking to participate, volunteer, or support our initiatives, there's a place for you in our community programmes.")}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link
-                  to="/membership"
-                  className="bg-primary text-white px-8 py-3 rounded-lg hover:bg-secondary transition-colors font-semibold inline-block"
-                >
-                  {isRTL ? 'كن عضواً' : 'Become a Member'}
-                </Link>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link
-                  to="/contact"
-                  className="bg-transparent border-2 border-primary text-primary px-8 py-3 rounded-lg hover:bg-primary hover:text-white transition-colors font-semibold inline-block"
-                >
-                  {t('button.contactUs')}
-                </Link>
-              </motion.div>
+              <Link
+                to="/membership"
+                className="bg-[#0d9488] text-white px-8 py-3 rounded-lg hover:opacity-90 transition-opacity font-medium inline-block"
+              >
+                {isRTL ? 'كن عضواً' : 'Become a Member'}
+              </Link>
+              <Link
+                to="/contact"
+                className="border border-[#0f1c2e] text-[#0f1c2e] px-8 py-3 rounded-lg hover:bg-[#0f1c2e] hover:text-white transition-colors font-medium inline-block"
+              >
+                {t('button.contactUs')}
+              </Link>
             </div>
           </motion.div>
         </div>
       </section>
-
-      <section className="py-16 bg-primary text-white">
-        <motion.div
-          className="container mx-auto px-4 text-center"
-          variants={fadeInUp}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-        >
-          <h2 className="text-3xl font-bold mb-4">{c('cta_title', 'Make a Difference')}</h2>
-          <p className="text-xl text-gray-300 mb-6 max-w-2xl mx-auto">
-            {c('cta_desc', 'Your support helps us continue providing vital services to our community members')}
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Link
-                to="/get-involved/donate"
-                className="bg-accent text-primary px-8 py-4 rounded-lg hover:bg-hover transition-colors font-semibold inline-block"
-              >
-                {isRTL ? 'ادعم عملنا' : 'Support Our Work'}
-              </Link>
-            </motion.div>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Link
-                to="/get-involved/volunteer"
-                className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg hover:bg-white hover:text-primary transition-colors font-semibold inline-block"
-              >
-                {isRTL ? 'تطوع معنا' : 'Volunteer With Us'}
-              </Link>
-            </motion.div>
-          </div>
-        </motion.div>
-      </section>
-      </div>
     </div>
   );
 }

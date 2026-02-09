@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { Lock, Mail, AlertCircle, Loader2 } from 'lucide-react';
+import { Lock, Mail, AlertCircle, Loader2, ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -24,7 +24,12 @@ export default function MemberLogin() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { user, loading: authLoading, isPaidMember, needsOnboarding, pendingApplication, signIn, signInWithGoogle } = useMemberAuth();
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
+  const [resetError, setResetError] = useState('');
+  const { user, loading: authLoading, isPaidMember, needsOnboarding, pendingApplication, signIn, signInWithGoogle, resetPassword } = useMemberAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
 
@@ -62,6 +67,13 @@ export default function MemberLogin() {
       forgotPassword: 'Forgot Password?',
       backToWebsite: 'Back to Website',
       errorMessage: 'Invalid email or password. Please try again.',
+      resetTitle: 'Reset Password',
+      resetSubtitle: 'Enter your email and we will send you a reset link',
+      sendResetLink: 'Send Reset Link',
+      sendingResetLink: 'Sending...',
+      resetSuccessMessage: 'Password reset link sent! Check your email inbox.',
+      resetErrorMessage: 'Failed to send reset link. Please try again.',
+      backToLogin: 'Back to Login',
     },
     ar: {
       title: 'تسجيل الدخول للأعضاء',
@@ -77,6 +89,13 @@ export default function MemberLogin() {
       forgotPassword: 'نسيت كلمة المرور؟',
       backToWebsite: 'العودة للموقع',
       errorMessage: 'البريد الإلكتروني أو كلمة المرور غير صحيحة. يرجى المحاولة مرة أخرى.',
+      resetTitle: 'إعادة تعيين كلمة المرور',
+      resetSubtitle: 'أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة التعيين',
+      sendResetLink: 'إرسال رابط إعادة التعيين',
+      sendingResetLink: 'جاري الإرسال...',
+      resetSuccessMessage: 'تم إرسال رابط إعادة التعيين! تحقق من بريدك الإلكتروني.',
+      resetErrorMessage: 'فشل إرسال رابط إعادة التعيين. يرجى المحاولة مرة أخرى.',
+      backToLogin: 'العودة لتسجيل الدخول',
     },
   };
 
@@ -129,141 +148,248 @@ export default function MemberLogin() {
     }
   };
 
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError('');
+    setResetLoading(true);
+
+    try {
+      const { error } = await resetPassword(resetEmail);
+      if (error) throw error;
+      setResetSuccess(true);
+    } catch (err: any) {
+      console.error('Reset password error:', err);
+      setResetError(t.resetErrorMessage);
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center p-4" dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="max-w-md w-full">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4" dir={isRTL ? 'rtl' : 'ltr'}>
+      <div className="max-w-md w-full mx-auto">
+        <div className="bg-white border border-gray-100 rounded-2xl p-8">
           <div className="text-center mb-8">
-            <div className="flex justify-center items-center gap-3 mb-6">
+            <div className="flex justify-center mb-6">
               <img
                 src="/logo.png"
-                alt="YCA Birmingham Logo"
+                alt="Logo"
                 className="h-16 w-auto"
               />
-              <img
-                src="/logo_text.png"
-                alt="Yemeni Community Association"
-                className="h-10 w-auto"
-              />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{t.title}</h1>
-            <p className="text-gray-600">{t.subtitle}</p>
-          </div>
-
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-800">{error}</p>
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={handleGoogleSignIn}
-            disabled={googleLoading || loading}
-            className="w-full bg-white hover:bg-gray-50 text-gray-700 font-semibold py-3 px-6 rounded-lg border-2 border-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 mb-6"
-          >
-            {googleLoading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                {language === 'ar' ? 'جاري التسجيل...' : 'Signing in...'}
-              </>
-            ) : (
-              <>
-                <GoogleIcon />
-                {t.signInWithGoogle}
-              </>
-            )}
-          </button>
-
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500 font-medium">{t.or}</span>
-            </div>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                {t.email}
-              </label>
-              <div className="relative">
-                <Mail className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400`} />
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-shadow`}
-                  placeholder="member@example.com"
-                  required
-                  disabled={loading}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                {t.password}
-              </label>
-              <div className="relative">
-                <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400`} />
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-shadow`}
-                  placeholder="••••••••"
-                  required
-                  disabled={loading}
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <Link
-                to="/member/forgot-password"
-                className="text-sm text-emerald-600 hover:text-emerald-700 transition-colors"
-              >
-                {t.forgotPassword}
-              </Link>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  {t.signingIn}
-                </>
-              ) : (
-                t.signIn
-              )}
-            </button>
-          </form>
-
-          <div className="mt-6 text-center space-y-3">
-            <p className="text-sm text-gray-600">
-              {t.noAccount}{' '}
-              <Link to="/member/signup" className="text-emerald-600 hover:text-emerald-700 font-medium transition-colors">
-                {t.register}
-              </Link>
+            <h1 className="text-2xl font-bold text-[#0f1c2e] mb-1">
+              {showResetPassword ? t.resetTitle : t.title}
+            </h1>
+            <p className="text-[#64748b] text-sm">
+              {showResetPassword ? t.resetSubtitle : t.subtitle}
             </p>
-            <Link to="/" className="block text-sm text-emerald-600 hover:text-emerald-700 transition-colors">
-              {isRTL ? '→' : '←'} {t.backToWebsite}
-            </Link>
           </div>
+
+          {showResetPassword ? (
+            <>
+              {resetSuccess ? (
+                <div className="text-center py-4">
+                  <div className="flex justify-center mb-4">
+                    <CheckCircle className="w-12 h-12 text-[#0d9488]" />
+                  </div>
+                  <p className="text-sm text-[#0f1c2e] mb-6">{t.resetSuccessMessage}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowResetPassword(false);
+                      setResetSuccess(false);
+                      setResetEmail('');
+                    }}
+                    className="text-sm font-medium text-[#0d9488] hover:text-[#0f766e] transition-colors"
+                  >
+                    {t.backToLogin}
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {resetError && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-red-800">{resetError}</p>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleResetPassword} className="space-y-5">
+                    <div>
+                      <label htmlFor="resetEmail" className="block text-sm font-medium text-[#0f1c2e] mb-2">
+                        {t.email}
+                      </label>
+                      <div className="relative">
+                        <Mail className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748b]`} />
+                        <input
+                          id="resetEmail"
+                          type="email"
+                          value={resetEmail}
+                          onChange={(e) => setResetEmail(e.target.value)}
+                          className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 border border-gray-200 rounded-xl focus:border-[#0d9488] focus:ring-1 focus:ring-[#0d9488] outline-none transition-all`}
+                          placeholder="member@example.com"
+                          required
+                          disabled={resetLoading}
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={resetLoading}
+                      className="w-full bg-[#0d9488] hover:bg-[#0f766e] text-white font-medium py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {resetLoading ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          {t.sendingResetLink}
+                        </>
+                      ) : (
+                        t.sendResetLink
+                      )}
+                    </button>
+                  </form>
+
+                  <div className="mt-6 text-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowResetPassword(false);
+                        setResetError('');
+                        setResetEmail('');
+                      }}
+                      className="text-sm font-medium text-[#0d9488] hover:text-[#0f766e] transition-colors"
+                    >
+                      {t.backToLogin}
+                    </button>
+                  </div>
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              {error && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-800">{error}</p>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={googleLoading || loading}
+                className="w-full bg-white hover:bg-gray-50 text-[#0f1c2e] font-medium py-3 px-6 rounded-xl border border-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 mb-6"
+              >
+                {googleLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    {language === 'ar' ? 'جاري التسجيل...' : 'Signing in...'}
+                  </>
+                ) : (
+                  <>
+                    <GoogleIcon />
+                    {t.signInWithGoogle}
+                  </>
+                )}
+              </button>
+
+              <div className="relative mb-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-white text-[#64748b]">{t.or}</span>
+                </div>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-[#0f1c2e] mb-2">
+                    {t.email}
+                  </label>
+                  <div className="relative">
+                    <Mail className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748b]`} />
+                    <input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 border border-gray-200 rounded-xl focus:border-[#0d9488] focus:ring-1 focus:ring-[#0d9488] outline-none transition-all`}
+                      placeholder="member@example.com"
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-[#0f1c2e] mb-2">
+                    {t.password}
+                  </label>
+                  <div className="relative">
+                    <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748b]`} />
+                    <input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 border border-gray-200 rounded-xl focus:border-[#0d9488] focus:ring-1 focus:ring-[#0d9488] outline-none transition-all`}
+                      placeholder="••••••••"
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowResetPassword(true);
+                      setError('');
+                      setResetEmail(email);
+                    }}
+                    className="text-sm text-[#0d9488] hover:text-[#0f766e] font-medium transition-colors"
+                  >
+                    {t.forgotPassword}
+                  </button>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-[#0d9488] hover:bg-[#0f766e] text-white font-medium py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      {t.signingIn}
+                    </>
+                  ) : (
+                    t.signIn
+                  )}
+                </button>
+              </form>
+
+              <div className="mt-6 text-center space-y-3">
+                <p className="text-sm text-[#64748b]">
+                  {t.noAccount}{' '}
+                  <Link to="/member/signup" className="text-[#0d9488] hover:text-[#0f766e] font-medium transition-colors">
+                    {t.register}
+                  </Link>
+                </p>
+                <Link to="/" className="inline-flex items-center gap-1 text-sm text-[#64748b] hover:text-[#0f1c2e] transition-colors">
+                  {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
+                  {t.backToWebsite}
+                </Link>
+              </div>
+            </>
+          )}
         </div>
 
-        <p className="text-center text-sm text-gray-600 mt-6">
-          © {new Date().getFullYear()} {isRTL ? 'جمعية الجالية اليمنية برمنغهام. جميع الحقوق محفوظة.' : 'YCA Birmingham. All rights reserved.'}
+        <p className="text-center text-xs text-[#64748b] mt-6">
+          &copy; {new Date().getFullYear()} {isRTL ? 'جمعية الجالية اليمنية برمنغهام. جميع الحقوق محفوظة.' : 'YCA Birmingham. All rights reserved.'}
         </p>
       </div>
     </div>

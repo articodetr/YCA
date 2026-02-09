@@ -17,6 +17,7 @@ export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [activeDesktopMenu, setActiveDesktopMenu] = useState<string | null>(null);
+  const [scrolled, setScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
@@ -24,24 +25,14 @@ export default function Header() {
     setOpenDropdown(openDropdown === menu ? null : menu);
   };
 
-  const handleMouseEnter = (menu: string) => {
-    setActiveDesktopMenu(menu);
-  };
-
-  const handleMouseLeave = () => {
-    setActiveDesktopMenu(null);
-  };
-
   useEffect(() => {
     const controlHeader = () => {
-      // Important: keep header visible while mobile menu is open
       if (isOpen) {
         setIsVisible(true);
         return;
       }
-
       const currentScrollY = window.scrollY;
-
+      setScrolled(currentScrollY > 20);
       if (currentScrollY < 10) {
         setIsVisible(true);
       } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
@@ -49,7 +40,6 @@ export default function Header() {
       } else if (currentScrollY < lastScrollY) {
         setIsVisible(true);
       }
-
       setLastScrollY(currentScrollY);
     };
 
@@ -63,249 +53,187 @@ export default function Header() {
     } else {
       document.body.style.overflow = '';
     }
-
-    return () => {
-      document.body.style.overflow = '';
-    };
+    return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
+
+  const navLinkClass = "text-sm font-medium tracking-wide whitespace-nowrap transition-colors duration-200 hover:text-accent";
 
   return (
     <motion.header
-      className="fixed top-0 left-0 right-0 z-50 bg-[#1b2b45]/40 backdrop-blur-none text-white shadow-none"
-      initial={{ y: -100, opacity: 0 }}
-      animate={{
-        y: isVisible ? 0 : -100,
-        opacity: isVisible ? 1 : 0
-      }}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? 'bg-white/95 backdrop-blur-md shadow-sm text-primary'
+          : 'bg-primary/30 backdrop-blur-sm text-white'
+      }`}
+      initial={{ y: -100 }}
+      animate={{ y: isVisible ? 0 : -100 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
     >
       <div className="container mx-auto px-4">
-        <div className="relative flex items-center justify-between h-20 md:h-24">
+        <div className="relative flex items-center justify-between h-16 md:h-[72px]">
           <Link to="/" className="flex items-center gap-3 group flex-shrink-0">
-            <div className="flex items-center gap-3">
-              <img
-                src={logoMain}
-                alt={orgName}
-                className="h-10 sm:h-12 md:h-14 lg:h-16 w-auto transition-transform group-hover:scale-105 duration-300"
-              />
-
-              <img
-                src={logoText}
-                alt={orgName}
-                className="h-8 sm:h-10 md:h-12 w-auto transition-opacity group-hover:opacity-80 duration-300 hidden xl:block"
-              />
-            </div>
+            <img
+              src={logoMain}
+              alt={orgName}
+              className="h-9 md:h-11 w-auto transition-transform group-hover:scale-105 duration-300"
+            />
+            <img
+              src={logoText}
+              alt={orgName}
+              className={`h-7 md:h-9 w-auto transition-opacity duration-300 hidden xl:block ${
+                scrolled ? 'opacity-90' : 'opacity-95'
+              }`}
+            />
           </Link>
 
-          {/* Mobile Center Text Logo (يظهر فقط تحت XL) */}
-<div className="absolute left-1/2 -translate-x-1/2 xl:hidden flex items-center justify-center pointer-events-none">
-  <img
-    src={logoText}
-    alt={getSetting('org_name_ar', 'الجالية اليمنية')}
-    className="h-7 sm:h-8 md:h-12 w-auto opacity-95"
-  />
-</div>
+          <div className="absolute left-1/2 -translate-x-1/2 xl:hidden flex items-center justify-center pointer-events-none">
+            <img
+              src={logoText}
+              alt={getSetting('org_name_ar', 'الجالية اليمنية')}
+              className={`h-6 sm:h-7 md:h-9 w-auto ${scrolled ? 'brightness-0' : 'brightness-100'} transition-all duration-300`}
+            />
+          </div>
 
           <div className="flex items-center gap-2 xl:hidden flex-shrink-0">
-            <motion.button
+            <button
               onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-              className="text-white border border-white/30 px-2 py-1 rounded text-xs font-semibold"
-              whileTap={{ scale: 0.9 }}
-              aria-label="Toggle language"
+              className={`px-2.5 py-1 rounded-md text-xs font-semibold border transition-colors ${
+                scrolled ? 'border-gray-300 text-primary' : 'border-white/30 text-white'
+              }`}
             >
               {language === 'en' ? 'AR' : 'EN'}
-            </motion.button>
+            </button>
 
-            <Link
-              to="/book"
-              className="hidden sm:inline-flex bg-accent text-primary px-5 py-2 hover:bg-hover transition-colors font-semibold text-xs uppercase tracking-wider whitespace-nowrap"
-            >
-              {t('button.book')}
-            </Link>
-
-            <motion.button
-              className="text-white"
+            <button
+              className={`p-1.5 rounded-md transition-colors ${scrolled ? 'text-primary' : 'text-white'}`}
               onClick={() => setIsOpen(!isOpen)}
-              whileTap={{ scale: 0.9 }}
               aria-label={isOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={isOpen}
             >
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={isOpen ? 'close' : 'open'}
-                  initial={{ rotate: -90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: 90, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {isOpen ? <X size={28} /> : <Menu size={28} />}
-                </motion.div>
-              </AnimatePresence>
-            </motion.button>
+              {isOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
           </div>
 
-          {/* روابط التنقل - في المنتصف */}
-          <nav className="hidden xl:flex items-center justify-center flex-1 gap-3 2xl:gap-5">
-            <Link to="/" className="text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
-              {t('nav.home')}
-            </Link>
-            <Link to="/services" className="text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
-              {t('nav.services')}
-            </Link>
-            <Link to="/programmes" className="text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
-              {t('nav.programmes')}
-            </Link>
-            <Link to="/events" className="text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
-              {t('nav.events')}
-            </Link>
-            <Link to="/news" className="text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
-              {t('nav.news')}
-            </Link>
+          <nav className="hidden xl:flex items-center justify-center flex-1 gap-6 2xl:gap-8">
+            <Link to="/" className={navLinkClass}>{t('nav.home')}</Link>
+            <Link to="/services" className={navLinkClass}>{t('nav.services')}</Link>
+            <Link to="/programmes" className={navLinkClass}>{t('nav.programmes')}</Link>
+            <Link to="/events" className={navLinkClass}>{t('nav.events')}</Link>
+            <Link to="/news" className={navLinkClass}>{t('nav.news')}</Link>
 
             <div
               className="relative"
-              onMouseEnter={() => handleMouseEnter('involved')}
-              onMouseLeave={handleMouseLeave}
+              onMouseEnter={() => setActiveDesktopMenu('involved')}
+              onMouseLeave={() => setActiveDesktopMenu(null)}
             >
-              <button className="flex items-center gap-1 text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
-                {t('nav.getInvolved')}{' '}
+              <button className={`flex items-center gap-1 ${navLinkClass}`}>
+                {t('nav.getInvolved')}
                 <ChevronDown
                   size={14}
-                  className={`transition-transform duration-300 ${activeDesktopMenu === 'involved' ? 'rotate-180' : ''}`}
+                  className={`transition-transform duration-200 ${activeDesktopMenu === 'involved' ? 'rotate-180' : ''}`}
                 />
               </button>
               <AnimatePresence>
                 {activeDesktopMenu === 'involved' && (
                   <motion.div
-                    className={`absolute top-full ${isRTL ? 'right-0' : 'left-0'} mt-2 w-64 bg-white text-primary shadow-xl rounded-lg overflow-hidden`}
-                    initial={{ opacity: 0, y: -10 }}
+                    className={`absolute top-full ${isRTL ? 'right-0' : 'left-0'} mt-1 w-56 bg-white text-primary shadow-lg rounded-xl border border-gray-100 overflow-hidden`}
+                    initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.15 }}
                   >
-                    <Link to="/membership" className="block px-6 py-3 hover:bg-sand transition-colors">
-                      {t('nav.getInvolved.membership')}
-                    </Link>
-                    <Link to="/get-involved/volunteer" className="block px-6 py-3 hover:bg-sand transition-colors">
-                      {t('nav.getInvolved.volunteer')}
-                    </Link>
-                    <Link to="/get-involved/jobs" className="block px-6 py-3 hover:bg-sand transition-colors">
-                      {t('nav.getInvolved.jobs')}
-                    </Link>
-                    <Link to="/get-involved/partnerships" className="block px-6 py-3 hover:bg-sand transition-colors">
-                      {t('nav.getInvolved.partnerships')}
-                    </Link>
+                    <Link to="/membership" className="block px-5 py-3 text-sm hover:bg-gray-50 transition-colors">{t('nav.getInvolved.membership')}</Link>
+                    <Link to="/get-involved/volunteer" className="block px-5 py-3 text-sm hover:bg-gray-50 transition-colors">{t('nav.getInvolved.volunteer')}</Link>
+                    <Link to="/get-involved/jobs" className="block px-5 py-3 text-sm hover:bg-gray-50 transition-colors">{t('nav.getInvolved.jobs')}</Link>
+                    <Link to="/get-involved/partnerships" className="block px-5 py-3 text-sm hover:bg-gray-50 transition-colors">{t('nav.getInvolved.partnerships')}</Link>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
 
-            <Link to="/resources" className="text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
-              {t('nav.resources')}
-            </Link>
+            <Link to="/resources" className={navLinkClass}>{t('nav.resources')}</Link>
 
             <div
               className="relative"
-              onMouseEnter={() => handleMouseEnter('about')}
-              onMouseLeave={handleMouseLeave}
+              onMouseEnter={() => setActiveDesktopMenu('about')}
+              onMouseLeave={() => setActiveDesktopMenu(null)}
             >
-              <button className="flex items-center gap-1 text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
-                {t('nav.about')}{' '}
+              <button className={`flex items-center gap-1 ${navLinkClass}`}>
+                {t('nav.about')}
                 <ChevronDown
                   size={14}
-                  className={`transition-transform duration-300 ${activeDesktopMenu === 'about' ? 'rotate-180' : ''}`}
+                  className={`transition-transform duration-200 ${activeDesktopMenu === 'about' ? 'rotate-180' : ''}`}
                 />
               </button>
               <AnimatePresence>
                 {activeDesktopMenu === 'about' && (
                   <motion.div
-                    className={`absolute top-full ${isRTL ? 'right-0' : 'left-0'} mt-2 w-56 bg-white text-primary shadow-xl rounded-lg overflow-hidden`}
-                    initial={{ opacity: 0, y: -10 }}
+                    className={`absolute top-full ${isRTL ? 'right-0' : 'left-0'} mt-1 w-52 bg-white text-primary shadow-lg rounded-xl border border-gray-100 overflow-hidden`}
+                    initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.15 }}
                   >
-                    <Link to="/about/mission" className="block px-6 py-3 hover:bg-sand transition-colors">
-                      {t('nav.about.mission')}
-                    </Link>
-                    <Link to="/about/history" className="block px-6 py-3 hover:bg-sand transition-colors">
-                      {t('nav.about.history')}
-                    </Link>
-                    <Link to="/about/team" className="block px-6 py-3 hover:bg-sand transition-colors">
-                      {t('nav.about.team')}
-                    </Link>
-                    <Link to="/about/partners" className="block px-6 py-3 hover:bg-sand transition-colors">
-                      {t('nav.about.partners')}
-                    </Link>
-                    <Link to="/about/reports" className="block px-6 py-3 hover:bg-sand transition-colors">
-                      {t('nav.about.reports')}
-                    </Link>
+                    <Link to="/about/mission" className="block px-5 py-3 text-sm hover:bg-gray-50 transition-colors">{t('nav.about.mission')}</Link>
+                    <Link to="/about/history" className="block px-5 py-3 text-sm hover:bg-gray-50 transition-colors">{t('nav.about.history')}</Link>
+                    <Link to="/about/team" className="block px-5 py-3 text-sm hover:bg-gray-50 transition-colors">{t('nav.about.team')}</Link>
+                    <Link to="/about/partners" className="block px-5 py-3 text-sm hover:bg-gray-50 transition-colors">{t('nav.about.partners')}</Link>
+                    <Link to="/about/reports" className="block px-5 py-3 text-sm hover:bg-gray-50 transition-colors">{t('nav.about.reports')}</Link>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
 
-            <Link to="/contact" className="text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
-              {t('nav.contact')}
-            </Link>
+            <Link to="/contact" className={navLinkClass}>{t('nav.contact')}</Link>
           </nav>
 
-          {/* ازرار الاجراءات - على اليمين */}
-          <div className="hidden xl:flex items-center gap-4 flex-shrink-0">
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Link
-                to="/book"
-                className="bg-accent text-primary px-6 py-2.5 hover:bg-hover transition-colors font-semibold text-sm uppercase tracking-wider whitespace-nowrap"
-              >
-                {t('button.book')}
-              </Link>
-            </motion.div>
+          <div className="hidden xl:flex items-center gap-3 flex-shrink-0">
+            <Link
+              to="/book"
+              className="bg-accent text-white px-5 py-2 rounded-lg hover:bg-hover transition-colors font-medium text-sm"
+            >
+              {t('button.book')}
+            </Link>
 
             {user ? (
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link
-                  to="/member/dashboard"
-                  className="hover:text-accent transition-colors p-2.5 block"
-                  title={language === 'ar' ? 'حسابي' : 'My Account'}
-                >
-                  <UserCircle size={20} />
-                </Link>
-              </motion.div>
+              <Link
+                to="/member/dashboard"
+                className={`p-2 rounded-lg transition-colors ${
+                  scrolled ? 'hover:bg-gray-100 text-primary' : 'hover:bg-white/10 text-white'
+                }`}
+                title={language === 'ar' ? 'حسابي' : 'My Account'}
+              >
+                <UserCircle size={20} />
+              </Link>
             ) : (
               <div
                 className="relative"
-                onMouseEnter={() => handleMouseEnter('account')}
-                onMouseLeave={handleMouseLeave}
+                onMouseEnter={() => setActiveDesktopMenu('account')}
+                onMouseLeave={() => setActiveDesktopMenu(null)}
               >
-                <motion.button
-                  className="hover:text-accent transition-colors p-2.5"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                <button
+                  className={`p-2 rounded-lg transition-colors ${
+                    scrolled ? 'hover:bg-gray-100 text-primary' : 'hover:bg-white/10 text-white'
+                  }`}
                   title={language === 'ar' ? 'العضوية' : 'Membership'}
                 >
                   <LogIn size={20} />
-                </motion.button>
+                </button>
                 <AnimatePresence>
                   {activeDesktopMenu === 'account' && (
                     <motion.div
-                      className={`absolute top-full ${isRTL ? 'left-0' : 'right-0'} mt-2 w-56 bg-white text-primary shadow-xl rounded-lg overflow-hidden`}
-                      initial={{ opacity: 0, y: -10 }}
+                      className={`absolute top-full ${isRTL ? 'left-0' : 'right-0'} mt-1 w-56 bg-white text-primary shadow-lg rounded-xl border border-gray-100 overflow-hidden`}
+                      initial={{ opacity: 0, y: -8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.2 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.15 }}
                     >
-                      <Link
-                        to="/member/login"
-                        className="flex items-center gap-3 px-6 py-3 hover:bg-sand transition-colors"
-                      >
-                        <LogIn size={18} />
-                        <span>{language === 'ar' ? 'لديك عضوية؟ تسجيل الدخول' : 'Have Membership? Login'}</span>
+                      <Link to="/member/login" className="flex items-center gap-3 px-5 py-3 text-sm hover:bg-gray-50 transition-colors">
+                        <LogIn size={16} className="text-muted" />
+                        <span>{language === 'ar' ? 'تسجيل الدخول' : 'Member Login'}</span>
                       </Link>
-                      <Link
-                        to="/membership"
-                        className="flex items-center gap-3 px-6 py-3 hover:bg-sand transition-colors"
-                      >
-                        <UserPlus size={18} />
+                      <Link to="/membership" className="flex items-center gap-3 px-5 py-3 text-sm hover:bg-gray-50 transition-colors">
+                        <UserPlus size={16} className="text-muted" />
                         <span>{language === 'ar' ? 'تسجيل عضوية جديدة' : 'Register New Membership'}</span>
                       </Link>
                     </motion.div>
@@ -314,214 +242,134 @@ export default function Header() {
               </div>
             )}
 
-            <motion.button
+            <button
               onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-              className="flex items-center gap-2 text-sm uppercase tracking-wider hover:text-accent transition-colors px-3 py-2 border border-white/30 rounded-lg"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              className={`flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border transition-colors ${
+                scrolled
+                  ? 'border-gray-200 hover:bg-gray-50 text-primary'
+                  : 'border-white/25 hover:bg-white/10 text-white'
+              }`}
               aria-label="Toggle language"
             >
-              <Globe size={16} />
+              <Globe size={14} />
               <span>{language === 'en' ? 'AR' : 'EN'}</span>
-            </motion.button>
+            </button>
           </div>
         </div>
 
-        {/* Mobile Menu */}
         <AnimatePresence>
           {isOpen && (
             <motion.nav
-              className="xl:hidden pb-6 space-y-2 bg-[#0b1424]/90 backdrop-blur-md rounded-b-2xl px-4 pt-4 max-h-[calc(100vh-80px)] overflow-y-auto overscroll-contain"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3 }}
+              className="xl:hidden fixed inset-0 top-16 bg-white z-50 overflow-y-auto"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
             >
-              <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
-                <Link to="/" onClick={() => setIsOpen(false)} className="block py-2 hover:text-accent transition-colors">
-                  {t('nav.home')}
-                </Link>
-              </motion.div>
+              <div className="container mx-auto px-4 py-6 space-y-1">
+                <Link to="/" onClick={() => setIsOpen(false)} className="block py-3 px-4 text-primary font-medium rounded-lg hover:bg-gray-50 transition-colors">{t('nav.home')}</Link>
+                <Link to="/services" onClick={() => setIsOpen(false)} className="block py-3 px-4 text-primary font-medium rounded-lg hover:bg-gray-50 transition-colors">{t('nav.services')}</Link>
+                <Link to="/programmes" onClick={() => setIsOpen(false)} className="block py-3 px-4 text-primary font-medium rounded-lg hover:bg-gray-50 transition-colors">{t('nav.programmes')}</Link>
+                <Link to="/events" onClick={() => setIsOpen(false)} className="block py-3 px-4 text-primary font-medium rounded-lg hover:bg-gray-50 transition-colors">{t('nav.events')}</Link>
+                <Link to="/news" onClick={() => setIsOpen(false)} className="block py-3 px-4 text-primary font-medium rounded-lg hover:bg-gray-50 transition-colors">{t('nav.news')}</Link>
 
-              <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.15 }}>
-                <Link to="/services" onClick={() => setIsOpen(false)} className="block py-2 hover:text-accent transition-colors">
-                  {t('nav.services')}
-                </Link>
-              </motion.div>
-
-              <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
-                <Link to="/programmes" onClick={() => setIsOpen(false)} className="block py-2 hover:text-accent transition-colors">
-                  {t('nav.programmes')}
-                </Link>
-              </motion.div>
-
-              <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.25 }}>
-                <Link to="/events" onClick={() => setIsOpen(false)} className="block py-2 hover:text-accent transition-colors">
-                  {t('nav.events')}
-                </Link>
-              </motion.div>
-
-              <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
-                <Link to="/news" onClick={() => setIsOpen(false)} className="block py-2 hover:text-accent transition-colors">
-                  {t('nav.news')}
-                </Link>
-              </motion.div>
-
-              <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.35 }}>
-                <button
-                  onClick={() => toggleDropdown('involved')}
-                  className="flex items-center justify-between w-full py-2 hover:text-accent transition-colors"
-                >
-                  {t('nav.getInvolved')} <ChevronDown size={16} />
-                </button>
-
-                <AnimatePresence>
-                  {openDropdown === 'involved' && (
-                    <motion.div
-                      className={`${isRTL ? 'pr-4' : 'pl-4'} space-y-2 mt-2`}
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Link to="/membership" onClick={() => setIsOpen(false)} className="block py-1 text-sm">
-                        {t('nav.getInvolved.membership')}
-                      </Link>
-                      <Link to="/get-involved/volunteer" onClick={() => setIsOpen(false)} className="block py-1 text-sm">
-                        {t('nav.getInvolved.volunteer')}
-                      </Link>
-                      <Link to="/get-involved/jobs" onClick={() => setIsOpen(false)} className="block py-1 text-sm">
-                        {t('nav.getInvolved.jobs')}
-                      </Link>
-                      <Link to="/get-involved/partnerships" onClick={() => setIsOpen(false)} className="block py-1 text-sm">
-                        {t('nav.getInvolved.partnerships')}
-                      </Link>
-
-                      <Link
-                        to="/book"
-                        onClick={() => setIsOpen(false)}
-                        className="inline-flex mt-2 bg-accent text-primary px-4 py-2 rounded-md hover:bg-hover transition-colors font-semibold text-xs uppercase tracking-wider whitespace-nowrap"
-                      >
-                        {t('button.book')}
-                      </Link>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-
-              <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.4 }}>
-                <Link to="/resources" onClick={() => setIsOpen(false)} className="block py-2 hover:text-accent transition-colors">
-                  {t('nav.resources')}
-                </Link>
-              </motion.div>
-
-              <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.45 }}>
-                <button
-                  onClick={() => toggleDropdown('about')}
-                  className="flex items-center justify-between w-full py-2 hover:text-accent transition-colors"
-                >
-                  {t('nav.about')} <ChevronDown size={16} />
-                </button>
-
-                <AnimatePresence>
-                  {openDropdown === 'about' && (
-                    <motion.div
-                      className={`${isRTL ? 'pr-4' : 'pl-4'} space-y-2 mt-2`}
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Link to="/about/mission" onClick={() => setIsOpen(false)} className="block py-1 text-sm">
-                        {t('nav.about.mission')}
-                      </Link>
-                      <Link to="/about/history" onClick={() => setIsOpen(false)} className="block py-1 text-sm">
-                        {t('nav.about.history')}
-                      </Link>
-                      <Link to="/about/team" onClick={() => setIsOpen(false)} className="block py-1 text-sm">
-                        {t('nav.about.team')}
-                      </Link>
-                      <Link to="/about/partners" onClick={() => setIsOpen(false)} className="block py-1 text-sm">
-                        {t('nav.about.partners')}
-                      </Link>
-                      <Link to="/about/reports" onClick={() => setIsOpen(false)} className="block py-1 text-sm">
-                        {t('nav.about.reports')}
-                      </Link>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-
-              <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.5 }}>
-                <Link
-                  to="/contact"
-                  onClick={() => setIsOpen(false)}
-                  className="block mt-4 bg-accent text-primary px-6 py-3 rounded-lg hover:bg-hover transition-colors font-semibold text-center whitespace-nowrap"
-                >
-                  {t('nav.contact')}
-                </Link>
-
-                <Link
-                  to="/book"
-                  onClick={() => setIsOpen(false)}
-                  className="block mt-3 bg-white/10 text-white px-6 py-3 rounded-lg hover:bg-white/15 transition-colors font-semibold text-center whitespace-nowrap"
-                >
-                  {t('button.book')}
-                </Link>
-
-                {user ? (
-                  <Link
-                    to="/member/dashboard"
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center justify-center gap-2 w-full mt-3 border border-white/30 text-white px-6 py-3 rounded-lg hover:bg-white/10 transition-colors font-semibold"
+                <div>
+                  <button
+                    onClick={() => toggleDropdown('involved')}
+                    className="flex items-center justify-between w-full py-3 px-4 text-primary font-medium rounded-lg hover:bg-gray-50 transition-colors"
                   >
-                    <UserCircle size={18} />
-                    {language === 'ar' ? 'حسابي' : 'My Account'}
-                  </Link>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => toggleDropdown('account')}
-                      className="flex items-center justify-between w-full mt-3 border border-white/30 text-white px-6 py-3 rounded-lg hover:bg-white/10 transition-colors font-semibold"
-                    >
-                      <div className="flex items-center gap-2">
-                        <LogIn size={18} />
-                        {language === 'ar' ? 'العضوية' : 'Membership'}
-                      </div>
-                      <ChevronDown size={16} className={`transition-transform duration-300 ${openDropdown === 'account' ? 'rotate-180' : ''}`} />
-                    </button>
+                    {t('nav.getInvolved')}
+                    <ChevronDown size={16} className={`transition-transform ${openDropdown === 'involved' ? 'rotate-180' : ''}`} />
+                  </button>
+                  <AnimatePresence>
+                    {openDropdown === 'involved' && (
+                      <motion.div
+                        className={`${isRTL ? 'pr-6' : 'pl-6'} space-y-0.5 mt-1`}
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <Link to="/membership" onClick={() => setIsOpen(false)} className="block py-2.5 px-4 text-sm text-muted rounded-lg hover:bg-gray-50 hover:text-primary transition-colors">{t('nav.getInvolved.membership')}</Link>
+                        <Link to="/get-involved/volunteer" onClick={() => setIsOpen(false)} className="block py-2.5 px-4 text-sm text-muted rounded-lg hover:bg-gray-50 hover:text-primary transition-colors">{t('nav.getInvolved.volunteer')}</Link>
+                        <Link to="/get-involved/jobs" onClick={() => setIsOpen(false)} className="block py-2.5 px-4 text-sm text-muted rounded-lg hover:bg-gray-50 hover:text-primary transition-colors">{t('nav.getInvolved.jobs')}</Link>
+                        <Link to="/get-involved/partnerships" onClick={() => setIsOpen(false)} className="block py-2.5 px-4 text-sm text-muted rounded-lg hover:bg-gray-50 hover:text-primary transition-colors">{t('nav.getInvolved.partnerships')}</Link>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
 
-                    <AnimatePresence>
-                      {openDropdown === 'account' && (
-                        <motion.div
-                          className={`${isRTL ? 'pr-4' : 'pl-4'} space-y-2 mt-2`}
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <Link
-                            to="/member/login"
-                            onClick={() => setIsOpen(false)}
-                            className="flex items-center gap-2 py-2 text-sm hover:text-accent transition-colors"
-                          >
-                            <LogIn size={16} />
-                            {language === 'ar' ? 'لديك عضوية؟ تسجيل الدخول' : 'Have Membership? Login'}
-                          </Link>
-                          <Link
-                            to="/membership"
-                            onClick={() => setIsOpen(false)}
-                            className="flex items-center gap-2 py-2 text-sm hover:text-accent transition-colors"
-                          >
-                            <UserPlus size={16} />
-                            {language === 'ar' ? 'تسجيل عضوية جديدة' : 'Register New Membership'}
-                          </Link>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </>
-                )}
-              </motion.div>
+                <Link to="/resources" onClick={() => setIsOpen(false)} className="block py-3 px-4 text-primary font-medium rounded-lg hover:bg-gray-50 transition-colors">{t('nav.resources')}</Link>
+
+                <div>
+                  <button
+                    onClick={() => toggleDropdown('about')}
+                    className="flex items-center justify-between w-full py-3 px-4 text-primary font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    {t('nav.about')}
+                    <ChevronDown size={16} className={`transition-transform ${openDropdown === 'about' ? 'rotate-180' : ''}`} />
+                  </button>
+                  <AnimatePresence>
+                    {openDropdown === 'about' && (
+                      <motion.div
+                        className={`${isRTL ? 'pr-6' : 'pl-6'} space-y-0.5 mt-1`}
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <Link to="/about/mission" onClick={() => setIsOpen(false)} className="block py-2.5 px-4 text-sm text-muted rounded-lg hover:bg-gray-50 hover:text-primary transition-colors">{t('nav.about.mission')}</Link>
+                        <Link to="/about/history" onClick={() => setIsOpen(false)} className="block py-2.5 px-4 text-sm text-muted rounded-lg hover:bg-gray-50 hover:text-primary transition-colors">{t('nav.about.history')}</Link>
+                        <Link to="/about/team" onClick={() => setIsOpen(false)} className="block py-2.5 px-4 text-sm text-muted rounded-lg hover:bg-gray-50 hover:text-primary transition-colors">{t('nav.about.team')}</Link>
+                        <Link to="/about/partners" onClick={() => setIsOpen(false)} className="block py-2.5 px-4 text-sm text-muted rounded-lg hover:bg-gray-50 hover:text-primary transition-colors">{t('nav.about.partners')}</Link>
+                        <Link to="/about/reports" onClick={() => setIsOpen(false)} className="block py-2.5 px-4 text-sm text-muted rounded-lg hover:bg-gray-50 hover:text-primary transition-colors">{t('nav.about.reports')}</Link>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                <Link to="/contact" onClick={() => setIsOpen(false)} className="block py-3 px-4 text-primary font-medium rounded-lg hover:bg-gray-50 transition-colors">{t('nav.contact')}</Link>
+
+                <div className="pt-4 space-y-3 border-t border-gray-100 mt-4">
+                  <Link
+                    to="/book"
+                    onClick={() => setIsOpen(false)}
+                    className="block w-full bg-accent text-white px-6 py-3 rounded-xl hover:bg-hover transition-colors font-medium text-center"
+                  >
+                    {t('button.book')}
+                  </Link>
+
+                  {user ? (
+                    <Link
+                      to="/member/dashboard"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center justify-center gap-2 w-full border border-gray-200 text-primary px-6 py-3 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+                    >
+                      <UserCircle size={18} />
+                      {language === 'ar' ? 'حسابي' : 'My Account'}
+                    </Link>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      <Link
+                        to="/member/login"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center justify-center gap-2 border border-gray-200 text-primary px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors font-medium text-sm"
+                      >
+                        <LogIn size={16} />
+                        {language === 'ar' ? 'تسجيل دخول' : 'Login'}
+                      </Link>
+                      <Link
+                        to="/membership"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center justify-center gap-2 bg-primary text-white px-4 py-3 rounded-xl hover:bg-secondary transition-colors font-medium text-sm"
+                      >
+                        <UserPlus size={16} />
+                        {language === 'ar' ? 'عضوية جديدة' : 'Register'}
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </div>
             </motion.nav>
           )}
         </AnimatePresence>

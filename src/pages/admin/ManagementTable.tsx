@@ -57,24 +57,25 @@ export default function ManagementTable({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 md:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+        <div className="relative flex-1 max-w-xs sm:max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
           <input
             type="text"
             placeholder="Search..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            className="w-full pl-9 sm:pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
           />
         </div>
         <button
           onClick={exportToCSV}
-          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium ml-4"
+          className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition-colors text-xs sm:text-sm font-medium whitespace-nowrap"
         >
           <Download className="w-4 h-4" />
-          Export CSV
+          <span className="hidden xs:inline">Export CSV</span>
+          <span className="xs:hidden">Export</span>
         </button>
       </div>
 
@@ -87,19 +88,19 @@ export default function ManagementTable({
           <p className="text-gray-500">No data found</p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+          <table className="w-full text-xs sm:text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 {columns.map((col) => (
                   <th
                     key={col.key}
-                    className="px-4 py-3 text-left text-sm font-semibold text-gray-900"
+                    className="px-2 sm:px-3 md:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-900"
                   >
                     {col.label}
                   </th>
                 ))}
-                {(onView || onDelete) && <th className="px-4 py-3 text-right text-sm font-semibold text-gray-900">Actions</th>}
+                {(onView || onDelete) && <th className="px-2 sm:px-3 md:px-4 py-2 sm:py-3 text-right text-xs sm:text-sm font-semibold text-gray-900">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -109,13 +110,13 @@ export default function ManagementTable({
                   className="hover:bg-gray-50"
                 >
                   {columns.map((col) => (
-                    <td key={col.key} className="px-4 py-4 text-sm text-gray-600">
+                    <td key={col.key} className="px-2 sm:px-3 md:px-4 py-2 sm:py-3 md:py-4 text-xs sm:text-sm text-gray-600">
                       {col.render ? col.render(item[col.key], item) : item[col.key] || '-'}
                     </td>
                   ))}
                   {(onView || onDelete) && (
-                    <td className="px-4 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="px-2 sm:px-3 md:px-4 py-2 sm:py-3 md:py-4 text-right">
+                      <div className="flex items-center justify-end gap-1 sm:gap-2">
                         {onView && (
                           <button
                             onClick={(e) => {

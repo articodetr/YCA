@@ -144,7 +144,7 @@ export default function TimeSlotGrid({ selectedDate, slots, selectedSlot, onSlot
           <p className="text-sm text-gray-400 mt-1">{t.tryDifferentDate}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1.5 sm:gap-2 md:gap-3">
           {visibleSlots.map((slot) => {
             const isJustBooked = !slot.isAvailable && (fadingOutIds.has(slot.id) || recentlyBookedSlotIds?.has(slot.id));
             const isSelected = selectedSlot?.id === slot.id;
@@ -156,7 +156,7 @@ export default function TimeSlotGrid({ selectedDate, slots, selectedSlot, onSlot
                 onClick={() => slot.isAvailable && onSlotSelect(slot)}
                 disabled={!slot.isAvailable}
                 className={`
-                  relative py-3 px-3 rounded-lg text-center font-medium text-sm border-2
+                  relative py-2 sm:py-2.5 md:py-3 px-1 sm:px-2 md:px-3 rounded-lg text-center font-medium text-xs sm:text-sm border-2
                   transition-all duration-300 ease-in-out
                   ${isJustBooked
                     ? 'bg-red-50 text-red-400 border-red-200 opacity-60 cursor-not-allowed scale-95'
@@ -168,11 +168,11 @@ export default function TimeSlotGrid({ selectedDate, slots, selectedSlot, onSlot
                   }
                 `}
               >
-                <div className={`font-semibold ${isJustBooked ? 'line-through' : ''}`}>
+                <div className={`text-xs sm:text-sm font-semibold ${isJustBooked ? 'line-through' : ''}`}>
                   {formatTime(slot.startTime)}
                 </div>
                 {isJustBooked && (
-                  <div className="text-[10px] font-bold text-red-500 mt-0.5 animate-pulse">
+                  <div className="text-[9px] sm:text-[10px] font-bold text-red-500 mt-0.5 animate-pulse">
                     {t.justBooked}
                   </div>
                 )}

@@ -433,15 +433,15 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
     return (
       <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4"
         onClick={e => { if (e.target === e.currentTarget) handleClose(); }}>
-        <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl w-full max-w-sm sm:max-w-md md:max-w-2xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto"
           dir={isRTL ? 'rtl' : 'ltr'} onClick={e => e.stopPropagation()}>
-          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
-            <h2 className="text-2xl font-bold text-gray-900">{t.paymentTitle}</h2>
+          <div className="sticky top-0 bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between z-10">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{t.paymentTitle}</h2>
             <button type="button" onClick={handleClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-              <X className="w-6 h-6 text-gray-600" />
+              <X className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
             </button>
           </div>
-          <div className="p-6">
+          <div className="p-4 sm:p-5 md:p-6">
             <Elements key={clientSecret} stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#059669' } } }}>
               <WakalaCheckoutForm amount={paymentAmount} formPayload={formPayload} onSuccess={handlePaymentSuccess} onBack={() => setStep('form')} />
             </Elements>
@@ -473,16 +473,16 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4"
       onClick={e => { if (e.target === e.currentTarget) handleClose(); }}>
-      <div className="bg-white rounded-2xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl w-full max-w-sm sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto"
         dir={isRTL ? 'rtl' : 'ltr'} onClick={e => e.stopPropagation()}>
 
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-4 sm:px-5 md:px-6 py-3 sm:py-4 flex items-center justify-between z-10">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">{t.title}</h2>
-            <p className="text-sm text-gray-500 mt-1">{t.subtitle}</p>
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{t.title}</h2>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">{t.subtitle}</p>
           </div>
-          <button type="button" onClick={handleClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <X className="w-6 h-6 text-gray-600" />
+          <button type="button" onClick={handleClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0">
+            <X className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
           </button>
         </div>
 

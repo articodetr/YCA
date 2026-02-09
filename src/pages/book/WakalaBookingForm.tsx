@@ -402,29 +402,29 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
           </div>
         )}
 
-        <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-          <div className="flex items-start gap-3 mb-5">
-            <div className="p-2 bg-blue-100 rounded-lg"><User className="w-5 h-5 text-blue-600" /></div>
+        <div className="bg-gray-50 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 border border-gray-200">
+          <div className="flex items-start gap-2 sm:gap-3 mb-4 sm:mb-5">
+            <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg flex-shrink-0"><User className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" /></div>
             <div>
-              <h3 className="text-lg font-bold text-gray-900">{t.personalInfo}</h3>
-              <p className="text-sm text-gray-600 mt-0.5">{t.contactDescription}</p>
+              <h3 className="text-base sm:text-lg font-bold text-gray-900">{t.personalInfo}</h3>
+              <p className="text-xs sm:text-sm text-gray-600 mt-0.5">{t.contactDescription}</p>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t.fullName} *</label>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">{t.fullName} *</label>
               <input type="text" value={formData.fullName} onChange={e => setFormData(p => ({ ...p, fullName: e.target.value }))}
-                className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required disabled={dataLoading} />
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required disabled={dataLoading} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t.phone} *</label>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">{t.phone} *</label>
               <input type="tel" value={formData.phone} onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
-                className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required disabled={dataLoading} />
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required disabled={dataLoading} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t.email} *</label>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">{t.email} *</label>
               <input type="email" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))}
-                className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required disabled={dataLoading} />
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required disabled={dataLoading} />
             </div>
             {membershipStatus === 'active' && (
               <div>
@@ -436,34 +436,34 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
           </div>
         </div>
 
-        <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-          <div className="flex items-start gap-3 mb-5">
-            <div className="p-2 bg-blue-100 rounded-lg"><FileText className="w-5 h-5 text-blue-600" /></div>
-            <h3 className="text-lg font-bold text-gray-900">{t.wakalaDetails}</h3>
+        <div className="bg-gray-50 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 border border-gray-200">
+          <div className="flex items-start gap-2 sm:gap-3 mb-4 sm:mb-5">
+            <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg flex-shrink-0"><FileText className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" /></div>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900">{t.wakalaDetails}</h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t.applicantName} *</label>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">{t.applicantName} *</label>
               <input type="text" value={formData.applicantName} onChange={e => setFormData(p => ({ ...p, applicantName: e.target.value }))}
-                className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required disabled={dataLoading} />
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required disabled={dataLoading} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t.agentName} *</label>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">{t.agentName} *</label>
               <input type="text" value={formData.agentName} onChange={e => setFormData(p => ({ ...p, agentName: e.target.value }))}
-                className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required disabled={dataLoading} />
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required disabled={dataLoading} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t.wakalaType} *</label>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">{t.wakalaType} *</label>
               <select value={formData.wakalaType} onChange={e => setFormData(p => ({ ...p, wakalaType: e.target.value }))}
-                className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none" required disabled={dataLoading}>
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none" required disabled={dataLoading}>
                 <option value="">{t.selectWakalaType}</option>
                 {Object.entries(t.wakalaTypes).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t.wakalaFormat} *</label>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">{t.wakalaFormat} *</label>
               <select value={formData.wakalaFormat} onChange={e => setFormData(p => ({ ...p, wakalaFormat: e.target.value }))}
-                className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none" required disabled={dataLoading}>
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none" required disabled={dataLoading}>
                 <option value="">{t.selectWakalaFormat}</option>
                 {Object.entries(t.wakalaFormats).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
               </select>
@@ -471,10 +471,10 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
           </div>
         </div>
 
-        <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-          <div className="flex items-start gap-3 mb-5">
-            <div className="p-2 bg-blue-100 rounded-lg"><Upload className="w-5 h-5 text-blue-600" /></div>
-            <h3 className="text-lg font-bold text-gray-900">{t.documents}</h3>
+        <div className="bg-gray-50 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 border border-gray-200">
+          <div className="flex items-start gap-2 sm:gap-3 mb-4 sm:mb-5">
+            <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg flex-shrink-0"><Upload className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" /></div>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900">{t.documents}</h3>
           </div>
           <div className="space-y-5">
             <FileUploadField label={t.applicantPassport} required userId={user?.id} onUploadComplete={setApplicantPassportUrls} existingUrls={applicantPassportUrls} />

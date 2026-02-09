@@ -85,17 +85,17 @@ export default function Contact() {
                 whileInView="visible"
                 viewport={{ once: true }}
               >
-                <motion.div className="flex items-start gap-4" variants={staggerItem}>
+                <motion.div className="flex items-start gap-2 sm:gap-3 md:gap-4" variants={staggerItem}>
                   <motion.div
-                    className="w-14 h-14 bg-accent rounded-lg flex items-center justify-center flex-shrink-0"
+                    className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-accent rounded-lg flex items-center justify-center flex-shrink-0"
                     whileHover={{ scale: 1.1, rotate: 5 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <MapPin size={24} className="text-primary" />
+                    <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                   </motion.div>
                   <div>
-                    <h3 className="font-bold text-lg text-primary mb-2">{c('address_label', 'Address')}</h3>
-                    <p className="text-muted">
+                    <h3 className="font-bold text-base sm:text-lg text-primary mb-2">{c('address_label', 'Address')}</h3>
+                    <p className="text-muted text-sm sm:text-base">
                       {c('address_line1', 'YCA GreenCoat House')}<br />
                       {c('address_line2', '261-271 Stratford Road')}<br />
                       {c('address_line3', 'Birmingham, B11 1QS')}
@@ -103,49 +103,49 @@ export default function Contact() {
                   </div>
                 </motion.div>
 
-                <motion.div className="flex items-start gap-4" variants={staggerItem}>
+                <motion.div className="flex items-start gap-2 sm:gap-3 md:gap-4" variants={staggerItem}>
                   <motion.div
-                    className="w-14 h-14 bg-accent rounded-lg flex items-center justify-center flex-shrink-0"
+                    className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-accent rounded-lg flex items-center justify-center flex-shrink-0"
                     whileHover={{ scale: 1.1, rotate: 5 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <Phone size={24} className="text-primary" />
+                    <Phone className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                   </motion.div>
                   <div>
-                    <h3 className="font-bold text-lg text-primary mb-2">{c('phone_label', 'Phone')}</h3>
-                    <a href="tel:01214395280" className="text-muted hover:text-accent transition-colors">
+                    <h3 className="font-bold text-base sm:text-lg text-primary mb-2">{c('phone_label', 'Phone')}</h3>
+                    <a href="tel:01214395280" className="text-muted hover:text-accent transition-colors text-sm sm:text-base">
                       {c('phone_number', '0121 439 5280')}
                     </a>
                   </div>
                 </motion.div>
 
-                <motion.div className="flex items-start gap-4" variants={staggerItem}>
+                <motion.div className="flex items-start gap-2 sm:gap-3 md:gap-4" variants={staggerItem}>
                   <motion.div
-                    className="w-14 h-14 bg-accent rounded-lg flex items-center justify-center flex-shrink-0"
+                    className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-accent rounded-lg flex items-center justify-center flex-shrink-0"
                     whileHover={{ scale: 1.1, rotate: 5 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <Mail size={24} className="text-primary" />
+                    <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                   </motion.div>
                   <div>
-                    <h3 className="font-bold text-lg text-primary mb-2">{c('email_label', 'Email')}</h3>
-                    <a href="mailto:info@yca-birmingham.org.uk" className="text-muted hover:text-accent transition-colors">
+                    <h3 className="font-bold text-base sm:text-lg text-primary mb-2">{c('email_label', 'Email')}</h3>
+                    <a href="mailto:info@yca-birmingham.org.uk" className="text-muted hover:text-accent transition-colors text-sm sm:text-base break-all">
                       {c('email_address', 'info@yca-birmingham.org.uk')}
                     </a>
                   </div>
                 </motion.div>
 
-                <motion.div className="flex items-start gap-4" variants={staggerItem}>
+                <motion.div className="flex items-start gap-2 sm:gap-3 md:gap-4" variants={staggerItem}>
                   <motion.div
-                    className="w-14 h-14 bg-accent rounded-lg flex items-center justify-center flex-shrink-0"
+                    className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-accent rounded-lg flex items-center justify-center flex-shrink-0"
                     whileHover={{ scale: 1.1, rotate: 5 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <Clock size={24} className="text-primary" />
+                    <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                   </motion.div>
                   <div>
-                    <h3 className="font-bold text-lg text-primary mb-2">{c('hours_label', 'Opening Times')}</h3>
-                    <p className="text-muted whitespace-pre-line">
+                    <h3 className="font-bold text-base sm:text-lg text-primary mb-2">{c('hours_label', 'Opening Times')}</h3>
+                    <p className="text-muted whitespace-pre-line text-sm sm:text-base">
                       {c('hours_text', 'Monday - Thursday: 10:00 AM - 3:30 PM\nFriday: 9:00 AM - 1:00 PM')}
                     </p>
                   </div>

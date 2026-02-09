@@ -223,6 +223,7 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
 
   const createPaymentIntent = async (amount: number) => {
     try {
+      console.log('Creating payment intent for amount:', amount);
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`,
         {
@@ -232,10 +233,26 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
         }
       );
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || t.paymentError);
-      if (!data.clientSecret) throw new Error('No client secret returned');
+      console.log('Payment intent response:', data);
+      if (!response.ok) {
+        console.error('Payment intent error:', data.error);
+        throw new Error(data.error || t.paymentError);
+      }
+      if (!data.clientSecret) {
+        console.error('No client secret in response:', data);
+        throw new Error('No client secret returned');
+      }
+      if (typeof data.clientSecret !== 'string' || !data.clientSecret.startsWith('pi_')) {
+        console.error('Invalid client secret format:', data.clientSecret);
+        throw new Error('Invalid payment intent format');
+      }
+      console.log('Client secret received successfully');
       setClientSecret(data.clientSecret);
-    } catch (err: any) { setError(err.message || t.paymentError); setStep('form'); }
+    } catch (err: any) {
+      console.error('Error creating payment intent:', err);
+      setError(err.message || t.paymentError);
+      setStep('form');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -288,6 +305,17 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
     (membershipStatus !== 'active' || formData.membershipNumber);
 
   if (step === 'payment' && clientSecret && formPayload) {
+    const elementsOptions = {
+      clientSecret,
+      appearance: {
+        theme: 'stripe' as const,
+        variables: {
+          colorPrimary: '#059669',
+        },
+      },
+      loader: 'auto' as const,
+    };
+
     return (
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden" dir={isRTL ? 'rtl' : 'ltr'}>
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 sm:px-8 py-6">
@@ -295,9 +323,17 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
         </div>
         <div className="p-6 sm:p-8">
           <button type="button" onClick={() => setStep('form')} className="mb-4 text-sm text-gray-500 hover:text-gray-700 underline">{t.backToForm}</button>
-          <Elements key={clientSecret} stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#059669' } } }}>
-            <WakalaCheckoutForm amount={paymentAmount} formPayload={formPayload} onSuccess={handlePaymentSuccess} onBack={() => setStep('form')} />
-          </Elements>
+          {stripePromise && (
+            <Elements stripe={stripePromise} options={elementsOptions}>
+              <WakalaCheckoutForm amount={paymentAmount} formPayload={formPayload} onSuccess={handlePaymentSuccess} onBack={() => setStep('form')} />
+            </Elements>
+          )}
+          {!stripePromise && (
+            <div className="text-center py-8">
+              <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+              <p className="text-red-600">{language === 'ar' ? 'فشل في تحميل نظام الدفع' : 'Failed to load payment system'}</p>
+            </div>
+          )}
         </div>
       </div>
     );

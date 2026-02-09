@@ -1,37 +1,79 @@
-import { FileText, Download, ExternalLink, Link as LinkIcon } from 'lucide-react';
+import { FileText, Download, ExternalLink, Link as LinkIcon, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import PageHeader from '../components/PageHeader';
 import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../lib/animations';
 import { useContent } from '../contexts/ContentContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import { supabase } from '../lib/supabase';
+
+interface Resource {
+  id: string;
+  title: string;
+  title_ar?: string;
+  description: string;
+  description_ar?: string;
+  resource_type: 'policy' | 'form' | 'guide' | 'link';
+  file_url: string | null;
+  link: string | null;
+  file_size: number;
+  year: number;
+  category: string;
+  is_active: boolean;
+  order_number: number;
+}
 
 export default function Resources() {
   const { getContent } = useContent();
+  const { language } = useLanguage();
+  const isRTL = language === 'ar';
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchResources();
+  }, []);
+
+  const fetchResources = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('resources_items')
+        .select('*')
+        .eq('is_active', true)
+        .order('resource_type', { ascending: true })
+        .order('year', { ascending: false })
+        .order('order_number', { ascending: true });
+
+      if (error) throw error;
+      setResources(data || []);
+    } catch (error) {
+      console.error('Error fetching resources:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const c = (key: string, fallback: string) => getContent('resources', key, fallback);
 
-  const policies = [
-    { title: 'Safeguarding Policy', size: '1.2 MB', year: '2024' },
-    { title: 'Equal Opportunities Policy', size: '890 KB', year: '2024' },
-    { title: 'Data Protection Policy', size: '1.5 MB', year: '2024' },
-    { title: 'Health & Safety Policy', size: '1.1 MB', year: '2024' },
-    { title: 'Volunteer Policy', size: '950 KB', year: '2024' },
-  ];
+  const policies = resources.filter(r => r.resource_type === 'policy');
+  const forms = resources.filter(r => r.resource_type === 'form' || r.resource_type === 'guide');
+  const links = resources.filter(r => r.resource_type === 'link');
 
-  const forms = [
-    { title: 'Membership Application Form', description: 'Join YCA Birmingham as a member' },
-    { title: 'Volunteer Registration Form', description: 'Register your interest in volunteering' },
-    { title: 'Event Registration Form', description: 'Sign up for community events' },
-    { title: 'Service Feedback Form', description: 'Share your feedback on our services' },
-    { title: 'Room Booking Form', description: 'Request to book our community spaces' },
-  ];
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  };
 
-  const links = [
-    { title: 'Birmingham City Council', url: 'https://www.birmingham.gov.uk', description: 'Local council services and information' },
-    { title: 'NHS Services', url: 'https://www.nhs.uk', description: 'Healthcare services and GP registration' },
-    { title: 'Citizens Advice', url: 'https://www.citizensadvice.org.uk', description: 'Free, confidential advice on various issues' },
-    { title: 'Job Centre Plus', url: 'https://www.gov.uk/contact-jobcentre-plus', description: 'Employment support and benefits' },
-    { title: 'Birmingham & Solihull Mental Health', url: 'https://www.bsmhft.nhs.uk', description: 'Mental health services and support' },
-    { title: 'Shelter Housing Advice', url: 'https://www.shelter.org.uk', description: 'Housing advice and support' },
-  ];
+  const getResourceTitle = (resource: Resource) => {
+    return isRTL && resource.title_ar ? resource.title_ar : resource.title;
+  };
+
+  const getResourceDesc = (resource: Resource) => {
+    return isRTL && resource.description_ar ? resource.description_ar : resource.description;
+  };
 
   return (
     <div>
@@ -42,10 +84,16 @@ export default function Resources() {
         pageKey="resources"
       />
 
-      <div className="pt-20">
+      <div className="pt-20" dir={isRTL ? 'rtl' : 'ltr'}>
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-12 h-12 animate-spin text-primary" />
+        </div>
+      ) : (
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
+            {policies.length > 0 && (
             <div className="mb-16">
               <motion.div
                 className="text-center mb-12"
@@ -74,35 +122,43 @@ export default function Resources() {
                 whileInView="visible"
                 viewport={{ once: true }}
               >
-                {policies.map((policy, index) => (
+                {policies.map((policy) => (
                   <motion.div
-                    key={index}
+                    key={policy.id}
                     className="bg-sand p-6 rounded-lg hover:shadow-xl transition-shadow flex items-center justify-between"
                     variants={staggerItem}
-                    whileHover={{ x: 4 }}
+                    whileHover={{ x: isRTL ? -4 : 4 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
                       <div className="w-14 h-14 bg-accent rounded-lg flex items-center justify-center flex-shrink-0">
                         <FileText size={24} className="text-primary" />
                       </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-primary mb-1">{policy.title}</h3>
-                        <p className="text-sm text-muted">PDF - {policy.size} | Updated {policy.year}</p>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-bold text-primary mb-1 truncate">{getResourceTitle(policy)}</h3>
+                        <p className="text-sm text-muted">
+                          PDF - {formatFileSize(policy.file_size)} | {isRTL ? 'تحديث' : 'Updated'} {policy.year}
+                        </p>
                       </div>
                     </div>
-                    <motion.button
-                      className="bg-primary text-white p-3 rounded-lg hover:bg-secondary transition-colors"
+                    <motion.a
+                      href={policy.file_url || '#'}
+                      download
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-primary text-white p-3 rounded-lg hover:bg-secondary transition-colors flex-shrink-0"
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
                     >
                       <Download size={20} />
-                    </motion.button>
+                    </motion.a>
                   </motion.div>
                 ))}
               </motion.div>
             </div>
+            )}
 
+            {forms.length > 0 && (
             <div className="mb-16">
               <motion.div
                 className="text-center mb-12"
@@ -131,31 +187,37 @@ export default function Resources() {
                 whileInView="visible"
                 viewport={{ once: true }}
               >
-                {forms.map((form, index) => (
+                {forms.map((form) => (
                   <motion.div
-                    key={index}
-                    className="bg-sand p-6 rounded-lg hover:shadow-xl transition-shadow flex items-center justify-between"
+                    key={form.id}
+                    className="bg-sand p-6 rounded-lg hover:shadow-xl transition-shadow flex items-center justify-between gap-4"
                     variants={staggerItem}
-                    whileHover={{ x: 4 }}
+                    whileHover={{ x: isRTL ? -4 : 4 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <div>
-                      <h3 className="text-xl font-bold text-primary mb-2">{form.title}</h3>
-                      <p className="text-muted">{form.description}</p>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-xl font-bold text-primary mb-2">{getResourceTitle(form)}</h3>
+                      <p className="text-muted">{getResourceDesc(form)}</p>
                     </div>
-                    <motion.button
-                      className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-secondary transition-colors font-semibold flex items-center gap-2 whitespace-nowrap"
+                    <motion.a
+                      href={form.file_url || '#'}
+                      download
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-secondary transition-colors font-semibold flex items-center gap-2 whitespace-nowrap flex-shrink-0"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
                       <Download size={20} />
-                      Download
-                    </motion.button>
+                      {isRTL ? 'تحميل' : 'Download'}
+                    </motion.a>
                   </motion.div>
                 ))}
               </motion.div>
             </div>
+            )}
 
+            {links.length > 0 && (
             <div>
               <motion.div
                 className="text-center mb-12"
@@ -184,10 +246,10 @@ export default function Resources() {
                 whileInView="visible"
                 viewport={{ once: true }}
               >
-                {links.map((link, index) => (
+                {links.map((link) => (
                   <motion.a
-                    key={index}
-                    href={link.url}
+                    key={link.id}
+                    href={link.link || '#'}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="bg-white border-2 border-sand p-6 rounded-lg hover:border-accent hover:shadow-xl transition-all group"
@@ -202,16 +264,24 @@ export default function Resources() {
                       <ExternalLink size={20} className="text-muted group-hover:text-accent transition-colors" />
                     </div>
                     <h3 className="text-xl font-bold text-primary mb-2 group-hover:text-accent transition-colors">
-                      {link.title}
+                      {getResourceTitle(link)}
                     </h3>
-                    <p className="text-muted">{link.description}</p>
+                    <p className="text-muted">{getResourceDesc(link)}</p>
                   </motion.a>
                 ))}
               </motion.div>
             </div>
+            )}
+
+            {!loading && resources.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-muted text-lg">{isRTL ? 'لا توجد موارد متاحة حالياً' : 'No resources available at the moment'}</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
+      )}
 
       <section className="py-16 bg-sand">
         <motion.div
@@ -221,9 +291,9 @@ export default function Resources() {
           whileInView="visible"
           viewport={{ once: true }}
         >
-          <h2 className="text-3xl font-bold text-primary mb-4">{c('help_title', 'Need Help?')}</h2>
+          <h2 className="text-3xl font-bold text-primary mb-4">{c('help_title', isRTL ? 'تحتاج مساعدة؟' : 'Need Help?')}</h2>
           <p className="text-lg text-muted max-w-3xl mx-auto mb-8">
-            {c('help_desc', "If you can't find what you're looking for or need assistance with any forms or documents, our team is here to help.")}
+            {c('help_desc', isRTL ? 'إذا لم تجد ما تبحث عنه أو تحتاج إلى مساعدة في أي نماذج أو مستندات، فريقنا هنا للمساعدة.' : "If you can't find what you're looking for or need assistance with any forms or documents, our team is here to help.")}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <motion.a
@@ -232,7 +302,7 @@ export default function Resources() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              Call: 0121 439 5280
+              {isRTL ? 'اتصل: 0121 439 5280' : 'Call: 0121 439 5280'}
             </motion.a>
             <motion.a
               href="mailto:info@yca-birmingham.org.uk"
@@ -240,7 +310,7 @@ export default function Resources() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              Email Us
+              {isRTL ? 'راسلنا' : 'Email Us'}
             </motion.a>
           </div>
         </motion.div>

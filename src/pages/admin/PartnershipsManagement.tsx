@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Loader2, Download, Eye, X, CheckCircle, XCircle } from 'lucide-react';
+import { Search, Loader2, Download, Eye, X, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface Partnership {
@@ -50,6 +50,21 @@ export default function PartnershipsManagement() {
     } catch (error) {
       console.error('Error:', error);
       setToast({ message: 'Failed to update status', type: 'error' });
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this partnership inquiry?')) return;
+
+    try {
+      const { error } = await supabase.from('partnership_inquiries').delete().eq('id', id);
+      if (error) throw error;
+      setToast({ message: 'Partnership deleted successfully', type: 'success' });
+      await fetchData();
+      if (selected?.id === id) setSelected(null);
+    } catch (error) {
+      console.error('Error:', error);
+      setToast({ message: 'Failed to delete partnership', type: 'error' });
     }
   };
 

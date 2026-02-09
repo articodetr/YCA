@@ -189,9 +189,6 @@ export default function Header() {
                     <Link to="/get-involved/volunteer" className="block px-6 py-3 hover:bg-sand transition-colors">
                       {t('nav.getInvolved.volunteer')}
                     </Link>
-                    <Link to="/get-involved/donate" className="block px-6 py-3 hover:bg-sand transition-colors">
-                      {t('nav.getInvolved.donate')}
-                    </Link>
                     <Link to="/get-involved/jobs" className="block px-6 py-3 hover:bg-sand transition-colors">
                       {t('nav.getInvolved.jobs')}
                     </Link>
@@ -392,9 +389,6 @@ export default function Header() {
                       </Link>
                       <Link to="/get-involved/volunteer" onClick={() => setIsOpen(false)} className="block py-1 text-sm">
                         {t('nav.getInvolved.volunteer')}
-                      </Link>
-                      <Link to="/get-involved/donate" onClick={() => setIsOpen(false)} className="block py-1 text-sm">
-                        {t('nav.getInvolved.donate')}
                       </Link>
                       <Link to="/get-involved/jobs" onClick={() => setIsOpen(false)} className="block py-1 text-sm">
                         {t('nav.getInvolved.jobs')}

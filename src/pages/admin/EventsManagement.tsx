@@ -102,6 +102,12 @@ export default function EventsManagement() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.title || !formData.date || !formData.time || !formData.location) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -115,7 +121,7 @@ export default function EventsManagement() {
         time: formData.time,
         location: formData.location,
         location_ar: formData.location_ar || null,
-        capacity: formData.capacity ? parseInt(formData.capacity) : null,
+        max_capacity: formData.capacity ? parseInt(formData.capacity) : null,
         image_url: formData.image_url || null,
         is_featured: formData.is_featured,
       };
@@ -126,18 +132,26 @@ export default function EventsManagement() {
           .update(eventData)
           .eq('id', editingEvent.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Update error:', error);
+          throw error;
+        }
+        alert('Event updated successfully!');
       } else {
         const { error } = await supabase.from('events').insert([eventData]);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Insert error:', error);
+          throw error;
+        }
+        alert('Event created successfully!');
       }
 
       await fetchEvents();
       handleCloseModal();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving event:', error);
-      alert('Failed to save event. Please try again.');
+      alert(`Failed to save event: ${error.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
     }

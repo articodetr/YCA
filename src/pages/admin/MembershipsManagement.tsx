@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
-  Search, Loader2, Download, UserPlus,
+  Search, Loader2, Download, UserPlus, Trash2,
   BarChart3, Clock, CheckCircle, XCircle,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -57,6 +57,25 @@ export default function MembershipsManagement() {
       console.error('Error fetching memberships:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm('Are you sure you want to delete this membership application?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('membership_applications')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      alert('Membership deleted successfully');
+      fetchMemberships();
+    } catch (error: any) {
+      console.error('Error deleting membership:', error);
+      alert(`Failed to delete: ${error.message}`);
     }
   };
 
@@ -238,27 +257,36 @@ export default function MembershipsManagement() {
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Payment</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredMemberships.map((mem) => (
                   <tr
                     key={mem.id}
-                    onClick={() => setSelectedApp(mem)}
-                    className="hover:bg-emerald-50/50 transition-colors cursor-pointer"
+                    className="hover:bg-emerald-50/50 transition-colors"
                   >
-                    <td className="px-4 py-3.5 font-medium text-sm text-gray-900">{getFullName(mem)}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-600">{mem.email}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-600">
+                    <td className="px-4 py-3.5 font-medium text-sm text-gray-900 cursor-pointer" onClick={() => setSelectedApp(mem)}>{getFullName(mem)}</td>
+                    <td className="px-4 py-3.5 text-sm text-gray-600 cursor-pointer" onClick={() => setSelectedApp(mem)}>{mem.email}</td>
+                    <td className="px-4 py-3.5 text-sm text-gray-600 cursor-pointer" onClick={() => setSelectedApp(mem)}>
                       <div className="capitalize">{mem.membership_type.replace('_', ' ')}</div>
                       {mem.business_support_tier && (
                         <div className="text-xs text-gray-400 capitalize">{mem.business_support_tier}</div>
                       )}
                     </td>
-                    <td className="px-4 py-3.5 text-sm font-medium text-gray-900">{getAmountDisplay(mem)}</td>
-                    <td className="px-4 py-3.5">{getStatusBadge(mem.status)}</td>
-                    <td className="px-4 py-3.5">{getPaymentBadge(mem.payment_status)}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-600">{new Date(mem.created_at).toLocaleDateString()}</td>
+                    <td className="px-4 py-3.5 text-sm font-medium text-gray-900 cursor-pointer" onClick={() => setSelectedApp(mem)}>{getAmountDisplay(mem)}</td>
+                    <td className="px-4 py-3.5 cursor-pointer" onClick={() => setSelectedApp(mem)}>{getStatusBadge(mem.status)}</td>
+                    <td className="px-4 py-3.5 cursor-pointer" onClick={() => setSelectedApp(mem)}>{getPaymentBadge(mem.payment_status)}</td>
+                    <td className="px-4 py-3.5 text-sm text-gray-600 cursor-pointer" onClick={() => setSelectedApp(mem)}>{new Date(mem.created_at).toLocaleDateString()}</td>
+                    <td className="px-4 py-3.5">
+                      <button
+                        onClick={(e) => handleDelete(mem.id, e)}
+                        className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

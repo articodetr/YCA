@@ -21,7 +21,6 @@ import Team from './pages/about/Team';
 import Partners from './pages/about/Partners';
 import Reports from './pages/about/Reports';
 import Volunteer from './pages/get-involved/Volunteer';
-import Donate from './pages/get-involved/Donate';
 import Jobs from './pages/get-involved/Jobs';
 import Partnerships from './pages/get-involved/Partnerships';
 import Resources from './pages/Resources';
@@ -166,7 +165,6 @@ function App() {
 
                 <Route path="/get-involved/membership" element={<Navigate to="/membership" replace />} />
                 <Route path="/get-involved/volunteer" element={<Volunteer />} />
-                <Route path="/get-involved/donate" element={<Donate />} />
                 <Route path="/get-involved/jobs" element={<Jobs />} />
                 <Route path="/get-involved/partnerships" element={<Partnerships />} />
 

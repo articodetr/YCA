@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Download, Mail, AlertCircle, Clock, CheckCircle, XCircle, Loader2, Send } from 'lucide-react';
+import { Search, Download, Mail, AlertCircle, Clock, CheckCircle, XCircle, Loader2, Send, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import AdminLayout from '../../components/admin/AdminLayout';
 import ExportDialog from '../../components/admin/ExportDialog';
@@ -95,6 +95,24 @@ export default function MembershipExpiryMonitoring() {
       setSelectedMembers(new Set());
     } else {
       setSelectedMembers(new Set(filteredMembers.map(m => m.id)));
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this member? This will also delete associated payment and notification records.')) return;
+
+    try {
+      const { error } = await supabase
+        .from('members')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      showToast('Member deleted successfully', 'success');
+      fetchMembers();
+    } catch (error: any) {
+      console.error('Error deleting member:', error);
+      showToast(`Failed to delete member: ${error.message}`, 'error');
     }
   };
 

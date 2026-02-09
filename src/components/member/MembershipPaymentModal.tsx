@@ -184,6 +184,9 @@ function PaymentForm({ amount, applicationId, onSuccess, onError }: PaymentFormP
   const { language } = useLanguage();
   const { user } = useMemberAuth();
   const [processing, setProcessing] = useState(false);
+  const [elementReady, setElementReady] = useState(false);
+  const [elementComplete, setElementComplete] = useState(false);
+  const [elementError, setElementError] = useState<string | null>(null);
   const t = translations[language];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -191,6 +194,8 @@ function PaymentForm({ amount, applicationId, onSuccess, onError }: PaymentFormP
     if (!stripe || !elements) return;
 
     setProcessing(true);
+    setElementError(null);
+
     try {
       const { error: submitError } = await elements.submit();
       if (submitError) throw submitError;
@@ -232,7 +237,10 @@ function PaymentForm({ amount, applicationId, onSuccess, onError }: PaymentFormP
         onSuccess();
       }
     } catch (err: any) {
-      onError(err.message || t.paymentError);
+      console.error('Payment error:', err);
+      const errorMessage = err.message || t.paymentError;
+      setElementError(errorMessage);
+      onError(errorMessage);
     } finally {
       setProcessing(false);
     }
@@ -240,10 +248,37 @@ function PaymentForm({ amount, applicationId, onSuccess, onError }: PaymentFormP
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <PaymentElement />
+      <PaymentElement
+        onReady={() => {
+          console.log('Payment element ready');
+          setElementReady(true);
+        }}
+        onChange={(e) => {
+          console.log('Payment element changed:', e.complete);
+          setElementComplete(!!e.complete);
+        }}
+        onLoadError={(error) => {
+          console.error('Payment element load error:', error);
+          setElementError(error.message);
+          onError(error.message);
+        }}
+      />
+
+      {elementError && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-red-700">{elementError}</p>
+        </div>
+      )}
+
+      <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
+        <Lock className="w-3.5 h-3.5" />
+        <span>{language === 'ar' ? 'الدفع يتم بأمان عبر Stripe' : 'Your payment is processed securely by Stripe'}</span>
+      </div>
+
       <button
         type="submit"
-        disabled={!stripe || processing}
+        disabled={!stripe || !elements || !elementReady || !elementComplete || processing}
         className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3.5 px-6 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {processing ? (
@@ -427,6 +462,8 @@ export default function MembershipPaymentModal({
     if (!validate() || !user) return;
 
     setSubmittingDetails(true);
+    setPaymentError(null);
+
     try {
       const applicationData: any = {
         user_id: user.id,
@@ -472,6 +509,8 @@ export default function MembershipPaymentModal({
       }
 
       setLoadingPayment(true);
+      setStep('payment');
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`,
         {
@@ -493,14 +532,23 @@ export default function MembershipPaymentModal({
       );
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Failed to create payment');
-      if (!data.clientSecret) throw new Error('No client secret returned');
 
+      if (!response.ok) {
+        console.error('Payment intent creation failed:', data);
+        throw new Error(data.error || 'Failed to create payment');
+      }
+
+      if (!data.clientSecret) {
+        console.error('No client secret in response:', data);
+        throw new Error('No client secret returned');
+      }
+
+      console.log('Payment intent created successfully');
       setClientSecret(data.clientSecret);
-      setStep('payment');
     } catch (err: any) {
       console.error('Application/payment setup error:', err);
       setPaymentError(err.message);
+      setStep('details');
     } finally {
       setSubmittingDetails(false);
       setLoadingPayment(false);
@@ -985,7 +1033,7 @@ export default function MembershipPaymentModal({
               </motion.div>
             )}
 
-            {step === 'payment' && clientSecret && (
+            {step === 'payment' && (
               <motion.div
                 key="payment"
                 initial={{ opacity: 0, x: 20 }}
@@ -1013,24 +1061,43 @@ export default function MembershipPaymentModal({
                   </div>
                 )}
 
-                <Elements
-                  key={clientSecret}
-                  stripe={stripePromise}
-                  options={{
-                    clientSecret,
-                    appearance: {
-                      theme: 'stripe',
-                      variables: { colorPrimary: '#059669' },
-                    },
-                  }}
-                >
-                  <PaymentForm
-                    amount={paymentAmount}
-                    applicationId={applicationId!}
-                    onSuccess={handlePaymentSuccess}
-                    onError={(msg) => setPaymentError(msg)}
-                  />
-                </Elements>
+                {!clientSecret && (
+                  <div className="flex items-center justify-center gap-2 py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
+                    <span className="text-gray-600">{t.settingUpPayment}</span>
+                  </div>
+                )}
+
+                {clientSecret && stripePromise && (
+                  <Elements
+                    key={clientSecret}
+                    stripe={stripePromise}
+                    options={{
+                      clientSecret,
+                      appearance: {
+                        theme: 'stripe',
+                        variables: { colorPrimary: '#059669' },
+                      },
+                      loader: 'auto',
+                    }}
+                  >
+                    <PaymentForm
+                      amount={paymentAmount}
+                      applicationId={applicationId!}
+                      onSuccess={handlePaymentSuccess}
+                      onError={(msg) => setPaymentError(msg)}
+                    />
+                  </Elements>
+                )}
+
+                {clientSecret && !stripePromise && (
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-center">
+                    <AlertCircle className="w-6 h-6 text-amber-600 mx-auto mb-2" />
+                    <p className="text-sm text-amber-800">
+                      {language === 'ar' ? 'نظام الدفع غير متوفر حالياً' : 'Payment system is not configured'}
+                    </p>
+                  </div>
+                )}
               </motion.div>
             )}
 

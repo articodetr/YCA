@@ -11,6 +11,7 @@ const corsHeaders = {
 
 const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY")!;
 const stripe = new Stripe(stripeSecretKey, {
+  apiVersion: '2024-11-20.acacia',
   appInfo: { name: "YCA Birmingham", version: "1.0.0" },
 });
 

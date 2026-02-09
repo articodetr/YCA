@@ -63,34 +63,39 @@ export default function Contact() {
         pageKey="contact"
       />
 
+      <div className="pt-20">
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-16 max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
             <motion.div
               variants={fadeInLeft}
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
             >
-              <h2 className="text-3xl font-bold text-[#0f1c2e] mb-4">{c('heading', 'Get In Touch With Us')}</h2>
-              <p className="text-lg text-[#64748b] mb-10 leading-relaxed">
+              <h2 className="text-3xl font-bold text-primary mb-6">{c('heading', 'Get In Touch With Us')}</h2>
+              <p className="text-lg text-muted mb-8 leading-relaxed">
                 {c('intro', 'If you have got a question or general query, you can contact us and we will get in touch with you as soon as possible.')}
               </p>
 
               <motion.div
-                className="space-y-8 mb-10"
+                className="space-y-6 mb-8"
                 variants={staggerContainer}
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true }}
               >
-                <motion.div className="flex items-start gap-4" variants={staggerItem}>
-                  <div className="w-12 h-12 bg-[#0d9488]/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <MapPin className="w-5 h-5 text-[#0d9488]" />
-                  </div>
+                <motion.div className="flex items-start gap-2 sm:gap-3 md:gap-4" variants={staggerItem}>
+                  <motion.div
+                    className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-accent rounded-lg flex items-center justify-center flex-shrink-0"
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                  </motion.div>
                   <div>
-                    <h3 className="font-semibold text-base text-[#0f1c2e] mb-1">{c('address_label', 'Address')}</h3>
-                    <p className="text-[#64748b] text-sm leading-relaxed">
+                    <h3 className="font-bold text-base sm:text-lg text-primary mb-2">{c('address_label', 'Address')}</h3>
+                    <p className="text-muted text-sm sm:text-base">
                       {c('address_line1', 'YCA GreenCoat House')}<br />
                       {c('address_line2', '261-271 Stratford Road')}<br />
                       {c('address_line3', 'Birmingham, B11 1QS')}
@@ -98,37 +103,49 @@ export default function Contact() {
                   </div>
                 </motion.div>
 
-                <motion.div className="flex items-start gap-4" variants={staggerItem}>
-                  <div className="w-12 h-12 bg-[#0d9488]/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Phone className="w-5 h-5 text-[#0d9488]" />
-                  </div>
+                <motion.div className="flex items-start gap-2 sm:gap-3 md:gap-4" variants={staggerItem}>
+                  <motion.div
+                    className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-accent rounded-lg flex items-center justify-center flex-shrink-0"
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Phone className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                  </motion.div>
                   <div>
-                    <h3 className="font-semibold text-base text-[#0f1c2e] mb-1">{c('phone_label', 'Phone')}</h3>
-                    <a href="tel:01214395280" className="text-[#64748b] hover:text-[#0d9488] transition-colors text-sm">
+                    <h3 className="font-bold text-base sm:text-lg text-primary mb-2">{c('phone_label', 'Phone')}</h3>
+                    <a href="tel:01214395280" className="text-muted hover:text-accent transition-colors text-sm sm:text-base">
                       {c('phone_number', '0121 439 5280')}
                     </a>
                   </div>
                 </motion.div>
 
-                <motion.div className="flex items-start gap-4" variants={staggerItem}>
-                  <div className="w-12 h-12 bg-[#0d9488]/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Mail className="w-5 h-5 text-[#0d9488]" />
-                  </div>
+                <motion.div className="flex items-start gap-2 sm:gap-3 md:gap-4" variants={staggerItem}>
+                  <motion.div
+                    className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-accent rounded-lg flex items-center justify-center flex-shrink-0"
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                  </motion.div>
                   <div>
-                    <h3 className="font-semibold text-base text-[#0f1c2e] mb-1">{c('email_label', 'Email')}</h3>
-                    <a href="mailto:info@yca-birmingham.org.uk" className="text-[#64748b] hover:text-[#0d9488] transition-colors text-sm break-all">
+                    <h3 className="font-bold text-base sm:text-lg text-primary mb-2">{c('email_label', 'Email')}</h3>
+                    <a href="mailto:info@yca-birmingham.org.uk" className="text-muted hover:text-accent transition-colors text-sm sm:text-base break-all">
                       {c('email_address', 'info@yca-birmingham.org.uk')}
                     </a>
                   </div>
                 </motion.div>
 
-                <motion.div className="flex items-start gap-4" variants={staggerItem}>
-                  <div className="w-12 h-12 bg-[#0d9488]/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Clock className="w-5 h-5 text-[#0d9488]" />
-                  </div>
+                <motion.div className="flex items-start gap-2 sm:gap-3 md:gap-4" variants={staggerItem}>
+                  <motion.div
+                    className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-accent rounded-lg flex items-center justify-center flex-shrink-0"
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                  </motion.div>
                   <div>
-                    <h3 className="font-semibold text-base text-[#0f1c2e] mb-1">{c('hours_label', 'Opening Times')}</h3>
-                    <p className="text-[#64748b] whitespace-pre-line text-sm leading-relaxed">
+                    <h3 className="font-bold text-base sm:text-lg text-primary mb-2">{c('hours_label', 'Opening Times')}</h3>
+                    <p className="text-muted whitespace-pre-line text-sm sm:text-base">
                       {c('hours_text', 'Monday - Thursday: 10:00 AM - 3:30 PM\nFriday: 9:00 AM - 1:00 PM')}
                     </p>
                   </div>
@@ -136,17 +153,17 @@ export default function Contact() {
               </motion.div>
 
               <motion.div
-                className="bg-gray-50 p-6 rounded-xl"
+                className="bg-sand p-6 rounded-lg"
                 variants={scaleIn}
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true }}
               >
-                <h3 className="font-bold text-lg text-[#0f1c2e] mb-2">{c('advice_title', 'Need Advice or Support?')}</h3>
-                <p className="text-[#64748b] text-sm leading-relaxed mb-3">
+                <h3 className="font-bold text-xl text-primary mb-3">{c('advice_title', 'Need Advice or Support?')}</h3>
+                <p className="text-muted mb-4">
                   {c('advice_desc', 'Our bilingual team provides confidential advice and guidance on welfare benefits, housing, immigration, and more.')}
                 </p>
-                <p className="text-[#0d9488] font-semibold text-sm">
+                <p className="text-primary font-semibold">
                   {c('advice_cta', 'Call us today to book your one-to-one appointment')}
                 </p>
               </motion.div>
@@ -158,11 +175,11 @@ export default function Contact() {
               whileInView="visible"
               viewport={{ once: true }}
             >
-              <div className="bg-white border border-gray-200 p-8 rounded-xl">
-                <h2 className="text-2xl font-bold text-[#0f1c2e] mb-6">{c('form_title', 'Send Us a Message')}</h2>
-                <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="bg-sand p-8 rounded-lg">
+                <h2 className="text-3xl font-bold text-primary mb-6">{c('form_title', 'Send Us a Message')}</h2>
+                <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <label htmlFor="name" className="block text-[#0f1c2e] text-sm font-medium mb-1.5">
+                    <label htmlFor="name" className="block text-primary font-semibold mb-2">
                       Your Name *
                     </label>
                     <input
@@ -172,13 +189,13 @@ export default function Contact() {
                       required
                       value={formData.name}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0d9488]/20 focus:border-[#0d9488] transition-colors text-sm"
+                      className="w-full px-4 py-3 border-2 border-border rounded-lg focus:outline-none focus:border-accent transition-colors"
                       placeholder="Enter your full name"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="email" className="block text-[#0f1c2e] text-sm font-medium mb-1.5">
+                    <label htmlFor="email" className="block text-primary font-semibold mb-2">
                       Email *
                     </label>
                     <input
@@ -188,13 +205,13 @@ export default function Contact() {
                       required
                       value={formData.email}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0d9488]/20 focus:border-[#0d9488] transition-colors text-sm"
+                      className="w-full px-4 py-3 border-2 border-border rounded-lg focus:outline-none focus:border-accent transition-colors"
                       placeholder="your.email@example.com"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="phone" className="block text-[#0f1c2e] text-sm font-medium mb-1.5">
+                    <label htmlFor="phone" className="block text-primary font-semibold mb-2">
                       Phone
                     </label>
                     <input
@@ -203,13 +220,13 @@ export default function Contact() {
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0d9488]/20 focus:border-[#0d9488] transition-colors text-sm"
+                      className="w-full px-4 py-3 border-2 border-border rounded-lg focus:outline-none focus:border-accent transition-colors"
                       placeholder="Your phone number"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="subject" className="block text-[#0f1c2e] text-sm font-medium mb-1.5">
+                    <label htmlFor="subject" className="block text-primary font-semibold mb-2">
                       Subject *
                     </label>
                     <input
@@ -219,29 +236,29 @@ export default function Contact() {
                       required
                       value={formData.subject}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0d9488]/20 focus:border-[#0d9488] transition-colors text-sm"
+                      className="w-full px-4 py-3 border-2 border-border rounded-lg focus:outline-none focus:border-accent transition-colors"
                       placeholder="What is your message about?"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="message" className="block text-[#0f1c2e] text-sm font-medium mb-1.5">
+                    <label htmlFor="message" className="block text-primary font-semibold mb-2">
                       Message *
                     </label>
                     <textarea
                       id="message"
                       name="message"
                       required
-                      rows={5}
+                      rows={6}
                       value={formData.message}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0d9488]/20 focus:border-[#0d9488] transition-colors resize-none text-sm"
+                      className="w-full px-4 py-3 border-2 border-border rounded-lg focus:outline-none focus:border-accent transition-colors resize-none"
                       placeholder="Write your message here..."
                     ></textarea>
                   </div>
 
                   {submitMessage && (
-                    <div className={`p-4 rounded-xl text-sm ${submitMessage.includes('error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                    <div className={`p-4 rounded-lg ${submitMessage.includes('error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
                       {submitMessage}
                     </div>
                   )}
@@ -249,11 +266,11 @@ export default function Contact() {
                   <motion.button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-[#0d9488] text-white px-8 py-3.5 rounded-xl hover:bg-[#0d9488]/90 transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                    className="w-full bg-primary text-white px-8 py-4 rounded-lg hover:bg-secondary transition-colors font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <Send size={18} />
+                    <Send size={20} />
                     {isSubmitting ? 'Sending...' : 'Send Message'}
                   </motion.button>
                 </form>
@@ -263,28 +280,21 @@ export default function Contact() {
         </div>
       </section>
 
-      <section className="pb-20 bg-white">
-        <div className="container mx-auto px-4">
-          <motion.div
-            className="max-w-6xl mx-auto overflow-hidden rounded-xl"
-            variants={fadeInUp}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-          >
-            <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2433.5!2d-1.8777!3d52.4633!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4870bdb6f2e8e4b1%3A0x5e8b2e0c8e9f4a0b!2s261-271+Stratford+Rd%2C+Birmingham+B11+1QS!5e0!3m2!1sen!2suk!4v1700000000000"
-              width="100%"
-              height="400"
-              style={{ border: 0 }}
-              allowFullScreen
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              title="YCA Birmingham Location"
-            ></iframe>
-          </motion.div>
+      <section className="py-0 bg-white">
+        <div className="w-full h-96">
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2433.5!2d-1.8777!3d52.4633!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4870bdb6f2e8e4b1%3A0x5e8b2e0c8e9f4a0b!2s261-271+Stratford+Rd%2C+Birmingham+B11+1QS!5e0!3m2!1sen!2suk!4v1700000000000"
+            width="100%"
+            height="100%"
+            style={{ border: 0 }}
+            allowFullScreen
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            title="YCA Birmingham Location"
+          ></iframe>
         </div>
       </section>
+      </div>
     </div>
   );
 }

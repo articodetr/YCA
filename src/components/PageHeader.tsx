@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
+import { ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { fadeInUp } from '../lib/animations';
+import { fadeInUp, fadeInDown, staggerContainer, staggerItem } from '../lib/animations';
 import { useSiteSettings } from '../contexts/SiteSettingsContext';
-import { useLanguage } from '../contexts/LanguageContext';
 
 interface PageHeaderProps {
   title: string;
@@ -14,52 +14,83 @@ interface PageHeaderProps {
 
 export default function PageHeader({ title, description, breadcrumbs, image, pageKey }: PageHeaderProps) {
   const { getPageImage } = useSiteSettings();
-  const { language } = useLanguage();
-  const isRTL = language === 'ar';
-
-  const bgImage = image || (pageKey ? getPageImage(pageKey, 'header_bg', '') : '');
+  const backgroundImage = image || (pageKey ? getPageImage(pageKey, 'header_bg', '/image.png') : '/image.png');
 
   return (
-    <section className="relative bg-primary overflow-hidden min-h-[220px] md:min-h-[260px] flex items-end">
-      {bgImage && (
-        <div className="absolute inset-0">
-          <img src={bgImage} alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-primary/75" />
-        </div>
-      )}
-      {!bgImage && (
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-secondary to-primary" />
-      )}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-accent/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-      <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+    <section className="relative h-80 flex items-center justify-center overflow-hidden">
+      <motion.div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${backgroundImage})` }}
+        initial={{ scale: 1.2, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 1.2, ease: 'easeOut' }}
+      />
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-r from-primary/90 via-secondary/85 to-primary/90"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, delay: 0.3 }}
+      />
 
-      <div className="container mx-auto px-4 relative z-10 pb-10 pt-28" dir={isRTL ? 'rtl' : 'ltr'}>
-        <motion.div
-          variants={fadeInUp}
-          initial="hidden"
-          animate="visible"
+      <motion.div
+        className="container mx-auto px-4 relative z-10 text-center pt-8"
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.h1
+          className="text-5xl md:text-6xl font-bold text-white mb-4"
+          variants={fadeInDown}
         >
-          {breadcrumbs && breadcrumbs.length > 0 && (
-            <div className="flex items-center gap-2 text-sm text-gray-400 mb-3">
-              <Link to="/" className="hover:text-accent transition-colors">{isRTL ? 'الرئيسية' : 'Home'}</Link>
-              {breadcrumbs.map((crumb, i) => (
-                <span key={i} className="flex items-center gap-2">
-                  <span className="text-gray-500">/</span>
-                  {crumb.path ? (
-                    <Link to={crumb.path} className="hover:text-accent transition-colors">{crumb.label}</Link>
-                  ) : (
-                    <span className="text-white">{crumb.label}</span>
-                  )}
-                </span>
-              ))}
-            </div>
-          )}
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white tracking-tight">{title}</h1>
-          {description && (
-            <p className="mt-3 text-base md:text-lg text-gray-300 max-w-2xl leading-relaxed">{description}</p>
-          )}
-        </motion.div>
-      </div>
+          {title}
+        </motion.h1>
+
+        {description && (
+          <motion.p
+            className="text-xl text-gray-200 max-w-3xl mx-auto mb-6 leading-relaxed"
+            variants={fadeInUp}
+          >
+            {description}
+          </motion.p>
+        )}
+
+        {breadcrumbs && breadcrumbs.length > 0 && (
+          <motion.nav
+            className="flex items-center justify-center gap-2 text-white/90 text-sm"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            <motion.div variants={staggerItem}>
+              <Link
+                to="/"
+                className="hover:text-accent transition-colors"
+              >
+                Home
+              </Link>
+            </motion.div>
+            {breadcrumbs.map((crumb, index) => (
+              <motion.div
+                key={index}
+                className="flex items-center gap-2"
+                variants={staggerItem}
+              >
+                <ChevronRight size={16} className="text-accent" />
+                {crumb.path ? (
+                  <Link
+                    to={crumb.path}
+                    className="hover:text-accent transition-colors"
+                  >
+                    {crumb.label}
+                  </Link>
+                ) : (
+                  <span className="text-accent font-semibold">{crumb.label}</span>
+                )}
+              </motion.div>
+            ))}
+          </motion.nav>
+        )}
+      </motion.div>
     </section>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, User, ArrowRight, FileText, Loader2 } from 'lucide-react';
+import { Calendar, User, Tag, ArrowRight, FileText, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PageHeader from '../components/PageHeader';
@@ -109,37 +109,40 @@ export default function News() {
         pageKey="news"
       />
 
-      <section className="py-16 bg-[#f8fafb]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="pt-20">
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4">
           <motion.div
-            className="mb-14"
+            className="mb-12"
             variants={fadeInUp}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
           >
-            <div className="flex flex-wrap gap-2 justify-center">
+            <div className="flex flex-wrap gap-3 justify-center">
               {categories.map((category, index) => {
                 const count = getCategoryCount(category);
                 return (
-                  <button
+                  <motion.button
                     key={index}
                     onClick={() => setSelectedCategory(category)}
-                    className={`px-5 py-2 rounded-full text-sm font-medium transition-colors flex items-center gap-2 ${
+                    className={`px-6 py-2 rounded-full font-semibold transition-colors flex items-center gap-2 ${
                       selectedCategory === category
-                        ? 'bg-[#0d9488] text-white'
-                        : 'bg-gray-100 text-[#64748b] hover:bg-gray-200'
+                        ? 'bg-primary text-white'
+                        : 'bg-sand text-primary hover:bg-accent'
                     }`}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
                     {category}
                     <span className={`text-xs px-2 py-0.5 rounded-full ${
                       selectedCategory === category
-                        ? 'bg-white/20'
-                        : 'bg-gray-200'
+                        ? 'bg-white bg-opacity-20'
+                        : 'bg-primary bg-opacity-10'
                     }`}>
                       {count}
                     </span>
-                  </button>
+                  </motion.button>
                 );
               })}
             </div>
@@ -147,36 +150,38 @@ export default function News() {
 
           {loading ? (
             <motion.div
-              className="flex flex-col items-center justify-center py-24"
+              className="flex flex-col items-center justify-center py-20"
               variants={fadeInUp}
               initial="hidden"
               animate="visible"
             >
-              <Loader2 size={40} className="text-[#0d9488] animate-spin mb-4" />
-              <p className="text-[#64748b]">Loading articles...</p>
+              <Loader2 size={48} className="text-primary animate-spin mb-4" />
+              <p className="text-lg text-muted">Loading articles...</p>
             </motion.div>
           ) : error ? (
             <motion.div
-              className="text-center py-24 max-w-md mx-auto"
+              className="text-center py-20 max-w-2xl mx-auto"
               variants={fadeInUp}
               initial="hidden"
               animate="visible"
             >
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-red-50 rounded-full mb-6">
-                <FileText size={36} className="text-red-400" />
+              <div className="inline-flex items-center justify-center w-24 h-24 bg-red-50 rounded-full mb-6">
+                <FileText size={48} className="text-red-500" />
               </div>
-              <h3 className="text-xl font-semibold text-[#0f1c2e] mb-3">Error Loading Articles</h3>
-              <p className="text-[#64748b] mb-8">{error}</p>
-              <button
+              <h3 className="text-2xl font-bold text-primary mb-4">Error Loading Articles</h3>
+              <p className="text-lg text-muted mb-8">{error}</p>
+              <motion.button
                 onClick={fetchArticles}
-                className="bg-[#0d9488] text-white px-6 py-2.5 rounded-lg hover:bg-[#0d9488]/90 transition-colors font-medium"
+                className="bg-primary text-white px-8 py-3 rounded-lg hover:bg-secondary transition-colors font-semibold"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
                 Try Again
-              </button>
+              </motion.button>
             </motion.div>
           ) : filteredArticles.length > 0 ? (
             <motion.div
-              className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
+              className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto"
               variants={staggerContainer}
               initial="hidden"
               animate="visible"
@@ -184,43 +189,45 @@ export default function News() {
               {filteredArticles.map((article) => (
                 <motion.article
                   key={article.id}
-                  className="bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-shadow"
+                  className="bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all group"
                   variants={staggerItem}
+                  whileHover={{ y: -8 }}
+                  transition={{ duration: 0.3 }}
                 >
                   <div className="relative overflow-hidden">
                     <img
                       src={article.image_url || 'https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=800'}
                       alt={article.title}
-                      className="w-full h-48 object-cover"
+                      className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-700 ease-in-out"
                     />
-                    <div className="absolute top-3 left-3">
-                      <span className="bg-[#0d9488] text-white px-3 py-1 rounded-full text-xs font-medium">
+                    <div className="absolute top-4 left-4">
+                      <span className="bg-accent text-primary px-4 py-1 rounded-full text-sm font-semibold">
                         {article.category}
                       </span>
                     </div>
                   </div>
-                  <div className="p-5">
-                    <div className="flex items-center gap-4 text-xs text-[#64748b] mb-3">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar size={14} />
+                  <div className="p-6">
+                    <div className="flex items-center gap-4 text-sm text-muted mb-3">
+                      <div className="flex items-center gap-2">
+                        <Calendar size={16} />
                         <span>{new Date(article.published_at).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <User size={14} />
+                      <div className="flex items-center gap-2">
+                        <User size={16} />
                         <span>{article.author}</span>
                       </div>
                     </div>
-                    <h3 className="text-lg font-semibold text-[#0f1c2e] mb-2 line-clamp-2">
+                    <h3 className="text-xl font-bold text-primary mb-3 line-clamp-2 group-hover:text-accent transition-colors">
                       {article.title}
                     </h3>
-                    <p className="text-[#64748b] text-sm mb-4 line-clamp-3 leading-relaxed">
+                    <p className="text-muted mb-4 line-clamp-3 leading-relaxed">
                       {article.excerpt}
                     </p>
                     <Link
                       to={`/news/${article.id}`}
-                      className="inline-flex items-center gap-1.5 text-[#0d9488] text-sm font-medium hover:gap-2.5 transition-all"
+                      className="inline-flex items-center gap-2 text-primary font-semibold hover:text-accent transition-colors"
                     >
-                      Read More <ArrowRight size={16} />
+                      Read More <ArrowRight size={18} />
                     </Link>
                   </div>
                 </motion.article>
@@ -228,28 +235,34 @@ export default function News() {
             </motion.div>
           ) : (
             <motion.div
-              className="text-center py-24 max-w-md mx-auto"
+              className="text-center py-20 max-w-2xl mx-auto"
               variants={fadeInUp}
               initial="hidden"
               animate="visible"
             >
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-6">
-                <FileText size={36} className="text-[#64748b]" />
-              </div>
-              <h3 className="text-xl font-semibold text-[#0f1c2e] mb-3">
+              <motion.div
+                className="inline-flex items-center justify-center w-24 h-24 bg-sand rounded-full mb-6"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                transition={{ duration: 0.3 }}
+              >
+                <FileText size={48} className="text-primary" />
+              </motion.div>
+              <h3 className="text-2xl font-bold text-primary mb-4">
                 No Articles Found
               </h3>
-              <p className="text-[#64748b] mb-8">
+              <p className="text-lg text-muted mb-8">
                 There are currently no articles in the "{selectedCategory}" category.
                 <br />
                 Please check back later or explore other categories.
               </p>
-              <button
+              <motion.button
                 onClick={() => setSelectedCategory('All')}
-                className="bg-[#0d9488] text-white px-6 py-2.5 rounded-lg hover:bg-[#0d9488]/90 transition-colors font-medium"
+                className="bg-primary text-white px-8 py-3 rounded-lg hover:bg-secondary transition-colors font-semibold"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
                 View All Articles
-              </button>
+              </motion.button>
             </motion.div>
           )}
 
@@ -261,87 +274,125 @@ export default function News() {
               whileInView="visible"
               viewport={{ once: true }}
             >
-              <button
+              <motion.button
                 onClick={handleLoadMore}
-                className="bg-[#0d9488] text-white px-8 py-2.5 rounded-lg hover:bg-[#0d9488]/90 transition-colors font-medium"
+                className="bg-primary text-white px-8 py-3 rounded-lg hover:bg-secondary transition-colors font-semibold"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
                 Load More Articles
-              </button>
+              </motion.button>
             </motion.div>
           )}
         </div>
       </section>
 
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-16 bg-sand">
+        <div className="container mx-auto px-4">
           <motion.div
-            className="max-w-xl mx-auto text-center"
+            className="max-w-4xl mx-auto bg-white p-10 rounded-lg shadow-lg text-center"
             variants={scaleIn}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
           >
-            <h2 className="text-2xl font-semibold text-[#0f1c2e] mb-2">{c('newsletter_title', 'Subscribe to Our Newsletter')}</h2>
-            <p className="text-[#64748b] mb-8">
+            <h2 className="text-3xl font-bold text-primary mb-4">{c('newsletter_title', 'Subscribe to Our Newsletter')}</h2>
+            <p className="text-lg text-muted mb-6">
               {c('newsletter_desc', 'Get the latest news, events, and community updates delivered directly to your inbox')}
             </p>
 
             {subscribeStatus === 'success' && (
               <motion.div
-                className="bg-green-50 border border-green-200 text-green-700 p-3 rounded-lg mb-6 text-sm"
-                initial={{ opacity: 0, y: -10 }}
+                className="bg-green-50 border-2 border-green-500 text-green-800 p-4 rounded-lg mb-6"
+                initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                <p className="font-medium">Successfully subscribed! Check your email for confirmation.</p>
+                <p className="font-semibold">Successfully subscribed! Check your email for confirmation.</p>
               </motion.div>
             )}
 
             {subscribeStatus === 'error' && (
               <motion.div
-                className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-6 text-sm"
-                initial={{ opacity: 0, y: -10 }}
+                className="bg-red-50 border-2 border-red-500 text-red-800 p-4 rounded-lg mb-6"
+                initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                <p className="font-medium">This email is already subscribed or there was an error. Please try again.</p>
+                <p className="font-semibold">This email is already subscribed or there was an error. Please try again.</p>
               </motion.div>
             )}
 
-            <form onSubmit={handleSubscribe} className="flex flex-col gap-3">
+            <form onSubmit={handleSubscribe} className="flex flex-col gap-4 max-w-xl mx-auto">
               <input
                 type="text"
                 placeholder="Your name (optional)"
                 value={subscribeName}
                 onChange={(e) => setSubscribeName(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0d9488] focus:ring-1 focus:ring-[#0d9488] transition-colors"
+                className="w-full px-6 py-3 border-2 border-border rounded-lg focus:outline-none focus:border-accent"
               />
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <input
                   type="email"
                   placeholder="Enter your email address"
                   value={subscribeEmail}
                   onChange={(e) => setSubscribeEmail(e.target.value)}
                   required
-                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#0d9488] focus:ring-1 focus:ring-[#0d9488] transition-colors"
+                  className="flex-1 px-6 py-3 border-2 border-border rounded-lg focus:outline-none focus:border-accent"
                 />
-                <button
+                <motion.button
                   type="submit"
                   disabled={subscribing}
-                  className="bg-[#0d9488] text-white px-6 py-2.5 rounded-lg hover:bg-[#0d9488]/90 transition-colors text-sm font-medium whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="bg-primary text-white px-8 py-3 rounded-lg hover:bg-secondary transition-colors font-semibold whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  whileHover={{ scale: subscribing ? 1 : 1.05 }}
+                  whileTap={{ scale: subscribing ? 1 : 0.95 }}
                 >
                   {subscribing ? (
                     <>
-                      <Loader2 size={16} className="animate-spin" />
+                      <Loader2 size={20} className="animate-spin" />
                       Subscribing...
                     </>
                   ) : (
                     'Subscribe'
                   )}
-                </button>
+                </motion.button>
               </div>
             </form>
           </motion.div>
         </div>
       </section>
+
+      <section className="py-16 bg-primary text-white">
+        <motion.div
+          className="container mx-auto px-4 text-center"
+          variants={fadeInUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
+          <h2 className="text-3xl font-bold mb-4">{c('social_title', 'Follow Us on Social Media')}</h2>
+          <p className="text-xl text-gray-300 mb-6 max-w-2xl mx-auto">
+            {c('social_desc', 'Stay connected for real-time updates and community stories')}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <motion.a
+              href="#"
+              className="bg-accent text-primary px-8 py-4 rounded-lg hover:bg-hover transition-colors font-semibold"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {c('follow_instagram', 'Follow on Instagram')}
+            </motion.a>
+            <motion.a
+              href="#"
+              className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg hover:bg-white hover:text-primary transition-colors font-semibold"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {c('join_facebook', 'Join Facebook Group')}
+            </motion.a>
+          </div>
+        </motion.div>
+      </section>
+      </div>
     </div>
   );
 }

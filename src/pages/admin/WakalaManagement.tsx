@@ -16,6 +16,8 @@ import {
   X,
   User,
   Loader2,
+  ExternalLink,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { formatTimeRange } from '../../lib/booking-utils';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
@@ -211,27 +213,6 @@ export default function WakalaManagement() {
     }
   };
 
-  const downloadDocument = async (filePath: string) => {
-    try {
-      const { data, error } = await supabase.storage
-        .from('wakala-documents')
-        .download(filePath);
-
-      if (error) throw error;
-
-      const url = URL.createObjectURL(data);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filePath.split('/').pop() || 'document';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error downloading document:', error);
-      alert('Failed to download document');
-    }
-  };
 
   const getStatusBadge = (status: string) => {
     const badges: Record<string, { color: string; icon: typeof Clock; text: string }> = {
@@ -602,20 +583,79 @@ export default function WakalaManagement() {
 
               <div>
                 <label className="text-sm font-medium text-gray-500 mb-2 block">Passport Documents</label>
-                <div className="space-y-2">
-                  {selectedApp.passport_copies && selectedApp.passport_copies.length > 0 ? (
-                    selectedApp.passport_copies.map((filePath: string, index: number) => (
-                      <button
-                        key={index}
-                        onClick={() => downloadDocument(filePath)}
-                        className="flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded-lg w-full text-left transition-colors"
-                      >
-                        <Download className="w-4 h-4 text-gray-600" />
-                        <span className="text-sm text-gray-900">Document {index + 1}</span>
-                      </button>
-                    ))
+                <div className="space-y-3">
+                  {selectedApp.applicant_passport_url || selectedApp.attorney_passport_url ? (
+                    <>
+                      {selectedApp.applicant_passport_url && (
+                        <div className="space-y-2">
+                          <p className="text-xs font-medium text-gray-600">Applicant Passport / جواز الموكل</p>
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={selectedApp.applicant_passport_url}
+                              alt="Applicant Passport"
+                              className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200 cursor-pointer hover:border-emerald-500 transition-colors"
+                              onClick={() => window.open(selectedApp.applicant_passport_url, '_blank')}
+                            />
+                            <div className="flex flex-col gap-2">
+                              <a
+                                href={selectedApp.applicant_passport_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium transition-colors"
+                              >
+                                <ExternalLink className="w-4 h-4" />
+                                View Full Size
+                              </a>
+                              <a
+                                href={selectedApp.applicant_passport_url}
+                                download
+                                className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg text-sm font-medium transition-colors"
+                              >
+                                <Download className="w-4 h-4" />
+                                Download
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {selectedApp.attorney_passport_url && (
+                        <div className="space-y-2">
+                          <p className="text-xs font-medium text-gray-600">Attorney Passport / جواز الوكيل</p>
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={selectedApp.attorney_passport_url}
+                              alt="Attorney Passport"
+                              className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200 cursor-pointer hover:border-emerald-500 transition-colors"
+                              onClick={() => window.open(selectedApp.attorney_passport_url, '_blank')}
+                            />
+                            <div className="flex flex-col gap-2">
+                              <a
+                                href={selectedApp.attorney_passport_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium transition-colors"
+                              >
+                                <ExternalLink className="w-4 h-4" />
+                                View Full Size
+                              </a>
+                              <a
+                                href={selectedApp.attorney_passport_url}
+                                download
+                                className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg text-sm font-medium transition-colors"
+                              >
+                                <Download className="w-4 h-4" />
+                                Download
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   ) : (
-                    <p className="text-gray-500 text-sm">No documents uploaded</p>
+                    <div className="flex items-center gap-2 text-gray-500 text-sm py-2">
+                      <ImageIcon className="w-4 h-4" />
+                      <span>No documents uploaded</span>
+                    </div>
                   )}
                 </div>
               </div>

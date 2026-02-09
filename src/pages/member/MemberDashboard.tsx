@@ -522,7 +522,6 @@ export default function MemberDashboard() {
               <ApplicationsTab
                 wakalaApps={wakalaApps}
                 onCancelAppointment={handleCancelAppointment}
-                onRefresh={fetchData}
                 t={t}
               />
             )}

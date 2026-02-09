@@ -195,6 +195,9 @@ export default function VolunteersManagement() {
                             </button>
                           </>
                         )}
+                        <button onClick={() => handleDelete(v.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>

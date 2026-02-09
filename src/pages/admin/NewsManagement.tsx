@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search, Loader2, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import ImageUploader from '../../components/admin/ImageUploader';
 
 interface Article {
   id: string;
@@ -313,15 +314,12 @@ export default function NewsManagement() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Image URL (optional)
-                </label>
-                <input
-                  type="url"
-                  value={formData.image_url}
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  placeholder="https://example.com/image.jpg"
+                <ImageUploader
+                  bucket="news-images"
+                  currentImage={formData.image_url}
+                  onUploadSuccess={(url) => setFormData({ ...formData, image_url: url })}
+                  label="Article Image (optional)"
+                  maxSizeMB={5}
                 />
               </div>
 

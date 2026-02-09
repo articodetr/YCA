@@ -133,9 +133,14 @@ export default function PartnershipsManagement() {
                     <td className="px-4 py-3.5">{getStatusBadge(i.status)}</td>
                     <td className="px-4 py-3.5 text-sm text-gray-600">{new Date(i.created_at).toLocaleDateString()}</td>
                     <td className="px-4 py-3.5 text-right">
-                      <button onClick={() => setSelected(i)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors" title="View">
-                        <Eye className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1">
+                        <button onClick={() => setSelected(i)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors" title="View">
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDelete(i.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

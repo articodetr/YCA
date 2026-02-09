@@ -327,6 +327,7 @@ Yemen Community Association
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Expiry Date</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Days Left</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -356,6 +357,15 @@ Yemen Community Association
                       </span>
                     </td>
                     <td className="px-4 py-3">{getStatusBadge(member.expiry_status)}</td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={() => handleDelete(member.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete Member"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

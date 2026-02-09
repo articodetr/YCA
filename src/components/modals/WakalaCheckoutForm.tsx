@@ -22,12 +22,6 @@ export interface WakalaFormPayload {
   attorney_passport_url: string | null;
   witness_passports_url: string | null;
   membership_number?: string;
-  booking_date?: string;
-  requested_date?: string;
-  slot_id?: string;
-  start_time?: string;
-  end_time?: string;
-  duration_minutes?: number;
 }
 
 interface WakalaCheckoutFormProps {

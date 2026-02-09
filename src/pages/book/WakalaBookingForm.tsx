@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Loader2, CheckCircle, AlertCircle, User, X, FileText, Send, Upload, Crown,
+  Loader2, CheckCircle, AlertCircle, User, X, FileText, Send, Upload, Crown, Calendar as CalendarIcon,
 } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';
 import { supabase } from '../../lib/supabase';
@@ -9,9 +9,30 @@ import { stripePromise } from '../../lib/stripe';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import FileUploadField from '../../components/booking/FileUploadField';
+import Calendar from '../../components/booking/Calendar';
+import TimeSlotGrid from '../../components/booking/TimeSlotGrid';
 import WakalaCheckoutForm from '../../components/modals/WakalaCheckoutForm';
 import type { WakalaFormPayload } from '../../components/modals/WakalaCheckoutForm';
 import type { BookingResult } from './BookPage';
+import {
+  getAvailableSlotsForDuration, reserveSlots, getUnavailableDatesWithReasons,
+  getEffectiveWorkingHours, checkSlotStillAvailable, findNearestAvailableSlot,
+  getPublicSlotCounts,
+} from '../../lib/booking-utils';
+import type { RealtimeChannel } from '@supabase/supabase-js';
+
+interface TimeSlot {
+  id: string;
+  startTime: string;
+  endTime: string;
+  isAvailable: boolean;
+}
+
+interface Service {
+  id: string;
+  name_en: string;
+  name_ar: string;
+}
 
 interface WakalaBookingFormProps {
   onComplete: (result: BookingResult) => void;
@@ -20,7 +41,7 @@ interface WakalaBookingFormProps {
 const translationsData = {
   en: {
     title: 'Wakala Application',
-    subtitle: 'Complete the form and upload required documents',
+    subtitle: 'Complete the form, select your appointment, and upload required documents',
     personalInfo: 'Contact Details',
     contactDescription: 'Enter your contact information.',
     fullName: 'Full Name',
@@ -71,10 +92,19 @@ const translationsData = {
     signIn: 'Sign In',
     signInPromo: 'Already a member? Sign in to auto-fill your details and get member pricing.',
     backToForm: 'Back',
+    selectAppointment: 'Select Appointment',
+    selectDate: 'Select Date',
+    selectTime: 'Select Time',
+    selectDateTimeRequired: 'Please select a date and time for your appointment',
+    slotTaken: 'The time you selected was just booked by someone else. Please choose a different time.',
+    slotTakenSuggestion: 'The nearest available time is',
+    slotNoLongerAvailable: 'This time slot is no longer available. Available times have been updated.',
+    tryDifferentDate: 'No available times for this date. Please try a different date.',
+    appointmentDuration: '30-minute appointment',
   },
   ar: {
     title: 'طلب وكالة',
-    subtitle: 'أكمل النموذج وارفق المستندات المطلوبة',
+    subtitle: 'أكمل النموذج، اختر موعدك، وارفق المستندات المطلوبة',
     personalInfo: 'بيانات الاتصال',
     contactDescription: 'أدخل معلومات الاتصال الخاصة بك.',
     fullName: 'الاسم الكامل',
@@ -125,6 +155,15 @@ const translationsData = {
     signIn: 'تسجيل الدخول',
     signInPromo: 'عضو بالفعل؟ سجل دخولك لتعبئة بياناتك تلقائياً والحصول على سعر الأعضاء.',
     backToForm: 'رجوع',
+    selectAppointment: 'اختر الموعد',
+    selectDate: 'اختر التاريخ',
+    selectTime: 'اختر الوقت',
+    selectDateTimeRequired: 'يرجى اختيار تاريخ ووقت لموعدك',
+    slotTaken: 'الوقت الذي اخترته تم حجزه للتو من قبل شخص آخر. يرجى اختيار وقت آخر.',
+    slotTakenSuggestion: 'أقرب وقت متاح هو',
+    slotNoLongerAvailable: 'هذا الوقت لم يعد متاحاً. تم تحديث الأوقات المتاحة.',
+    tryDifferentDate: 'لا توجد أوقات متاحة لهذا التاريخ. يرجى اختيار تاريخ آخر.',
+    appointmentDuration: 'موعد 30 دقيقة',
   },
 };
 
@@ -158,10 +197,149 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
   const [previousWakalaCount, setPreviousWakalaCount] = useState(0);
   const [memberNumber, setMemberNumber] = useState('');
 
+  const [wakalaService, setWakalaService] = useState<Service | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
+  const [slots, setSlots] = useState<TimeSlot[]>([]);
+  const [maxDaysAhead, setMaxDaysAhead] = useState(30);
+  const [unavailableDates, setUnavailableDates] = useState<string[]>([]);
+  const [fullyBookedDates, setFullyBookedDates] = useState<string[]>([]);
+  const [slotCounts, setSlotCounts] = useState<Record<string, number>>({});
+  const [workingHours, setWorkingHours] = useState<{ startTime: string; endTime: string; breakTimes: { start: string; end: string }[] } | null>(null);
+  const [recentlyBookedSlotIds, setRecentlyBookedSlotIds] = useState<Set<string>>(new Set());
+  const [slotWarning, setSlotWarning] = useState('');
+  const realtimeChannelRef = useRef<RealtimeChannel | null>(null);
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const WAKALA_DURATION = 30 as const;
+
+  const cleanupRealtimeAndPolling = useCallback(() => {
+    if (realtimeChannelRef.current) {
+      supabase.removeChannel(realtimeChannelRef.current);
+      realtimeChannelRef.current = null;
+    }
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+  }, []);
+
   useEffect(() => {
     loadUserData();
     checkMemberEligibility();
+    loadWakalaService();
+    loadSettings();
+    loadUnavailableDates();
+    return () => cleanupRealtimeAndPolling();
   }, []);
+
+  useEffect(() => {
+    if (wakalaService && selectedDate) {
+      loadSlots();
+      setupRealtimeSubscription();
+      setupPolling();
+    } else {
+      cleanupRealtimeAndPolling();
+    }
+    return cleanupRealtimeAndPolling;
+  }, [wakalaService, selectedDate]);
+
+  const setupRealtimeSubscription = () => {
+    if (!wakalaService || !selectedDate) return;
+    cleanupRealtimeAndPolling();
+    const dateStr = selectedDate.toISOString().split('T')[0];
+    const channel = supabase
+      .channel(`wakala-slots-${dateStr}-${wakalaService.id}`)
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'availability_slots',
+        filter: `service_id=eq.${wakalaService.id}`,
+      }, (payload) => {
+        const updated = payload.new as { id: string; is_available: boolean; date: string };
+        if (updated.date !== dateStr) return;
+        if (!updated.is_available) {
+          setRecentlyBookedSlotIds(prev => new Set([...prev, updated.id]));
+          setTimeout(() => {
+            setRecentlyBookedSlotIds(prev => { const next = new Set(prev); next.delete(updated.id); return next; });
+          }, 3000);
+        }
+        setSlots(prev => prev.map(s => s.id === updated.id ? { ...s, isAvailable: updated.is_available } : s));
+        setSelectedSlot(prev => {
+          if (prev && prev.id === updated.id && !updated.is_available) {
+            setSlotWarning(t.slotTaken);
+            return null;
+          }
+          return prev;
+        });
+        loadUnavailableDates();
+      })
+      .subscribe();
+    realtimeChannelRef.current = channel;
+  };
+
+  const setupPolling = () => {
+    if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current);
+    pollingIntervalRef.current = setInterval(() => {
+      if (wakalaService && selectedDate) loadSlots();
+      loadUnavailableDates();
+    }, 10000);
+  };
+
+  const loadWakalaService = async () => {
+    try {
+      const { data } = await supabase.from('booking_services').select('*').eq('name_en', 'Wakala Services').eq('is_active', true).limit(1).maybeSingle();
+      if (data) setWakalaService(data);
+    } catch (err) { console.error('Error loading wakala service:', err); }
+  };
+
+  const loadSettings = async () => {
+    try {
+      const { data } = await supabase.from('booking_settings').select('max_booking_days_ahead').maybeSingle();
+      if (data) setMaxDaysAhead(data.max_booking_days_ahead);
+    } catch (err) { console.error('Error loading settings:', err); }
+  };
+
+  const loadUnavailableDates = async () => {
+    try {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + maxDaysAhead);
+      const endStr = endDate.toISOString().split('T')[0];
+      const datesWithReasons = await getUnavailableDatesWithReasons(todayStr, endStr);
+      const unavailable: string[] = [];
+      const fullyBooked: string[] = [];
+      for (const item of datesWithReasons) {
+        if (item.reason === 'fully_booked') fullyBooked.push(item.date);
+        else unavailable.push(item.date);
+      }
+      setUnavailableDates(unavailable);
+      setFullyBookedDates(fullyBooked);
+      if (wakalaService) {
+        const counts = await getPublicSlotCounts(wakalaService.id, todayStr, endStr);
+        setSlotCounts(counts);
+      }
+    } catch (err) { console.error('Error loading unavailable dates:', err); }
+  };
+
+  const loadSlots = async () => {
+    if (!wakalaService || !selectedDate) return;
+    try {
+      const dateStr = selectedDate.toISOString().split('T')[0];
+      const hours = await getEffectiveWorkingHours(dateStr);
+      if (hours && hours.is_active) {
+        setWorkingHours({ startTime: hours.start_time, endTime: hours.end_time, breakTimes: hours.break_times });
+      } else { setWorkingHours(null); }
+      const availableSlots = await getAvailableSlotsForDuration(wakalaService.id, dateStr, WAKALA_DURATION);
+      setSlots(availableSlots.map(s => ({ id: s.id, startTime: s.start_time, endTime: s.end_time, isAvailable: s.is_available })));
+    } catch (err) { console.error('Error loading slots:', err); setSlots([]); }
+  };
+
+  const formatTimeDisplay = (time: string) => {
+    const [h, m] = time.split(':');
+    const hour = parseInt(h);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const h12 = hour % 12 || 12;
+    return `${h12}:${m} ${ampm}`;
+  };
 
   const loadUserData = async () => {
     if (!user) return;
@@ -240,14 +418,40 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError(''); setSlotWarning('');
     if (!formData.fullName || !formData.phone || !formData.email || !formData.applicantName || !formData.agentName || !formData.wakalaType || !formData.wakalaFormat) { setError(t.fillAllFields); return; }
     if (applicantPassportUrls.length === 0 || attorneyPassportUrls.length === 0) { setError(t.uploadRequired); return; }
     if (membershipStatus === 'active' && !formData.membershipNumber) { setError(t.fillAllFields); return; }
     if (!consent) { setError(t.fillAllFields); return; }
+    if (!selectedDate || !selectedSlot) { setError(t.selectDateTimeRequired); return; }
+    if (!wakalaService) return;
 
     setLoading(true);
     try {
+      const dateStr = selectedDate.toISOString().split('T')[0];
+
+      const stillAvailable = await checkSlotStillAvailable(selectedSlot.id);
+      if (!stillAvailable) {
+        await loadSlots();
+        const nearest = await findNearestAvailableSlot(wakalaService.id, dateStr, selectedSlot.startTime, WAKALA_DURATION);
+        setSelectedSlot(null);
+        setSlotWarning(nearest ? `${t.slotNoLongerAvailable} ${t.slotTakenSuggestion} ${formatTimeDisplay(nearest.start_time)}.` : t.tryDifferentDate);
+        setLoading(false); return;
+      }
+
+      const reserveResult = await reserveSlots({
+        slot_id: selectedSlot.id, service_id: wakalaService.id, booking_date: dateStr,
+        start_time: selectedSlot.startTime, end_time: selectedSlot.endTime, duration_minutes: WAKALA_DURATION,
+      });
+
+      if (!reserveResult.success) {
+        await loadSlots();
+        const nearest = await findNearestAvailableSlot(wakalaService.id, dateStr, selectedSlot.startTime, WAKALA_DURATION);
+        setSelectedSlot(null);
+        setSlotWarning(nearest ? `${t.slotTaken} ${t.slotTakenSuggestion} ${formatTimeDisplay(nearest.start_time)}.` : t.tryDifferentDate);
+        setLoading(false); return;
+      }
+
       const price = calculatePrice();
       const payload: WakalaFormPayload = {
         user_id: user?.id || null,
@@ -262,6 +466,12 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
         applicant_passport_url: applicantPassportUrls[0] || null,
         attorney_passport_url: attorneyPassportUrls[0] || null,
         witness_passports_url: witnessPassportUrls.length > 0 ? witnessPassportUrls.join(',') : null,
+        booking_date: dateStr,
+        requested_date: dateStr,
+        slot_id: selectedSlot.id,
+        start_time: selectedSlot.startTime,
+        end_time: selectedSlot.endTime,
+        duration_minutes: WAKALA_DURATION,
       };
 
       setFormPayload(payload);
@@ -273,10 +483,14 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
   };
 
   const handlePaymentSuccess = (_applicationId: string, bookingReference: string) => {
+    cleanupRealtimeAndPolling();
+    const dateStr = selectedDate ? selectedDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
     onComplete({
       bookingReference,
-      serviceType: 'wakala', date: new Date().toISOString().split('T')[0],
-      startTime: '', endTime: '',
+      serviceType: 'wakala',
+      date: dateStr,
+      startTime: selectedSlot?.startTime || '',
+      endTime: selectedSlot?.endTime || '',
       fullName: formData.fullName, email: formData.email, fee: paymentAmount,
     });
   };
@@ -285,7 +499,8 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
   const isFormComplete = formData.fullName && formData.phone && formData.email &&
     formData.applicantName && formData.agentName && formData.wakalaType && formData.wakalaFormat &&
     applicantPassportUrls.length > 0 && attorneyPassportUrls.length > 0 && consent &&
-    (membershipStatus !== 'active' || formData.membershipNumber);
+    (membershipStatus !== 'active' || formData.membershipNumber) &&
+    selectedDate && selectedSlot;
 
   if (step === 'payment' && clientSecret && formPayload) {
     return (
@@ -337,6 +552,13 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
           <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-red-800 flex-1">{error}</p>
           <button onClick={() => setError('')} className="text-red-600 hover:text-red-800"><X className="w-4 h-4" /></button>
+        </div>
+      )}
+      {slotWarning && (
+        <div className="mx-6 mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-800 flex-1">{slotWarning}</p>
+          <button onClick={() => setSlotWarning('')} className="text-amber-600 hover:text-amber-800"><X className="w-4 h-4" /></button>
         </div>
       )}
 
@@ -445,6 +667,43 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
             <FileUploadField label={t.attorneyPassport} required userId={user?.id} onUploadComplete={setAttorneyPassportUrls} existingUrls={attorneyPassportUrls} />
             <FileUploadField label={t.witnessPassports} multiple userId={user?.id} onUploadComplete={setWitnessPassportUrls} existingUrls={witnessPassportUrls} />
           </div>
+        </div>
+
+        <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+          <div className="flex items-start gap-3 mb-5">
+            <div className="p-2 bg-blue-100 rounded-lg"><CalendarIcon className="w-5 h-5 text-blue-600" /></div>
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">{t.selectAppointment}</h3>
+              <p className="text-sm text-gray-600 mt-0.5">{t.appointmentDuration}</p>
+            </div>
+          </div>
+          <div className="mb-6">
+            <h4 className="text-sm font-medium text-gray-700 mb-3">{t.selectDate}</h4>
+            <div className="max-w-md mx-auto">
+              <Calendar
+                selectedDate={selectedDate}
+                onDateSelect={date => { setSelectedDate(date); setSelectedSlot(null); }}
+                maxDaysAhead={maxDaysAhead}
+                unavailableDates={unavailableDates}
+                fullyBookedDates={fullyBookedDates}
+                slotCounts={slotCounts}
+                autoSelectNearest
+              />
+            </div>
+          </div>
+          {selectedDate && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-700 mb-3">{t.selectTime}</h4>
+              <TimeSlotGrid
+                selectedDate={selectedDate}
+                slots={slots}
+                selectedSlot={selectedSlot}
+                onSlotSelect={(slot) => { setSlotWarning(''); setSelectedSlot(slot); }}
+                workingHours={workingHours}
+                recentlyBookedSlotIds={recentlyBookedSlotIds}
+              />
+            </div>
+          )}
         </div>
 
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">

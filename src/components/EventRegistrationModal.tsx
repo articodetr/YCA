@@ -229,24 +229,24 @@ export default function EventRegistrationModal({
           onClick={onClose}
         >
           <motion.div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-lg md:max-w-2xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto"
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
             transition={{ type: 'spring', duration: 0.5 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="sticky top-0 bg-gradient-to-r from-primary to-secondary text-white px-8 py-6 rounded-t-2xl flex items-center justify-between z-10">
-              <div>
-                <h2 className="text-2xl font-bold">Event Registration</h2>
-                <p className="text-white/90 text-sm mt-1">{eventTitle}</p>
+            <div className="sticky top-0 bg-gradient-to-r from-primary to-secondary text-white px-4 sm:px-6 md:px-8 py-4 sm:py-5 md:py-6 rounded-t-xl sm:rounded-t-2xl flex items-center justify-between z-10">
+              <div className="min-w-0 flex-1 mr-3">
+                <h2 className="text-lg sm:text-xl md:text-2xl font-bold">Event Registration</h2>
+                <p className="text-white/90 text-xs sm:text-sm mt-1 truncate">{eventTitle}</p>
               </div>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                className="p-2 hover:bg-white/20 rounded-full transition-colors flex-shrink-0"
                 aria-label="Close modal"
               >
-                <X size={24} />
+                <X className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
             </div>
 
@@ -272,8 +272,8 @@ export default function EventRegistrationModal({
                 </p>
               </motion.div>
             ) : (
-              <form onSubmit={handleSubmit} className="p-8 space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
+              <form onSubmit={handleSubmit} className="p-4 sm:p-6 md:p-8 space-y-5 sm:space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <label
                       htmlFor="firstName"

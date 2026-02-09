@@ -154,9 +154,12 @@ export default function BusinessSupportSelector({ onSelect }: BusinessSupportSel
             {monthlyAmounts.map((amount) => (
               <button
                 key={amount}
-                onClick={() => handleSelection('monthly', amount, 'monthly')}
+                onClick={() => {
+                  setCustomAmount(String(amount));
+                  handleSelection('monthly', amount, 'monthly');
+                }}
                 className={`p-4 rounded-lg border-2 transition-all ${
-                  selectedTier === 'monthly' && customAmount === String(amount)
+                  customAmount === String(amount)
                     ? 'border-accent bg-accent/5 shadow-lg'
                     : 'border-gray-200 hover:border-accent/50'
                 }`}
@@ -223,9 +226,12 @@ export default function BusinessSupportSelector({ onSelect }: BusinessSupportSel
             {oneTimeAmounts.map((amount) => (
               <button
                 key={amount}
-                onClick={() => handleSelection('one_time', amount, 'one_time')}
+                onClick={() => {
+                  setCustomAmount(String(amount));
+                  handleSelection('one_time', amount, 'one_time');
+                }}
                 className={`p-4 rounded-lg border-2 transition-all ${
-                  selectedTier === 'one_time' && customAmount === String(amount)
+                  customAmount === String(amount)
                     ? 'border-accent bg-accent/5 shadow-lg'
                     : 'border-gray-200 hover:border-accent/50'
                 }`}

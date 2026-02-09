@@ -120,6 +120,31 @@ export default function WakalaManagement() {
     }
   };
 
+  const handleDelete = async (item: any) => {
+    if (!confirm(`Are you sure you want to delete the wakala application for ${item.full_name}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('wakala_applications')
+        .delete()
+        .eq('id', item.id);
+
+      if (error) throw error;
+
+      alert('Wakala application deleted successfully');
+      await fetchApplications();
+      if (selectedApp?.id === item.id) {
+        setShowModal(false);
+        setSelectedApp(null);
+      }
+    } catch (error: any) {
+      console.error('Error deleting application:', error);
+      alert(`Failed to delete application: ${error.message}`);
+    }
+  };
+
   const updateAssignment = async (appId: string, adminId: string | null) => {
     try {
       const { error } = await supabase
@@ -428,6 +453,7 @@ export default function WakalaManagement() {
           setShowModal(true);
           setEditing(false);
         }}
+        onDelete={handleDelete}
         onRefresh={fetchApplications}
       />
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Loader2, Download } from 'lucide-react';
+import { Search, Loader2, Download, Eye, Trash2 } from 'lucide-react';
 
 interface Column {
   key: string;
@@ -12,6 +12,7 @@ interface ManagementTableProps {
   columns: Column[];
   loading?: boolean;
   onView?: (item: any) => void;
+  onDelete?: (item: any) => void;
   onRefresh?: () => void;
   exportFilename?: string;
 }
@@ -21,6 +22,7 @@ export default function ManagementTable({
   columns,
   loading = false,
   onView,
+  onDelete,
   exportFilename,
 }: ManagementTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -97,26 +99,48 @@ export default function ManagementTable({
                     {col.label}
                   </th>
                 ))}
-                {onView && <th className="px-4 py-3 text-right text-sm font-semibold text-gray-900">Actions</th>}
+                {(onView || onDelete) && <th className="px-4 py-3 text-right text-sm font-semibold text-gray-900">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredData.map((item, idx) => (
                 <tr
                   key={item.id || idx}
-                  className={`hover:bg-gray-50 ${onView ? 'cursor-pointer' : ''}`}
-                  onClick={() => onView?.(item)}
+                  className="hover:bg-gray-50"
                 >
                   {columns.map((col) => (
                     <td key={col.key} className="px-4 py-4 text-sm text-gray-600">
                       {col.render ? col.render(item[col.key], item) : item[col.key] || '-'}
                     </td>
                   ))}
-                  {onView && (
+                  {(onView || onDelete) && (
                     <td className="px-4 py-4 text-right">
-                      <span className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">
-                        View
-                      </span>
+                      <div className="flex items-center justify-end gap-2">
+                        {onView && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onView(item);
+                            }}
+                            className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+                            title="View Details"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                        )}
+                        {onDelete && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDelete(item);
+                            }}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   )}
                 </tr>

@@ -24,6 +24,7 @@ import Volunteer from './pages/get-involved/Volunteer';
 import Jobs from './pages/get-involved/Jobs';
 import Partnerships from './pages/get-involved/Partnerships';
 import BusinessSupport from './pages/get-involved/BusinessSupport';
+import Donate from './pages/get-involved/Donate';
 import Resources from './pages/Resources';
 import ComplaintsSuggestions from './pages/contact/ComplaintsSuggestions';
 import ServiceFeedback from './pages/contact/ServiceFeedback';
@@ -183,6 +184,7 @@ function App() {
                 <Route path="/get-involved/jobs" element={<Jobs />} />
                 <Route path="/get-involved/partnerships" element={<Partnerships />} />
                 <Route path="/get-involved/business-support" element={<BusinessSupport />} />
+                <Route path="/get-involved/donate" element={<Donate />} />
 
                 <Route path="/services/legal/translation" element={<Navigate to="/book?service=translation" replace />} />
                 <Route path="/services/legal/other" element={<Navigate to="/book?service=other" replace />} />

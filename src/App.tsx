@@ -181,5 +181,21 @@ function App() {
     </LanguageProvider>
   );
 }
+export default function PageLayout({ children }) {
+  return (
+    <div className="relative min-h-screen overflow-hidden">
+      {/* watermark خلف المحتوى */}
+      <div className="logo-watermark" />
+
+      {/* المحتوى فوق الـ watermark */}
+      <div className="relative z-10">
+        {children}
+      </div>
+
+      {/* الحزام في الأسفل */}
+      <div className="gold-belt" />
+    </div>
+  );
+}
 
 export default App;

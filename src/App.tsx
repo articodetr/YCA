@@ -66,6 +66,22 @@ import AvailabilityManagement from './pages/admin/AvailabilityManagement';
 import PageImagesManagement from './pages/admin/PageImagesManagement';
 import AdminManagement from './pages/admin/AdminManagement';
 import MembershipExpiryMonitoring from './pages/admin/MembershipExpiryMonitoring';
+export default function PageLayout({ children }) {
+  return (
+    <div className="relative min-h-screen overflow-hidden">
+      {/* watermark خلف المحتوى */}
+      <div className="logo-watermark" />
+
+      {/* المحتوى فوق الـ watermark */}
+      <div className="relative z-10">
+        {children}
+      </div>
+
+      {/* الحزام في الأسفل */}
+      <div className="gold-belt" />
+    </div>
+  );
+}
 
 function App() {
   return (
@@ -180,23 +196,7 @@ function App() {
       </AdminAuthProvider>
     </LanguageProvider>
   );
-  export default function PageLayout({ children }) {
-  return (
-    <div className="relative min-h-screen overflow-hidden">
-      {/* watermark خلف المحتوى */}
-      <div className="logo-watermark" />
-
-      {/* المحتوى فوق الـ watermark */}
-      <div className="relative z-10">
-        {children}
-      </div>
-
-      {/* الحزام في الأسفل */}
-      <div className="gold-belt" />
-    </div>
-  );
-}
-
+  
 }
 
 export default App;

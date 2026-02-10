@@ -247,7 +247,7 @@ export default function ElderlyProgramme() {
                 >
                   <Calendar size={36} className="text-primary" />
                 </motion.div>
-                <h2 className="text-3xl font-bold mb-6">Join Our Weekly Sessions</h2>
+                <h2 className="text-3xl font-bold mb-6">Join Our Monthly Session</h2>
                 <p className="text-xl text-gray-200 mb-8 max-w-2xl mx-auto leading-relaxed">
                   All seniors in the community are welcome. Sessions are designed to be accessible and welcoming.
                 </p>
@@ -258,7 +258,7 @@ export default function ElderlyProgramme() {
                       className="inline-flex items-center justify-center gap-2 bg-accent text-primary px-8 py-4 rounded-lg hover:bg-hover transition-colors font-semibold"
                     >
                       <Mail size={20} />
-                      Contact Us for Details
+                      Check Next Session
                     </Link>
                   </motion.div>
                 </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, Heart, Sparkles, Baby, Briefcase, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Users, Heart, Sparkles, Baby, Briefcase, Compass, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PageHeader from '../components/PageHeader';
@@ -17,6 +17,16 @@ export default function Programmes() {
   const [selectedCategory, setSelectedCategory] = useState('All');
 
   const programmes = [
+    {
+      id: 6,
+      title: c('journey_title', 'The Journey Within'),
+      description: c('journey_desc', 'A bespoke 8-session course for young women aged 18-24, designed to help discover your inner compass through personal growth, resilience, and inner leadership.'),
+      category: 'Journey',
+      icon: Compass,
+      link: '/programmes/journey-within',
+      image: 'https://images.pexels.com/photos/3810792/pexels-photo-3810792.jpeg?auto=compress&cs=tinysrgb&w=800',
+      color: 'from-teal-500 to-emerald-600',
+    },
     {
       id: 1,
       title: c('women_title', "Women's Programme"),
@@ -69,11 +79,11 @@ export default function Programmes() {
     },
   ];
 
-  const categoriesEn = ['All', "Women's", "Elderly's", 'Youth', "Children's", "Men's"];
-  const categoriesAr = ['الكل', 'النساء', 'كبار السن', 'الشباب', 'الأطفال', 'الرجال'];
+  const categoriesEn = ['All', 'Journey', "Women's", "Elderly's", 'Youth', "Children's", "Men's"];
+  const categoriesAr = ['الكل', 'الرحلة', 'النساء', 'كبار السن', 'الشباب', 'الأطفال', 'الرجال'];
   const categories = isRTL ? categoriesAr : categoriesEn;
   const categoryMap: Record<string, string> = isRTL
-    ? { 'الكل': 'All', 'النساء': "Women's", 'كبار السن': "Elderly's", 'الشباب': 'Youth', 'الأطفال': "Children's", 'الرجال': "Men's" }
+    ? { 'الكل': 'All', 'الرحلة': 'Journey', 'النساء': "Women's", 'كبار السن': "Elderly's", 'الشباب': 'Youth', 'الأطفال': "Children's", 'الرجال': "Men's" }
     : {};
   const getInternalCat = (cat: string) => categoryMap[cat] || cat;
 

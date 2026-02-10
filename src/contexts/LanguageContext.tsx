@@ -32,12 +32,33 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.about.partners': 'Partners',
     'nav.about.reports': 'Reports',
 
+    // Services submenu
+    'nav.services.advisory': 'Advisory Office Services',
+    'nav.services.legal': 'Legal Services & Documentation',
+    'nav.services.legal.wakala': 'Legal Wakala',
+    'nav.services.legal.translation': 'Translation',
+    'nav.services.legal.other': 'Other (Legal/Documentation)',
+
+    // Community Activities submenu
+    'nav.communityActivities': 'Community Activities',
+    'nav.communityActivities.news': 'News & Updates',
+    'nav.communityActivities.events': 'Events',
+    'nav.communityActivities.resources': 'Resources',
+    'nav.communityActivities.programmes': 'Programmes',
+
     // Get Involved submenu
     'nav.getInvolved.membership': 'Membership',
     'nav.getInvolved.volunteer': 'Volunteer',
     'nav.getInvolved.donate': 'Donate',
     'nav.getInvolved.partnerships': 'Partnerships',
     'nav.getInvolved.jobs': 'Jobs',
+    'nav.getInvolved.businessSupport': 'Business Support',
+
+    // Contact submenu
+    'nav.contact.details': 'Contact Details & Opening Hours',
+    'nav.contact.location': 'Location (Map)',
+    'nav.contact.complaints': 'Complaints & Suggestions',
+    'nav.contact.feedback': 'Feedback',
 
     // Programmes submenu
     'nav.programmes.women': "Women's Programme",
@@ -367,12 +388,33 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.about.partners': 'الشركاء',
     'nav.about.reports': 'التقارير',
 
+    // Services submenu
+    'nav.services.advisory': 'المكتب الاستشاري',
+    'nav.services.legal': 'الخدمات القانونية والتوثيق',
+    'nav.services.legal.wakala': 'الوكالة القانونية',
+    'nav.services.legal.translation': 'الترجمة',
+    'nav.services.legal.other': 'خدمات أخرى (قانونية/توثيق)',
+
+    // Community Activities submenu
+    'nav.communityActivities': 'الأنشطة المجتمعية',
+    'nav.communityActivities.news': 'الأخبار والتحديثات',
+    'nav.communityActivities.events': 'الفعاليات',
+    'nav.communityActivities.resources': 'الموارد',
+    'nav.communityActivities.programmes': 'البرامج',
+
     // Get Involved submenu
     'nav.getInvolved.membership': 'العضوية',
     'nav.getInvolved.volunteer': 'التطوع',
     'nav.getInvolved.donate': 'تبرع',
     'nav.getInvolved.partnerships': 'الشراكات',
     'nav.getInvolved.jobs': 'الوظائف',
+    'nav.getInvolved.businessSupport': 'دعم الأعمال',
+
+    // Contact submenu
+    'nav.contact.details': 'بيانات الاتصال وأوقات العمل',
+    'nav.contact.location': 'الموقع (الخريطة)',
+    'nav.contact.complaints': 'الشكاوى والمقترحات',
+    'nav.contact.feedback': 'التقييم والملاحظات',
 
     // Programmes submenu
     'nav.programmes.women': 'برنامج النساء',

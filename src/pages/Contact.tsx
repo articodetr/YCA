@@ -280,17 +280,17 @@ export default function Contact() {
         </div>
       </section>
 
-      <section className="py-0 bg-white">
+      <section id="map" className="py-0 bg-white">
         <div className="w-full h-96">
           <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2433.5!2d-1.8777!3d52.4633!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4870bdb6f2e8e4b1%3A0x5e8b2e0c8e9f4a0b!2s261-271+Stratford+Rd%2C+Birmingham+B11+1QS!5e0!3m2!1sen!2suk!4v1700000000000"
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2433.8!2d-1.8785!3d52.4630!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4870bc3551e4c3a7%3A0x4b87b4b8e52bfb0c!2sYemeni%20Community%20Association!5e0!3m2!1sen!2suk!4v1700000000000"
             width="100%"
             height="100%"
             style={{ border: 0 }}
             allowFullScreen
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
-            title="YCA Birmingham Location"
+            title="Yemeni Community Association - Birmingham"
           ></iframe>
         </div>
       </section>

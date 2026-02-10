@@ -23,7 +23,12 @@ import Reports from './pages/about/Reports';
 import Volunteer from './pages/get-involved/Volunteer';
 import Jobs from './pages/get-involved/Jobs';
 import Partnerships from './pages/get-involved/Partnerships';
+import BusinessSupport from './pages/get-involved/BusinessSupport';
 import Resources from './pages/Resources';
+import ComplaintsSuggestions from './pages/contact/ComplaintsSuggestions';
+import ServiceFeedback from './pages/contact/ServiceFeedback';
+import TranslationRequest from './pages/services/TranslationRequest';
+import OtherLegalRequest from './pages/services/OtherLegalRequest';
 import BookPage from './pages/book/BookPage';
 import BookingTracker from './pages/book/BookingTracker';
 import PaymentResult from './pages/PaymentResult';
@@ -66,6 +71,11 @@ import AvailabilityManagement from './pages/admin/AvailabilityManagement';
 import PageImagesManagement from './pages/admin/PageImagesManagement';
 import AdminManagement from './pages/admin/AdminManagement';
 import MembershipExpiryMonitoring from './pages/admin/MembershipExpiryMonitoring';
+import ComplaintsManagement from './pages/admin/ComplaintsManagement';
+import FeedbackManagement from './pages/admin/FeedbackManagement';
+import TranslationsManagement from './pages/admin/TranslationsManagement';
+import LegalRequestsManagement from './pages/admin/LegalRequestsManagement';
+import BusinessSupportersManagement from './pages/admin/BusinessSupportersManagement';
 
 function App() {
   return (
@@ -115,6 +125,11 @@ function App() {
                     <Route path="page-images" element={<PageImagesManagement />} />
                     <Route path="availability" element={<AvailabilityManagement />} />
                     <Route path="admins" element={<AdminManagement />} />
+                    <Route path="complaints" element={<ComplaintsManagement />} />
+                    <Route path="feedback" element={<FeedbackManagement />} />
+                    <Route path="translations" element={<TranslationsManagement />} />
+                    <Route path="legal-requests" element={<LegalRequestsManagement />} />
+                    <Route path="business-supporters" element={<BusinessSupportersManagement />} />
                     <Route path="settings" element={<Settings />} />
                   </Routes>
                 </AdminLayout>
@@ -156,6 +171,8 @@ function App() {
                 <Route path="/news" element={<News />} />
                 <Route path="/news/:id" element={<NewsDetail />} />
                 <Route path="/contact" element={<Contact />} />
+                <Route path="/contact/complaints" element={<ComplaintsSuggestions />} />
+                <Route path="/contact/feedback" element={<ServiceFeedback />} />
 
                 <Route path="/about/mission" element={<Mission />} />
                 <Route path="/about/history" element={<History />} />
@@ -167,6 +184,11 @@ function App() {
                 <Route path="/get-involved/volunteer" element={<Volunteer />} />
                 <Route path="/get-involved/jobs" element={<Jobs />} />
                 <Route path="/get-involved/partnerships" element={<Partnerships />} />
+                <Route path="/get-involved/business-support" element={<BusinessSupport />} />
+
+                <Route path="/services/legal/translation" element={<TranslationRequest />} />
+                <Route path="/services/legal/other" element={<OtherLegalRequest />} />
+                <Route path="/services/legal/wakala" element={<Navigate to="/book" replace />} />
 
                 <Route path="/resources" element={<Resources />} />
               </Routes>

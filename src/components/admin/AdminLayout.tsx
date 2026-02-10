@@ -30,6 +30,10 @@ import {
   ChevronLeft,
   Clock,
   Shield,
+  AlertTriangle,
+  Star,
+  Scale,
+  Building2,
 } from 'lucide-react';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
 import { useSiteSettings } from '../../contexts/SiteSettingsContext';
@@ -129,6 +133,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         { icon: MessageSquare, label: 'Messages', path: '/admin/contacts' },
         { icon: Heart, label: 'Donations', path: '/admin/donations' },
         { icon: Mail, label: 'Subscribers', path: '/admin/subscribers' },
+        { icon: AlertTriangle, label: 'Complaints', path: '/admin/complaints' },
+        { icon: Star, label: 'Service Feedback', path: '/admin/feedback' },
+        { icon: FileText, label: 'Translation Requests', path: '/admin/translations' },
+        { icon: Scale, label: 'Other Legal Requests', path: '/admin/legal-requests' },
+        { icon: Building2, label: 'Business Supporters', path: '/admin/business-supporters' },
       ],
     }] : []),
     ...(operationsItems.length > 0 ? [{

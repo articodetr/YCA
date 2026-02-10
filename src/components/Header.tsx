@@ -1,10 +1,22 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, ChevronDown, Globe, UserCircle, LogIn, UserPlus } from 'lucide-react';
+import { Menu, X, ChevronDown, ChevronRight, Globe, UserCircle, LogIn, UserPlus, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSiteSettings } from '../contexts/SiteSettingsContext';
 import { useMemberAuth } from '../contexts/MemberAuthContext';
+
+interface DropdownItem {
+  label: string;
+  path: string;
+  children?: DropdownItem[];
+}
+
+interface NavDropdown {
+  key: string;
+  label: string;
+  items: DropdownItem[];
+}
 
 export default function Header() {
   const { language, setLanguage, t } = useLanguage();
@@ -17,6 +29,7 @@ export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [activeDesktopMenu, setActiveDesktopMenu] = useState<string | null>(null);
+  const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
@@ -30,18 +43,16 @@ export default function Header() {
 
   const handleMouseLeave = () => {
     setActiveDesktopMenu(null);
+    setActiveSubmenu(null);
   };
 
   useEffect(() => {
     const controlHeader = () => {
-      // Important: keep header visible while mobile menu is open
       if (isOpen) {
         setIsVisible(true);
         return;
       }
-
       const currentScrollY = window.scrollY;
-
       if (currentScrollY < 10) {
         setIsVisible(true);
       } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
@@ -49,10 +60,8 @@ export default function Header() {
       } else if (currentScrollY < lastScrollY) {
         setIsVisible(true);
       }
-
       setLastScrollY(currentScrollY);
     };
-
     window.addEventListener('scroll', controlHeader);
     return () => window.removeEventListener('scroll', controlHeader);
   }, [lastScrollY, isOpen]);
@@ -63,11 +72,218 @@ export default function Header() {
     } else {
       document.body.style.overflow = '';
     }
-
-    return () => {
-      document.body.style.overflow = '';
-    };
+    return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
+
+  const servicesDropdown: NavDropdown = {
+    key: 'services',
+    label: t('nav.services'),
+    items: [
+      { label: t('nav.services.advisory'), path: '/services' },
+      {
+        label: t('nav.services.legal'),
+        path: '/services/legal',
+        children: [
+          { label: t('nav.services.legal.wakala'), path: '/services/legal/wakala' },
+          { label: t('nav.services.legal.translation'), path: '/services/legal/translation' },
+          { label: t('nav.services.legal.other'), path: '/services/legal/other' },
+        ],
+      },
+    ],
+  };
+
+  const communityDropdown: NavDropdown = {
+    key: 'community',
+    label: t('nav.communityActivities'),
+    items: [
+      { label: t('nav.communityActivities.news'), path: '/news' },
+      { label: t('nav.communityActivities.events'), path: '/events' },
+      { label: t('nav.communityActivities.resources'), path: '/resources' },
+      {
+        label: t('nav.communityActivities.programmes'),
+        path: '/programmes',
+        children: [
+          { label: t('nav.programmes.journeyWithin'), path: '/programmes/journey-within' },
+          { label: t('nav.programmes.women'), path: '/programmes/women' },
+          { label: t('nav.programmes.elderly'), path: '/programmes/elderly' },
+          { label: t('nav.programmes.youth'), path: '/programmes/youth' },
+          { label: t('nav.programmes.children'), path: '/programmes/children' },
+          { label: t('nav.programmes.men'), path: '/programmes/men' },
+        ],
+      },
+    ],
+  };
+
+  const involvedDropdown: NavDropdown = {
+    key: 'involved',
+    label: t('nav.getInvolved'),
+    items: [
+      { label: t('nav.getInvolved.membership'), path: '/membership' },
+      { label: t('nav.getInvolved.volunteer'), path: '/get-involved/volunteer' },
+      { label: t('nav.getInvolved.jobs'), path: '/get-involved/jobs' },
+      { label: t('nav.getInvolved.partnerships'), path: '/get-involved/partnerships' },
+      { label: t('nav.getInvolved.businessSupport'), path: '/get-involved/business-support' },
+    ],
+  };
+
+  const aboutDropdown: NavDropdown = {
+    key: 'about',
+    label: t('nav.about'),
+    items: [
+      { label: t('nav.about.mission'), path: '/about/mission' },
+      { label: t('nav.about.history'), path: '/about/history' },
+      { label: t('nav.about.team'), path: '/about/team' },
+      { label: t('nav.about.partners'), path: '/about/partners' },
+      { label: t('nav.about.reports'), path: '/about/reports' },
+    ],
+  };
+
+  const contactDropdown: NavDropdown = {
+    key: 'contact',
+    label: t('nav.contact'),
+    items: [
+      { label: t('nav.contact.details'), path: '/contact' },
+      { label: t('nav.contact.location'), path: '/contact#map' },
+      { label: t('nav.contact.complaints'), path: '/contact/complaints' },
+      { label: t('nav.contact.feedback'), path: '/contact/feedback' },
+    ],
+  };
+
+  const allDropdowns = [servicesDropdown, communityDropdown, involvedDropdown, aboutDropdown, contactDropdown];
+
+  const renderDesktopDropdown = (dropdown: NavDropdown) => (
+    <div
+      key={dropdown.key}
+      className="relative"
+      onMouseEnter={() => handleMouseEnter(dropdown.key)}
+      onMouseLeave={handleMouseLeave}
+    >
+      <button className="flex items-center gap-1 text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
+        {dropdown.label}{' '}
+        <ChevronDown
+          size={14}
+          className={`transition-transform duration-300 ${activeDesktopMenu === dropdown.key ? 'rotate-180' : ''}`}
+        />
+      </button>
+      <AnimatePresence>
+        {activeDesktopMenu === dropdown.key && (
+          <motion.div
+            className={`absolute top-full ${isRTL ? 'right-0' : 'left-0'} mt-2 w-72 bg-white text-primary shadow-xl rounded-lg overflow-visible z-50`}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            {dropdown.items.map((item) => (
+              <div
+                key={item.path}
+                className="relative"
+                onMouseEnter={() => item.children && setActiveSubmenu(item.path)}
+                onMouseLeave={() => setActiveSubmenu(null)}
+              >
+                {item.children ? (
+                  <>
+                    <Link
+                      to={item.path}
+                      className="flex items-center justify-between px-5 py-3 hover:bg-sand transition-colors text-sm"
+                    >
+                      <span>{item.label}</span>
+                      <ChevronRight size={14} className={isRTL ? 'rotate-180' : ''} />
+                    </Link>
+                    <AnimatePresence>
+                      {activeSubmenu === item.path && (
+                        <motion.div
+                          className={`absolute top-0 ${isRTL ? 'right-full mr-1' : 'left-full ml-1'} w-64 bg-white text-primary shadow-xl rounded-lg overflow-hidden z-50`}
+                          initial={{ opacity: 0, x: isRTL ? 10 : -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: isRTL ? 10 : -10 }}
+                          transition={{ duration: 0.15 }}
+                        >
+                          {item.children.map((child) => (
+                            <Link
+                              key={child.path}
+                              to={child.path}
+                              className="block px-5 py-3 hover:bg-sand transition-colors text-sm"
+                            >
+                              {child.label}
+                            </Link>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </>
+                ) : (
+                  <Link
+                    to={item.path}
+                    className="block px-5 py-3 hover:bg-sand transition-colors text-sm"
+                  >
+                    {item.label}
+                  </Link>
+                )}
+              </div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+
+  const renderMobileDropdown = (dropdown: NavDropdown, delay: number) => (
+    <motion.div
+      key={dropdown.key}
+      initial={{ x: -20, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      transition={{ delay }}
+    >
+      <button
+        onClick={() => toggleDropdown(dropdown.key)}
+        className="flex items-center justify-between w-full py-2 hover:text-accent transition-colors"
+      >
+        {dropdown.label}
+        <ChevronDown
+          size={16}
+          className={`transition-transform duration-300 ${openDropdown === dropdown.key ? 'rotate-180' : ''}`}
+        />
+      </button>
+      <AnimatePresence>
+        {openDropdown === dropdown.key && (
+          <motion.div
+            className={`${isRTL ? 'pr-4' : 'pl-4'} space-y-1 mt-1`}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            {dropdown.items.map((item) => (
+              <div key={item.path}>
+                <Link
+                  to={item.path}
+                  onClick={() => !item.children && setIsOpen(false)}
+                  className="block py-1.5 text-sm hover:text-accent transition-colors"
+                >
+                  {item.label}
+                </Link>
+                {item.children && (
+                  <div className={`${isRTL ? 'pr-4' : 'pl-4'} space-y-1`}>
+                    {item.children.map((child) => (
+                      <Link
+                        key={child.path}
+                        to={child.path}
+                        onClick={() => setIsOpen(false)}
+                        className="block py-1 text-xs text-gray-300 hover:text-accent transition-colors"
+                      >
+                        {child.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
 
   return (
     <motion.header
@@ -88,7 +304,6 @@ export default function Header() {
                 alt={orgName}
                 className="h-10 sm:h-12 md:h-14 lg:h-16 w-auto transition-transform group-hover:scale-105 duration-300"
               />
-
               <img
                 src={logoText}
                 alt={orgName}
@@ -97,14 +312,13 @@ export default function Header() {
             </div>
           </Link>
 
-          {/* Mobile Center Text Logo (يظهر فقط تحت XL) */}
-<div className="absolute left-1/2 -translate-x-1/2 xl:hidden flex items-center justify-center pointer-events-none">
-  <img
-    src={logoText}
-    alt={getSetting('org_name_ar', 'الجالية اليمنية')}
-    className="h-7 sm:h-8 md:h-12 w-auto opacity-95"
-  />
-</div>
+          <div className="absolute left-1/2 -translate-x-1/2 xl:hidden flex items-center justify-center pointer-events-none">
+            <img
+              src={logoText}
+              alt={getSetting('org_name_ar', 'الجالية اليمنية')}
+              className="h-7 sm:h-8 md:h-12 w-auto opacity-95"
+            />
+          </div>
 
           <div className="flex items-center gap-2 xl:hidden flex-shrink-0">
             <motion.button
@@ -115,14 +329,12 @@ export default function Header() {
             >
               {language === 'en' ? 'AR' : 'EN'}
             </motion.button>
-
             <Link
               to="/book"
               className="hidden sm:inline-flex bg-accent text-primary px-5 py-2 hover:bg-hover transition-colors font-semibold text-xs uppercase tracking-wider whitespace-nowrap"
             >
               {t('button.book')}
             </Link>
-
             <motion.button
               className="text-white"
               onClick={() => setIsOpen(!isOpen)}
@@ -144,118 +356,18 @@ export default function Header() {
             </motion.button>
           </div>
 
-          {/* روابط التنقل - في المنتصف */}
-          <nav className="hidden xl:flex items-center justify-center flex-1 gap-3 2xl:gap-5">
+          <nav className="hidden xl:flex items-center justify-center flex-1 gap-3 2xl:gap-4">
             <Link to="/" className="text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
               {t('nav.home')}
             </Link>
-            <Link to="/services" className="text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
-              {t('nav.services')}
-            </Link>
-            <Link to="/programmes" className="text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
-              {t('nav.programmes')}
-            </Link>
-            <Link to="/events" className="text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
-              {t('nav.events')}
-            </Link>
-            <Link to="/news" className="text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
-              {t('nav.news')}
-            </Link>
-
-            <div
-              className="relative"
-              onMouseEnter={() => handleMouseEnter('involved')}
-              onMouseLeave={handleMouseLeave}
-            >
-              <button className="flex items-center gap-1 text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
-                {t('nav.getInvolved')}{' '}
-                <ChevronDown
-                  size={14}
-                  className={`transition-transform duration-300 ${activeDesktopMenu === 'involved' ? 'rotate-180' : ''}`}
-                />
-              </button>
-              <AnimatePresence>
-                {activeDesktopMenu === 'involved' && (
-                  <motion.div
-                    className={`absolute top-full ${isRTL ? 'right-0' : 'left-0'} mt-2 w-64 bg-white text-primary shadow-xl rounded-lg overflow-hidden`}
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Link to="/membership" className="block px-6 py-3 hover:bg-sand transition-colors">
-                      {t('nav.getInvolved.membership')}
-                    </Link>
-                    <Link to="/get-involved/volunteer" className="block px-6 py-3 hover:bg-sand transition-colors">
-                      {t('nav.getInvolved.volunteer')}
-                    </Link>
-                    <Link to="/get-involved/jobs" className="block px-6 py-3 hover:bg-sand transition-colors">
-                      {t('nav.getInvolved.jobs')}
-                    </Link>
-                    <Link to="/get-involved/partnerships" className="block px-6 py-3 hover:bg-sand transition-colors">
-                      {t('nav.getInvolved.partnerships')}
-                    </Link>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            <Link to="/resources" className="text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
-              {t('nav.resources')}
-            </Link>
-
-            <div
-              className="relative"
-              onMouseEnter={() => handleMouseEnter('about')}
-              onMouseLeave={handleMouseLeave}
-            >
-              <button className="flex items-center gap-1 text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
-                {t('nav.about')}{' '}
-                <ChevronDown
-                  size={14}
-                  className={`transition-transform duration-300 ${activeDesktopMenu === 'about' ? 'rotate-180' : ''}`}
-                />
-              </button>
-              <AnimatePresence>
-                {activeDesktopMenu === 'about' && (
-                  <motion.div
-                    className={`absolute top-full ${isRTL ? 'right-0' : 'left-0'} mt-2 w-56 bg-white text-primary shadow-xl rounded-lg overflow-hidden`}
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Link to="/about/mission" className="block px-6 py-3 hover:bg-sand transition-colors">
-                      {t('nav.about.mission')}
-                    </Link>
-                    <Link to="/about/history" className="block px-6 py-3 hover:bg-sand transition-colors">
-                      {t('nav.about.history')}
-                    </Link>
-                    <Link to="/about/team" className="block px-6 py-3 hover:bg-sand transition-colors">
-                      {t('nav.about.team')}
-                    </Link>
-                    <Link to="/about/partners" className="block px-6 py-3 hover:bg-sand transition-colors">
-                      {t('nav.about.partners')}
-                    </Link>
-                    <Link to="/about/reports" className="block px-6 py-3 hover:bg-sand transition-colors">
-                      {t('nav.about.reports')}
-                    </Link>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            <Link to="/contact" className="text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
-              {t('nav.contact')}
-            </Link>
+            {allDropdowns.map((dropdown) => renderDesktopDropdown(dropdown))}
           </nav>
 
-          {/* ازرار الاجراءات - على اليمين */}
-          <div className="hidden xl:flex items-center gap-4 flex-shrink-0">
+          <div className="hidden xl:flex items-center gap-3 flex-shrink-0">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 to="/book"
-                className="bg-accent text-primary px-6 py-2.5 hover:bg-hover transition-colors font-semibold text-sm uppercase tracking-wider whitespace-nowrap"
+                className="bg-accent text-primary px-5 py-2.5 hover:bg-hover transition-colors font-semibold text-sm uppercase tracking-wider whitespace-nowrap"
               >
                 {t('button.book')}
               </Link>
@@ -278,17 +390,20 @@ export default function Header() {
                 onMouseLeave={handleMouseLeave}
               >
                 <motion.button
-                  className="hover:text-accent transition-colors p-2.5"
+                  className="hover:text-accent transition-colors p-2.5 flex items-center gap-1 text-sm"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  title={language === 'ar' ? 'العضوية' : 'Membership'}
+                  title={language === 'ar' ? 'تسجيل الدخول' : 'Member Login'}
                 >
-                  <LogIn size={20} />
+                  <LogIn size={18} />
+                  <span className="hidden 2xl:inline text-xs uppercase tracking-wider">
+                    {language === 'ar' ? 'الدخول' : 'Login'}
+                  </span>
                 </motion.button>
                 <AnimatePresence>
                   {activeDesktopMenu === 'account' && (
                     <motion.div
-                      className={`absolute top-full ${isRTL ? 'left-0' : 'right-0'} mt-2 w-56 bg-white text-primary shadow-xl rounded-lg overflow-hidden`}
+                      className={`absolute top-full ${isRTL ? 'left-0' : 'right-0'} mt-2 w-56 bg-white text-primary shadow-xl rounded-lg overflow-hidden z-50`}
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
@@ -296,14 +411,14 @@ export default function Header() {
                     >
                       <Link
                         to="/member/login"
-                        className="flex items-center gap-3 px-6 py-3 hover:bg-sand transition-colors"
+                        className="flex items-center gap-3 px-6 py-3 hover:bg-sand transition-colors text-sm"
                       >
                         <LogIn size={18} />
-                        <span>{language === 'ar' ? 'لديك عضوية؟ تسجيل الدخول' : 'Have Membership? Login'}</span>
+                        <span>{language === 'ar' ? 'تسجيل الدخول' : 'Member Login'}</span>
                       </Link>
                       <Link
                         to="/membership"
-                        className="flex items-center gap-3 px-6 py-3 hover:bg-sand transition-colors"
+                        className="flex items-center gap-3 px-6 py-3 hover:bg-sand transition-colors text-sm"
                       >
                         <UserPlus size={18} />
                         <span>{language === 'ar' ? 'تسجيل عضوية جديدة' : 'Register New Membership'}</span>
@@ -313,6 +428,16 @@ export default function Header() {
                 </AnimatePresence>
               </div>
             )}
+
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Link
+                to="/get-involved/donate"
+                className="hover:text-accent transition-colors p-2.5 block text-red-300 hover:text-red-200"
+                title={language === 'ar' ? 'تبرع' : 'Donate'}
+              >
+                <Heart size={20} />
+              </Link>
+            </motion.div>
 
             <motion.button
               onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
@@ -327,7 +452,6 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile Menu */}
         <AnimatePresence>
           {isOpen && (
             <motion.nav
@@ -343,184 +467,83 @@ export default function Header() {
                 </Link>
               </motion.div>
 
-              <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.15 }}>
-                <Link to="/services" onClick={() => setIsOpen(false)} className="block py-2 hover:text-accent transition-colors">
-                  {t('nav.services')}
-                </Link>
-              </motion.div>
-
-              <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
-                <Link to="/programmes" onClick={() => setIsOpen(false)} className="block py-2 hover:text-accent transition-colors">
-                  {t('nav.programmes')}
-                </Link>
-              </motion.div>
-
-              <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.25 }}>
-                <Link to="/events" onClick={() => setIsOpen(false)} className="block py-2 hover:text-accent transition-colors">
-                  {t('nav.events')}
-                </Link>
-              </motion.div>
-
-              <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
-                <Link to="/news" onClick={() => setIsOpen(false)} className="block py-2 hover:text-accent transition-colors">
-                  {t('nav.news')}
-                </Link>
-              </motion.div>
-
-              <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.35 }}>
-                <button
-                  onClick={() => toggleDropdown('involved')}
-                  className="flex items-center justify-between w-full py-2 hover:text-accent transition-colors"
-                >
-                  {t('nav.getInvolved')} <ChevronDown size={16} />
-                </button>
-
-                <AnimatePresence>
-                  {openDropdown === 'involved' && (
-                    <motion.div
-                      className={`${isRTL ? 'pr-4' : 'pl-4'} space-y-2 mt-2`}
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Link to="/membership" onClick={() => setIsOpen(false)} className="block py-1 text-sm">
-                        {t('nav.getInvolved.membership')}
-                      </Link>
-                      <Link to="/get-involved/volunteer" onClick={() => setIsOpen(false)} className="block py-1 text-sm">
-                        {t('nav.getInvolved.volunteer')}
-                      </Link>
-                      <Link to="/get-involved/jobs" onClick={() => setIsOpen(false)} className="block py-1 text-sm">
-                        {t('nav.getInvolved.jobs')}
-                      </Link>
-                      <Link to="/get-involved/partnerships" onClick={() => setIsOpen(false)} className="block py-1 text-sm">
-                        {t('nav.getInvolved.partnerships')}
-                      </Link>
-
-                      <Link
-                        to="/book"
-                        onClick={() => setIsOpen(false)}
-                        className="inline-flex mt-2 bg-accent text-primary px-4 py-2 rounded-md hover:bg-hover transition-colors font-semibold text-xs uppercase tracking-wider whitespace-nowrap"
-                      >
-                        {t('button.book')}
-                      </Link>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-
-              <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.4 }}>
-                <Link to="/resources" onClick={() => setIsOpen(false)} className="block py-2 hover:text-accent transition-colors">
-                  {t('nav.resources')}
-                </Link>
-              </motion.div>
+              {allDropdowns.map((dropdown, index) =>
+                renderMobileDropdown(dropdown, 0.15 + index * 0.05)
+              )}
 
               <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.45 }}>
-                <button
-                  onClick={() => toggleDropdown('about')}
-                  className="flex items-center justify-between w-full py-2 hover:text-accent transition-colors"
-                >
-                  {t('nav.about')} <ChevronDown size={16} />
-                </button>
-
-                <AnimatePresence>
-                  {openDropdown === 'about' && (
-                    <motion.div
-                      className={`${isRTL ? 'pr-4' : 'pl-4'} space-y-2 mt-2`}
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Link to="/about/mission" onClick={() => setIsOpen(false)} className="block py-1 text-sm">
-                        {t('nav.about.mission')}
-                      </Link>
-                      <Link to="/about/history" onClick={() => setIsOpen(false)} className="block py-1 text-sm">
-                        {t('nav.about.history')}
-                      </Link>
-                      <Link to="/about/team" onClick={() => setIsOpen(false)} className="block py-1 text-sm">
-                        {t('nav.about.team')}
-                      </Link>
-                      <Link to="/about/partners" onClick={() => setIsOpen(false)} className="block py-1 text-sm">
-                        {t('nav.about.partners')}
-                      </Link>
-                      <Link to="/about/reports" onClick={() => setIsOpen(false)} className="block py-1 text-sm">
-                        {t('nav.about.reports')}
-                      </Link>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-
-              <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.5 }}>
-                <Link
-                  to="/contact"
-                  onClick={() => setIsOpen(false)}
-                  className="block mt-4 bg-accent text-primary px-6 py-3 rounded-lg hover:bg-hover transition-colors font-semibold text-center whitespace-nowrap"
-                >
-                  {t('nav.contact')}
-                </Link>
-
-                <Link
-                  to="/book"
-                  onClick={() => setIsOpen(false)}
-                  className="block mt-3 bg-white/10 text-white px-6 py-3 rounded-lg hover:bg-white/15 transition-colors font-semibold text-center whitespace-nowrap"
-                >
-                  {t('button.book')}
-                </Link>
-
-                {user ? (
+                <div className="pt-4 space-y-3">
                   <Link
-                    to="/member/dashboard"
+                    to="/book"
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center justify-center gap-2 w-full mt-3 border border-white/30 text-white px-6 py-3 rounded-lg hover:bg-white/10 transition-colors font-semibold"
+                    className="block bg-accent text-primary px-6 py-3 rounded-lg hover:bg-hover transition-colors font-semibold text-center whitespace-nowrap"
                   >
-                    <UserCircle size={18} />
-                    {language === 'ar' ? 'حسابي' : 'My Account'}
+                    {t('button.book')}
                   </Link>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => toggleDropdown('account')}
-                      className="flex items-center justify-between w-full mt-3 border border-white/30 text-white px-6 py-3 rounded-lg hover:bg-white/10 transition-colors font-semibold"
-                    >
-                      <div className="flex items-center gap-2">
-                        <LogIn size={18} />
-                        {language === 'ar' ? 'العضوية' : 'Membership'}
-                      </div>
-                      <ChevronDown size={16} className={`transition-transform duration-300 ${openDropdown === 'account' ? 'rotate-180' : ''}`} />
-                    </button>
 
-                    <AnimatePresence>
-                      {openDropdown === 'account' && (
-                        <motion.div
-                          className={`${isRTL ? 'pr-4' : 'pl-4'} space-y-2 mt-2`}
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <Link
-                            to="/member/login"
-                            onClick={() => setIsOpen(false)}
-                            className="flex items-center gap-2 py-2 text-sm hover:text-accent transition-colors"
+                  <Link
+                    to="/get-involved/donate"
+                    onClick={() => setIsOpen(false)}
+                    className="block bg-red-600/80 text-white px-6 py-3 rounded-lg hover:bg-red-700/80 transition-colors font-semibold text-center whitespace-nowrap"
+                  >
+                    <span className="flex items-center justify-center gap-2">
+                      <Heart size={18} />
+                      {language === 'ar' ? 'تبرع' : 'Donate'}
+                    </span>
+                  </Link>
+
+                  {user ? (
+                    <Link
+                      to="/member/dashboard"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center justify-center gap-2 w-full border border-white/30 text-white px-6 py-3 rounded-lg hover:bg-white/10 transition-colors font-semibold"
+                    >
+                      <UserCircle size={18} />
+                      {language === 'ar' ? 'حسابي' : 'My Account'}
+                    </Link>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => toggleDropdown('account')}
+                        className="flex items-center justify-between w-full border border-white/30 text-white px-6 py-3 rounded-lg hover:bg-white/10 transition-colors font-semibold"
+                      >
+                        <div className="flex items-center gap-2">
+                          <LogIn size={18} />
+                          {language === 'ar' ? 'تسجيل الدخول' : 'Member Login'}
+                        </div>
+                        <ChevronDown size={16} className={`transition-transform duration-300 ${openDropdown === 'account' ? 'rotate-180' : ''}`} />
+                      </button>
+                      <AnimatePresence>
+                        {openDropdown === 'account' && (
+                          <motion.div
+                            className={`${isRTL ? 'pr-4' : 'pl-4'} space-y-2 mt-2`}
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
                           >
-                            <LogIn size={16} />
-                            {language === 'ar' ? 'لديك عضوية؟ تسجيل الدخول' : 'Have Membership? Login'}
-                          </Link>
-                          <Link
-                            to="/membership"
-                            onClick={() => setIsOpen(false)}
-                            className="flex items-center gap-2 py-2 text-sm hover:text-accent transition-colors"
-                          >
-                            <UserPlus size={16} />
-                            {language === 'ar' ? 'تسجيل عضوية جديدة' : 'Register New Membership'}
-                          </Link>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </>
-                )}
+                            <Link
+                              to="/member/login"
+                              onClick={() => setIsOpen(false)}
+                              className="flex items-center gap-2 py-2 text-sm hover:text-accent transition-colors"
+                            >
+                              <LogIn size={16} />
+                              {language === 'ar' ? 'تسجيل الدخول' : 'Login'}
+                            </Link>
+                            <Link
+                              to="/membership"
+                              onClick={() => setIsOpen(false)}
+                              className="flex items-center gap-2 py-2 text-sm hover:text-accent transition-colors"
+                            >
+                              <UserPlus size={16} />
+                              {language === 'ar' ? 'تسجيل عضوية جديدة' : 'Register New Membership'}
+                            </Link>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </>
+                  )}
+                </div>
               </motion.div>
             </motion.nav>
           )}

@@ -107,6 +107,7 @@ export default function Footer() {
               <motion.li whileHover={{ x: isRTL ? -5 : 5 }}><Link to="/programmes/youth" className="text-gray-300 hover:text-accent transition-colors">{t('nav.programmes.youth')}</Link></motion.li>
               <motion.li whileHover={{ x: isRTL ? -5 : 5 }}><Link to="/programmes/children" className="text-gray-300 hover:text-accent transition-colors">{t('nav.programmes.children')}</Link></motion.li>
               <motion.li whileHover={{ x: isRTL ? -5 : 5 }}><Link to="/programmes/men" className="text-gray-300 hover:text-accent transition-colors">{t('nav.programmes.men')}</Link></motion.li>
+              <motion.li whileHover={{ x: isRTL ? -5 : 5 }}><Link to="/programmes/journey-within" className="text-gray-300 hover:text-accent transition-colors">{language === 'ar' ? 'رحلة الذات' : 'The Journey Within'}</Link></motion.li>
             </ul>
           </motion.div>
 

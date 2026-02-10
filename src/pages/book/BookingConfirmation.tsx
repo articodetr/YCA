@@ -27,6 +27,8 @@ const translations = {
     free: 'Free',
     advisory: 'Advisory Bureau',
     wakala: 'Wakala Service',
+    translation: 'Translation Service',
+    other: 'Legal/Documentation Service',
     keepRef: 'Please save your reference number. You will need it to track your booking status.',
     emailSent: 'A confirmation will be sent to',
     trackBooking: 'Track Your Booking',
@@ -51,6 +53,8 @@ const translations = {
     free: 'مجاناً',
     advisory: 'المكتب الاستشاري',
     wakala: 'خدمة الوكالة',
+    translation: 'خدمة الترجمة',
+    other: 'خدمة قانونية / توثيق',
     keepRef: 'يرجى حفظ الرقم المرجعي. ستحتاجه لتتبع حالة حجزك.',
     emailSent: 'سيتم إرسال التأكيد إلى',
     trackBooking: 'تتبع حجزك',
@@ -92,7 +96,13 @@ export default function BookingConfirmation({ result, onNewBooking }: BookingCon
     });
   };
 
-  const serviceName = result.serviceType === 'advisory' ? t.advisory : t.wakala;
+  const serviceNameMap: Record<string, string> = {
+    advisory: t.advisory,
+    wakala: t.wakala,
+    translation: t.translation,
+    other: t.other,
+  };
+  const serviceName = serviceNameMap[result.serviceType] || result.serviceType;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-50 to-white" dir={isRTL ? 'rtl' : 'ltr'}>

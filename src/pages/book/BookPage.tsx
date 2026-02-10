@@ -5,9 +5,10 @@ import {
   FileText,
   CheckCircle,
   ChevronRight,
-  HelpCircle,
   Clock,
   Search,
+  Languages,
+  Scale,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -16,10 +17,12 @@ import { useSiteSettings } from '../../contexts/SiteSettingsContext';
 import Layout from '../../components/Layout';
 import AdvisoryBookingForm from './AdvisoryBookingForm';
 import WakalaBookingForm from './WakalaBookingForm';
+import TranslationBookingForm from './TranslationBookingForm';
+import OtherLegalBookingForm from './OtherLegalBookingForm';
 import BookingConfirmation from './BookingConfirmation';
 import BookingGateModal from './BookingGateModal';
 
-export type ServiceType = 'advisory' | 'wakala' | null;
+export type ServiceType = 'advisory' | 'wakala' | 'translation' | 'other' | null;
 
 export interface BookingResult {
   bookingReference: string;
@@ -32,45 +35,58 @@ export interface BookingResult {
   fee: number;
 }
 
+const VALID_SERVICES: ServiceType[] = ['advisory', 'wakala', 'translation', 'other'];
+
 const translations = {
   en: {
-    title: 'Book an Appointment',
-    subtitle: 'Choose a service and schedule your visit',
-    selectService: 'Select a Service',
+    title: 'Book a Service',
+    subtitle: 'Choose a service to get started',
+    selectService: 'Select',
     advisoryTitle: 'Advisory Bureau',
     advisoryDesc: 'Book an in-person consultation at our centre for advice on benefits, housing, immigration, employment, and more.',
     advisoryFeatures: ['Face-to-face consultation', 'Immediate assistance', 'Free service'],
     wakalaTitle: 'Wakala Service',
     wakalaDesc: 'Let us handle official procedures and paperwork on your behalf through our authorised representation service.',
     wakalaFeatures: ['Official representation', 'Document handling', 'Professional service'],
-    otherTitle: 'Other Services',
-    otherDesc: 'Explore our programmes, events, and community resources.',
-    viewProgrammes: 'View Programmes',
-    viewEvents: 'View Events',
+    translationTitle: 'Translation Service',
+    translationDesc: 'Professional translation of official documents including birth certificates, legal papers, and more.',
+    translationFeatures: ['Certified translation', 'Multiple document types', 'Fast turnaround'],
+    otherTitle: 'Other Legal / Documentation',
+    otherDesc: 'Legal consultations, document notarization, immigration assistance, housing support, and other services.',
+    otherFeatures: ['Legal consultation', 'Document notarization', 'Wide range of services'],
     backToServices: 'Back to Services',
     trackBooking: 'Track Your Booking',
     trackDesc: 'Already have a booking? Enter your reference number to check the status.',
     trackButton: 'Track Booking',
   },
   ar: {
-    title: 'حجز موعد',
-    subtitle: 'اختر الخدمة وحدد موعد زيارتك',
-    selectService: 'اختر الخدمة',
+    title: 'احجز خدمة',
+    subtitle: 'اختر الخدمة للبدء',
+    selectService: 'اختر',
     advisoryTitle: 'المكتب الاستشاري',
     advisoryDesc: 'احجز موعداً شخصياً في مركزنا للحصول على استشارات حول الإعانات والسكن والهجرة والتوظيف والمزيد.',
     advisoryFeatures: ['استشارة وجهاً لوجه', 'مساعدة فورية', 'خدمة مجانية'],
     wakalaTitle: 'خدمة الوكالة',
     wakalaDesc: 'دعنا نتولى الإجراءات الرسمية والأوراق نيابة عنك من خلال خدمة التمثيل المعتمدة لدينا.',
     wakalaFeatures: ['تمثيل رسمي', 'التعامل مع الوثائق', 'خدمة احترافية'],
-    otherTitle: 'خدمات أخرى',
-    otherDesc: 'استكشف برامجنا وفعالياتنا وموارد المجتمع.',
-    viewProgrammes: 'عرض البرامج',
-    viewEvents: 'عرض الفعاليات',
+    translationTitle: 'خدمة الترجمة',
+    translationDesc: 'ترجمة احترافية للمستندات الرسمية بما في ذلك شهادات الميلاد والأوراق القانونية والمزيد.',
+    translationFeatures: ['ترجمة معتمدة', 'أنواع مستندات متعددة', 'إنجاز سريع'],
+    otherTitle: 'خدمات قانونية / توثيق أخرى',
+    otherDesc: 'استشارات قانونية، توثيق المستندات، مساعدة في الهجرة، دعم الإسكان، وخدمات أخرى.',
+    otherFeatures: ['استشارة قانونية', 'توثيق المستندات', 'مجموعة واسعة من الخدمات'],
     backToServices: 'العودة للخدمات',
     trackBooking: 'تتبع حجزك',
     trackDesc: 'لديك حجز بالفعل؟ أدخل الرقم المرجعي للتحقق من الحالة.',
     trackButton: 'تتبع الحجز',
   },
+};
+
+const accentMap: Record<string, { bg: string; bgHover: string; text: string; border: string }> = {
+  emerald: { bg: 'bg-emerald-100', bgHover: 'group-hover:bg-emerald-600', text: 'text-emerald-600', border: 'hover:border-emerald-500' },
+  blue: { bg: 'bg-blue-100', bgHover: 'group-hover:bg-blue-600', text: 'text-blue-600', border: 'hover:border-blue-500' },
+  teal: { bg: 'bg-teal-100', bgHover: 'group-hover:bg-teal-600', text: 'text-teal-600', border: 'hover:border-teal-500' },
+  amber: { bg: 'bg-amber-100', bgHover: 'group-hover:bg-amber-600', text: 'text-amber-600', border: 'hover:border-amber-500' },
 };
 
 export default function BookPage() {
@@ -92,7 +108,7 @@ export default function BookPage() {
 
   useEffect(() => {
     const serviceParam = searchParams.get('service') as ServiceType;
-    if (serviceParam && (serviceParam === 'advisory' || serviceParam === 'wakala')) {
+    if (serviceParam && VALID_SERVICES.includes(serviceParam)) {
       setSelectedService(serviceParam);
     }
   }, [searchParams]);
@@ -161,6 +177,22 @@ export default function BookPage() {
       features: t.wakalaFeatures,
       accent: 'blue',
     },
+    {
+      id: 'translation' as ServiceType,
+      icon: Languages,
+      title: t.translationTitle,
+      description: t.translationDesc,
+      features: t.translationFeatures,
+      accent: 'teal',
+    },
+    {
+      id: 'other' as ServiceType,
+      icon: Scale,
+      title: t.otherTitle,
+      description: t.otherDesc,
+      features: t.otherFeatures,
+      accent: 'amber',
+    },
   ];
 
   return (
@@ -186,54 +218,51 @@ export default function BookPage() {
           {!selectedService ? (
             <div className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
-                {services.map((service, idx) => (
-                  <motion.button
-                    key={service.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.1, duration: 0.4 }}
-                    onClick={() => handleServiceSelect(service.id)}
-                    className="group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 sm:p-8 text-left border-2 border-transparent hover:border-emerald-500"
-                  >
-                    <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-5 ${
-                      service.accent === 'emerald'
-                        ? 'bg-emerald-100 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white'
-                        : 'bg-blue-100 text-blue-600 group-hover:bg-blue-600 group-hover:text-white'
-                    } transition-colors`}>
-                      <service.icon className="w-7 h-7" />
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-emerald-700 transition-colors">
-                      {service.title}
-                    </h3>
-                    <p className="text-gray-600 mb-5 leading-relaxed">
-                      {service.description}
-                    </p>
-                    <ul className="space-y-2 mb-6">
-                      {service.features.map((feature, fidx) => (
-                        <li key={fidx} className="flex items-center gap-2 text-sm text-gray-500">
-                          <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                    <div className={`inline-flex items-center gap-2 font-semibold ${
-                      service.accent === 'emerald' ? 'text-emerald-600' : 'text-blue-600'
-                    }`}>
-                      {t.selectService}
-                      <ChevronRight className={`w-5 h-5 transition-transform group-hover:translate-x-1 ${isRTL ? 'rotate-180 group-hover:-translate-x-1' : ''}`} />
-                    </div>
-                  </motion.button>
-                ))}
+                {services.map((service, idx) => {
+                  const colors = accentMap[service.accent] || accentMap.emerald;
+                  return (
+                    <motion.button
+                      key={service.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.1, duration: 0.4 }}
+                      onClick={() => handleServiceSelect(service.id)}
+                      className={`group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 sm:p-8 text-left border-2 border-transparent ${colors.border}`}
+                    >
+                      <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-5 ${colors.bg} ${colors.text} ${colors.bgHover} group-hover:text-white transition-colors`}>
+                        <service.icon className="w-7 h-7" />
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-gray-800 transition-colors">
+                        {service.title}
+                      </h3>
+                      <p className="text-gray-600 mb-5 leading-relaxed text-sm">
+                        {service.description}
+                      </p>
+                      <ul className="space-y-2 mb-6">
+                        {service.features.map((feature, fidx) => (
+                          <li key={fidx} className="flex items-center gap-2 text-sm text-gray-500">
+                            <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                      <div className={`inline-flex items-center gap-2 font-semibold ${colors.text}`}>
+                        {t.selectService}
+                        <ChevronRight className={`w-5 h-5 transition-transform group-hover:translate-x-1 ${isRTL ? 'rotate-180 group-hover:-translate-x-1' : ''}`} />
+                      </div>
+                    </motion.button>
+                  );
+                })}
               </div>
 
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.4 }}
+                transition={{ delay: 0.4, duration: 0.4 }}
                 className="bg-white rounded-2xl shadow-lg p-6 sm:p-8"
               >
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-xl bg-gray-100 text-gray-600 flex items-center justify-center flex-shrink-0">
                     <Search className="w-6 h-6" />
                   </div>
                   <div className="flex-1">
@@ -246,37 +275,6 @@ export default function BookPage() {
                       {t.trackButton}
                       <ChevronRight className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
                     </Link>
-                  </div>
-                </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.4 }}
-                className="bg-white rounded-2xl shadow-lg p-6 sm:p-8"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-gray-100 text-gray-600 flex items-center justify-center flex-shrink-0">
-                    <HelpCircle className="w-6 h-6" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">{t.otherTitle}</h3>
-                    <p className="text-gray-600 mb-4">{t.otherDesc}</p>
-                    <div className="flex flex-wrap gap-3">
-                      <Link
-                        to="/programmes"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium"
-                      >
-                        {t.viewProgrammes}
-                      </Link>
-                      <Link
-                        to="/events"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium"
-                      >
-                        {t.viewEvents}
-                      </Link>
-                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -301,6 +299,14 @@ export default function BookPage() {
 
               {selectedService === 'wakala' && (
                 <WakalaBookingForm onComplete={handleBookingComplete} />
+              )}
+
+              {selectedService === 'translation' && (
+                <TranslationBookingForm onComplete={handleBookingComplete} />
+              )}
+
+              {selectedService === 'other' && (
+                <OtherLegalBookingForm onComplete={handleBookingComplete} />
               )}
             </motion.div>
           )}

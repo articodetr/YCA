@@ -27,8 +27,6 @@ import BusinessSupport from './pages/get-involved/BusinessSupport';
 import Resources from './pages/Resources';
 import ComplaintsSuggestions from './pages/contact/ComplaintsSuggestions';
 import ServiceFeedback from './pages/contact/ServiceFeedback';
-import TranslationRequest from './pages/services/TranslationRequest';
-import OtherLegalRequest from './pages/services/OtherLegalRequest';
 import BookPage from './pages/book/BookPage';
 import BookingTracker from './pages/book/BookingTracker';
 import PaymentResult from './pages/PaymentResult';
@@ -186,9 +184,9 @@ function App() {
                 <Route path="/get-involved/partnerships" element={<Partnerships />} />
                 <Route path="/get-involved/business-support" element={<BusinessSupport />} />
 
-                <Route path="/services/legal/translation" element={<TranslationRequest />} />
-                <Route path="/services/legal/other" element={<OtherLegalRequest />} />
-                <Route path="/services/legal/wakala" element={<Navigate to="/book" replace />} />
+                <Route path="/services/legal/translation" element={<Navigate to="/book?service=translation" replace />} />
+                <Route path="/services/legal/other" element={<Navigate to="/book?service=other" replace />} />
+                <Route path="/services/legal/wakala" element={<Navigate to="/book?service=wakala" replace />} />
 
                 <Route path="/resources" element={<Resources />} />
               </Routes>

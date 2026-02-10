@@ -79,14 +79,14 @@ export default function Header() {
     key: 'services',
     label: t('nav.services'),
     items: [
-      { label: t('nav.services.advisory'), path: '/services' },
+      { label: t('nav.services.advisory'), path: '/book?service=advisory' },
       {
         label: t('nav.services.legal'),
         path: '/services/legal',
         children: [
-          { label: t('nav.services.legal.wakala'), path: '/services/legal/wakala' },
-          { label: t('nav.services.legal.translation'), path: '/services/legal/translation' },
-          { label: t('nav.services.legal.other'), path: '/services/legal/other' },
+          { label: t('nav.services.legal.wakala'), path: '/book?service=wakala' },
+          { label: t('nav.services.legal.translation'), path: '/book?service=translation' },
+          { label: t('nav.services.legal.other'), path: '/book?service=other' },
         ],
       },
     ],

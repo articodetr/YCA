@@ -180,8 +180,7 @@ function App() {
       </AdminAuthProvider>
     </LanguageProvider>
   );
-}
-export default function PageLayout({ children }) {
+  export default function PageLayout({ children }) {
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* watermark خلف المحتوى */}
@@ -196,6 +195,8 @@ export default function PageLayout({ children }) {
       <div className="gold-belt" />
     </div>
   );
+}
+
 }
 
 export default App;

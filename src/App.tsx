@@ -34,6 +34,7 @@ import { MemberAuthProvider } from './contexts/MemberAuthContext';
 import { ContentProvider } from './contexts/ContentContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { SiteSettingsProvider } from './contexts/SiteSettingsContext';
+
 import AdminLogin from './pages/admin/AdminLogin';
 import ProtectedRoute from './components/admin/ProtectedRoute';
 import ProtectedMemberRoute from './components/member/ProtectedMemberRoute';
@@ -42,6 +43,7 @@ import MemberSignup from './pages/member/MemberSignup';
 import AuthCallback from './pages/member/AuthCallback';
 import MemberDashboard from './pages/member/MemberDashboard';
 import WakalaApplication from './pages/member/WakalaApplication';
+
 import AdminLayout from './components/admin/AdminLayout';
 import Dashboard from './pages/admin/Dashboard';
 import NewsManagement from './pages/admin/NewsManagement';
@@ -66,22 +68,6 @@ import AvailabilityManagement from './pages/admin/AvailabilityManagement';
 import PageImagesManagement from './pages/admin/PageImagesManagement';
 import AdminManagement from './pages/admin/AdminManagement';
 import MembershipExpiryMonitoring from './pages/admin/MembershipExpiryMonitoring';
-export default function PageLayout({ children }) {
-  return (
-    <div className="relative min-h-screen overflow-hidden">
-      {/* watermark خلف المحتوى */}
-      <div className="logo-watermark" />
-
-      {/* المحتوى فوق الـ watermark */}
-      <div className="relative z-10">
-        {children}
-      </div>
-
-      {/* الحزام في الأسفل */}
-      <div className="gold-belt" />
-    </div>
-  );
-}
 
 function App() {
   return (
@@ -89,114 +75,118 @@ function App() {
       <AdminAuthProvider>
         <MemberAuthProvider>
           <SiteSettingsProvider>
-          <ContentProvider>
-            <Router>
-            <ScrollToTop />
-            <Routes>
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/member/login" element={<MemberLogin />} />
-            <Route path="/member/signup" element={<MemberSignup />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/membership" element={<UnifiedMembership />} />
-            <Route path="/book" element={<BookPage />} />
-            <Route path="/book/track" element={<BookingTracker />} />
-            <Route path="/payment/result" element={<PaymentResult />} />
-            <Route path="/apply" element={<BookPage />} />
+            <ContentProvider>
+              <Router>
+                <ScrollToTop />
 
-          <Route
-            path="/admin/*"
-            element={
-              <ProtectedRoute>
-                <AdminLayout>
-                  <Routes>
-                    <Route path="dashboard" element={<Dashboard />} />
-                    <Route path="news" element={<NewsManagement />} />
-                    <Route path="events" element={<EventsManagement />} />
-                    <Route path="event-galleries" element={<EventGalleriesManagement />} />
-                    <Route path="registrations" element={<RegistrationsManagement />} />
-                    <Route path="memberships" element={<MembershipsManagement />} />
-                    <Route path="membership-expiry" element={<MembershipExpiryMonitoring />} />
-                    <Route path="wakala" element={<WakalaManagement />} />
-                    <Route path="volunteers" element={<VolunteersManagement />} />
-                    <Route path="partnerships" element={<PartnershipsManagement />} />
-                    <Route path="contacts" element={<ContactsManagement />} />
-                    <Route path="donations" element={<DonationsManagement />} />
-                    <Route path="subscribers" element={<SubscribersManagement />} />
-                    <Route path="hero" element={<HeroManagement />} />
-                    <Route path="team" element={<TeamManagement />} />
-                    <Route path="services" element={<ServicesManagement />} />
-                    <Route path="programmes" element={<ProgrammesManagement />} />
-                    <Route path="resources" element={<ResourcesManagement />} />
-                    <Route path="content" element={<ContentManagement />} />
-                    <Route path="page-images" element={<PageImagesManagement />} />
-                    <Route path="availability" element={<AvailabilityManagement />} />
-                    <Route path="admins" element={<AdminManagement />} />
-                    <Route path="settings" element={<Settings />} />
-                  </Routes>
-                </AdminLayout>
-              </ProtectedRoute>
-            }
-          />
-
-          <Route path="/member/membership/apply" element={<Navigate to="/membership" replace />} />
-          <Route path="/member/choose-membership" element={<Navigate to="/membership" replace />} />
-
-          <Route
-            path="/member/*"
-            element={
-              <ProtectedMemberRoute>
                 <Routes>
-                  <Route path="dashboard" element={<MemberDashboard />} />
-                  <Route path="wakala/apply" element={<WakalaApplication />} />
+                  <Route path="/admin/login" element={<AdminLogin />} />
+                  <Route path="/member/login" element={<MemberLogin />} />
+                  <Route path="/member/signup" element={<MemberSignup />} />
+                  <Route path="/auth/callback" element={<AuthCallback />} />
+                  <Route path="/membership" element={<UnifiedMembership />} />
+                  <Route path="/book" element={<BookPage />} />
+                  <Route path="/book/track" element={<BookingTracker />} />
+                  <Route path="/payment/result" element={<PaymentResult />} />
+                  <Route path="/apply" element={<BookPage />} />
+
+                  <Route
+                    path="/admin/*"
+                    element={
+                      <ProtectedRoute>
+                        <AdminLayout>
+                          <Routes>
+                            <Route path="dashboard" element={<Dashboard />} />
+                            <Route path="news" element={<NewsManagement />} />
+                            <Route path="events" element={<EventsManagement />} />
+                            <Route path="event-galleries" element={<EventGalleriesManagement />} />
+                            <Route path="registrations" element={<RegistrationsManagement />} />
+                            <Route path="memberships" element={<MembershipsManagement />} />
+                            <Route path="membership-expiry" element={<MembershipExpiryMonitoring />} />
+                            <Route path="wakala" element={<WakalaManagement />} />
+                            <Route path="volunteers" element={<VolunteersManagement />} />
+                            <Route path="partnerships" element={<PartnershipsManagement />} />
+                            <Route path="contacts" element={<ContactsManagement />} />
+                            <Route path="donations" element={<DonationsManagement />} />
+                            <Route path="subscribers" element={<SubscribersManagement />} />
+                            <Route path="hero" element={<HeroManagement />} />
+                            <Route path="team" element={<TeamManagement />} />
+                            <Route path="services" element={<ServicesManagement />} />
+                            <Route path="programmes" element={<ProgrammesManagement />} />
+                            <Route path="resources" element={<ResourcesManagement />} />
+                            <Route path="content" element={<ContentManagement />} />
+                            <Route path="page-images" element={<PageImagesManagement />} />
+                            <Route path="availability" element={<AvailabilityManagement />} />
+                            <Route path="admins" element={<AdminManagement />} />
+                            <Route path="settings" element={<Settings />} />
+                          </Routes>
+                        </AdminLayout>
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  <Route path="/member/membership/apply" element={<Navigate to="/membership" replace />} />
+                  <Route path="/member/choose-membership" element={<Navigate to="/membership" replace />} />
+
+                  <Route
+                    path="/member/*"
+                    element={
+                      <ProtectedMemberRoute>
+                        <Routes>
+                          <Route path="dashboard" element={<MemberDashboard />} />
+                          <Route path="wakala/apply" element={<WakalaApplication />} />
+                        </Routes>
+                      </ProtectedMemberRoute>
+                    }
+                  />
+
+                  {/* Public Website */}
+                  <Route
+                    path="*"
+                    element={
+                      <Layout>
+                        <Routes>
+                          <Route path="/" element={<Home />} />
+                          <Route path="/services" element={<Services />} />
+
+                          <Route path="/programmes" element={<Programmes />} />
+                          <Route path="/programmes/women" element={<WomenProgramme />} />
+                          <Route path="/programmes/elderly" element={<ElderlyProgramme />} />
+                          <Route path="/programmes/youth" element={<YouthProgramme />} />
+                          <Route path="/programmes/children" element={<ChildrenProgramme />} />
+                          <Route path="/programmes/men" element={<MenProgramme />} />
+                          <Route path="/programmes/journey-within" element={<JourneyWithinProgramme />} />
+
+                          <Route path="/events" element={<Events />} />
+                          <Route path="/event-gallery/:id" element={<EventGallery />} />
+                          <Route path="/news" element={<News />} />
+                          <Route path="/news/:id" element={<NewsDetail />} />
+                          <Route path="/contact" element={<Contact />} />
+
+                          <Route path="/about/mission" element={<Mission />} />
+                          <Route path="/about/history" element={<History />} />
+                          <Route path="/about/team" element={<Team />} />
+                          <Route path="/about/partners" element={<Partners />} />
+                          <Route path="/about/reports" element={<Reports />} />
+
+                          <Route path="/get-involved/membership" element={<Navigate to="/membership" replace />} />
+                          <Route path="/get-involved/volunteer" element={<Volunteer />} />
+                          <Route path="/get-involved/jobs" element={<Jobs />} />
+                          <Route path="/get-involved/partnerships" element={<Partnerships />} />
+
+                          <Route path="/resources" element={<Resources />} />
+                        </Routes>
+                      </Layout>
+                    }
+                  />
                 </Routes>
-              </ProtectedMemberRoute>
-            }
-          />
-
-          <Route path="*" element={
-            <Layout>
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/services" element={<Services />} />
-
-                <Route path="/programmes" element={<Programmes />} />
-                <Route path="/programmes/women" element={<WomenProgramme />} />
-                <Route path="/programmes/elderly" element={<ElderlyProgramme />} />
-                <Route path="/programmes/youth" element={<YouthProgramme />} />
-                <Route path="/programmes/children" element={<ChildrenProgramme />} />
-                <Route path="/programmes/men" element={<MenProgramme />} />
-                <Route path="/programmes/journey-within" element={<JourneyWithinProgramme />} />
-
-                <Route path="/events" element={<Events />} />
-                <Route path="/event-gallery/:id" element={<EventGallery />} />
-                <Route path="/news" element={<News />} />
-                <Route path="/news/:id" element={<NewsDetail />} />
-                <Route path="/contact" element={<Contact />} />
-
-                <Route path="/about/mission" element={<Mission />} />
-                <Route path="/about/history" element={<History />} />
-                <Route path="/about/team" element={<Team />} />
-                <Route path="/about/partners" element={<Partners />} />
-                <Route path="/about/reports" element={<Reports />} />
-
-                <Route path="/get-involved/membership" element={<Navigate to="/membership" replace />} />
-                <Route path="/get-involved/volunteer" element={<Volunteer />} />
-                <Route path="/get-involved/jobs" element={<Jobs />} />
-                <Route path="/get-involved/partnerships" element={<Partnerships />} />
-
-                <Route path="/resources" element={<Resources />} />
-              </Routes>
-            </Layout>
-          } />
-          </Routes>
-          </Router>
-          </ContentProvider>
+              </Router>
+            </ContentProvider>
           </SiteSettingsProvider>
         </MemberAuthProvider>
       </AdminAuthProvider>
     </LanguageProvider>
   );
-  
 }
 
 export default App;

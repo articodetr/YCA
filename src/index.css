@@ -2,19 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ====== Design Tokens (Corporate / Strive-like) ====== */
 :root {
-  --color-primary: #0B1220;   /* main text */
-  --color-secondary: #334155; /* headings / secondary text */
-  --color-accent: #2563EB;    /* accent (links/buttons) */
-
-  --color-bg-sand: #F8FAFC;   /* page background */
-  --color-white: #FFFFFF;     /* surface/cards */
-
-  --color-muted: #64748B;     /* muted text */
-  --color-border: #E2E8F0;    /* borders */
-  --color-hover: #F1F5F9;     /* hover bg */
-  --color-divider: #F1F5F9;   /* dividers */
+  --color-primary: #22262D;
+  --color-secondary: #3A3F46;
+  --color-accent: #E4D4B5;
+  --color-bg-sand: #F0EBDF;
+  --color-white: #FFFFFF;
+  --color-muted: #6A6A6A;
+  --color-border: #A4A19A;
+  --color-hover: #D6C3A1;
+  --color-divider: #E8E2D8;
 }
 
 * {
@@ -31,11 +28,10 @@ body {
   font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   line-height: 1.6;
   color: var(--color-primary);
-  background-color: var(--color-bg-sand);
+  background-color: var(--color-white);
   overflow-x: hidden;
 }
 
-/* ====== RTL Helpers ====== */
 [dir="rtl"] {
   text-align: right;
 }
@@ -48,7 +44,6 @@ body {
   text-align: left;
 }
 
-/* ====== Reduce motion for accessibility ====== */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -63,25 +58,21 @@ body {
   }
 }
 
-/* ====== Typography ====== */
 h1, h2, h3, h4, h5, h6 {
   line-height: 1.2;
   font-weight: 700;
   margin-bottom: 1rem;
-  color: var(--color-primary);
 }
 
 p {
   margin-bottom: 1rem;
   line-height: 1.7;
-  color: var(--color-secondary);
 }
 
-/* ====== Links & Media ====== */
 a {
   text-decoration: none;
   color: inherit;
-  transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 img {
@@ -89,47 +80,3 @@ img {
   height: auto;
   display: block;
 }
-
-/* ===== Decorative Gold Belt (Bottom Strip) ===== */
-.gold-belt {
-  width: 100%;
-  height: 72px; /* تقدر تغيّرها */
-  background-image: url("/yca_gold_belt_transparent.png");
-  background-repeat: repeat-x;
-  background-position: bottom center;
-  background-size: auto 72px;
-}
-
-/* ===== Logo Watermark Background ===== */
-.logo-watermark {
-  position: absolute;
-  inset: 0;
-  background-image: url("/logo.png");
-  background-repeat: no-repeat;
-  background-position: 80% 120px; /* مكان الشعار (يمين) */
-  background-size: 560px;         /* حجم الشعار */
-  opacity: 0.06;                  /* شفافية */
-  filter: grayscale(100%);        /* يخليه أنعم وأقل “كرتوني” */
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* RTL: حرك الشعار لليسار عند العربية */
-[dir="rtl"] .logo-watermark {
-  background-position: 20% 120px;
-}
-
-/* Mobile adjustments */
-@media (max-width: 768px) {
-  .gold-belt {
-    height: 48px;
-    background-size: auto 48px;
-  }
-
-  .logo-watermark {
-    background-position: 50% 140px;
-    background-size: 360px;
-    opacity: 0.04;
-  }
-}
-

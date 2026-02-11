@@ -1,4 +1,4 @@
-import { Briefcase, Mail, FileText, Users, MapPin, Clock, DollarSign, Calendar, Loader2, Send } from 'lucide-react';
+import { Briefcase, Mail, FileText, Users, MapPin, Clock, DollarSign, Calendar, Loader2, Send, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
@@ -7,6 +7,7 @@ import { fadeInUp, fadeInLeft, fadeInRight, staggerContainer, staggerItem, scale
 import { useContent } from '../../contexts/ContentContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
+import DynamicFormModal from '../../components/modals/DynamicFormModal';
 
 interface JobPosting {
   id: string;
@@ -32,15 +33,7 @@ export default function Jobs() {
   const [jobPostings, setJobPostings] = useState<JobPosting[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState<JobPosting | null>(null);
-  const [isApplying, setIsApplying] = useState(false);
-  const [applicationData, setApplicationData] = useState({
-    full_name: '',
-    email: '',
-    phone: '',
-    cover_letter: '',
-    portfolio_url: '',
-    resume_file: null as File | null
-  });
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
   const c = (key: string, fallback: string) => getContent('jobs', key, fallback);
@@ -66,68 +59,54 @@ export default function Jobs() {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setApplicationData(prev => ({ ...prev, resume_file: e.target.files![0] }));
-    }
-  };
+  const handleSubmitApplication = async (
+    formData: Record<string, any>,
+    responses: Array<{ question_id: string; response_text: string; response_files?: any[] }>
+  ) => {
+    if (!selectedJob) return;
 
-  const uploadResume = async (file: File, jobId: string): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${jobId}_${Date.now()}.${fileExt}`;
-    const filePath = `resumes/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('job-resumes')
-      .upload(filePath, file);
-
-    if (uploadError) throw uploadError;
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('job-resumes')
-      .getPublicUrl(filePath);
-
-    return publicUrl;
-  };
-
-  const handleSubmitApplication = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedJob || !applicationData.resume_file) return;
-
-    setIsApplying(true);
     try {
-      const resumeUrl = await uploadResume(applicationData.resume_file, selectedJob.id);
+      const basicData = {
+        job_posting_id: selectedJob.id,
+        full_name: formData.full_name || '',
+        email: formData.email || '',
+        phone: formData.phone || '',
+        resume_url: formData.resume_url || '',
+        cover_letter: formData.cover_letter || '',
+        portfolio_url: formData.portfolio_url || null
+      };
 
-      const { error } = await supabase
+      const { data: application, error: appError } = await supabase
         .from('job_applications')
-        .insert([{
-          job_posting_id: selectedJob.id,
-          full_name: applicationData.full_name,
-          email: applicationData.email,
-          phone: applicationData.phone,
-          resume_url: resumeUrl,
-          cover_letter: applicationData.cover_letter,
-          portfolio_url: applicationData.portfolio_url || null
-        }]);
+        .insert([basicData])
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (appError) throw appError;
+
+      const responsesToInsert = responses.map(r => ({
+        form_type: 'job_application',
+        application_id: application.id,
+        question_id: r.question_id,
+        response_text: r.response_text,
+        response_files: r.response_files || []
+      }));
+
+      if (responsesToInsert.length > 0) {
+        const { error: responseError } = await supabase
+          .from('form_responses')
+          .insert(responsesToInsert);
+
+        if (responseError) throw responseError;
+      }
 
       setSubmitSuccess(true);
-      setApplicationData({
-        full_name: '',
-        email: '',
-        phone: '',
-        cover_letter: '',
-        portfolio_url: '',
-        resume_file: null
-      });
       setSelectedJob(null);
+      setIsModalOpen(false);
       setTimeout(() => setSubmitSuccess(false), 5000);
     } catch (error) {
       console.error('Error submitting application:', error);
-      alert(language === 'ar' ? 'حدث خطأ أثناء إرسال الطلب' : 'Error submitting application');
-    } finally {
-      setIsApplying(false);
+      throw error;
     }
   };
 
@@ -302,7 +281,10 @@ export default function Jobs() {
                           </div>
                         </div>
                         <motion.button
-                          onClick={() => setSelectedJob(job)}
+                          onClick={() => {
+                            setSelectedJob(job);
+                            setIsModalOpen(true);
+                          }}
                           className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-secondary transition-colors font-semibold whitespace-nowrap"
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
@@ -427,7 +409,7 @@ export default function Jobs() {
         </div>
       </section>
 
-      {selectedJob && (
+      {selectedJob && !isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
@@ -446,7 +428,7 @@ export default function Jobs() {
                 onClick={() => setSelectedJob(null)}
                 className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-full transition-colors"
               >
-                <Mail size={24} className="transform rotate-45" />
+                <X size={24} />
               </button>
               <h2 className="text-3xl font-bold mb-2">
                 {language === 'ar' ? selectedJob.title_ar : selectedJob.title_en}
@@ -499,136 +481,35 @@ export default function Jobs() {
                 </div>
               )}
 
-              <div className="border-t-2 border-gray-200 pt-8">
-                <h3 className="text-2xl font-bold text-primary mb-6">
-                  {language === 'ar' ? 'قدم طلبك' : 'Submit Your Application'}
-                </h3>
-
-                <form onSubmit={handleSubmitApplication} className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-semibold text-primary mb-2">
-                        {language === 'ar' ? 'الاسم الكامل' : 'Full Name'} <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={applicationData.full_name}
-                        onChange={(e) => setApplicationData(prev => ({ ...prev, full_name: e.target.value }))}
-                        required
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-primary mb-2">
-                        {language === 'ar' ? 'البريد الإلكتروني' : 'Email'} <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        value={applicationData.email}
-                        onChange={(e) => setApplicationData(prev => ({ ...prev, email: e.target.value }))}
-                        required
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none transition-colors"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-primary mb-2">
-                      {language === 'ar' ? 'رقم الهاتف' : 'Phone'} <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      value={applicationData.phone}
-                      onChange={(e) => setApplicationData(prev => ({ ...prev, phone: e.target.value }))}
-                      required
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none transition-colors"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-primary mb-2">
-                      {language === 'ar' ? 'السيرة الذاتية' : 'Resume/CV'} <span className="text-red-500">*</span>
-                    </label>
-                    <label className="flex items-center justify-center gap-3 px-6 py-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary hover:bg-sand transition-all">
-                      <FileText size={24} className="text-primary" />
-                      <span className="font-medium">
-                        {applicationData.resume_file
-                          ? applicationData.resume_file.name
-                          : language === 'ar'
-                          ? 'اختر ملف (PDF, DOC, DOCX)'
-                          : 'Choose file (PDF, DOC, DOCX)'}
-                      </span>
-                      <input
-                        type="file"
-                        onChange={handleFileChange}
-                        accept=".pdf,.doc,.docx"
-                        required
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-primary mb-2">
-                      {language === 'ar' ? 'خطاب التقديم' : 'Cover Letter'}
-                    </label>
-                    <textarea
-                      value={applicationData.cover_letter}
-                      onChange={(e) => setApplicationData(prev => ({ ...prev, cover_letter: e.target.value }))}
-                      rows={4}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none transition-colors resize-y"
-                      placeholder={language === 'ar' ? 'أخبرنا لماذا أنت مناسب لهذا المنصب...' : 'Tell us why you\'re a great fit for this position...'}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-primary mb-2">
-                      {language === 'ar' ? 'رابط معرض الأعمال (اختياري)' : 'Portfolio URL (optional)'}
-                    </label>
-                    <input
-                      type="url"
-                      value={applicationData.portfolio_url}
-                      onChange={(e) => setApplicationData(prev => ({ ...prev, portfolio_url: e.target.value }))}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none transition-colors"
-                      placeholder="https://"
-                    />
-                  </div>
-
-                  <div className="flex gap-4 justify-end pt-4">
-                    <motion.button
-                      type="button"
-                      onClick={() => setSelectedJob(null)}
-                      className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      {language === 'ar' ? 'إلغاء' : 'Cancel'}
-                    </motion.button>
-                    <motion.button
-                      type="submit"
-                      disabled={isApplying}
-                      className="flex items-center gap-2 px-8 py-3 bg-primary text-white rounded-lg hover:bg-secondary transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                      whileHover={{ scale: isApplying ? 1 : 1.05 }}
-                      whileTap={{ scale: isApplying ? 1 : 0.95 }}
-                    >
-                      {isApplying ? (
-                        <>
-                          <Loader2 className="animate-spin" size={20} />
-                          {language === 'ar' ? 'جاري الإرسال...' : 'Submitting...'}
-                        </>
-                      ) : (
-                        <>
-                          <Send size={20} />
-                          {language === 'ar' ? 'إرسال الطلب' : 'Submit Application'}
-                        </>
-                      )}
-                    </motion.button>
-                  </div>
-                </form>
+              <div className="flex justify-end pt-8 border-t">
+                <motion.button
+                  onClick={() => setIsModalOpen(true)}
+                  className="flex items-center gap-2 px-8 py-4 bg-primary text-white rounded-lg hover:bg-secondary transition-colors font-semibold"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Send size={20} />
+                  {language === 'ar' ? 'تقديم الطلب' : 'Start Application'}
+                </motion.button>
               </div>
             </div>
           </motion.div>
         </div>
+      )}
+
+      {isModalOpen && selectedJob && (
+        <DynamicFormModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedJob(null);
+          }}
+          formType="job_application"
+          title={`Apply for ${selectedJob.title_en}`}
+          titleAr={`التقديم على ${selectedJob.title_ar}`}
+          onSubmit={handleSubmitApplication}
+          jobPostingId={selectedJob.id}
+        />
       )}
       </div>
     </div>

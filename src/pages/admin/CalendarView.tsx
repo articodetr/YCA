@@ -111,6 +111,7 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
           )
         `)
         .eq('availability_slots.service_id', selectedServiceId)
+        .neq('status', 'deleted_by_admin')
         .gte('booking_date', startDate)
         .lte('booking_date', endDate)
         .not('booking_date', 'is', null)

@@ -21,7 +21,7 @@ export default function ExportDialog({ open, onClose, entityType, admins }: Expo
   const exportCSV = async () => {
     setExporting(true);
     try {
-      let query = supabase.from('wakala_applications').select('*');
+      let query = supabase.from('wakala_applications').select('*').neq('status', 'deleted_by_admin');
 
       if (dateFrom) {
         query = query.gte('created_at', `${dateFrom}T00:00:00`);

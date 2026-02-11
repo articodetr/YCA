@@ -286,6 +286,7 @@ export default function MemberDashboard() {
           .from('membership_applications')
           .select('*')
           .eq('email', user.email)
+          .neq('status', 'deleted_by_admin')
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle(),
@@ -309,6 +310,7 @@ export default function MemberDashboard() {
           .select('*, availability_slots(service_id)')
           .eq('user_id', user.id)
           .neq('status', 'pending_payment')
+          .neq('status', 'deleted_by_admin')
           .order('created_at', { ascending: false }),
         supabase
           .from('donations')

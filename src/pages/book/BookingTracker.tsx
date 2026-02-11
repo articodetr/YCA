@@ -119,6 +119,7 @@ export default function BookingTracker() {
       let query = supabase
         .from('wakala_applications')
         .select('id, booking_reference, full_name, email, service_type, booking_date, start_time, end_time, status, fee_amount, created_at')
+        .neq('status', 'deleted_by_admin')
         .order('created_at', { ascending: false });
 
       if (refInput.trim()) {

@@ -113,6 +113,7 @@ export default function BookingsOverview({
           availability_slots!inner(service_id),
           admins:assigned_admin_id(full_name)
         `)
+        .neq('status', 'deleted_by_admin')
         .gte('booking_date', startDate)
         .lte('booking_date', endDate)
         .not('booking_date', 'is', null)

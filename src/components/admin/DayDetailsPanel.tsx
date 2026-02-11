@@ -73,6 +73,7 @@ export default function DayDetailsPanel({
             .from('wakala_applications')
             .select('id, full_name, email, phone, service_type')
             .eq('slot_id', slot.id)
+            .neq('status', 'deleted_by_admin')
             .maybeSingle();
 
           return {

@@ -50,7 +50,7 @@ export default function PartnershipsManagement() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.from('partnership_inquiries').select('*').order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('partnership_inquiries').select('*').neq('status', 'deleted_by_admin').order('created_at', { ascending: false });
       if (error) throw error;
       setItems(data || []);
     } catch (error) { console.error('Error:', error); } finally { setLoading(false); }
@@ -157,9 +157,9 @@ export default function PartnershipsManagement() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this partnership inquiry?')) return;
     try {
-      await supabase.from('form_responses').delete().eq('application_id', id).eq('form_type', 'partnership');
-      const { error } = await supabase.from('partnership_inquiries').delete().eq('id', id);
-      if (error) throw error;
+      const { adminDeleteRecord } = await import('../../lib/admin-api');
+      const result = await adminDeleteRecord('partnership_inquiries', id);
+      if (!result.success) throw new Error(result.error);
       setToast({ message: 'Partnership deleted successfully', type: 'success' });
       await fetchData();
       if (selected?.id === id) setSelected(null);

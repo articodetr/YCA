@@ -70,6 +70,7 @@ export default function BusinessSupportersManagement() {
       const { data, error } = await supabase
         .from('business_supporters')
         .select('*')
+        .neq('status', 'deleted_by_admin')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -129,12 +130,9 @@ export default function BusinessSupportersManagement() {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('business_supporters')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
+      const { adminDeleteRecord } = await import('../../lib/admin-api');
+      const result = await adminDeleteRecord('business_supporters', id);
+      if (!result.success) throw new Error(result.error);
       setToast({ message: 'Supporter deleted successfully', type: 'success' });
       setDeleteConfirm(null);
       await fetchSupporters();

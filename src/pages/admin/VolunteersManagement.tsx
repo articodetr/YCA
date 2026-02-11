@@ -59,6 +59,7 @@ export default function VolunteersManagement() {
       const { data, error } = await supabase
         .from('volunteer_applications')
         .select('*')
+        .neq('status', 'deleted_by_admin')
         .order('created_at', { ascending: false });
       if (error) throw error;
       setVolunteers(data || []);
@@ -177,9 +178,9 @@ export default function VolunteersManagement() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this volunteer application?')) return;
     try {
-      await supabase.from('form_responses').delete().eq('application_id', id).eq('form_type', 'volunteer');
-      const { error } = await supabase.from('volunteer_applications').delete().eq('id', id);
-      if (error) throw error;
+      const { adminDeleteRecord } = await import('../../lib/admin-api');
+      const result = await adminDeleteRecord('volunteer_applications', id);
+      if (!result.success) throw new Error(result.error);
       setToast({ message: 'Volunteer deleted successfully', type: 'success' });
       await fetchVolunteers();
       if (selectedVol?.id === id) setSelectedVol(null);

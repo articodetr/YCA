@@ -51,6 +51,7 @@ export default function MembershipsManagement() {
         .from('membership_applications')
         .select('*')
         .or('payment_status.eq.completed,status.eq.approved')
+        .neq('status', 'deleted_by_admin')
         .order('created_at', { ascending: false });
 
       if (error) throw error;

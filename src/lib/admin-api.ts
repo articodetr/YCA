@@ -1,67 +1,101 @@
 import { supabase } from './supabase';
 
-export async function adminDeleteRecord(table: string, id: string): Promise<{ success: boolean; error?: string }> {
+const SOFT_DELETE_TABLES = [
+  'wakala_applications',
+  'membership_applications',
+  'event_registrations',
+  'volunteer_applications',
+  'partnership_inquiries',
+  'complaints',
+  'feedback',
+  'legal_requests',
+  'donations',
+  'business_supporters',
+  'contact_submissions',
+  'newsletter_subscribers',
+];
+
+async function releaseWakalaSlot(id: string) {
+  const { data: app } = await supabase
+    .from('wakala_applications')
+    .select('slot_id')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (app?.slot_id) {
+    await supabase
+      .from('booking_slots')
+      .update({ is_available: true })
+      .eq('id', app.slot_id);
+  }
+}
+
+export async function adminDeleteRecord(
+  table: string,
+  id: string
+): Promise<{ success: boolean; error?: string }> {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       return { success: false, error: 'Not authenticated' };
     }
 
-    let edgeFnSucceeded = false;
-
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-operations`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-          },
-          body: JSON.stringify({ action: 'delete', table, id }),
-        }
-      );
-
-      const result = await response.json().catch(() => ({}));
-
-      if (response.ok && (result.success || result.deleted)) {
-        edgeFnSucceeded = true;
-      }
-    } catch {
-      // edge function unreachable
+    if (table === 'wakala_applications') {
+      await releaseWakalaSlot(id);
     }
 
-    if (edgeFnSucceeded) {
-      const { data: stillExists } = await supabase
+    if (SOFT_DELETE_TABLES.includes(table)) {
+      const { error } = await supabase
         .from(table)
-        .select('id')
-        .eq('id', id)
-        .maybeSingle();
+        .update({ status: 'deleted_by_admin' })
+        .eq('id', id);
 
-      if (!stillExists) return { success: true };
+      if (error) throw new Error(error.message);
+      return { success: true };
     }
 
-    const { data: deleted, error } = await supabase
+    const { error } = await supabase
       .from(table)
       .delete()
-      .eq('id', id)
-      .select('id');
+      .eq('id', id);
 
     if (error) throw new Error(error.message);
-    if (deleted && deleted.length > 0) return { success: true };
-
-    const { data: checkRecord } = await supabase
-      .from(table)
-      .select('id')
-      .eq('id', id)
-      .maybeSingle();
-
-    if (!checkRecord) return { success: true };
-
-    throw new Error('Could not delete record. Please try again.');
+    return { success: true };
   } catch (err: any) {
     console.error(`Admin delete failed for ${table}/${id}:`, err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function adminBulkDelete(
+  table: string,
+  ids: string[]
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    if (SOFT_DELETE_TABLES.includes(table)) {
+      const { error } = await supabase
+        .from(table)
+        .update({ status: 'deleted_by_admin' })
+        .in('id', ids);
+
+      if (error) throw new Error(error.message);
+      return { success: true };
+    }
+
+    const { error } = await supabase
+      .from(table)
+      .delete()
+      .in('id', ids);
+
+    if (error) throw new Error(error.message);
+    return { success: true };
+  } catch (err: any) {
+    console.error(`Admin bulk delete failed for ${table}:`, err);
     return { success: false, error: err.message };
   }
 }

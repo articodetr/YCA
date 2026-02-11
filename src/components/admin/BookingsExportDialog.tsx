@@ -95,6 +95,7 @@ export default function BookingsExportDialog({ serviceId, onClose }: BookingsExp
           availability_slots!inner (service_id)
         `)
         .eq('availability_slots.service_id', serviceId)
+        .neq('status', 'deleted_by_admin')
         .not('booking_date', 'is', null)
         .order('booking_date', { ascending: true })
         .order('start_time', { ascending: true });

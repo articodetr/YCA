@@ -118,6 +118,7 @@ export default function MemberProfileModal({ membership, onClose }: Props) {
           .from('wakala_applications')
           .select('id, booking_reference, booking_date, start_time, end_time, wakala_type, status, fee_amount, payment_status, applicant_name, created_at')
           .eq('email', membership.email)
+          .neq('status', 'deleted_by_admin')
           .order('created_at', { ascending: false }),
         supabase
           .from('event_registrations')

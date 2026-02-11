@@ -332,65 +332,65 @@ export default function Home() {
             viewport={{ once: true }}
           >
             <motion.div
-              className="bg-sand p-8 rounded-lg hover:shadow-xl transition-all group"
+              className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all group border-2 border-transparent hover:border-emerald-500"
               variants={staggerItem}
               whileHover={{ y: -10 }}
             >
               <motion.div
-                className="w-16 h-16 bg-accent rounded-lg flex items-center justify-center mb-6"
+                className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-6"
                 whileHover={{ rotate: 360, scale: 1.1 }}
                 transition={{ duration: 0.5 }}
               >
-                <FileText size={32} className="text-primary" />
+                <FileText size={32} className="text-emerald-600" />
               </motion.div>
-              <h3 className="text-2xl font-bold text-primary mb-4">{getContent('home', 'service_advice_title', 'Advice & Guidance')}</h3>
+              <h3 className="text-2xl font-bold text-emerald-700 mb-4">{getContent('home', 'service_advice_title', 'Advice & Guidance')}</h3>
               <p className="text-muted mb-6 leading-relaxed">
                 {getContent('home', 'service_advice_description', 'One-to-one confidential support with welfare benefits, housing, immigration, and essential life services in both English and Arabic.')}
               </p>
-              <Link to="/services" className="text-primary font-semibold hover:text-accent transition-colors">
-                Learn More →
+              <Link to="/services" className="text-emerald-600 font-semibold hover:text-emerald-700 transition-colors inline-flex items-center gap-2">
+                Learn More <ArrowRight size={18} />
               </Link>
             </motion.div>
 
             <motion.div
-              className="bg-sand p-8 rounded-lg hover:shadow-xl transition-all group"
+              className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all group border-2 border-transparent hover:border-blue-500"
               variants={staggerItem}
               whileHover={{ y: -10 }}
             >
               <motion.div
-                className="w-16 h-16 bg-accent rounded-lg flex items-center justify-center mb-6"
+                className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-6"
                 whileHover={{ rotate: 360, scale: 1.1 }}
                 transition={{ duration: 0.5 }}
               >
-                <Users size={32} className="text-primary" />
+                <Users size={32} className="text-blue-600" />
               </motion.div>
-              <h3 className="text-2xl font-bold text-primary mb-4">{getContent('home', 'service_programmes_title', 'Community Programmes')}</h3>
+              <h3 className="text-2xl font-bold text-blue-700 mb-4">{getContent('home', 'service_programmes_title', 'Community Programmes')}</h3>
               <p className="text-muted mb-6 leading-relaxed">
                 {getContent('home', 'service_programmes_description', 'Dedicated programmes for women, elderly, youth, children, and men focusing on social bonds, wellbeing, and cultural heritage.')}
               </p>
-              <Link to="/programmes/women" className="text-primary font-semibold hover:text-accent transition-colors">
-                Explore Programmes →
+              <Link to="/programmes/women" className="text-blue-600 font-semibold hover:text-blue-700 transition-colors inline-flex items-center gap-2">
+                Explore Programmes <ArrowRight size={18} />
               </Link>
             </motion.div>
 
             <motion.div
-              className="bg-sand p-8 rounded-lg hover:shadow-xl transition-all group"
+              className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all group border-2 border-transparent hover:border-amber-500"
               variants={staggerItem}
               whileHover={{ y: -10 }}
             >
               <motion.div
-                className="w-16 h-16 bg-accent rounded-lg flex items-center justify-center mb-6"
+                className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mb-6"
                 whileHover={{ rotate: 360, scale: 1.1 }}
                 transition={{ duration: 0.5 }}
               >
-                <Building size={32} className="text-primary" />
+                <Building size={32} className="text-amber-600" />
               </motion.div>
-              <h3 className="text-2xl font-bold text-primary mb-4">{getContent('home', 'service_hub_title', 'Community Hub')}</h3>
+              <h3 className="text-2xl font-bold text-amber-700 mb-4">{getContent('home', 'service_hub_title', 'Community Hub')}</h3>
               <p className="text-muted mb-6 leading-relaxed">
                 {getContent('home', 'service_hub_description', 'A welcoming space for social gatherings, cultural celebrations, and community events that bring our community together.')}
               </p>
-              <Link to="/events" className="text-primary font-semibold hover:text-accent transition-colors">
-                View Events →
+              <Link to="/events" className="text-amber-600 font-semibold hover:text-amber-700 transition-colors inline-flex items-center gap-2">
+                View Events <ArrowRight size={18} />
               </Link>
             </motion.div>
           </motion.div>
@@ -472,57 +472,57 @@ export default function Home() {
             viewport={{ once: true }}
           >
             <motion.div variants={staggerItem} whileHover={{ y: -10, scale: 1.03 }}>
-              <Link to="/membership" className="bg-white p-6 rounded-lg hover:shadow-xl transition-all text-center group block">
+              <Link to="/membership" className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all text-center group block border-2 border-transparent hover:border-emerald-500">
                 <motion.div
-                  className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4"
+                  className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-4"
                   whileHover={{ rotate: 360 }}
                   transition={{ duration: 0.6 }}
                 >
-                  <Users size={28} className="text-primary" />
+                  <Users size={28} className="text-emerald-600" />
                 </motion.div>
-                <h3 className="text-xl font-bold text-primary mb-2">{getContent('home', 'get_involved_membership_title', 'Become a Member')}</h3>
+                <h3 className="text-xl font-bold text-emerald-700 mb-2">{getContent('home', 'get_involved_membership_title', 'Become a Member')}</h3>
                 <p className="text-muted text-sm">{getContent('home', 'get_involved_membership_desc', 'Join our growing community')}</p>
               </Link>
             </motion.div>
 
             <motion.div variants={staggerItem} whileHover={{ y: -10, scale: 1.03 }}>
-              <Link to="/get-involved/volunteer" className="bg-white p-6 rounded-lg hover:shadow-xl transition-all text-center group block">
+              <Link to="/get-involved/volunteer" className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all text-center group block border-2 border-transparent hover:border-rose-500">
                 <motion.div
-                  className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4"
+                  className="w-16 h-16 bg-rose-100 rounded-2xl flex items-center justify-center mx-auto mb-4"
                   whileHover={{ rotate: 360 }}
                   transition={{ duration: 0.6 }}
                 >
-                  <HandHeart size={28} className="text-primary" />
+                  <HandHeart size={28} className="text-rose-600" />
                 </motion.div>
-                <h3 className="text-xl font-bold text-primary mb-2">{getContent('home', 'get_involved_volunteer_title', 'Volunteer')}</h3>
+                <h3 className="text-xl font-bold text-rose-700 mb-2">{getContent('home', 'get_involved_volunteer_title', 'Volunteer')}</h3>
                 <p className="text-muted text-sm">{getContent('home', 'get_involved_volunteer_desc', 'Make a difference')}</p>
               </Link>
             </motion.div>
 
             <motion.div variants={staggerItem} whileHover={{ y: -10, scale: 1.03 }}>
-              <Link to="/get-involved/donate" className="bg-white p-6 rounded-lg hover:shadow-xl transition-all text-center group block">
+              <Link to="/get-involved/donate" className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all text-center group block border-2 border-transparent hover:border-amber-500">
                 <motion.div
-                  className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4"
+                  className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-4"
                   whileHover={{ rotate: 360 }}
                   transition={{ duration: 0.6 }}
                 >
-                  <Heart size={28} className="text-primary" />
+                  <Heart size={28} className="text-amber-600" />
                 </motion.div>
-                <h3 className="text-xl font-bold text-primary mb-2">{getContent('home', 'get_involved_donate_title', 'Donate')}</h3>
+                <h3 className="text-xl font-bold text-amber-700 mb-2">{getContent('home', 'get_involved_donate_title', 'Donate')}</h3>
                 <p className="text-muted text-sm">{getContent('home', 'get_involved_donate_desc', 'Support our work')}</p>
               </Link>
             </motion.div>
 
             <motion.div variants={staggerItem} whileHover={{ y: -10, scale: 1.03 }}>
-              <Link to="/get-involved/partnerships" className="bg-white p-6 rounded-lg hover:shadow-xl transition-all text-center group block">
+              <Link to="/get-involved/partnerships" className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all text-center group block border-2 border-transparent hover:border-blue-500">
                 <motion.div
-                  className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4"
+                  className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4"
                   whileHover={{ rotate: 360 }}
                   transition={{ duration: 0.6 }}
                 >
-                  <Building size={28} className="text-primary" />
+                  <Building size={28} className="text-blue-600" />
                 </motion.div>
-                <h3 className="text-xl font-bold text-primary mb-2">{getContent('home', 'get_involved_partner_title', 'Partner With Us')}</h3>
+                <h3 className="text-xl font-bold text-blue-700 mb-2">{getContent('home', 'get_involved_partner_title', 'Partner With Us')}</h3>
                 <p className="text-muted text-sm">{getContent('home', 'get_involved_partner_desc', 'Collaborate for impact')}</p>
               </Link>
             </motion.div>

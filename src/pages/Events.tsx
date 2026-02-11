@@ -247,45 +247,55 @@ export default function Events() {
                 whileInView="visible"
                 viewport={{ once: true }}
               >
-                {upcomingEvents.map((event) => (
-                  <motion.div
-                    key={event.id}
-                    className="bg-sand border-l-4 border-accent p-6 rounded-lg hover:shadow-xl transition-shadow"
-                    variants={staggerItem}
-                    whileHover={{ x: 8 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <div className="flex flex-col gap-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-shrink-0 bg-primary text-white text-center p-4 rounded-lg">
-                          <div className="text-3xl font-bold">{new Date(event.date).getDate()}</div>
-                          <div className="text-sm uppercase">{new Date(event.date).toLocaleDateString('en-US', { month: 'short' })}</div>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <span className="inline-block bg-accent text-primary px-3 py-1 rounded-full text-xs font-semibold">
-                              {event.category}
-                            </span>
-                            {event.is_paid_event && event.ticket_price_adult && (
-                              <span className="inline-block bg-primary text-white px-3 py-1 rounded-full text-xs font-semibold">
-                                From £{Number(event.ticket_price_adult).toFixed(0)}
+                {upcomingEvents.map((event, index) => {
+                  const colors = [
+                    { bg: 'bg-emerald-600', border: 'border-emerald-500', badge: 'bg-emerald-100 text-emerald-700' },
+                    { bg: 'bg-blue-600', border: 'border-blue-500', badge: 'bg-blue-100 text-blue-700' },
+                    { bg: 'bg-amber-600', border: 'border-amber-500', badge: 'bg-amber-100 text-amber-700' },
+                    { bg: 'bg-rose-600', border: 'border-rose-500', badge: 'bg-rose-100 text-rose-700' },
+                    { bg: 'bg-teal-600', border: 'border-teal-500', badge: 'bg-teal-100 text-teal-700' },
+                  ];
+                  const color = colors[index % colors.length];
+
+                  return (
+                    <motion.div
+                      key={event.id}
+                      className={`bg-white border-2 ${color.border} p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all`}
+                      variants={staggerItem}
+                      whileHover={{ y: -4 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <div className="flex flex-col gap-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className={`flex-shrink-0 ${color.bg} text-white text-center p-4 rounded-2xl shadow-md`}>
+                            <div className="text-3xl font-bold">{new Date(event.date).getDate()}</div>
+                            <div className="text-sm uppercase">{new Date(event.date).toLocaleDateString('en-US', { month: 'short' })}</div>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
+                              <span className={`inline-block ${color.badge} px-3 py-1 rounded-full text-xs font-semibold`}>
+                                {event.category}
                               </span>
-                            )}
-                          </div>
-                          <h3 className="text-xl font-bold text-primary mb-2">{event.title}</h3>
-                          <p className="text-muted text-sm mb-3 leading-relaxed">{event.description}</p>
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2 text-sm text-muted">
-                              <Clock size={16} className="text-primary" />
-                              <span>{event.time}</span>
+                              {event.is_paid_event && event.ticket_price_adult && (
+                                <span className={`inline-block ${color.bg} text-white px-3 py-1 rounded-full text-xs font-semibold`}>
+                                  From £{Number(event.ticket_price_adult).toFixed(0)}
+                                </span>
+                              )}
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-muted">
-                              <MapPin size={16} className="text-primary" />
-                              <span>{event.location}</span>
+                            <h3 className="text-xl font-bold text-primary mb-2">{event.title}</h3>
+                            <p className="text-muted text-sm mb-3 leading-relaxed">{event.description}</p>
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 text-sm text-muted">
+                                <Clock size={16} className={color.bg.replace('bg-', 'text-')} />
+                                <span>{event.time}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-muted">
+                                <MapPin size={16} className={color.bg.replace('bg-', 'text-')} />
+                                <span>{event.location}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
                       <div className="flex gap-2">
                         <motion.button
                           onClick={() => openRegistrationModal(event)}
@@ -305,16 +315,17 @@ export default function Events() {
                           }}
                         />
                       </div>
-                    </div>
-                  </motion.div>
-                ))}
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </motion.div>
 
               {/* Right Column - Calendar and Featured Event */}
               <div className="space-y-6">
                 {/* Calendar */}
                 <motion.div
-                  className="bg-white rounded-lg shadow-lg p-6"
+                  className="bg-white rounded-2xl shadow-lg p-6 border-2 border-transparent hover:border-primary transition-all"
                   variants={fadeInUp}
                   initial="hidden"
                   whileInView="visible"

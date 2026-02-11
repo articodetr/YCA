@@ -85,15 +85,15 @@ export default function Services() {
                 viewport={{ once: true }}
               >
                 <motion.div
-                  className="bg-white border-2 border-accent p-8 rounded-lg"
+                  className="bg-white border-2 border-transparent hover:border-emerald-500 p-8 rounded-2xl shadow-lg"
                   variants={staggerItem}
                   whileHover={{ scale: 1.03 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mb-6">
-                    <Users size={32} className="text-primary" />
+                  <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-6">
+                    <Users size={32} className="text-emerald-600" />
                   </div>
-                  <h3 className="text-2xl font-bold text-primary mb-4">
+                  <h3 className="text-2xl font-bold text-emerald-700 mb-4">
                     {c('mission_title', language === 'ar' ? 'مهمتنا ومن نساعد' : 'Our Mission and Who We Help')}
                   </h3>
                   <p className="text-muted leading-relaxed">
@@ -102,15 +102,15 @@ export default function Services() {
                 </motion.div>
 
                 <motion.div
-                  className="bg-white border-2 border-accent p-8 rounded-lg"
+                  className="bg-white border-2 border-transparent hover:border-blue-500 p-8 rounded-2xl shadow-lg"
                   variants={staggerItem}
                   whileHover={{ scale: 1.03 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mb-6">
-                    <FileText size={32} className="text-primary" />
+                  <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-6">
+                    <FileText size={32} className="text-blue-600" />
                   </div>
-                  <h3 className="text-2xl font-bold text-primary mb-4">
+                  <h3 className="text-2xl font-bold text-blue-700 mb-4">
                     {c('how_we_help_title', language === 'ar' ? 'كيف نساعد' : 'How We Help')}
                   </h3>
                   <p className="text-muted leading-relaxed">
@@ -179,27 +179,36 @@ export default function Services() {
               whileInView="visible"
               viewport={{ once: true }}
             >
-              {categories.map((service, index) => (
-                <motion.div
-                  key={index}
-                  className="bg-white p-8 rounded-lg shadow-lg"
-                  variants={staggerItem}
-                  whileHover={{ y: -8, boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <h3 className="text-2xl font-bold text-primary mb-6 pb-4 border-b-2 border-accent">
-                    {service.category}
-                  </h3>
-                  <ul className="space-y-3">
-                    {service.items.map((item, idx) => (
-                      <li key={idx} className="flex items-start gap-3">
-                        <CheckCircle size={20} className="text-accent flex-shrink-0 mt-1" />
-                        <span className="text-muted">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </motion.div>
-              ))}
+              {categories.map((service, index) => {
+                const colors = [
+                  { border: 'border-emerald-500', text: 'text-emerald-700', icon: 'text-emerald-600' },
+                  { border: 'border-blue-500', text: 'text-blue-700', icon: 'text-blue-600' },
+                  { border: 'border-amber-500', text: 'text-amber-700', icon: 'text-amber-600' },
+                ];
+                const color = colors[index % colors.length];
+
+                return (
+                  <motion.div
+                    key={index}
+                    className={`bg-white p-8 rounded-2xl shadow-lg border-2 border-transparent hover:${color.border}`}
+                    variants={staggerItem}
+                    whileHover={{ y: -8, boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.15)' }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <h3 className={`text-2xl font-bold ${color.text} mb-6 pb-4 border-b-2 ${color.border}`}>
+                      {service.category}
+                    </h3>
+                    <ul className="space-y-3">
+                      {service.items.map((item, idx) => (
+                        <li key={idx} className="flex items-start gap-3">
+                          <CheckCircle size={20} className={`${color.icon} flex-shrink-0 mt-1`} />
+                          <span className="text-muted">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </motion.div>
+                );
+              })}
             </motion.div>
           </div>
         </section>

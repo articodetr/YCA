@@ -141,14 +141,25 @@ export default function Programmes() {
             <div className="flex flex-wrap gap-3 justify-center">
               {categories.map((category, index) => {
                 const count = getCategoryCount(category);
+                const colors = [
+                  { bg: 'bg-emerald-500', hover: 'hover:border-emerald-500', text: 'text-emerald-700' },
+                  { bg: 'bg-teal-500', hover: 'hover:border-teal-500', text: 'text-teal-700' },
+                  { bg: 'bg-rose-500', hover: 'hover:border-rose-500', text: 'text-rose-700' },
+                  { bg: 'bg-amber-500', hover: 'hover:border-amber-500', text: 'text-amber-700' },
+                  { bg: 'bg-blue-500', hover: 'hover:border-blue-500', text: 'text-blue-700' },
+                  { bg: 'bg-green-500', hover: 'hover:border-green-500', text: 'text-green-700' },
+                  { bg: 'bg-slate-600', hover: 'hover:border-slate-600', text: 'text-slate-700' },
+                ];
+                const color = colors[index % colors.length];
+
                 return (
                   <motion.button
                     key={index}
                     onClick={() => setSelectedCategory(category)}
-                    className={`px-6 py-2 rounded-full font-semibold transition-colors flex items-center gap-2 ${
+                    className={`px-6 py-3 rounded-2xl font-semibold transition-all flex items-center gap-2 shadow-md ${
                       selectedCategory === category
-                        ? 'bg-primary text-white'
-                        : 'bg-sand text-primary hover:bg-accent'
+                        ? `${color.bg} text-white border-2 ${color.hover.replace('hover:', '')}`
+                        : `bg-white ${color.text} border-2 border-transparent ${color.hover}`
                     }`}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -157,7 +168,7 @@ export default function Programmes() {
                     <span className={`text-xs px-2 py-0.5 rounded-full ${
                       selectedCategory === category
                         ? 'bg-white bg-opacity-20'
-                        : 'bg-primary bg-opacity-10'
+                        : 'bg-current bg-opacity-10'
                     }`}>
                       {count}
                     </span>
@@ -178,7 +189,7 @@ export default function Programmes() {
               return (
                 <motion.div
                   key={programme.id}
-                  className="bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all group"
+                  className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all group border-2 border-transparent hover:border-primary"
                   variants={staggerItem}
                   whileHover={{ y: -8 }}
                   transition={{ duration: 0.3 }}

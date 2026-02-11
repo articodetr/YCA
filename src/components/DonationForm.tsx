@@ -257,47 +257,65 @@ export default function DonationForm() {
       <form onSubmit={handleSubmit} className="space-y-8">
         <div>
           <div className="flex gap-4 mb-4">
-            <button
+            <motion.button
               type="button"
               onClick={() => setFormData({ ...formData, donationType: 'one-time' })}
-              className={`flex-1 py-3 px-6 rounded-lg font-semibold transition-all ${
+              className={`flex-1 py-4 px-6 rounded-2xl font-semibold transition-all ${
                 formData.donationType === 'one-time'
-                  ? 'bg-primary text-white shadow-lg'
-                  : 'bg-gray-100 text-muted hover:bg-gray-200'
+                  ? 'bg-white text-emerald-700 shadow-lg border-2 border-emerald-500'
+                  : 'bg-white text-muted shadow-md border-2 border-gray-200 hover:border-emerald-300'
               }`}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
             >
+              <Heart className="inline-block mr-2" size={20} />
               One-Time
-            </button>
-            <button
+            </motion.button>
+            <motion.button
               type="button"
               onClick={() => setFormData({ ...formData, donationType: 'monthly' })}
-              className={`flex-1 py-3 px-6 rounded-lg font-semibold transition-all ${
+              className={`flex-1 py-4 px-6 rounded-2xl font-semibold transition-all ${
                 formData.donationType === 'monthly'
-                  ? 'bg-primary text-white shadow-lg'
-                  : 'bg-gray-100 text-muted hover:bg-gray-200'
+                  ? 'bg-white text-blue-700 shadow-lg border-2 border-blue-500'
+                  : 'bg-white text-muted shadow-md border-2 border-gray-200 hover:border-blue-300'
               }`}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
             >
+              <Heart className="inline-block mr-2" size={20} />
               Monthly
-            </button>
+            </motion.button>
           </div>
 
           <div className="grid grid-cols-5 gap-3 mb-4">
-            {presetAmounts.map((amount) => (
-              <motion.button
-                key={amount}
-                type="button"
-                onClick={() => handleAmountSelect(amount)}
-                className={`py-4 px-4 rounded-lg font-bold text-lg transition-all ${
-                  formData.amount === amount && formData.customAmount === amount.toString()
-                    ? 'bg-accent text-primary shadow-lg ring-2 ring-primary'
-                    : 'bg-gray-100 text-muted hover:bg-gray-200'
-                }`}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                £{amount}
-              </motion.button>
-            ))}
+            {presetAmounts.map((amount, index) => {
+              const colors = [
+                { bg: 'bg-white', text: 'text-emerald-700', border: 'border-emerald-500', hover: 'hover:border-emerald-300' },
+                { bg: 'bg-white', text: 'text-blue-700', border: 'border-blue-500', hover: 'hover:border-blue-300' },
+                { bg: 'bg-white', text: 'text-amber-700', border: 'border-amber-500', hover: 'hover:border-amber-300' },
+                { bg: 'bg-white', text: 'text-rose-700', border: 'border-rose-500', hover: 'hover:border-rose-300' },
+                { bg: 'bg-white', text: 'text-teal-700', border: 'border-teal-500', hover: 'hover:border-teal-300' },
+              ];
+              const color = colors[index % colors.length];
+              const isSelected = formData.amount === amount && formData.customAmount === amount.toString();
+
+              return (
+                <motion.button
+                  key={amount}
+                  type="button"
+                  onClick={() => handleAmountSelect(amount)}
+                  className={`py-4 px-4 rounded-2xl font-bold text-lg transition-all ${color.bg} ${
+                    isSelected
+                      ? `${color.text} shadow-xl border-2 ${color.border}`
+                      : `text-muted shadow-lg border-2 border-gray-200 ${color.hover}`
+                  }`}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  £{amount}
+                </motion.button>
+              );
+            })}
           </div>
 
           <div className="relative">
@@ -309,7 +327,7 @@ export default function DonationForm() {
               placeholder="Enter custom amount"
               value={formData.customAmount}
               onChange={(e) => handleCustomAmountChange(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-lg focus:border-primary focus:outline-none text-lg"
+              className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:border-emerald-500 focus:outline-none text-lg shadow-md hover:shadow-lg transition-all bg-white"
               min="1"
               step="0.01"
             />
@@ -336,7 +354,7 @@ export default function DonationForm() {
                 type="text"
                 value={formData.fullName}
                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-primary focus:outline-none"
+                className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-emerald-500 focus:outline-none shadow-md hover:shadow-lg transition-all bg-white"
                 placeholder="John Smith"
               />
             </div>
@@ -361,7 +379,7 @@ export default function DonationForm() {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-primary focus:outline-none"
+                className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-blue-500 focus:outline-none shadow-md hover:shadow-lg transition-all bg-white"
                 placeholder="john@example.com"
               />
             </div>
@@ -386,7 +404,7 @@ export default function DonationForm() {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-primary focus:outline-none"
+                className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-amber-500 focus:outline-none shadow-md hover:shadow-lg transition-all bg-white"
                 placeholder="07123 456789"
               />
             </div>
@@ -410,7 +428,7 @@ export default function DonationForm() {
               <textarea
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-primary focus:outline-none resize-none"
+                className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-rose-500 focus:outline-none resize-none shadow-md hover:shadow-lg transition-all bg-white"
                 placeholder="Add a message..."
                 rows={3}
               />
@@ -423,7 +441,7 @@ export default function DonationForm() {
             <CreditCard size={20} />
             Card Details *
           </label>
-          <div className="border-2 border-gray-200 rounded-lg p-4 focus-within:border-primary transition-colors">
+          <div className="border-2 border-gray-200 rounded-2xl p-4 focus-within:border-teal-500 transition-colors shadow-md hover:shadow-lg bg-white">
             <CardElement
               options={cardElementOptions}
               onChange={(e) => setCardComplete(e.complete)}

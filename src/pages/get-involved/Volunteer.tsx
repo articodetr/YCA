@@ -123,17 +123,29 @@ export default function Volunteer() {
                 viewport={{ once: true }}
                 variants={staggerContainer}
               >
-                {opportunities.map((opportunity, index) => (
-                  <motion.div
-                    key={index}
-                    className="bg-sand p-6 rounded-lg"
-                    variants={staggerItem}
-                    whileHover={{ y: -8, transition: { duration: 0.3 } }}
-                  >
-                    <h3 className="text-xl font-bold text-primary mb-3">{opportunity.title}</h3>
-                    <p className="text-muted">{opportunity.description}</p>
-                  </motion.div>
-                ))}
+                {opportunities.map((opportunity, index) => {
+                  const colors = [
+                    { bg: 'bg-emerald-50', border: 'border-emerald-500', text: 'text-emerald-700' },
+                    { bg: 'bg-blue-50', border: 'border-blue-500', text: 'text-blue-700' },
+                    { bg: 'bg-amber-50', border: 'border-amber-500', text: 'text-amber-700' },
+                    { bg: 'bg-rose-50', border: 'border-rose-500', text: 'text-rose-700' },
+                    { bg: 'bg-teal-50', border: 'border-teal-500', text: 'text-teal-700' },
+                    { bg: 'bg-purple-50', border: 'border-purple-500', text: 'text-purple-700' },
+                  ];
+                  const color = colors[index % colors.length];
+
+                  return (
+                    <motion.div
+                      key={index}
+                      className={`${color.bg} p-6 rounded-2xl shadow-lg border-2 border-transparent hover:${color.border}`}
+                      variants={staggerItem}
+                      whileHover={{ y: -8, transition: { duration: 0.3 } }}
+                    >
+                      <h3 className={`text-xl font-bold ${color.text} mb-3`}>{opportunity.title}</h3>
+                      <p className="text-muted">{opportunity.description}</p>
+                    </motion.div>
+                  );
+                })}
               </motion.div>
             </div>
 

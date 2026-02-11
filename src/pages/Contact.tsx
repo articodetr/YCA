@@ -85,16 +85,16 @@ export default function Contact() {
                 whileInView="visible"
                 viewport={{ once: true }}
               >
-                <motion.div className="flex items-start gap-2 sm:gap-3 md:gap-4" variants={staggerItem}>
+                <motion.div className="flex items-start gap-2 sm:gap-3 md:gap-4 bg-white p-4 rounded-2xl shadow-lg border-2 border-transparent hover:border-emerald-500 transition-all" variants={staggerItem}>
                   <motion.div
-                    className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-accent rounded-lg flex items-center justify-center flex-shrink-0"
+                    className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-emerald-100 rounded-2xl flex items-center justify-center flex-shrink-0"
                     whileHover={{ scale: 1.1, rotate: 5 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                    <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />
                   </motion.div>
                   <div>
-                    <h3 className="font-bold text-base sm:text-lg text-primary mb-2">{c('address_label', 'Address')}</h3>
+                    <h3 className="font-bold text-base sm:text-lg text-emerald-700 mb-2">{c('address_label', 'Address')}</h3>
                     <p className="text-muted text-sm sm:text-base">
                       {c('address_line1', 'YCA GreenCoat House')}<br />
                       {c('address_line2', '261-271 Stratford Road')}<br />
@@ -103,48 +103,48 @@ export default function Contact() {
                   </div>
                 </motion.div>
 
-                <motion.div className="flex items-start gap-2 sm:gap-3 md:gap-4" variants={staggerItem}>
+                <motion.div className="flex items-start gap-2 sm:gap-3 md:gap-4 bg-white p-4 rounded-2xl shadow-lg border-2 border-transparent hover:border-blue-500 transition-all" variants={staggerItem}>
                   <motion.div
-                    className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-accent rounded-lg flex items-center justify-center flex-shrink-0"
+                    className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-blue-100 rounded-2xl flex items-center justify-center flex-shrink-0"
                     whileHover={{ scale: 1.1, rotate: 5 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <Phone className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                    <Phone className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
                   </motion.div>
                   <div>
-                    <h3 className="font-bold text-base sm:text-lg text-primary mb-2">{c('phone_label', 'Phone')}</h3>
-                    <a href="tel:01214395280" className="text-muted hover:text-accent transition-colors text-sm sm:text-base">
+                    <h3 className="font-bold text-base sm:text-lg text-blue-700 mb-2">{c('phone_label', 'Phone')}</h3>
+                    <a href="tel:01214395280" className="text-muted hover:text-blue-600 transition-colors text-sm sm:text-base">
                       {c('phone_number', '0121 439 5280')}
                     </a>
                   </div>
                 </motion.div>
 
-                <motion.div className="flex items-start gap-2 sm:gap-3 md:gap-4" variants={staggerItem}>
+                <motion.div className="flex items-start gap-2 sm:gap-3 md:gap-4 bg-white p-4 rounded-2xl shadow-lg border-2 border-transparent hover:border-amber-500 transition-all" variants={staggerItem}>
                   <motion.div
-                    className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-accent rounded-lg flex items-center justify-center flex-shrink-0"
+                    className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-amber-100 rounded-2xl flex items-center justify-center flex-shrink-0"
                     whileHover={{ scale: 1.1, rotate: 5 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                    <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600" />
                   </motion.div>
                   <div>
-                    <h3 className="font-bold text-base sm:text-lg text-primary mb-2">{c('email_label', 'Email')}</h3>
-                    <a href="mailto:info@yca-birmingham.org.uk" className="text-muted hover:text-accent transition-colors text-sm sm:text-base break-all">
+                    <h3 className="font-bold text-base sm:text-lg text-amber-700 mb-2">{c('email_label', 'Email')}</h3>
+                    <a href="mailto:info@yca-birmingham.org.uk" className="text-muted hover:text-amber-600 transition-colors text-sm sm:text-base break-all">
                       {c('email_address', 'info@yca-birmingham.org.uk')}
                     </a>
                   </div>
                 </motion.div>
 
-                <motion.div className="flex items-start gap-2 sm:gap-3 md:gap-4" variants={staggerItem}>
+                <motion.div className="flex items-start gap-2 sm:gap-3 md:gap-4 bg-white p-4 rounded-2xl shadow-lg border-2 border-transparent hover:border-rose-500 transition-all" variants={staggerItem}>
                   <motion.div
-                    className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-accent rounded-lg flex items-center justify-center flex-shrink-0"
+                    className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-rose-100 rounded-2xl flex items-center justify-center flex-shrink-0"
                     whileHover={{ scale: 1.1, rotate: 5 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                    <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-rose-600" />
                   </motion.div>
                   <div>
-                    <h3 className="font-bold text-base sm:text-lg text-primary mb-2">{c('hours_label', 'Opening Times')}</h3>
+                    <h3 className="font-bold text-base sm:text-lg text-rose-700 mb-2">{c('hours_label', 'Opening Times')}</h3>
                     <p className="text-muted whitespace-pre-line text-sm sm:text-base">
                       {c('hours_text', 'Monday - Thursday: 10:00 AM - 3:30 PM\nFriday: 9:00 AM - 1:00 PM')}
                     </p>
@@ -175,11 +175,11 @@ export default function Contact() {
               whileInView="visible"
               viewport={{ once: true }}
             >
-              <div className="bg-sand p-8 rounded-lg">
+              <div className="bg-white p-8 rounded-2xl shadow-lg">
                 <h2 className="text-3xl font-bold text-primary mb-6">{c('form_title', 'Send Us a Message')}</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <label htmlFor="name" className="block text-primary font-semibold mb-2">
+                    <label htmlFor="name" className="block text-emerald-700 font-semibold mb-2">
                       Your Name *
                     </label>
                     <input
@@ -189,13 +189,13 @@ export default function Contact() {
                       required
                       value={formData.name}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border-2 border-border rounded-lg focus:outline-none focus:border-accent transition-colors"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-emerald-500 transition-all shadow-md hover:shadow-lg bg-white"
                       placeholder="Enter your full name"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="email" className="block text-primary font-semibold mb-2">
+                    <label htmlFor="email" className="block text-blue-700 font-semibold mb-2">
                       Email *
                     </label>
                     <input
@@ -205,13 +205,13 @@ export default function Contact() {
                       required
                       value={formData.email}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border-2 border-border rounded-lg focus:outline-none focus:border-accent transition-colors"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500 transition-all shadow-md hover:shadow-lg bg-white"
                       placeholder="your.email@example.com"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="phone" className="block text-primary font-semibold mb-2">
+                    <label htmlFor="phone" className="block text-amber-700 font-semibold mb-2">
                       Phone
                     </label>
                     <input
@@ -220,13 +220,13 @@ export default function Contact() {
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border-2 border-border rounded-lg focus:outline-none focus:border-accent transition-colors"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-amber-500 transition-all shadow-md hover:shadow-lg bg-white"
                       placeholder="Your phone number"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="subject" className="block text-primary font-semibold mb-2">
+                    <label htmlFor="subject" className="block text-rose-700 font-semibold mb-2">
                       Subject *
                     </label>
                     <input
@@ -236,13 +236,13 @@ export default function Contact() {
                       required
                       value={formData.subject}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border-2 border-border rounded-lg focus:outline-none focus:border-accent transition-colors"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-rose-500 transition-all shadow-md hover:shadow-lg bg-white"
                       placeholder="What is your message about?"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="message" className="block text-primary font-semibold mb-2">
+                    <label htmlFor="message" className="block text-teal-700 font-semibold mb-2">
                       Message *
                     </label>
                     <textarea
@@ -252,7 +252,7 @@ export default function Contact() {
                       rows={6}
                       value={formData.message}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border-2 border-border rounded-lg focus:outline-none focus:border-accent transition-colors resize-none"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-teal-500 transition-all shadow-md hover:shadow-lg resize-none bg-white"
                       placeholder="Write your message here..."
                     ></textarea>
                   </div>

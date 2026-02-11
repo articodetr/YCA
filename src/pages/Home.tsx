@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Trophy, Users, Building, GraduationCap, Heart, Calendar, FileText, HandHeart, ArrowRight, MapPin, Clock, ChevronDown } from 'lucide-react';
+import { Trophy, Users, Building, GraduationCap, Heart, Calendar, FileText, HandHeart, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { fadeInUp, fadeInLeft, fadeInRight, staggerContainer, staggerItem, scaleIn } from '../lib/animations';
@@ -19,11 +19,6 @@ interface Event {
   category: string;
   image_url: string | null;
 }
-
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
-];
 
 export default function Home() {
   const { getContent } = useContent();
@@ -52,10 +47,6 @@ export default function Home() {
   ]);
 
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
-  const [selectedMonth, setSelectedMonth] = useState<string>('All Months');
-  const [selectedCategory, setSelectedCategory] = useState<string>('All Categories');
-  const [showMonthDropdown, setShowMonthDropdown] = useState(false);
-  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
 
   useEffect(() => {
     fetchStats();
@@ -134,28 +125,6 @@ export default function Home() {
     setCurrentSlide(index);
     setIsAutoPlaying(false);
     setTimeout(() => setIsAutoPlaying(true), 10000);
-  };
-
-  const categories = Array.from(new Set(upcomingEvents.map(e => e.category)));
-
-  const filteredEvents = upcomingEvents.filter(event => {
-    const eventMonth = MONTHS[new Date(event.date).getMonth()];
-    const monthMatch = selectedMonth === 'All Months' || eventMonth === selectedMonth;
-    const categoryMatch = selectedCategory === 'All Categories' || event.category === selectedCategory;
-    return monthMatch && categoryMatch;
-  });
-
-  const getCategoryColor = (category: string) => {
-    const colors: Record<string, string> = {
-      'Community': 'bg-emerald-500',
-      'Education': 'bg-blue-500',
-      'Health': 'bg-rose-500',
-      'Youth': 'bg-amber-500',
-      'Cultural': 'bg-teal-500',
-      'Sports': 'bg-green-600',
-      'Academic': 'bg-blue-600',
-    };
-    return colors[category] || 'bg-gray-500';
   };
 
   return (
@@ -463,8 +432,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Upcoming Events Section - New Design */}
-      <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
+      {/* Upcoming Events Section */}
+      <section className="py-20 bg-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             className="text-center mb-12"
@@ -473,205 +442,77 @@ export default function Home() {
             viewport={{ once: true }}
             variants={staggerContainer}
           >
-            <motion.h2 className="text-4xl sm:text-5xl font-bold text-primary mb-4" variants={fadeInUp}>
-              Events
-            </motion.h2>
-            <motion.div
-              className="w-32 h-1 bg-gradient-to-r from-transparent via-[#8B4513] to-transparent mx-auto mb-6"
-              variants={scaleIn}
-            ></motion.div>
-            <motion.p className="text-lg text-gray-600 max-w-3xl mx-auto" variants={fadeInUp}>
+            <motion.p className="text-base text-gray-600 max-w-3xl mx-auto leading-relaxed" variants={fadeInUp}>
               Necessitatibus eius consequatur ex aliquid fuga eum quidem sint consectetur velit
             </motion.p>
           </motion.div>
 
-          {/* Filters */}
-          <motion.div
-            className="flex flex-col sm:flex-row gap-4 justify-center mb-12 max-w-2xl mx-auto"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={fadeInUp}
-          >
-            {/* Month Dropdown */}
-            <div className="relative flex-1">
-              <button
-                onClick={() => {
-                  setShowMonthDropdown(!showMonthDropdown);
-                  setShowCategoryDropdown(false);
-                }}
-                className="w-full px-6 py-4 bg-white border-2 border-[#8B4513] rounded-xl text-left flex items-center justify-between hover:border-[#6B3410] transition-colors shadow-sm"
-              >
-                <span className="text-gray-700 font-medium">{selectedMonth}</span>
-                <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${showMonthDropdown ? 'rotate-180' : ''}`} />
-              </button>
-              {showMonthDropdown && (
-                <div className="absolute z-10 w-full mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-xl max-h-64 overflow-y-auto">
-                  <button
-                    onClick={() => {
-                      setSelectedMonth('All Months');
-                      setShowMonthDropdown(false);
-                    }}
-                    className="w-full px-6 py-3 text-left hover:bg-gray-100 transition-colors"
-                  >
-                    All Months
-                  </button>
-                  {MONTHS.map((month) => (
-                    <button
-                      key={month}
-                      onClick={() => {
-                        setSelectedMonth(month);
-                        setShowMonthDropdown(false);
-                      }}
-                      className="w-full px-6 py-3 text-left hover:bg-gray-100 transition-colors"
-                    >
-                      {month}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Category Dropdown */}
-            <div className="relative flex-1">
-              <button
-                onClick={() => {
-                  setShowCategoryDropdown(!showCategoryDropdown);
-                  setShowMonthDropdown(false);
-                }}
-                className="w-full px-6 py-4 bg-white border-2 border-gray-300 rounded-xl text-left flex items-center justify-between hover:border-gray-400 transition-colors shadow-sm"
-              >
-                <span className="text-gray-700 font-medium">{selectedCategory}</span>
-                <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${showCategoryDropdown ? 'rotate-180' : ''}`} />
-              </button>
-              {showCategoryDropdown && (
-                <div className="absolute z-10 w-full mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-xl max-h-64 overflow-y-auto">
-                  <button
-                    onClick={() => {
-                      setSelectedCategory('All Categories');
-                      setShowCategoryDropdown(false);
-                    }}
-                    className="w-full px-6 py-3 text-left hover:bg-gray-100 transition-colors"
-                  >
-                    All Categories
-                  </button>
-                  {categories.map((category) => (
-                    <button
-                      key={category}
-                      onClick={() => {
-                        setSelectedCategory(category);
-                        setShowCategoryDropdown(false);
-                      }}
-                      className="w-full px-6 py-3 text-left hover:bg-gray-100 transition-colors"
-                    >
-                      {category}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </motion.div>
-
           {/* Events Grid */}
           <motion.div
-            className="grid md:grid-cols-2 gap-6 max-w-6xl mx-auto"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
             variants={staggerContainer}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
           >
-            {filteredEvents.map((event, idx) => {
+            {upcomingEvents.slice(0, 4).map((event, idx) => {
               const eventDate = new Date(event.date);
-              const month = MONTHS[eventDate.getMonth()].substring(0, 3).toUpperCase();
+              const dayOfWeek = eventDate.toLocaleDateString('en-US', { weekday: 'short' });
+              const month = eventDate.toLocaleDateString('en-US', { month: 'long' });
               const day = eventDate.getDate();
-              const year = eventDate.getFullYear();
+
+              const defaultImages = [
+                'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=400',
+                'https://images.pexels.com/photos/3184430/pexels-photo-3184430.jpeg?auto=compress&cs=tinysrgb&w=400',
+                'https://images.pexels.com/photos/3184632/pexels-photo-3184632.jpeg?auto=compress&cs=tinysrgb&w=400',
+                'https://images.pexels.com/photos/3184338/pexels-photo-3184338.jpeg?auto=compress&cs=tinysrgb&w=400'
+              ];
 
               return (
                 <motion.div
                   key={event.id}
-                  className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all overflow-hidden border-2 border-transparent hover:border-[#8B4513]"
+                  className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all group"
                   variants={staggerItem}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.1, duration: 0.4 }}
-                  whileHover={{ y: -4, scale: 1.01 }}
+                  whileHover={{ y: -8 }}
                 >
-                  <div className="flex flex-col sm:flex-row gap-6 p-6">
-                    {/* Date Box */}
-                    <div className="flex-shrink-0">
-                      <div className="w-28 h-28 bg-[#8B4513] text-white rounded-2xl flex flex-col items-center justify-center shadow-lg">
-                        <div className="text-sm font-bold tracking-wider">{month}</div>
-                        <div className="text-4xl font-bold">{day}</div>
-                        <div className="text-sm">{year}</div>
-                      </div>
+                  {/* Event Image */}
+                  <div className="relative h-56 overflow-hidden">
+                    <img
+                      src={event.image_url || defaultImages[idx % 4]}
+                      alt={event.title}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                  </div>
+
+                  {/* Event Content */}
+                  <div className="p-6">
+                    {/* Date and Author */}
+                    <div className="text-sm text-[#8B4513] mb-3 font-medium">
+                      {dayOfWeek}, {month} {day} / YCA Birmingham
                     </div>
 
-                    {/* Event Details */}
-                    <div className="flex-1">
-                      {/* Category Badge */}
-                      <span className={`inline-block ${getCategoryColor(event.category).replace('bg-', 'bg-').replace('500', '100').replace('600', '100')} px-4 py-1 rounded-full text-xs font-bold uppercase mb-3`}
-                        style={{ color: event.category === 'Academic' ? '#2563eb' : event.category === 'Sports' ? '#16a34a' : '#059669' }}
-                      >
-                        {event.category}
-                      </span>
+                    {/* Title */}
+                    <h3 className="text-xl font-bold text-gray-900 mb-3 hover:text-[#8B4513] transition-colors line-clamp-2 min-h-[3.5rem]">
+                      <Link to="/events">{event.title}</Link>
+                    </h3>
 
-                      {/* Title */}
-                      <h3 className="text-xl font-bold text-primary mb-3 hover:text-[#8B4513] transition-colors">
-                        {event.title}
-                      </h3>
+                    {/* Description */}
+                    <p className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-3 min-h-[4rem]">
+                      {event.description}
+                    </p>
 
-                      {/* Description */}
-                      <p className="text-gray-600 text-sm mb-4 leading-relaxed line-clamp-2">
-                        {event.description}
-                      </p>
-
-                      {/* Time and Location */}
-                      <div className="space-y-2 mb-4">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Clock size={16} className="text-[#8B4513]" />
-                          <span>{event.time}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <MapPin size={16} className="text-[#8B4513]" />
-                          <span className="line-clamp-1">{event.location}</span>
-                        </div>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex gap-3">
-                        <Link
-                          to="/events"
-                          className="flex-1 text-center bg-[#8B4513] text-white px-4 py-2 rounded-xl hover:bg-[#6B3410] transition-colors font-semibold text-sm shadow-md"
-                        >
-                          View Details
-                        </Link>
-                        <button className="px-4 py-2 border-2 border-gray-300 rounded-xl hover:border-[#8B4513] transition-colors text-gray-700 font-semibold text-sm">
-                          Buy Ticket
-                        </button>
-                      </div>
-                    </div>
+                    {/* Read More Link */}
+                    <Link
+                      to="/events"
+                      className="inline-flex items-center gap-2 text-[#8B4513] font-semibold hover:gap-3 transition-all group/link"
+                    >
+                      Read More
+                      <ArrowRight size={18} className="group-hover/link:translate-x-1 transition-transform" />
+                    </Link>
                   </div>
                 </motion.div>
               );
             })}
-          </motion.div>
-
-          {/* View All Events Button */}
-          <motion.div
-            className="text-center mt-12"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={fadeInUp}
-          >
-            <Link
-              to="/events"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-[#8B4513] to-[#6B3410] text-white px-10 py-4 rounded-xl hover:from-[#6B3410] hover:to-[#5B2810] transition-all font-semibold text-lg shadow-lg"
-            >
-              <Calendar size={24} />
-              View All Events
-              <ArrowRight size={20} />
-            </Link>
           </motion.div>
         </div>
       </section>

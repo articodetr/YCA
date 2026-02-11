@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CreditCard, Mail, Phone, User, MessageSquare, Check, AlertCircle, Loader2, Heart } from 'lucide-react';
-import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { Mail, Phone, User, MessageSquare, Check, AlertCircle, Loader2, Heart, ArrowRight, ChevronLeft, Wallet } from 'lucide-react';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { stripePromise } from '../lib/stripe';
 import { supabase } from '../lib/supabase';
 import { fadeInUp, scaleIn } from '../lib/animations';
 
@@ -24,10 +25,139 @@ interface Props {
   onSuccess?: () => void;
 }
 
-export default function DonationForm({ onSuccess }: Props = {}) {
+function PaymentStep({
+  formData,
+  donationId,
+  onSuccess,
+  onBack,
+  onError,
+}: {
+  formData: FormData;
+  donationId: string | null;
+  onSuccess: (message: string) => void;
+  onBack: () => void;
+  onError: (msg: string) => void;
+}) {
   const stripe = useStripe();
   const elements = useElements();
+  const [processing, setProcessing] = useState(false);
+  const [paymentReady, setPaymentReady] = useState(false);
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+
+    setProcessing(true);
+
+    try {
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/payment-result?type=donation`,
+          payment_method_data: {
+            billing_details: {
+              name: formData.fullName,
+              email: formData.email,
+              phone: formData.phone,
+            },
+          },
+        },
+        redirect: 'if_required',
+      });
+
+      if (error) {
+        if (donationId) {
+          await supabase
+            .from('donations')
+            .update({ payment_status: 'failed' })
+            .eq('id', donationId);
+        }
+        throw new Error(error.message || 'Payment failed');
+      }
+
+      if (paymentIntent?.status === 'succeeded') {
+        if (donationId) {
+          await supabase
+            .from('donations')
+            .update({ payment_status: 'succeeded' })
+            .eq('id', donationId);
+        }
+        onSuccess(`Thank you for your \u00A3${formData.amount} donation!`);
+      }
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="flex items-center gap-3 mb-2">
+        <button
+          type="button"
+          onClick={onBack}
+          className="text-gray-500 hover:text-gray-700 transition-colors"
+        >
+          <ChevronLeft size={20} />
+        </button>
+        <h3 className="text-lg font-semibold text-gray-800">Choose Payment Method</h3>
+      </div>
+
+      <div className="bg-gray-50 rounded-xl p-4 flex items-center justify-between">
+        <div>
+          <p className="text-sm text-gray-500">Donation Amount</p>
+          <p className="text-2xl font-bold text-primary">{'\u00A3'}{formData.amount.toFixed(2)}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-sm text-gray-500">{formData.donationType === 'monthly' ? 'Monthly' : 'One-time'}</p>
+          <p className="text-sm font-medium text-gray-700">{formData.fullName}</p>
+        </div>
+      </div>
+
+      <div className="rounded-xl border-2 border-gray-200 p-4 bg-white">
+        <PaymentElement
+          onChange={(e) => setPaymentReady(e.complete)}
+          options={{
+            layout: {
+              type: 'accordion',
+              defaultCollapsed: false,
+              radios: true,
+              spacedAccordionItems: true,
+            },
+          }}
+        />
+      </div>
+
+      <motion.button
+        type="submit"
+        disabled={processing || !stripe || !paymentReady}
+        className="w-full bg-primary text-white py-4 rounded-xl font-bold text-lg hover:bg-secondary transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        whileHover={!processing ? { scale: 1.02 } : {}}
+        whileTap={!processing ? { scale: 0.98 } : {}}
+      >
+        {processing ? (
+          <>
+            <Loader2 size={20} className="animate-spin" />
+            Processing...
+          </>
+        ) : (
+          <>
+            <Wallet size={20} />
+            Donate {'\u00A3'}{formData.amount.toFixed(2)}
+          </>
+        )}
+      </motion.button>
+
+      <p className="text-xs text-center text-muted">
+        Your payment is processed securely by Stripe. We never store your payment details.
+      </p>
+    </form>
+  );
+}
+
+export default function DonationForm({ onSuccess }: Props = {}) {
+  const [step, setStep] = useState<'details' | 'payment'>('details');
   const [formData, setFormData] = useState<FormData>({
     amount: 0,
     customAmount: '',
@@ -43,8 +173,10 @@ export default function DonationForm({ onSuccess }: Props = {}) {
     message: '',
   });
 
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [donationId, setDonationId] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [cardComplete, setCardComplete] = useState(false);
+  const [creatingIntent, setCreatingIntent] = useState(false);
 
   const presetAmounts = [10, 25, 50, 100, 250];
 
@@ -80,22 +212,15 @@ export default function DonationForm({ onSuccess }: Props = {}) {
       newErrors.phone = 'Please enter a valid phone number';
     }
 
-    if (!cardComplete) {
-      newErrors.card = 'Please enter complete card details';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleContinueToPayment = async () => {
+    if (!validateForm()) return;
 
-    if (!validateForm() || !stripe || !elements) {
-      return;
-    }
-
-    setPaymentStatus({ status: 'processing', message: '' });
+    setCreatingIntent(true);
+    setPaymentStatus({ status: 'idle', message: '' });
 
     try {
       const response = await fetch(
@@ -119,92 +244,44 @@ export default function DonationForm({ onSuccess }: Props = {}) {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create payment intent');
+      if (!response.ok || !data.clientSecret) {
+        throw new Error(data.error || 'Failed to set up payment');
       }
 
-      const cardElement = elements.getElement(CardElement);
-      if (!cardElement) {
-        throw new Error('Card element not found');
-      }
-
-      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
-        data.clientSecret,
-        {
-          payment_method: {
-            card: cardElement,
-            billing_details: {
-              name: formData.fullName,
-              email: formData.email,
-              phone: formData.phone,
-            },
-          },
-        }
-      );
-
-      if (stripeError) {
-        if (data.donationId) {
-          await supabase
-            .from('donations')
-            .update({ payment_status: 'failed' })
-            .eq('id', data.donationId);
-        }
-        throw new Error(stripeError.message || 'Payment failed');
-      }
-
-      if (paymentIntent?.status === 'succeeded') {
-        if (data.donationId) {
-          await supabase
-            .from('donations')
-            .update({ payment_status: 'succeeded' })
-            .eq('id', data.donationId);
-        }
-
-        setPaymentStatus({
-          status: 'success',
-          message: `Thank you for your £${formData.amount} donation!`,
-        });
-
-        setFormData({
-          amount: 0,
-          customAmount: '',
-          donationType: 'one-time',
-          fullName: '',
-          email: '',
-          phone: '',
-          message: '',
-        });
-
-        cardElement.clear();
-
-        if (onSuccess) {
-          setTimeout(() => {
-            onSuccess();
-          }, 2000);
-        }
-      }
+      setClientSecret(data.clientSecret);
+      setDonationId(data.donationId || null);
+      setStep('payment');
     } catch (error) {
       setPaymentStatus({
         status: 'error',
         message: error instanceof Error ? error.message : 'An error occurred',
       });
+    } finally {
+      setCreatingIntent(false);
     }
   };
 
-  const cardElementOptions = {
-    style: {
-      base: {
-        fontSize: '16px',
-        color: '#1a4d2e',
-        '::placeholder': {
-          color: '#666666',
-        },
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-      },
-      invalid: {
-        color: '#dc2626',
-      },
-    },
+  const handlePaymentSuccess = (message: string) => {
+    setPaymentStatus({ status: 'success', message });
+    setFormData({
+      amount: 0,
+      customAmount: '',
+      donationType: 'one-time',
+      fullName: '',
+      email: '',
+      phone: '',
+      message: '',
+    });
+    setClientSecret(null);
+    setStep('details');
+
+    if (onSuccess) {
+      setTimeout(() => onSuccess(), 2000);
+    }
+  };
+
+  const handlePaymentError = (message: string) => {
+    setPaymentStatus({ status: 'error', message });
   };
 
   if (paymentStatus.status === 'success') {
@@ -243,6 +320,58 @@ export default function DonationForm({ onSuccess }: Props = {}) {
     );
   }
 
+  if (step === 'payment' && clientSecret && stripePromise) {
+    return (
+      <motion.div
+        className="bg-white rounded-lg shadow-xl p-8 max-w-3xl mx-auto"
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <Elements
+          key={clientSecret}
+          stripe={stripePromise}
+          options={{
+            clientSecret,
+            appearance: {
+              theme: 'stripe',
+              variables: {
+                colorPrimary: '#1a4d2e',
+                borderRadius: '12px',
+              },
+            },
+            loader: 'auto',
+          }}
+        >
+          <PaymentStep
+            formData={formData}
+            donationId={donationId}
+            onSuccess={handlePaymentSuccess}
+            onBack={() => { setStep('details'); setClientSecret(null); }}
+            onError={handlePaymentError}
+          />
+        </Elements>
+
+        <AnimatePresence>
+          {paymentStatus.status === 'error' && (
+            <motion.div
+              className="mt-4 bg-red-50 border-2 border-red-200 rounded-lg p-4 flex items-start gap-3"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <AlertCircle size={20} className="text-red-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-red-800">Payment Failed</p>
+                <p className="text-sm text-red-700">{paymentStatus.message}</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       className="bg-white rounded-lg shadow-xl p-8 max-w-3xl mx-auto"
@@ -264,7 +393,7 @@ export default function DonationForm({ onSuccess }: Props = {}) {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <div className="space-y-8">
         <div>
           <div className="flex gap-4 mb-4">
             <motion.button
@@ -322,7 +451,7 @@ export default function DonationForm({ onSuccess }: Props = {}) {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  £{amount}
+                  {'\u00A3'}{amount}
                 </motion.button>
               );
             })}
@@ -330,7 +459,7 @@ export default function DonationForm({ onSuccess }: Props = {}) {
 
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-primary">
-              £
+              {'\u00A3'}
             </span>
             <input
               type="number"
@@ -446,28 +575,6 @@ export default function DonationForm({ onSuccess }: Props = {}) {
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-primary mb-3 flex items-center gap-2">
-            <CreditCard size={20} />
-            Card Details *
-          </label>
-          <div className="border-2 border-gray-200 rounded-2xl p-4 focus-within:border-teal-500 transition-colors shadow-md hover:shadow-lg bg-white">
-            <CardElement
-              options={cardElementOptions}
-              onChange={(e) => setCardComplete(e.complete)}
-            />
-          </div>
-          {errors.card && (
-            <p className="text-red-600 text-sm mt-2 flex items-center gap-1">
-              <AlertCircle size={14} />
-              {errors.card}
-            </p>
-          )}
-          <p className="text-xs text-muted mt-2">
-            Test card: 4242 4242 4242 4242 | Any future expiry | Any 3-digit CVV
-          </p>
-        </div>
-
         <AnimatePresence>
           {paymentStatus.status === 'error' && (
             <motion.div
@@ -486,28 +593,26 @@ export default function DonationForm({ onSuccess }: Props = {}) {
         </AnimatePresence>
 
         <motion.button
-          type="submit"
-          disabled={paymentStatus.status === 'processing' || !stripe}
-          className="w-full bg-primary text-white py-4 rounded-lg font-bold text-lg hover:bg-secondary transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          whileHover={paymentStatus.status !== 'processing' ? { scale: 1.02 } : {}}
-          whileTap={paymentStatus.status !== 'processing' ? { scale: 0.98 } : {}}
+          type="button"
+          onClick={handleContinueToPayment}
+          disabled={creatingIntent}
+          className="w-full bg-primary text-white py-4 rounded-xl font-bold text-lg hover:bg-secondary transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          whileHover={!creatingIntent ? { scale: 1.02 } : {}}
+          whileTap={!creatingIntent ? { scale: 0.98 } : {}}
         >
-          {paymentStatus.status === 'processing' ? (
+          {creatingIntent ? (
             <>
               <Loader2 size={20} className="animate-spin" />
-              Processing...
+              Setting up payment...
             </>
           ) : (
             <>
-              Donate £{formData.amount > 0 ? formData.amount.toFixed(2) : '0.00'}
+              Continue to Payment
+              <ArrowRight size={20} />
             </>
           )}
         </motion.button>
-
-        <p className="text-xs text-center text-muted">
-          Your payment is processed securely by Stripe. We never store your card details.
-        </p>
-      </form>
+      </div>
     </motion.div>
   );
 }

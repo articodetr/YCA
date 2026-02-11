@@ -1,9 +1,8 @@
-import { Elements } from '@stripe/react-stripe-js';
-import { stripePromise } from '../../lib/stripe';
 import { useLanguage } from '../../contexts/LanguageContext';
 import Layout from '../../components/Layout';
 import PageHeader from '../../components/PageHeader';
 import DonationForm from '../../components/DonationForm';
+import { stripePromise } from '../../lib/stripe';
 import { AlertCircle } from 'lucide-react';
 
 export default function Donate() {
@@ -33,9 +32,7 @@ export default function Donate() {
           <section className="py-16 bg-gradient-to-b from-gray-50 to-white">
             <div className="container mx-auto px-4">
               {stripePromise ? (
-                <Elements stripe={stripePromise}>
-                  <DonationForm />
-                </Elements>
+                <DonationForm />
               ) : (
                 <div className="max-w-2xl mx-auto text-center py-12">
                   <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />

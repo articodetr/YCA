@@ -275,6 +275,14 @@ function PaymentForm({ amount, applicationId, onSuccess, onError }: PaymentFormP
           setElementError(error.message);
           onError(error.message);
         }}
+        options={{
+          layout: {
+            type: 'accordion',
+            defaultCollapsed: false,
+            radios: true,
+            spacedAccordionItems: true,
+          },
+        }}
       />
 
       {elementError && (

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Loader2, AlertCircle, CreditCard, ArrowLeft } from 'lucide-react';
+import { Loader2, AlertCircle, Wallet, ArrowLeft } from 'lucide-react';
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
@@ -108,7 +108,16 @@ export default function ServiceCheckoutForm({
         </div>
       )}
 
-      <PaymentElement />
+      <PaymentElement
+        options={{
+          layout: {
+            type: 'accordion',
+            defaultCollapsed: false,
+            radios: true,
+            spacedAccordionItems: true,
+          },
+        }}
+      />
 
       <div className="flex gap-3">
         <button
@@ -132,7 +141,7 @@ export default function ServiceCheckoutForm({
             </>
           ) : (
             <>
-              <CreditCard className="w-5 h-5" />
+              <Wallet className="w-5 h-5" />
               {t.payNow}
             </>
           )}

@@ -105,7 +105,16 @@ function PaymentForm({ totalPrice, registrationId, onSuccess, onError, t }: Paym
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <PaymentElement />
+      <PaymentElement
+        options={{
+          layout: {
+            type: 'accordion',
+            defaultCollapsed: false,
+            radios: true,
+            spacedAccordionItems: true,
+          },
+        }}
+      />
       <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
         <Lock className="w-3.5 h-3.5" />
         <span>{t.securePayment}</span>

@@ -1,63 +1,61 @@
-import { Handshake, Building, Users, Award, Mail, CheckCircle, Loader2, Send } from 'lucide-react';
+import { Handshake, Building, Users, Award, Mail, CheckCircle, Send } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useState, FormEvent } from 'react';
+import { useState } from 'react';
 import PageHeader from '../../components/PageHeader';
 import { fadeInUp, fadeInLeft, fadeInRight, staggerContainer, staggerItem, scaleIn } from '../../lib/animations';
 import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
+import DynamicFormModal from '../../components/modals/DynamicFormModal';
 
 export default function Partnerships() {
-  const { t, isRTL } = useLanguage();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [formData, setFormData] = useState({
-    organization_name: '',
-    contact_person: '',
-    email: '',
-    phone: '',
-    organization_type: '',
-    partnership_interest: '',
-    message: '',
-  });
+  const { t, isRTL, language } = useLanguage();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setSubmitStatus('idle');
-
+  const handleFormSubmit = async (
+    formData: Record<string, any>,
+    responses: Array<{ question_id: string; response_text: string; response_files?: any[] }>
+  ) => {
     try {
-      const { error } = await supabase
+      const basicData = {
+        organization_name: formData.organization_name || '',
+        contact_person: formData.contact_person || '',
+        email: formData.email || '',
+        phone: formData.phone || '',
+        organization_type: formData.organization_type || '',
+        partnership_interest: formData.partnership_interest || '',
+        message: formData.message || '',
+      };
+
+      const { data: inquiry, error: inquiryError } = await supabase
         .from('partnership_inquiries')
-        .insert([formData]);
+        .insert([basicData])
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (inquiryError) throw inquiryError;
 
-      setSubmitStatus('success');
-      setFormData({
-        organization_name: '',
-        contact_person: '',
-        email: '',
-        phone: '',
-        organization_type: '',
-        partnership_interest: '',
-        message: '',
-      });
+      const responsesToInsert = responses.map(r => ({
+        form_type: 'partnership',
+        application_id: inquiry.id,
+        question_id: r.question_id,
+        response_text: r.response_text,
+        response_files: r.response_files || []
+      }));
 
-      setTimeout(() => {
-        setSubmitStatus('idle');
-      }, 5000);
+      const { error: responseError } = await supabase
+        .from('form_responses')
+        .insert(responsesToInsert);
+
+      if (responseError) throw responseError;
+
+      setSubmitSuccess(true);
+      setTimeout(() => setSubmitSuccess(false), 5000);
     } catch (error) {
-      console.error('Error submitting inquiry:', error);
-      setSubmitStatus('error');
-    } finally {
-      setIsSubmitting(false);
+      console.error('Error submitting partnership inquiry:', error);
+      throw error;
     }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const benefits = [
@@ -235,20 +233,27 @@ export default function Partnerships() {
             </motion.div>
 
             <motion.div
-              className="bg-white border-2 border-primary p-10 rounded-lg"
+              className="bg-gradient-to-br from-primary to-secondary text-white p-12 rounded-2xl text-center shadow-2xl"
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
               variants={fadeInUp}
             >
-              <h2 className="text-3xl font-bold text-primary mb-6 text-center">{t('partnerships.formTitle')}</h2>
-              <p className="text-lg text-muted mb-8 text-center max-w-2xl mx-auto">
+              <motion.div
+                className="w-20 h-20 bg-accent rounded-full flex items-center justify-center mx-auto mb-6"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+              >
+                <Handshake size={40} className="text-primary" />
+              </motion.div>
+
+              <h2 className="text-4xl font-bold mb-4">{t('partnerships.formTitle')}</h2>
+              <p className="text-xl mb-8 max-w-2xl mx-auto opacity-90">
                 {t('partnerships.formDesc')}
               </p>
 
-              {submitStatus === 'success' && (
+              {submitSuccess && (
                 <motion.div
-                  className="bg-green-50 border-2 border-green-500 text-green-800 p-6 rounded-lg mb-8"
+                  className="bg-green-500/20 border-2 border-green-300 text-white p-6 rounded-lg mb-8 max-w-2xl mx-auto"
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
@@ -257,170 +262,37 @@ export default function Partnerships() {
                 </motion.div>
               )}
 
-              {submitStatus === 'error' && (
-                <motion.div
-                  className="bg-red-50 border-2 border-red-500 text-red-800 p-6 rounded-lg mb-8"
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <motion.button
+                  onClick={() => setIsModalOpen(true)}
+                  className="bg-accent text-primary px-10 py-5 rounded-xl hover:bg-hover transition-colors font-bold text-lg flex items-center justify-center gap-3 shadow-lg"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  <h3 className="font-bold text-xl mb-2">{t('partnerships.errorTitle')}</h3>
-                  <p>{t('partnerships.errorMsg')}</p>
-                </motion.div>
-              )}
+                  <Send size={24} />
+                  {language === 'ar' ? 'ابدأ طلب الشراكة' : 'Start Partnership Application'}
+                </motion.button>
 
-              <form onSubmit={handleSubmit} className="space-y-8">
-                <div className="space-y-6">
-                  <h3 className="text-xl font-bold text-primary border-b-2 border-accent pb-2">{t('partnerships.orgInfo')}</h3>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <label htmlFor="organization_name" className="block text-sm font-semibold text-primary mb-2">
-                        {t('partnerships.orgName')} <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        id="organization_name"
-                        name="organization_name"
-                        value={formData.organization_name}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-3 border-2 border-sand rounded-lg focus:border-accent focus:outline-none transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="organization_type" className="block text-sm font-semibold text-primary mb-2">
-                        {t('partnerships.orgType')}
-                      </label>
-                      <select
-                        id="organization_type"
-                        name="organization_type"
-                        value={formData.organization_type}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 border-2 border-sand rounded-lg focus:border-accent focus:outline-none transition-colors"
-                      >
-                        <option value="">{t('partnerships.selectType')}</option>
-                        <option value="corporate">{t('partnerships.typeCorporate')}</option>
-                        <option value="nonprofit">{t('partnerships.typeNonprofit')}</option>
-                        <option value="public_sector">{t('partnerships.typePublic')}</option>
-                        <option value="community">{t('partnerships.typeCommunity')}</option>
-                        <option value="education">{t('partnerships.typeEducation')}</option>
-                        <option value="other">{t('partnerships.typeOther')}</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  <h3 className="text-xl font-bold text-primary border-b-2 border-accent pb-2">{t('partnerships.contactInfo')}</h3>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <label htmlFor="contact_person" className="block text-sm font-semibold text-primary mb-2">
-                        {t('partnerships.contactPerson')} <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        id="contact_person"
-                        name="contact_person"
-                        value={formData.contact_person}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-3 border-2 border-sand rounded-lg focus:border-accent focus:outline-none transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="email" className="block text-sm font-semibold text-primary mb-2">
-                        {t('form.email')} <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-3 border-2 border-sand rounded-lg focus:border-accent focus:outline-none transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="phone" className="block text-sm font-semibold text-primary mb-2">
-                        {t('form.phone')} <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="tel"
-                        id="phone"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-3 border-2 border-sand rounded-lg focus:border-accent focus:outline-none transition-colors"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  <h3 className="text-xl font-bold text-primary border-b-2 border-accent pb-2">{t('partnerships.partnershipDetails')}</h3>
-                  <div>
-                    <label htmlFor="partnership_interest" className="block text-sm font-semibold text-primary mb-2">
-                      {t('partnerships.interestArea')}
-                    </label>
-                    <textarea
-                      id="partnership_interest"
-                      name="partnership_interest"
-                      value={formData.partnership_interest}
-                      onChange={handleChange}
-                      rows={3}
-                      className="w-full px-4 py-3 border-2 border-sand rounded-lg focus:border-accent focus:outline-none transition-colors resize-none"
-                      placeholder={t('partnerships.interestPlaceholder')}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="message" className="block text-sm font-semibold text-primary mb-2">
-                      {t('partnerships.additionalInfo')}
-                    </label>
-                    <textarea
-                      id="message"
-                      name="message"
-                      value={formData.message}
-                      onChange={handleChange}
-                      rows={4}
-                      className="w-full px-4 py-3 border-2 border-sand rounded-lg focus:border-accent focus:outline-none transition-colors resize-none"
-                      placeholder={t('partnerships.additionalPlaceholder')}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                  <motion.button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="bg-primary text-white px-8 py-4 rounded-lg hover:bg-secondary transition-colors font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    whileHover={{ scale: isSubmitting ? 1 : 1.05 }}
-                    whileTap={{ scale: isSubmitting ? 1 : 0.95 }}
+                <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
+                  <Link
+                    to="/contact"
+                    className="bg-white/10 border-2 border-white text-white px-10 py-5 rounded-xl hover:bg-white hover:text-primary transition-colors font-bold text-lg flex items-center justify-center gap-3"
                   >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 size={20} className="animate-spin" />
-                        {t('partnerships.submitting')}
-                      </>
-                    ) : (
-                      <>
-                        <Send size={20} />
-                        {t('partnerships.submitInquiry')}
-                      </>
-                    )}
-                  </motion.button>
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Link
-                      to="/contact"
-                      className="bg-white border-2 border-primary text-primary px-8 py-4 rounded-lg hover:bg-primary hover:text-white transition-colors font-semibold flex items-center justify-center gap-2"
-                    >
-                      <Mail size={20} />
-                      {t('partnerships.questionsContact')}
-                    </Link>
-                  </motion.div>
-                </div>
-              </form>
+                    <Mail size={24} />
+                    {t('partnerships.questionsContact')}
+                  </Link>
+                </motion.div>
+              </div>
             </motion.div>
+
+            <DynamicFormModal
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+              formType="partnership"
+              title="Partnership Application"
+              titleAr="طلب شراكة"
+              onSubmit={handleFormSubmit}
+            />
           </div>
         </div>
       </section>

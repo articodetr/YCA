@@ -75,6 +75,8 @@ import FeedbackManagement from './pages/admin/FeedbackManagement';
 import TranslationsManagement from './pages/admin/TranslationsManagement';
 import LegalRequestsManagement from './pages/admin/LegalRequestsManagement';
 import BusinessSupportersManagement from './pages/admin/BusinessSupportersManagement';
+import FormQuestionsManagement from './pages/admin/FormQuestionsManagement';
+import JobPostingsManagement from './pages/admin/JobPostingsManagement';
 
 function App() {
   return (
@@ -129,6 +131,8 @@ function App() {
                     <Route path="translations" element={<TranslationsManagement />} />
                     <Route path="legal-requests" element={<LegalRequestsManagement />} />
                     <Route path="business-supporters" element={<BusinessSupportersManagement />} />
+                    <Route path="form-questions" element={<FormQuestionsManagement />} />
+                    <Route path="job-postings" element={<JobPostingsManagement />} />
                     <Route path="settings" element={<Settings />} />
                   </Routes>
                 </AdminLayout>

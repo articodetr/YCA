@@ -226,6 +226,8 @@ export default function TranslationBookingForm({ onComplete }: TranslationBookin
   };
 
   const createPaymentIntent = async (amount: number) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     try {
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`,
@@ -233,8 +235,10 @@ export default function TranslationBookingForm({ onComplete }: TranslationBookin
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
           body: JSON.stringify({ amount: Math.round(amount * 100), currency: 'gbp', metadata: { user_id: user?.id, type: 'translation' } }),
+          signal: controller.signal,
         }
       );
+      clearTimeout(timeoutId);
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || t.paymentError);
       if (!data.clientSecret || typeof data.clientSecret !== 'string' || !data.clientSecret.startsWith('pi_')) {
@@ -242,9 +246,11 @@ export default function TranslationBookingForm({ onComplete }: TranslationBookin
       }
       setClientSecret(data.clientSecret);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : t.paymentError;
-      setError(msg);
-      setStep('form');
+      clearTimeout(timeoutId);
+      const msg = err instanceof Error
+        ? (err.name === 'AbortError' ? (language === 'ar' ? 'انتهت مهلة الاتصال. يرجى المحاولة مرة أخرى.' : 'Request timed out. Please try again.') : err.message)
+        : t.paymentError;
+      throw new Error(msg);
     }
   };
 

@@ -230,36 +230,31 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
   };
 
   const createPaymentIntent = async (amount: number) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     try {
-      console.log('Creating payment intent for amount:', amount);
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
           body: JSON.stringify({ amount: Math.round(amount * 100), currency: 'gbp', metadata: { user_id: user?.id, type: 'wakala' } }),
+          signal: controller.signal,
         }
       );
+      clearTimeout(timeoutId);
       const data = await response.json();
-      console.log('Payment intent response:', data);
-      if (!response.ok) {
-        console.error('Payment intent error:', data.error);
-        throw new Error(data.error || t.paymentError);
-      }
-      if (!data.clientSecret) {
-        console.error('No client secret in response:', data);
-        throw new Error('No client secret returned');
-      }
-      if (typeof data.clientSecret !== 'string' || !data.clientSecret.startsWith('pi_')) {
-        console.error('Invalid client secret format:', data.clientSecret);
+      if (!response.ok) throw new Error(data.error || t.paymentError);
+      if (!data.clientSecret || typeof data.clientSecret !== 'string' || !data.clientSecret.startsWith('pi_')) {
         throw new Error('Invalid payment intent format');
       }
-      console.log('Client secret received successfully');
       setClientSecret(data.clientSecret);
-    } catch (err: any) {
-      console.error('Error creating payment intent:', err);
-      setError(err.message || t.paymentError);
-      setStep('form');
+    } catch (err: unknown) {
+      clearTimeout(timeoutId);
+      const msg = err instanceof Error
+        ? (err.name === 'AbortError' ? (language === 'ar' ? 'انتهت مهلة الاتصال. يرجى المحاولة مرة أخرى.' : 'Request timed out. Please try again.') : err.message)
+        : t.paymentError;
+      throw new Error(msg);
     }
   };
 

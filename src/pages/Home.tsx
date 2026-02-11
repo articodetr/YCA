@@ -243,8 +243,27 @@ export default function Home() {
       </section>
 
       {/* Welcome Section */}
-      <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-20 bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
+        {/* Background Logo Watermark */}
+        <div
+          className="absolute inset-0 flex items-center justify-end pointer-events-none"
+          style={{
+            backgroundImage: 'url(/logo_white.png)',
+            backgroundSize: 'contain',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'right center',
+            opacity: 0.05,
+            maxWidth: '800px',
+            right: '-100px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: '100%',
+            height: '100%',
+            position: 'absolute'
+          }}
+        />
+
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <motion.div
             className="text-center mb-12"
             initial="hidden"
@@ -518,8 +537,24 @@ export default function Home() {
       </section>
 
       {/* Get Involved Section */}
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-20 bg-white relative overflow-hidden">
+        {/* Background Logo Watermark */}
+        <div
+          className="absolute inset-0 flex items-center justify-center pointer-events-none"
+          style={{
+            backgroundImage: 'url(/logo_white.png)',
+            backgroundSize: 'contain',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+            opacity: 0.04,
+            maxWidth: '900px',
+            margin: '0 auto',
+            width: '100%',
+            height: '100%'
+          }}
+        />
+
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <motion.div
             className="text-center mb-16"
             initial="hidden"

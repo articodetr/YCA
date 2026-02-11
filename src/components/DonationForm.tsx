@@ -20,7 +20,11 @@ interface PaymentStatus {
   message: string;
 }
 
-export default function DonationForm() {
+interface Props {
+  onSuccess?: () => void;
+}
+
+export default function DonationForm({ onSuccess }: Props = {}) {
   const stripe = useStripe();
   const elements = useElements();
 
@@ -172,6 +176,12 @@ export default function DonationForm() {
         });
 
         cardElement.clear();
+
+        if (onSuccess) {
+          setTimeout(() => {
+            onSuccess();
+          }, 2000);
+        }
       }
     } catch (error) {
       setPaymentStatus({

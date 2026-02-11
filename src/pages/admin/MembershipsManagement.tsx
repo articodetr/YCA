@@ -65,6 +65,9 @@ export default function MembershipsManagement() {
     e.stopPropagation();
     if (!confirm('Are you sure you want to delete this membership application?')) return;
 
+    const previous = memberships;
+    setMemberships((prev) => prev.filter((m) => m.id !== id));
+
     try {
       const { adminDeleteRecord } = await import('../../lib/admin-api');
       const result = await adminDeleteRecord('membership_applications', id);
@@ -72,11 +75,9 @@ export default function MembershipsManagement() {
       if (!result.success) {
         throw new Error(result.error || 'Delete failed');
       }
-
-      alert('Membership deleted successfully');
-      fetchMemberships();
     } catch (error: any) {
       console.error('Error deleting membership:', error);
+      setMemberships(previous);
       alert(`Failed to delete: ${error.message}`);
     }
   };
@@ -120,21 +121,24 @@ export default function MembershipsManagement() {
     if (!confirm('This will permanently remove all applications. Confirm again to proceed.')) return;
 
     setDeletingAll(true);
+    const total = memberships.length;
     try {
       const { adminDeleteRecord } = await import('../../lib/admin-api');
       let failed = 0;
       for (const mem of memberships) {
         const result = await adminDeleteRecord('membership_applications', mem.id);
         if (!result.success) failed++;
+        else setMemberships((prev) => prev.filter((m) => m.id !== mem.id));
       }
       if (failed > 0) {
-        alert(`Deleted ${memberships.length - failed} applications. ${failed} failed.`);
+        alert(`Deleted ${total - failed} applications. ${failed} failed.`);
+        fetchMemberships();
       } else {
-        alert(`All ${memberships.length} applications deleted.`);
+        alert(`All ${total} applications deleted.`);
       }
-      fetchMemberships();
     } catch (error: any) {
       alert(`Error: ${error.message}`);
+      fetchMemberships();
     } finally {
       setDeletingAll(false);
     }

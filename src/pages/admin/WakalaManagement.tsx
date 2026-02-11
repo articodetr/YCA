@@ -125,6 +125,14 @@ export default function WakalaManagement() {
       return;
     }
 
+    const previous = applications;
+    setApplications((prev) => prev.filter((a) => a.id !== item.id));
+
+    if (selectedApp?.id === item.id) {
+      setShowModal(false);
+      setSelectedApp(null);
+    }
+
     try {
       const { adminDeleteRecord } = await import('../../lib/admin-api');
       const result = await adminDeleteRecord('wakala_applications', item.id);
@@ -132,15 +140,9 @@ export default function WakalaManagement() {
       if (!result.success) {
         throw new Error(result.error || 'Delete failed');
       }
-
-      alert('Wakala application deleted successfully');
-      await fetchApplications();
-      if (selectedApp?.id === item.id) {
-        setShowModal(false);
-        setSelectedApp(null);
-      }
     } catch (error: any) {
       console.error('Error deleting application:', error);
+      setApplications(previous);
       alert(`Failed to delete application: ${error.message}`);
     }
   };

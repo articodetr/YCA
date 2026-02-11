@@ -86,26 +86,70 @@ export default function AddMemberModal({ open, onClose, onSuccess }: AddMemberMo
         payload.payment_frequency = form.payment_frequency;
       }
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-member`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+      let edgeFnData: any = null;
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-member`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            },
+            body: JSON.stringify(payload),
+          }
+        );
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Failed to create member');
+        const data = await response.json();
+        if (response.ok && data.success) {
+          edgeFnData = data;
+        } else if (response.ok || response.status === 400) {
+          throw new Error(data.error || 'Failed to create member');
+        }
+      } catch (fnErr: any) {
+        if (fnErr.message && !fnErr.message.includes('fetch')) {
+          throw fnErr;
+        }
+      }
+
+      if (edgeFnData) {
+        setResult({
+          email: edgeFnData.email,
+          password: edgeFnData.password,
+          member_number: edgeFnData.member_number,
+        });
+        onSuccess();
+        return;
+      }
+
+      const appInsert: Record<string, unknown> = {
+        first_name: form.first_name,
+        last_name: form.last_name,
+        email: form.email,
+        phone: form.phone,
+        address: '',
+        membership_type: form.membership_type,
+        status: 'approved',
+        payment_status: 'completed',
+      };
+
+      if (form.membership_type === 'business_support') {
+        appInsert.business_support_tier = form.business_support_tier;
+        appInsert.custom_amount = form.custom_amount;
+        appInsert.payment_frequency = form.payment_frequency;
+      }
+
+      const { error: insertError } = await supabase
+        .from('membership_applications')
+        .insert(appInsert);
+
+      if (insertError) throw new Error(insertError.message);
 
       setResult({
-        email: data.email,
-        password: data.password,
-        member_number: data.member_number,
+        email: form.email,
+        password: '(No account created - application added only)',
+        member_number: 'Will be assigned automatically',
       });
       onSuccess();
     } catch (err: any) {

@@ -93,13 +93,46 @@ Deno.serve(async (req: Request) => {
         return errorResponse("id is required for delete");
       }
 
-      const { error, count } = await adminClient
+      if (table === "wakala_applications") {
+        const { data: app } = await adminClient
+          .from("wakala_applications")
+          .select("slot_id")
+          .eq("id", id)
+          .maybeSingle();
+
+        await adminClient
+          .from("case_notes")
+          .delete()
+          .eq("entity_type", "wakala_application")
+          .eq("entity_id", id);
+
+        if (app?.slot_id) {
+          await adminClient
+            .from("availability_slots")
+            .update({ is_available: true })
+            .eq("id", app.slot_id);
+        }
+      }
+
+      if (table === "membership_applications") {
+        await adminClient
+          .from("membership_application_family_members")
+          .delete()
+          .eq("application_id", id);
+      }
+
+      const { data: deleted, error } = await adminClient
         .from(table)
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+        .select("id");
 
       if (error) {
         return errorResponse(error.message, 500);
+      }
+
+      if (!deleted || deleted.length === 0) {
+        return errorResponse("Record not found", 404);
       }
 
       return successResponse({ success: true, deleted: true });

@@ -175,9 +175,11 @@ Deno.serve(async (req: Request) => {
         return errorResponse(`Failed to create application: ${appError.message}`);
       }
 
-      const { error: memberError } = await adminClient.from("members").insert({
-        member_number: memberNumber,
-        membership_type,
+      const memberType =
+        membership_type === "organization" ? "associate" : membership_type;
+
+      const memberInsert: Record<string, unknown> = {
+        membership_type: memberType,
         first_name,
         last_name,
         email,
@@ -185,22 +187,31 @@ Deno.serve(async (req: Request) => {
         status: "active",
         start_date: startDate,
         expiry_date: expiryDate,
-        business_support_tier: business_support_tier || null,
-        custom_amount: custom_amount || null,
-        payment_frequency: payment_frequency || null,
         metadata: notes ? { admin_notes: notes } : {},
-      });
+      };
+
+      if (memberType === "business_support") {
+        memberInsert.business_support_tier = business_support_tier || null;
+        memberInsert.custom_amount = custom_amount || null;
+        memberInsert.payment_frequency = payment_frequency || null;
+      }
+
+      const { data: memberRow, error: memberError } = await adminClient
+        .from("members")
+        .insert(memberInsert)
+        .select("id, member_number")
+        .single();
 
       if (memberError) {
+        await adminClient
+          .from("membership_applications")
+          .delete()
+          .eq("user_id", authUser.user.id);
         await adminClient.auth.admin.deleteUser(authUser.user.id);
         return errorResponse(`Failed to create member: ${memberError.message}`);
       }
 
-      const { data: memberRow } = await adminClient
-        .from("members")
-        .select("id")
-        .eq("email", email)
-        .maybeSingle();
+      const actualMemberNumber = memberRow?.member_number || memberNumber;
 
       if (memberRow && payment_amount && payment_amount > 0) {
         await adminClient.from("member_payments").insert({
@@ -221,7 +232,7 @@ Deno.serve(async (req: Request) => {
       return successResponse({
         success: true,
         user_id: authUser.user.id,
-        member_number: memberNumber,
+        member_number: actualMemberNumber,
         email,
         password,
       });

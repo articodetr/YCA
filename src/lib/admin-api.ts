@@ -7,39 +7,59 @@ export async function adminDeleteRecord(table: string, id: string): Promise<{ su
       return { success: false, error: 'Not authenticated' };
     }
 
-    const endpoints = ['admin-operations', 'manage-admin'];
+    let edgeFnSucceeded = false;
 
-    for (const endpoint of endpoints) {
-      try {
-        const body = endpoint === 'admin-operations'
-          ? { action: 'delete', table, id }
-          : { action: 'delete_record', table, record_id: id };
-
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${endpoint}`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.access_token}`,
-              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            },
-            body: JSON.stringify(body),
-          }
-        );
-
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success || result.deleted) return { success: true };
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-operations`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({ action: 'delete', table, id }),
         }
-      } catch {
-        continue;
+      );
+
+      const result = await response.json().catch(() => ({}));
+
+      if (response.ok && (result.success || result.deleted)) {
+        edgeFnSucceeded = true;
       }
+    } catch {
+      // edge function unreachable
     }
 
-    const { error } = await supabase.from(table).delete().eq('id', id);
+    if (edgeFnSucceeded) {
+      const { data: stillExists } = await supabase
+        .from(table)
+        .select('id')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (!stillExists) return { success: true };
+    }
+
+    const { data: deleted, error } = await supabase
+      .from(table)
+      .delete()
+      .eq('id', id)
+      .select('id');
+
     if (error) throw new Error(error.message);
-    return { success: true };
+    if (deleted && deleted.length > 0) return { success: true };
+
+    const { data: checkRecord } = await supabase
+      .from(table)
+      .select('id')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (!checkRecord) return { success: true };
+
+    throw new Error('Could not delete record. Please try again.');
   } catch (err: any) {
     console.error(`Admin delete failed for ${table}/${id}:`, err);
     return { success: false, error: err.message };

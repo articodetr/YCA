@@ -123,13 +123,13 @@ export default function News() {
               {categories.map((category, index) => {
                 const count = getCategoryCount(category);
                 const colors = [
-                  { bg: 'bg-emerald-500', hover: 'hover:border-emerald-500', text: 'text-emerald-700' },
-                  { bg: 'bg-blue-500', hover: 'hover:border-blue-500', text: 'text-blue-700' },
-                  { bg: 'bg-amber-500', hover: 'hover:border-amber-500', text: 'text-amber-700' },
-                  { bg: 'bg-rose-500', hover: 'hover:border-rose-500', text: 'text-rose-700' },
-                  { bg: 'bg-teal-500', hover: 'hover:border-teal-500', text: 'text-teal-700' },
-                  { bg: 'bg-purple-500', hover: 'hover:border-purple-500', text: 'text-purple-700' },
-                  { bg: 'bg-orange-500', hover: 'hover:border-orange-500', text: 'text-orange-700' },
+                  { bg: 'bg-emerald-500', hover: 'hover:border-emerald-500', text: 'text-primary' },
+                  { bg: 'bg-blue-500', hover: 'hover:border-blue-500', text: 'text-primary' },
+                  { bg: 'bg-amber-500', hover: 'hover:border-amber-500', text: 'text-primary' },
+                  { bg: 'bg-rose-500', hover: 'hover:border-rose-500', text: 'text-primary' },
+                  { bg: 'bg-teal-500', hover: 'hover:border-teal-500', text: 'text-primary' },
+                  { bg: 'bg-purple-500', hover: 'hover:border-purple-500', text: 'text-primary' },
+                  { bg: 'bg-orange-500', hover: 'hover:border-orange-500', text: 'text-primary' },
                 ];
                 const color = colors[index % colors.length];
 

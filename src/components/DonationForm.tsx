@@ -262,7 +262,7 @@ export default function DonationForm() {
               onClick={() => setFormData({ ...formData, donationType: 'one-time' })}
               className={`flex-1 py-4 px-6 rounded-2xl font-semibold transition-all ${
                 formData.donationType === 'one-time'
-                  ? 'bg-white text-emerald-700 shadow-lg border-2 border-emerald-500'
+                  ? 'bg-white text-primary shadow-lg border-2 border-emerald-500'
                   : 'bg-white text-muted shadow-md border-2 border-gray-200 hover:border-emerald-300'
               }`}
               whileHover={{ scale: 1.03 }}
@@ -276,7 +276,7 @@ export default function DonationForm() {
               onClick={() => setFormData({ ...formData, donationType: 'monthly' })}
               className={`flex-1 py-4 px-6 rounded-2xl font-semibold transition-all ${
                 formData.donationType === 'monthly'
-                  ? 'bg-white text-blue-700 shadow-lg border-2 border-blue-500'
+                  ? 'bg-white text-primary shadow-lg border-2 border-blue-500'
                   : 'bg-white text-muted shadow-md border-2 border-gray-200 hover:border-blue-300'
               }`}
               whileHover={{ scale: 1.03 }}
@@ -290,11 +290,11 @@ export default function DonationForm() {
           <div className="grid grid-cols-5 gap-3 mb-4">
             {presetAmounts.map((amount, index) => {
               const colors = [
-                { bg: 'bg-white', text: 'text-emerald-700', border: 'border-emerald-500', hover: 'hover:border-emerald-300' },
-                { bg: 'bg-white', text: 'text-blue-700', border: 'border-blue-500', hover: 'hover:border-blue-300' },
-                { bg: 'bg-white', text: 'text-amber-700', border: 'border-amber-500', hover: 'hover:border-amber-300' },
-                { bg: 'bg-white', text: 'text-rose-700', border: 'border-rose-500', hover: 'hover:border-rose-300' },
-                { bg: 'bg-white', text: 'text-teal-700', border: 'border-teal-500', hover: 'hover:border-teal-300' },
+                { bg: 'bg-white', text: 'text-primary', border: 'border-emerald-500', hover: 'hover:border-emerald-300' },
+                { bg: 'bg-white', text: 'text-primary', border: 'border-blue-500', hover: 'hover:border-blue-300' },
+                { bg: 'bg-white', text: 'text-primary', border: 'border-amber-500', hover: 'hover:border-amber-300' },
+                { bg: 'bg-white', text: 'text-primary', border: 'border-rose-500', hover: 'hover:border-rose-300' },
+                { bg: 'bg-white', text: 'text-primary', border: 'border-teal-500', hover: 'hover:border-teal-300' },
               ];
               const color = colors[index % colors.length];
               const isSelected = formData.amount === amount && formData.customAmount === amount.toString();

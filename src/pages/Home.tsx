@@ -343,11 +343,11 @@ export default function Home() {
               >
                 <FileText size={32} className="text-emerald-600" />
               </motion.div>
-              <h3 className="text-2xl font-bold text-emerald-700 mb-4">{getContent('home', 'service_advice_title', 'Advice & Guidance')}</h3>
+              <h3 className="text-2xl font-bold text-primary mb-4">{getContent('home', 'service_advice_title', 'Advice & Guidance')}</h3>
               <p className="text-muted mb-6 leading-relaxed">
                 {getContent('home', 'service_advice_description', 'One-to-one confidential support with welfare benefits, housing, immigration, and essential life services in both English and Arabic.')}
               </p>
-              <Link to="/services" className="text-emerald-600 font-semibold hover:text-emerald-700 transition-colors inline-flex items-center gap-2">
+              <Link to="/services" className="text-primary font-semibold hover:text-accent transition-colors inline-flex items-center gap-2">
                 Learn More <ArrowRight size={18} />
               </Link>
             </motion.div>
@@ -364,11 +364,11 @@ export default function Home() {
               >
                 <Users size={32} className="text-blue-600" />
               </motion.div>
-              <h3 className="text-2xl font-bold text-blue-700 mb-4">{getContent('home', 'service_programmes_title', 'Community Programmes')}</h3>
+              <h3 className="text-2xl font-bold text-primary mb-4">{getContent('home', 'service_programmes_title', 'Community Programmes')}</h3>
               <p className="text-muted mb-6 leading-relaxed">
                 {getContent('home', 'service_programmes_description', 'Dedicated programmes for women, elderly, youth, children, and men focusing on social bonds, wellbeing, and cultural heritage.')}
               </p>
-              <Link to="/programmes/women" className="text-blue-600 font-semibold hover:text-blue-700 transition-colors inline-flex items-center gap-2">
+              <Link to="/programmes/women" className="text-primary font-semibold hover:text-accent transition-colors inline-flex items-center gap-2">
                 Explore Programmes <ArrowRight size={18} />
               </Link>
             </motion.div>
@@ -385,11 +385,11 @@ export default function Home() {
               >
                 <Building size={32} className="text-amber-600" />
               </motion.div>
-              <h3 className="text-2xl font-bold text-amber-700 mb-4">{getContent('home', 'service_hub_title', 'Community Hub')}</h3>
+              <h3 className="text-2xl font-bold text-primary mb-4">{getContent('home', 'service_hub_title', 'Community Hub')}</h3>
               <p className="text-muted mb-6 leading-relaxed">
                 {getContent('home', 'service_hub_description', 'A welcoming space for social gatherings, cultural celebrations, and community events that bring our community together.')}
               </p>
-              <Link to="/events" className="text-amber-600 font-semibold hover:text-amber-700 transition-colors inline-flex items-center gap-2">
+              <Link to="/events" className="text-primary font-semibold hover:text-accent transition-colors inline-flex items-center gap-2">
                 View Events <ArrowRight size={18} />
               </Link>
             </motion.div>
@@ -480,7 +480,7 @@ export default function Home() {
                 >
                   <Users size={28} className="text-emerald-600" />
                 </motion.div>
-                <h3 className="text-xl font-bold text-emerald-700 mb-2">{getContent('home', 'get_involved_membership_title', 'Become a Member')}</h3>
+                <h3 className="text-xl font-bold text-primary mb-2">{getContent('home', 'get_involved_membership_title', 'Become a Member')}</h3>
                 <p className="text-muted text-sm">{getContent('home', 'get_involved_membership_desc', 'Join our growing community')}</p>
               </Link>
             </motion.div>
@@ -494,7 +494,7 @@ export default function Home() {
                 >
                   <HandHeart size={28} className="text-rose-600" />
                 </motion.div>
-                <h3 className="text-xl font-bold text-rose-700 mb-2">{getContent('home', 'get_involved_volunteer_title', 'Volunteer')}</h3>
+                <h3 className="text-xl font-bold text-primary mb-2">{getContent('home', 'get_involved_volunteer_title', 'Volunteer')}</h3>
                 <p className="text-muted text-sm">{getContent('home', 'get_involved_volunteer_desc', 'Make a difference')}</p>
               </Link>
             </motion.div>
@@ -508,7 +508,7 @@ export default function Home() {
                 >
                   <Heart size={28} className="text-amber-600" />
                 </motion.div>
-                <h3 className="text-xl font-bold text-amber-700 mb-2">{getContent('home', 'get_involved_donate_title', 'Donate')}</h3>
+                <h3 className="text-xl font-bold text-primary mb-2">{getContent('home', 'get_involved_donate_title', 'Donate')}</h3>
                 <p className="text-muted text-sm">{getContent('home', 'get_involved_donate_desc', 'Support our work')}</p>
               </Link>
             </motion.div>
@@ -522,7 +522,7 @@ export default function Home() {
                 >
                   <Building size={28} className="text-blue-600" />
                 </motion.div>
-                <h3 className="text-xl font-bold text-blue-700 mb-2">{getContent('home', 'get_involved_partner_title', 'Partner With Us')}</h3>
+                <h3 className="text-xl font-bold text-primary mb-2">{getContent('home', 'get_involved_partner_title', 'Partner With Us')}</h3>
                 <p className="text-muted text-sm">{getContent('home', 'get_involved_partner_desc', 'Collaborate for impact')}</p>
               </Link>
             </motion.div>

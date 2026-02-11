@@ -93,7 +93,7 @@ export default function Services() {
                   <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-6">
                     <Users size={32} className="text-emerald-600" />
                   </div>
-                  <h3 className="text-2xl font-bold text-emerald-700 mb-4">
+                  <h3 className="text-2xl font-bold text-primary mb-4">
                     {c('mission_title', language === 'ar' ? 'مهمتنا ومن نساعد' : 'Our Mission and Who We Help')}
                   </h3>
                   <p className="text-muted leading-relaxed">
@@ -110,7 +110,7 @@ export default function Services() {
                   <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-6">
                     <FileText size={32} className="text-blue-600" />
                   </div>
-                  <h3 className="text-2xl font-bold text-blue-700 mb-4">
+                  <h3 className="text-2xl font-bold text-primary mb-4">
                     {c('how_we_help_title', language === 'ar' ? 'كيف نساعد' : 'How We Help')}
                   </h3>
                   <p className="text-muted leading-relaxed">
@@ -181,9 +181,9 @@ export default function Services() {
             >
               {categories.map((service, index) => {
                 const colors = [
-                  { border: 'border-emerald-500', text: 'text-emerald-700', icon: 'text-emerald-600' },
-                  { border: 'border-blue-500', text: 'text-blue-700', icon: 'text-blue-600' },
-                  { border: 'border-amber-500', text: 'text-amber-700', icon: 'text-amber-600' },
+                  { border: 'border-emerald-500', text: 'text-primary', icon: 'text-emerald-600' },
+                  { border: 'border-blue-500', text: 'text-primary', icon: 'text-blue-600' },
+                  { border: 'border-amber-500', text: 'text-primary', icon: 'text-amber-600' },
                 ];
                 const color = colors[index % colors.length];
 

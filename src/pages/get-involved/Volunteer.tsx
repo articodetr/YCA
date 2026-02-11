@@ -125,12 +125,12 @@ export default function Volunteer() {
               >
                 {opportunities.map((opportunity, index) => {
                   const colors = [
-                    { bg: 'bg-emerald-50', border: 'border-emerald-500', text: 'text-emerald-700' },
-                    { bg: 'bg-blue-50', border: 'border-blue-500', text: 'text-blue-700' },
-                    { bg: 'bg-amber-50', border: 'border-amber-500', text: 'text-amber-700' },
-                    { bg: 'bg-rose-50', border: 'border-rose-500', text: 'text-rose-700' },
-                    { bg: 'bg-teal-50', border: 'border-teal-500', text: 'text-teal-700' },
-                    { bg: 'bg-purple-50', border: 'border-purple-500', text: 'text-purple-700' },
+                    { bg: 'bg-white', border: 'border-emerald-500', text: 'text-primary' },
+                    { bg: 'bg-white', border: 'border-blue-500', text: 'text-primary' },
+                    { bg: 'bg-white', border: 'border-amber-500', text: 'text-primary' },
+                    { bg: 'bg-white', border: 'border-rose-500', text: 'text-primary' },
+                    { bg: 'bg-white', border: 'border-teal-500', text: 'text-primary' },
+                    { bg: 'bg-white', border: 'border-purple-500', text: 'text-primary' },
                   ];
                   const color = colors[index % colors.length];
 

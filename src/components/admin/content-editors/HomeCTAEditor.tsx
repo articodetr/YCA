@@ -13,7 +13,7 @@ export default function HomeCTAEditor({
   const { getId, getEn } = useSectionHelper(sections, editedContentEn, editedContentAr);
 
   const preview = (
-    <div className="bg-accent p-6 text-center">
+    <div className="bg-white border-2 border-gray-100 p-6 text-center shadow-sm">
       <h3 className="text-lg font-bold text-primary mb-2">
         {getEn('cta_title') || 'Need Help or Have Questions?'}
       </h3>

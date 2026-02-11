@@ -6,12 +6,14 @@
   --color-primary: #22262D;
   --color-secondary: #3A3F46;
   --color-accent: #E4D4B5;
-  --color-bg-sand: #F0EBDF;
+  --color-bg-sand: #FAFAFA;
   --color-white: #FFFFFF;
   --color-muted: #6A6A6A;
-  --color-border: #A4A19A;
-  --color-hover: #D6C3A1;
-  --color-divider: #E8E2D8;
+  --color-border: #E5E7EB;
+  --color-hover: #F5F5F5;
+  --color-divider: #E5E7EB;
+  --color-background: #FAFAFA;
+  --color-surface: #FFFFFF;
 }
 
 * {

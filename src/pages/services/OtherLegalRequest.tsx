@@ -316,7 +316,7 @@ export default function OtherLegalRequest() {
                 </div>
 
                 {price !== null && (
-                  <div className="bg-accent/30 p-4 rounded-lg mb-8">
+                  <div className="bg-white border-2 border-gray-200 p-4 rounded-lg mb-8 shadow-sm">
                     <p className="text-lg font-semibold text-primary">
                       {txt.amountDue} {price === 0 ? txt.free : `\u00a3${price}`}
                     </p>

@@ -153,7 +153,7 @@ export default function Contact() {
               </motion.div>
 
               <motion.div
-                className="bg-sand p-6 rounded-lg"
+                className="bg-white border-2 border-gray-100 p-6 rounded-lg shadow-sm"
                 variants={scaleIn}
                 initial="hidden"
                 whileInView="visible"

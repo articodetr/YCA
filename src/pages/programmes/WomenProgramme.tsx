@@ -95,7 +95,7 @@ export default function WomenProgramme() {
               </div>
             </div>
 
-            <div className="bg-accent p-8 rounded-lg mb-12">
+            <div className="bg-white border-2 border-gray-100 p-8 rounded-lg mb-12 shadow-sm">
               <div className="flex items-start gap-4">
                 <div className="text-6xl text-primary">"</div>
                 <div>

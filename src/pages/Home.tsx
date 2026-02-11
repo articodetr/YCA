@@ -530,7 +530,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-16 bg-accent">
+      <section className="py-16 bg-white">
         <motion.div
           className="container mx-auto px-4 text-center"
           initial="hidden"

@@ -94,6 +94,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const operationsItems = [
     ...(hasPermission('availability.manage') ? [{ icon: Calendar, label: 'Availability', path: '/admin/availability' }] : []),
     ...(hasPermission('wakala.manage') ? [{ icon: FileText, label: 'Wakala Applications', path: '/admin/wakala' }] : []),
+    { icon: FileText, label: 'Translation Requests', path: '/admin/translations' },
+    { icon: Scale, label: 'Other Legal Requests', path: '/admin/legal-requests' },
     ...(hasPermission('admin.manage') ? [{ icon: Shield, label: 'Admin Management', path: '/admin/admins' }] : []),
     ...(hasPermission('settings.manage') ? [{ icon: Settings, label: 'Settings', path: '/admin/settings' }] : []),
   ];
@@ -135,8 +137,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         { icon: Mail, label: 'Subscribers', path: '/admin/subscribers' },
         { icon: AlertTriangle, label: 'Complaints', path: '/admin/complaints' },
         { icon: Star, label: 'Service Feedback', path: '/admin/feedback' },
-        { icon: FileText, label: 'Translation Requests', path: '/admin/translations' },
-        { icon: Scale, label: 'Other Legal Requests', path: '/admin/legal-requests' },
         { icon: Building2, label: 'Business Supporters', path: '/admin/business-supporters' },
       ],
     }] : []),

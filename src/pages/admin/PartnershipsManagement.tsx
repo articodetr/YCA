@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, Loader2, Download, Eye, X, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import FormResponsesViewer from '../../components/admin/FormResponsesViewer';
 
 interface Partnership {
   id: string;
@@ -173,16 +172,6 @@ export default function PartnershipsManagement() {
               {selected.message && (
                 <div><label className="text-xs font-medium text-gray-500 uppercase">Message</label><p className="text-sm text-gray-900 mt-1 whitespace-pre-wrap">{selected.message}</p></div>
               )}
-
-              <div className="border-t border-gray-200 pt-6 mt-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Form Responses</h3>
-                <FormResponsesViewer
-                  applicationId={selected.id}
-                  formType="partnership"
-                  language="en"
-                />
-              </div>
-
               <div className="border-t border-gray-200 pt-4">
                 <label className="text-xs font-medium text-gray-500 uppercase mb-2 block">Update Status</label>
                 <div className="flex gap-2 flex-wrap">

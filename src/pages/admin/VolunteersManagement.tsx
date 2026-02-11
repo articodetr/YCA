@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, Loader2, Download, Check, X, Eye, CheckCircle, XCircle, Clock, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import FormResponsesViewer from '../../components/admin/FormResponsesViewer';
 
 interface Volunteer {
   id: string;
@@ -234,15 +233,6 @@ export default function VolunteersManagement() {
               {selectedVol.experience && (<div><label className="text-xs font-medium text-gray-500 uppercase">Experience</label><p className="text-sm text-gray-900 mt-1 whitespace-pre-wrap">{selectedVol.experience}</p></div>)}
               {selectedVol.why_volunteer && (<div><label className="text-xs font-medium text-gray-500 uppercase">Why Volunteer</label><p className="text-sm text-gray-900 mt-1 whitespace-pre-wrap">{selectedVol.why_volunteer}</p></div>)}
               {selectedVol.interests && (<div><label className="text-xs font-medium text-gray-500 uppercase">Interests</label><p className="text-sm text-gray-900 mt-1">{selectedVol.interests}</p></div>)}
-
-              <div className="border-t border-gray-200 pt-6 mt-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Form Responses</h3>
-                <FormResponsesViewer
-                  applicationId={selectedVol.id}
-                  formType="volunteer"
-                  language="en"
-                />
-              </div>
 
               <div className="flex gap-3 pt-4 border-t border-gray-200">
                 {selectedVol.status === 'pending' && (

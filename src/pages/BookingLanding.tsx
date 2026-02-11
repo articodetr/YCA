@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   MapPin,
-  FileText,
   HelpCircle,
   ChevronRight,
   User,
@@ -16,7 +15,7 @@ import { useMemberAuth } from '../contexts/MemberAuthContext';
 import { useSiteSettings } from '../contexts/SiteSettingsContext';
 import Layout from '../components/Layout';
 
-type ServiceType = 'in_person' | 'wakala' | null;
+type ServiceType = 'in_person' | null;
 
 export default function BookingLanding() {
   const [selectedService, setSelectedService] = useState<ServiceType>(null);
@@ -34,9 +33,6 @@ export default function BookingLanding() {
       inPersonTitle: 'Visit Our Centre',
       inPersonDesc: 'Book an in-person appointment at our premises for advisory services, support, and consultations.',
       inPersonFeatures: ['Face-to-face consultation', 'Immediate assistance', 'Document support'],
-      wakalaTitle: 'Wakala Service',
-      wakalaDesc: 'Let us handle official procedures and paperwork on your behalf through our authorized representation service.',
-      wakalaFeatures: ['Official representation', 'Document handling', 'Professional service'],
       otherTitle: 'Other Services',
       otherDesc: 'Explore our programmes, events, and community resources.',
       otherFeatures: ['Community programmes', 'Events & workshops', 'Resources & support'],
@@ -61,9 +57,6 @@ export default function BookingLanding() {
       inPersonTitle: 'زيارة مركزنا',
       inPersonDesc: 'احجز موعداً شخصياً في مقرنا للحصول على الاستشارات والدعم والمساعدة.',
       inPersonFeatures: ['استشارة وجهاً لوجه', 'مساعدة فورية', 'دعم الوثائق'],
-      wakalaTitle: 'خدمة الوكالة',
-      wakalaDesc: 'دعنا نتولى الإجراءات الرسمية والأوراق نيابة عنك من خلال خدمة التمثيل المعتمدة لدينا.',
-      wakalaFeatures: ['تمثيل رسمي', 'التعامل مع الوثائق', 'خدمة احترافية'],
       otherTitle: 'خدمات أخرى',
       otherDesc: 'استكشف برامجنا وفعالياتنا وموارد المجتمع.',
       otherFeatures: ['برامج مجتمعية', 'فعاليات وورش عمل', 'موارد ودعم'],
@@ -89,8 +82,6 @@ export default function BookingLanding() {
   const handleProceed = (service: ServiceType) => {
     if (service === 'in_person') {
       navigate('/member/dashboard?openAdvisory=true');
-    } else if (service === 'wakala') {
-      navigate('/member/dashboard?openWakala=true');
     }
   };
 
@@ -102,14 +93,6 @@ export default function BookingLanding() {
       description: t.inPersonDesc,
       features: t.inPersonFeatures,
       color: 'emerald',
-    },
-    {
-      id: 'wakala' as ServiceType,
-      icon: FileText,
-      title: t.wakalaTitle,
-      description: t.wakalaDesc,
-      features: t.wakalaFeatures,
-      color: 'blue',
     },
   ];
 
@@ -210,14 +193,12 @@ export default function BookingLanding() {
                   {t.backToServices}
                 </button>
                 <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                    selectedService === 'wakala' ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'
-                  }`}>
-                    {selectedService === 'wakala' ? <FileText className="w-6 h-6" /> : <Building2 className="w-6 h-6" />}
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-emerald-100 text-emerald-600">
+                    <Building2 className="w-6 h-6" />
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-gray-900">
-                      {selectedService === 'wakala' ? t.wakalaTitle : t.inPersonTitle}
+                      {t.inPersonTitle}
                     </h2>
                     <p className="text-gray-500 text-sm">{t.continueWith}</p>
                   </div>

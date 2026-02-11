@@ -40,9 +40,7 @@ export default function AuthCallback() {
     }
 
     if (savedRedirect === '/apply' && savedService) {
-      if (savedService === 'wakala') {
-        navigate('/member/dashboard?openWakala=true', { replace: true });
-      } else if (savedService === 'in_person') {
+      if (savedService === 'in_person') {
         navigate('/member/dashboard?openAdvisory=true', { replace: true });
       } else {
         navigate('/member/dashboard', { replace: true });

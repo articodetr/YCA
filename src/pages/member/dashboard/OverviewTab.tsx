@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Shield, FileText, CreditCard, Plus, MessageSquare,
+  Shield, CreditCard, Plus, MessageSquare,
   Bell, Calendar, Handshake, BookOpen,
 } from 'lucide-react';
 import { staggerContainer, staggerItem } from '../../../lib/animations';
@@ -11,11 +11,9 @@ import MembershipCard from '../../../components/member/MembershipCard';
 interface Props {
   memberRecord: any;
   membershipApp: any;
-  wakalaApps: any[];
+  bookings: any[];
   paymentHistory: any[];
   notifications: any[];
-  onNewWakala: () => void;
-  onNewAdvisory?: () => void;
   t: Record<string, string>;
 }
 
@@ -38,11 +36,7 @@ function StatusBadge({ status, t }: { status: string; t: Record<string, string> 
   );
 }
 
-function isAdvisory(serviceType: string) {
-  return serviceType?.startsWith('advisory_');
-}
-
-export default function OverviewTab({ memberRecord, membershipApp, wakalaApps, paymentHistory, notifications, t }: Props) {
+export default function OverviewTab({ memberRecord, membershipApp, bookings, paymentHistory, notifications, t }: Props) {
   const { language } = useLanguage();
   const isRTL = language === 'ar';
 
@@ -50,21 +44,18 @@ export default function OverviewTab({ memberRecord, membershipApp, wakalaApps, p
     .filter(p => p.status === 'paid')
     .reduce((sum, p) => sum + (p.amount || 0), 0);
 
-  const advisoryCount = wakalaApps.filter(a => isAdvisory(a.service_type)).length;
-  const wakalaCount = wakalaApps.filter(a => !isAdvisory(a.service_type)).length;
+  const bookingCount = bookings.length;
   const unreadNotifs = notifications.filter(n => !n.is_read).length;
 
-  const upcomingAppointments = wakalaApps
+  const upcomingAppointments = bookings
     .filter(a => a.booking_date && new Date(a.booking_date) >= new Date() && a.status !== 'cancelled')
     .sort((a, b) => new Date(a.booking_date).getTime() - new Date(b.booking_date).getTime())
     .slice(0, 3);
 
   const recentItems = [
-    ...wakalaApps.slice(0, 3).map(app => ({
-      type: isAdvisory(app.service_type) ? 'advisory' as const : 'application' as const,
-      title: isAdvisory(app.service_type)
-        ? (language === 'ar' ? 'موعد استشاري' : 'Advisory Appointment')
-        : (language === 'ar' ? 'طلب وكالة' : 'Wakala Application'),
+    ...bookings.slice(0, 3).map(app => ({
+      type: 'advisory' as const,
+      title: language === 'ar' ? 'موعد استشاري' : 'Advisory Appointment',
       date: app.created_at,
       status: app.status,
     })),
@@ -104,19 +95,9 @@ export default function OverviewTab({ memberRecord, membershipApp, wakalaApps, p
             <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
               <MessageSquare className="w-5 h-5 text-blue-600" />
             </div>
-            <span className="text-sm text-muted">{language === 'ar' ? 'استشارات' : 'Advisory'}</span>
+            <span className="text-sm text-muted">{language === 'ar' ? 'الحجوزات' : 'Bookings'}</span>
           </div>
-          <p className="text-2xl font-bold text-primary">{advisoryCount}</p>
-        </div>
-
-        <div className="bg-white rounded-xl border border-divider p-5">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-sand flex items-center justify-center">
-              <FileText className="w-5 h-5 text-primary" />
-            </div>
-            <span className="text-sm text-muted">{language === 'ar' ? 'وكالات' : 'Wakala'}</span>
-          </div>
-          <p className="text-2xl font-bold text-primary">{wakalaCount}</p>
+          <p className="text-2xl font-bold text-primary">{bookingCount}</p>
         </div>
 
         <div className="bg-white rounded-xl border border-divider p-5">
@@ -212,9 +193,7 @@ export default function OverviewTab({ memberRecord, membershipApp, wakalaApps, p
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-primary">
-                    {isAdvisory(app.service_type)
-                      ? (language === 'ar' ? 'موعد استشاري' : 'Advisory Appointment')
-                      : (language === 'ar' ? 'موعد وكالة' : 'Wakala Appointment')}
+                    {language === 'ar' ? 'موعد استشاري' : 'Advisory Appointment'}
                   </p>
                   <p className="text-xs text-muted">
                     {new Date(app.booking_date).toLocaleDateString(isRTL ? 'ar-GB' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -266,13 +245,11 @@ export default function OverviewTab({ memberRecord, membershipApp, wakalaApps, p
             {recentItems.map((item, idx) => (
               <div key={idx} className="flex items-center gap-3 py-3 border-b border-divider last:border-0">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  item.type === 'advisory' ? 'bg-blue-50' : item.type === 'payment' ? 'bg-emerald-50' : 'bg-amber-50'
+                  item.type === 'advisory' ? 'bg-blue-50' : 'bg-emerald-50'
                 }`}>
                   {item.type === 'advisory'
                     ? <MessageSquare className="w-4 h-4 text-blue-600" />
-                    : item.type === 'payment'
-                      ? <CreditCard className="w-4 h-4 text-emerald-600" />
-                      : <FileText className="w-4 h-4 text-amber-600" />
+                    : <CreditCard className="w-4 h-4 text-emerald-600" />
                   }
                 </div>
                 <div className="flex-1 min-w-0">

@@ -32,7 +32,6 @@ const translations = {
     wakalaApplications: 'Applications',
     paymentHistory: 'Payments',
     notifications: 'Notifications',
-    newWakalaApp: 'New Wakala Application',
     logout: 'Logout',
     pending: 'Pending',
     approved: 'Approved',
@@ -40,7 +39,6 @@ const translations = {
     paid: 'Paid',
     unpaid: 'Unpaid',
     noMembership: 'No membership application found',
-    noWakala: 'No Wakala applications yet',
     noPayments: 'No payment history',
     applyMembership: 'Apply for Membership',
     email: 'Email',
@@ -95,7 +93,6 @@ const translations = {
     wakalaApplications: 'الطلبات',
     paymentHistory: 'المدفوعات',
     notifications: 'الإشعارات',
-    newWakalaApp: 'طلب وكالة جديد',
     logout: 'تسجيل الخروج',
     pending: 'قيد الانتظار',
     approved: 'موافق عليه',
@@ -103,7 +100,6 @@ const translations = {
     paid: 'مدفوع',
     unpaid: 'غير مدفوع',
     noMembership: 'لم يتم العثور على طلب عضوية',
-    noWakala: 'لا توجد طلبات وكالة بعد',
     noPayments: 'لا يوجد سجل للمدفوعات',
     applyMembership: 'التقدم للعضوية',
     email: 'البريد الإلكتروني',
@@ -170,7 +166,7 @@ export default function MemberDashboard() {
 
   const [loading, setLoading] = useState(true);
   const [membershipApp, setMembershipApp] = useState<any>(null);
-  const [wakalaApps, setWakalaApps] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
   const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
   const [memberRecord, setMemberRecord] = useState<any>(null);
   const [memberProfile, setMemberProfile] = useState<any>(null);
@@ -218,23 +214,6 @@ export default function MemberDashboard() {
         if (!paymentIntent) return;
 
         if (paymentIntent.status === 'succeeded') {
-          const pendingFormDataStr = sessionStorage.getItem('pending_wakala_form_data');
-          if (pendingFormDataStr) {
-            try {
-              const formPayload = JSON.parse(pendingFormDataStr);
-              await supabase
-                .from('wakala_applications')
-                .insert([{
-                  ...formPayload,
-                  payment_status: 'paid',
-                  status: 'submitted',
-                }]);
-              sessionStorage.removeItem('pending_wakala_form_data');
-            } catch (insertErr) {
-              console.error('Error creating wakala application after redirect:', insertErr);
-            }
-          }
-
           const meta = paymentIntent.metadata as Record<string, string> | undefined;
           const membershipAppId = sessionStorage.getItem('pending_membership_payment') || meta?.application_id;
           if (membershipAppId) {
@@ -273,7 +252,6 @@ export default function MemberDashboard() {
           showToast(language === 'ar' ? 'تم الدفع بنجاح!' : 'Payment completed successfully!', 'success');
           fetchData();
         } else if (paymentIntent.status === 'requires_payment_method' || redirectStatus === 'failed') {
-          sessionStorage.removeItem('pending_wakala_form_data');
           showToast(language === 'ar' ? 'فشل الدفع. يرجى المحاولة مرة أخرى.' : 'Payment failed. Please try again.', 'error');
         }
 
@@ -288,7 +266,7 @@ export default function MemberDashboard() {
     if (!user) return;
     setLoading(true);
     try {
-      const [membershipRes, memberByIdRes, memberByEmailRes, profileRes, wakalaRes, paymentsRes, notifRes] = await Promise.all([
+      const [membershipRes, memberByIdRes, memberByEmailRes, profileRes, bookingsRes, paymentsRes, notifRes] = await Promise.all([
         supabase
           .from('membership_applications')
           .select('*')
@@ -316,6 +294,7 @@ export default function MemberDashboard() {
           .from('wakala_applications')
           .select('*, availability_slots(service_id)')
           .eq('user_id', user.id)
+          .like('service_type', 'advisory_%')
           .neq('status', 'pending_payment')
           .neq('status', 'deleted_by_admin')
           .order('created_at', { ascending: false }),
@@ -336,7 +315,7 @@ export default function MemberDashboard() {
       setMembershipApp(membershipRes.data);
       setMemberRecord(resolvedMember);
       setMemberProfile(profileRes.data);
-      setWakalaApps(wakalaRes.data || []);
+      setBookings(bookingsRes.data || []);
       setPaymentHistory(paymentsRes.data || []);
       setNotifications(notifRes.data || []);
       setUnreadCount((notifRes.data || []).filter((n: any) => !n.is_read).length);
@@ -535,16 +514,15 @@ export default function MemberDashboard() {
               <OverviewTab
                 memberRecord={memberRecord}
                 membershipApp={membershipApp}
-                wakalaApps={wakalaApps}
+                bookings={bookings}
                 paymentHistory={paymentHistory}
                 notifications={notifications}
-                onNewWakala={() => {}}
                 t={t}
               />
             )}
             {activeTab === 'applications' && (
               <ApplicationsTab
-                wakalaApps={wakalaApps}
+                bookings={bookings}
                 onRefresh={fetchData}
                 t={t}
               />

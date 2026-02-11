@@ -24,13 +24,6 @@ const steps = {
       color: 'bg-blue-50 text-blue-600',
     },
     {
-      icon: FileText,
-      title: 'Wakala (Power of Attorney)',
-      desc: 'Apply for official wakala documents with our streamlined process.',
-      link: '/book',
-      color: 'bg-emerald-50 text-emerald-600',
-    },
-    {
       icon: Shield,
       title: 'Membership Benefits',
       desc: 'Join as a member for reduced fees and priority appointments.',

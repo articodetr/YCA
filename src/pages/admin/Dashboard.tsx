@@ -7,7 +7,6 @@ import {
   Mail,
   Loader2,
   ArrowUpRight,
-  FileText,
   Newspaper,
   MessageSquare,
   Clock,
@@ -25,9 +24,7 @@ interface Stats {
   totalMemberships: number;
   totalSubscribers: number;
   totalContacts: number;
-  totalWakala: number;
   pendingMemberships: number;
-  pendingWakala: number;
   recentDonations: any[];
   recentRegistrations: any[];
   recentContacts: any[];
@@ -42,7 +39,6 @@ const quickActions = [
   { label: 'Memberships', path: '/admin/memberships', icon: UserCheck, color: 'bg-emerald-500' },
   { label: 'Messages', path: '/admin/contacts', icon: MessageSquare, color: 'bg-cyan-500' },
   { label: 'Donations', path: '/admin/donations', icon: Heart, color: 'bg-rose-500' },
-  { label: 'Wakala', path: '/admin/wakala', icon: FileText, color: 'bg-teal-500' },
 ];
 
 export default function Dashboard() {
@@ -55,9 +51,7 @@ export default function Dashboard() {
     totalMemberships: 0,
     totalSubscribers: 0,
     totalContacts: 0,
-    totalWakala: 0,
     pendingMemberships: 0,
-    pendingWakala: 0,
     recentDonations: [],
     recentRegistrations: [],
     recentContacts: [],
@@ -82,9 +76,7 @@ export default function Dashboard() {
         membershipsRes,
         subscribersRes,
         contactsRes,
-        wakalaRes,
         pendingMembershipsRes,
-        pendingWakalaRes,
         recentDonationsRes,
         recentRegistrationsRes,
         recentContactsRes,
@@ -95,12 +87,10 @@ export default function Dashboard() {
         supabase.from('donations').select('amount', { count: 'exact' }),
         supabase.from('events').select('*', { count: 'exact' }),
         supabase.from('event_registrations').select('*', { count: 'exact' }),
-        supabase.from('membership_applications').select('*', { count: 'exact' }).neq('status', 'deleted_by_admin'),
+        supabase.from('membership_applications').select('*', { count: 'exact' }),
         supabase.from('newsletter_subscribers').select('*', { count: 'exact' }),
         supabase.from('contact_submissions').select('*', { count: 'exact' }),
-        supabase.from('wakala_applications').select('*', { count: 'exact' }).neq('status', 'deleted_by_admin'),
         supabase.from('membership_applications').select('*', { count: 'exact' }).eq('status', 'pending'),
-        supabase.from('wakala_applications').select('*', { count: 'exact' }).eq('status', 'submitted'),
         supabase.from('donations').select('*').order('created_at', { ascending: false }).limit(5),
         supabase.from('event_registrations').select('*, events(title)').order('created_at', { ascending: false }).limit(5),
         supabase.from('contact_submissions').select('*').order('created_at', { ascending: false }).limit(4),
@@ -119,9 +109,7 @@ export default function Dashboard() {
         totalMemberships: membershipsRes.count || 0,
         totalSubscribers: subscribersRes.count || 0,
         totalContacts: contactsRes.count || 0,
-        totalWakala: wakalaRes.count || 0,
         pendingMemberships: pendingMembershipsRes.count || 0,
-        pendingWakala: pendingWakalaRes.count || 0,
         recentDonations: recentDonationsRes.data || [],
         recentRegistrations: recentRegistrationsRes.data || [],
         recentContacts: recentContactsRes.data || [],
@@ -194,16 +182,6 @@ export default function Dashboard() {
       iconBg: 'bg-blue-100',
       iconColor: 'text-blue-600',
       link: '/admin/events',
-    },
-    {
-      title: 'Wakala',
-      value: stats.totalWakala.toString(),
-      subtitle: stats.pendingWakala > 0 ? `${stats.pendingWakala} pending` : 'Applications',
-      icon: FileText,
-      iconBg: 'bg-teal-100',
-      iconColor: 'text-teal-600',
-      link: '/admin/wakala',
-      badge: stats.pendingWakala > 0 ? stats.pendingWakala : undefined,
     },
     {
       title: 'Subscribers',

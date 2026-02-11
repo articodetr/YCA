@@ -92,9 +92,7 @@ export default function MemberLogin() {
       if (redirectPath === '/book' && serviceType) {
         navigate(`/book?service=${serviceType}`);
       } else if (redirectPath === '/apply' && serviceType) {
-        if (serviceType === 'wakala') {
-          navigate('/member/dashboard?openWakala=true');
-        } else if (serviceType === 'in_person') {
+        if (serviceType === 'in_person') {
           navigate('/member/dashboard?openAdvisory=true');
         } else {
           navigate('/member/dashboard');

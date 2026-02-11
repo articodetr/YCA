@@ -30,7 +30,6 @@ const translations = {
     fee: 'Fee',
     free: 'Free',
     advisory: 'Advisory Bureau',
-    wakala: 'Wakala Service',
     statuses: {
       submitted: 'Submitted',
       pending_payment: 'Pending Payment',

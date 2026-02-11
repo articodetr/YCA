@@ -41,7 +41,6 @@ export default function PaymentResult() {
         bookingRef: 'Booking Reference',
         donation: 'Donation',
         membership: 'Membership',
-        wakala: 'Wakala Service',
         event: 'Event Registration',
         backHome: 'Back to Home',
         tryAgain: 'Try Again',

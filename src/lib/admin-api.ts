@@ -1,8 +1,6 @@
 import { supabase } from './supabase';
 
 const SOFT_DELETE_TABLES = [
-  'wakala_applications',
-  'membership_applications',
   'event_registrations',
   'volunteer_applications',
   'partnership_inquiries',
@@ -15,21 +13,6 @@ const SOFT_DELETE_TABLES = [
   'newsletter_subscribers',
 ];
 
-async function releaseWakalaSlot(id: string) {
-  const { data: app } = await supabase
-    .from('wakala_applications')
-    .select('slot_id')
-    .eq('id', id)
-    .maybeSingle();
-
-  if (app?.slot_id) {
-    await supabase
-      .from('booking_slots')
-      .update({ is_available: true })
-      .eq('id', app.slot_id);
-  }
-}
-
 export async function adminDeleteRecord(
   table: string,
   id: string
@@ -38,10 +21,6 @@ export async function adminDeleteRecord(
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       return { success: false, error: 'Not authenticated' };
-    }
-
-    if (table === 'wakala_applications') {
-      await releaseWakalaSlot(id);
     }
 
     if (SOFT_DELETE_TABLES.includes(table)) {

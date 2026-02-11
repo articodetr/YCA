@@ -68,11 +68,6 @@ const PERMISSION_GROUPS: PermissionGroup[] = [
         description: 'Manage booking availability and slots',
       },
       {
-        key: 'wakala.manage',
-        label: 'Wakala Applications',
-        description: 'View and manage Wakala applications',
-      },
-      {
         key: 'admin.manage',
         label: 'Admin Management',
         description: 'Manage admin accounts and permissions',

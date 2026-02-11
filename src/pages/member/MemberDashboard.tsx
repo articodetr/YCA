@@ -392,6 +392,15 @@ export default function MemberDashboard() {
   };
 
   const handleCancelAppointment = async (app: any) => {
+    if (app.booking_date && app.start_time) {
+      const appointmentDate = new Date(app.booking_date);
+      const [h, m] = app.start_time.split(':').map(Number);
+      appointmentDate.setHours(h, m, 0, 0);
+      if (appointmentDate < new Date()) {
+        showToast(language === 'ar' ? 'لا يمكن إلغاء موعد منتهي' : 'Cannot cancel a past appointment', 'error');
+        return;
+      }
+    }
     if (!confirm(t.confirmCancel)) return;
     if (!app.slot_id || !app.duration_minutes || !app.booking_date || !app.start_time) {
       showToast(t.cancelError, 'error');

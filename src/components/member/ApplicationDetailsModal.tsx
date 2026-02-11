@@ -240,6 +240,17 @@ export default function ApplicationDetailsModal({ isOpen, onClose, application, 
   const isCancelled = application.status === 'cancelled';
   const StatusIcon = statusConfig[application.status]?.icon || Clock;
 
+  const isAppointmentPast = (() => {
+    if (!application.booking_date) return false;
+    const appointmentDate = new Date(application.booking_date);
+    if (application.start_time) {
+      const [h, m] = application.start_time.split(':').map(Number);
+      appointmentDate.setHours(h, m, 0, 0);
+    }
+    return appointmentDate < new Date();
+  })();
+  const canEdit = !isCancelled && application.status !== 'completed' && !isAppointmentPast;
+
   return (
     <>
       <AnimatePresence>
@@ -393,7 +404,7 @@ export default function ApplicationDetailsModal({ isOpen, onClose, application, 
                 <div className="space-y-4">
                   <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center justify-between">
                     {language === 'ar' ? 'معلومات الاتصال' : 'Contact Information'}
-                    {!isEditMode && !isCancelled && application.status !== 'completed' && (
+                    {!isEditMode && canEdit && (
                       <button
                         onClick={() => setIsEditMode(true)}
                         className="text-xs px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-1.5"
@@ -401,6 +412,11 @@ export default function ApplicationDetailsModal({ isOpen, onClose, application, 
                         <Edit2 className="w-3.5 h-3.5" />
                         {language === 'ar' ? 'تعديل' : 'Edit'}
                       </button>
+                    )}
+                    {isAppointmentPast && !isCancelled && application.status !== 'completed' && (
+                      <span className="text-xs px-3 py-1.5 bg-gray-100 text-gray-500 rounded-lg">
+                        {language === 'ar' ? 'انتهى الموعد' : 'Appointment passed'}
+                      </span>
                     )}
                   </h3>
 

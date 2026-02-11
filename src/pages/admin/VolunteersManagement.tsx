@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Loader2, Download, Check, X, Eye, CheckCircle, XCircle, Clock, Trash2 } from 'lucide-react';
+import { Search, Loader2, Download, Check, X, Eye, CheckCircle, XCircle, Clock, Trash2, Pencil, Save, MessageSquare } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface Volunteer {
@@ -19,6 +19,16 @@ interface Volunteer {
   created_at: string;
 }
 
+interface FormResponse {
+  id: string;
+  question_id: string;
+  response_text: string;
+  question_text_en: string;
+  question_text_ar: string;
+  question_type: string;
+  order_index: number;
+}
+
 interface Toast {
   message: string;
   type: 'success' | 'error';
@@ -31,6 +41,12 @@ export default function VolunteersManagement() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedVol, setSelectedVol] = useState<Volunteer | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
+  const [formResponses, setFormResponses] = useState<FormResponse[]>([]);
+  const [loadingResponses, setLoadingResponses] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editData, setEditData] = useState<Record<string, any>>({});
+  const [editResponses, setEditResponses] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => { fetchVolunteers(); }, []);
   useEffect(() => {
@@ -53,6 +69,95 @@ export default function VolunteersManagement() {
     }
   };
 
+  const fetchFormResponses = async (applicationId: string) => {
+    setLoadingResponses(true);
+    try {
+      const { data, error } = await supabase
+        .from('form_responses')
+        .select('id, question_id, response_text, form_questions(question_text_en, question_text_ar, question_type, order_index)')
+        .eq('form_type', 'volunteer')
+        .eq('application_id', applicationId)
+        .order('created_at');
+
+      if (error) throw error;
+
+      const mapped = (data || []).map((r: any) => ({
+        id: r.id,
+        question_id: r.question_id,
+        response_text: r.response_text || '',
+        question_text_en: r.form_questions?.question_text_en || '',
+        question_text_ar: r.form_questions?.question_text_ar || '',
+        question_type: r.form_questions?.question_type || 'text',
+        order_index: r.form_questions?.order_index || 0,
+      }));
+
+      mapped.sort((a: FormResponse, b: FormResponse) => a.order_index - b.order_index);
+      setFormResponses(mapped);
+    } catch (error) {
+      console.error('Error fetching form responses:', error);
+      setFormResponses([]);
+    } finally {
+      setLoadingResponses(false);
+    }
+  };
+
+  const openDetail = async (v: Volunteer) => {
+    setSelectedVol(v);
+    setEditing(false);
+    await fetchFormResponses(v.id);
+  };
+
+  const startEditing = () => {
+    if (!selectedVol) return;
+    setEditData({
+      full_name: selectedVol.full_name || '',
+      email: selectedVol.email || '',
+      phone: selectedVol.phone || '',
+      address: selectedVol.address || '',
+      availability: selectedVol.availability || '',
+      experience: selectedVol.experience || '',
+      why_volunteer: selectedVol.why_volunteer || '',
+      interests: selectedVol.interests || '',
+      skills: selectedVol.skills || '',
+      emergency_contact_name: selectedVol.emergency_contact_name || '',
+      emergency_contact_phone: selectedVol.emergency_contact_phone || '',
+    });
+    const respMap: Record<string, string> = {};
+    formResponses.forEach(r => { respMap[r.id] = r.response_text; });
+    setEditResponses(respMap);
+    setEditing(true);
+  };
+
+  const saveEdits = async () => {
+    if (!selectedVol) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('volunteer_applications')
+        .update({ ...editData, updated_at: new Date().toISOString() })
+        .eq('id', selectedVol.id);
+      if (error) throw error;
+
+      for (const [responseId, text] of Object.entries(editResponses)) {
+        const original = formResponses.find(r => r.id === responseId);
+        if (original && original.response_text !== text) {
+          await supabase.from('form_responses').update({ response_text: text }).eq('id', responseId);
+        }
+      }
+
+      setToast({ message: 'Changes saved successfully', type: 'success' });
+      setEditing(false);
+      await fetchVolunteers();
+      await fetchFormResponses(selectedVol.id);
+      setSelectedVol(prev => prev ? { ...prev, ...editData } : null);
+    } catch (error) {
+      console.error('Error saving:', error);
+      setToast({ message: 'Failed to save changes', type: 'error' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const updateStatus = async (id: string, status: string) => {
     try {
       const { error } = await supabase
@@ -71,13 +176,9 @@ export default function VolunteersManagement() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this volunteer application?')) return;
-
     try {
-      const { error } = await supabase
-        .from('volunteer_applications')
-        .delete()
-        .eq('id', id);
-
+      await supabase.from('form_responses').delete().eq('application_id', id).eq('form_type', 'volunteer');
+      const { error } = await supabase.from('volunteer_applications').delete().eq('id', id);
       if (error) throw error;
       setToast({ message: 'Volunteer deleted successfully', type: 'success' });
       await fetchVolunteers();
@@ -121,6 +222,34 @@ export default function VolunteersManagement() {
       <span className={`inline-block px-2.5 py-1 text-xs font-semibold rounded-full capitalize ${styles[status] || styles.pending}`}>
         {status}
       </span>
+    );
+  };
+
+  const editableField = (label: string, key: string, type: 'text' | 'textarea' = 'text') => {
+    const value = editing ? editData[key] : selectedVol?.[key as keyof Volunteer];
+    return (
+      <div>
+        <label className="text-xs font-medium text-gray-500 uppercase">{label}</label>
+        {editing ? (
+          type === 'textarea' ? (
+            <textarea
+              value={editData[key] || ''}
+              onChange={(e) => setEditData(prev => ({ ...prev, [key]: e.target.value }))}
+              rows={3}
+              className="w-full mt-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            />
+          ) : (
+            <input
+              type="text"
+              value={editData[key] || ''}
+              onChange={(e) => setEditData(prev => ({ ...prev, [key]: e.target.value }))}
+              className="w-full mt-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            />
+          )
+        ) : (
+          <p className="text-sm text-gray-900 mt-0.5 whitespace-pre-wrap">{(value as string) || '-'}</p>
+        )}
+      </div>
     );
   };
 
@@ -182,7 +311,7 @@ export default function VolunteersManagement() {
                     <td className="px-4 py-3.5 text-sm text-gray-600">{new Date(v.created_at).toLocaleDateString()}</td>
                     <td className="px-4 py-3.5">
                       <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => setSelectedVol(v)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors" title="View">
+                        <button onClick={() => openDetail(v)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors" title="View">
                           <Eye className="w-4 h-4" />
                         </button>
                         {v.status === 'pending' && (
@@ -217,22 +346,85 @@ export default function VolunteersManagement() {
                 <h2 className="text-xl font-bold text-gray-900">{selectedVol.full_name}</h2>
                 <p className="text-sm text-gray-500 mt-1">{selectedVol.email}</p>
               </div>
-              <button onClick={() => setSelectedVol(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+              <div className="flex items-center gap-2">
+                {!editing ? (
+                  <button onClick={startEditing} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                    <Pencil className="w-3.5 h-3.5" /> Edit
+                  </button>
+                ) : (
+                  <>
+                    <button onClick={saveEdits} disabled={saving} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors disabled:opacity-50">
+                      {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Save
+                    </button>
+                    <button onClick={() => setEditing(false)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                      Cancel
+                    </button>
+                  </>
+                )}
+                <button onClick={() => { setSelectedVol(null); setEditing(false); }} className="text-gray-400 hover:text-gray-600">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
             <div className="space-y-6">
               <div>{getStatusBadge(selectedVol.status)}</div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="text-xs font-medium text-gray-500 uppercase">Phone</label><p className="text-sm text-gray-900 mt-0.5">{selectedVol.phone || '-'}</p></div>
-                <div><label className="text-xs font-medium text-gray-500 uppercase">Availability</label><p className="text-sm text-gray-900 mt-0.5">{selectedVol.availability || '-'}</p></div>
-                <div><label className="text-xs font-medium text-gray-500 uppercase">Address</label><p className="text-sm text-gray-900 mt-0.5">{selectedVol.address || '-'}</p></div>
-                <div><label className="text-xs font-medium text-gray-500 uppercase">Applied On</label><p className="text-sm text-gray-900 mt-0.5">{new Date(selectedVol.created_at).toLocaleString()}</p></div>
-                {selectedVol.emergency_contact_name && (
-                  <div><label className="text-xs font-medium text-gray-500 uppercase">Emergency Contact</label><p className="text-sm text-gray-900 mt-0.5">{selectedVol.emergency_contact_name} {selectedVol.emergency_contact_phone && `- ${selectedVol.emergency_contact_phone}`}</p></div>
-                )}
+                {editableField('Full Name', 'full_name')}
+                {editableField('Email', 'email')}
+                {editableField('Phone', 'phone')}
+                {editableField('Address', 'address')}
+                {editableField('Availability', 'availability')}
+                <div>
+                  <label className="text-xs font-medium text-gray-500 uppercase">Applied On</label>
+                  <p className="text-sm text-gray-900 mt-0.5">{new Date(selectedVol.created_at).toLocaleString()}</p>
+                </div>
+                {editableField('Emergency Contact', 'emergency_contact_name')}
+                {editableField('Emergency Phone', 'emergency_contact_phone')}
               </div>
-              {selectedVol.experience && (<div><label className="text-xs font-medium text-gray-500 uppercase">Experience</label><p className="text-sm text-gray-900 mt-1 whitespace-pre-wrap">{selectedVol.experience}</p></div>)}
-              {selectedVol.why_volunteer && (<div><label className="text-xs font-medium text-gray-500 uppercase">Why Volunteer</label><p className="text-sm text-gray-900 mt-1 whitespace-pre-wrap">{selectedVol.why_volunteer}</p></div>)}
-              {selectedVol.interests && (<div><label className="text-xs font-medium text-gray-500 uppercase">Interests</label><p className="text-sm text-gray-900 mt-1">{selectedVol.interests}</p></div>)}
+              {editableField('Skills', 'skills', 'textarea')}
+              {editableField('Experience', 'experience', 'textarea')}
+              {editableField('Why Volunteer', 'why_volunteer', 'textarea')}
+              {editableField('Interests', 'interests', 'textarea')}
+
+              {(formResponses.length > 0 || loadingResponses) && (
+                <div className="border-t border-gray-200 pt-4">
+                  <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2 mb-4">
+                    <MessageSquare className="w-4 h-4" /> Form Responses
+                  </h3>
+                  {loadingResponses ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {formResponses.map((r) => (
+                        <div key={r.id}>
+                          <label className="text-xs font-medium text-gray-500">{r.question_text_en}</label>
+                          {editing ? (
+                            r.question_type === 'textarea' ? (
+                              <textarea
+                                value={editResponses[r.id] || ''}
+                                onChange={(e) => setEditResponses(prev => ({ ...prev, [r.id]: e.target.value }))}
+                                rows={2}
+                                className="w-full mt-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                              />
+                            ) : (
+                              <input
+                                type="text"
+                                value={editResponses[r.id] || ''}
+                                onChange={(e) => setEditResponses(prev => ({ ...prev, [r.id]: e.target.value }))}
+                                className="w-full mt-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                              />
+                            )
+                          ) : (
+                            <p className="text-sm text-gray-900 mt-0.5 whitespace-pre-wrap">{r.response_text || '-'}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="flex gap-3 pt-4 border-t border-gray-200">
                 {selectedVol.status === 'pending' && (

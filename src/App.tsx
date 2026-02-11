@@ -190,6 +190,7 @@ function App() {
                 <Route path="/get-involved/business-support" element={<BusinessSupport />} />
                 <Route path="/get-involved/donate" element={<Donate />} />
 
+                <Route path="/services/legal" element={<Navigate to="/book" replace />} />
                 <Route path="/services/legal/translation" element={<Navigate to="/book?service=translation" replace />} />
                 <Route path="/services/legal/other" element={<Navigate to="/book?service=other" replace />} />
                 <Route path="/services/legal/wakala" element={<Navigate to="/book?service=wakala" replace />} />

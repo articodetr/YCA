@@ -50,13 +50,16 @@ const translationsData = {
     attorneyPassport: 'Attorney Passport Copy',
     witnessPassports: 'Witness Passports (Optional)',
     pricingInfo: 'Pricing Information',
-    priceMember: '\u00A320 - First wakala for eligible members (10+ days membership)',
-    priceStandard: '\u00A340 - Standard rate',
+    priceMember: 'FREE - First wakala for eligible members (10+ days membership)',
+    priceMemberSecond: '\u00A320 - Subsequent wakalas for members',
+    priceStandard: '\u00A340 - Standard rate (non-members)',
     yourPrice: 'Your Price',
+    priceFree: 'FREE',
     specialRequests: 'Additional Notes (Optional)',
     membershipNumber: 'Membership Number',
     consentLabel: 'I confirm that I agree to the use of my information in line with YCA Birmingham policies',
     submitAndPay: 'Submit & Proceed to Payment',
+    submitFree: 'Submit Application',
     submitting: 'Processing...',
     errorMessage: 'Failed to submit application. Please try again.',
     fillAllFields: 'Please fill all required fields',
@@ -104,13 +107,16 @@ const translationsData = {
     attorneyPassport: 'جواز سفر الوكيل',
     witnessPassports: 'جوازات الشهود (اختياري)',
     pricingInfo: 'معلومات التسعير',
-    priceMember: '20 جنيه - أول وكالة للأعضاء المؤهلين (عضوية 10 أيام فأكثر)',
-    priceStandard: '40 جنيه - السعر الأساسي',
+    priceMember: 'مجاناً - أول وكالة للأعضاء المؤهلين (عضوية 10 أيام فأكثر)',
+    priceMemberSecond: '20 جنيه - الوكالات اللاحقة للأعضاء',
+    priceStandard: '40 جنيه - السعر الأساسي (غير الأعضاء)',
     yourPrice: 'السعر الخاص بك',
+    priceFree: 'مجاناً',
     specialRequests: 'ملاحظات إضافية (اختياري)',
     membershipNumber: 'رقم العضوية',
     consentLabel: 'أؤكد موافقتي على استخدام معلوماتي وفقاً لسياسات جمعية الجالية اليمنية في برمنغهام',
     submitAndPay: 'تقديم الطلب والدفع',
+    submitFree: 'تقديم الطلب',
     submitting: 'جاري المعالجة...',
     errorMessage: 'فشل تقديم الطلب. يرجى المحاولة مرة أخرى.',
     fillAllFields: 'يرجى تعبئة جميع الحقول المطلوبة',
@@ -216,7 +222,7 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
 
   const calculatePrice = () => {
     if (membershipStatus === 'active' && memberDaysSinceJoin >= 10) {
-      return previousWakalaCount === 0 ? 20 : 40;
+      return previousWakalaCount === 0 ? 0 : 20;
     }
     return 40;
   };
@@ -283,6 +289,28 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
 
       setFormPayload(payload);
       setPaymentAmount(price);
+
+      if (price === 0) {
+        const bookingRef = `WK-${Date.now().toString(36).toUpperCase()}`;
+        const { error: insertError } = await supabase
+          .from('wakala_applications')
+          .insert([{
+            ...payload,
+            status: 'submitted',
+            payment_status: 'free',
+            booking_reference: bookingRef,
+          }]);
+        if (insertError) throw insertError;
+        onComplete({
+          bookingReference: bookingRef,
+          serviceType: 'wakala',
+          date: new Date().toISOString().split('T')[0],
+          startTime: '', endTime: '',
+          fullName: formData.fullName, email: formData.email, fee: 0,
+        });
+        return;
+      }
+
       await createPaymentIntent(price);
       setStep('payment');
     } catch (err: any) { setError(err.message || t.errorMessage); }
@@ -486,10 +514,13 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
           <h4 className="text-md font-bold text-gray-900 mb-3">{t.pricingInfo}</h4>
           <div className="space-y-2 text-sm">
-            <p className={currentPrice === 20 ? 'font-bold text-emerald-700' : 'text-gray-600'}>{t.priceMember}</p>
+            <p className={currentPrice === 0 ? 'font-bold text-emerald-700' : 'text-gray-600'}>{t.priceMember}</p>
+            <p className={currentPrice === 20 ? 'font-bold text-emerald-700' : 'text-gray-600'}>{t.priceMemberSecond}</p>
             <p className={currentPrice === 40 ? 'font-bold text-emerald-700' : 'text-gray-600'}>{t.priceStandard}</p>
             <div className="border-t border-blue-300 pt-2 mt-2">
-              <span className="font-bold text-lg text-emerald-700">{t.yourPrice}: {`\u00A3${currentPrice}`}</span>
+              <span className="font-bold text-lg text-emerald-700">
+                {t.yourPrice}: {currentPrice === 0 ? t.priceFree : `\u00A3${currentPrice}`}
+              </span>
             </div>
           </div>
         </div>
@@ -508,7 +539,7 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
 
         <button type="submit" disabled={!isFormComplete || loading}
           className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 px-6 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md flex items-center justify-center gap-2">
-          {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> {t.submitting}</> : <><Send className="w-5 h-5" /> {t.submitAndPay}</>}
+          {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> {t.submitting}</> : <><Send className="w-5 h-5" /> {currentPrice === 0 ? t.submitFree : t.submitAndPay}</>}
         </button>
       </form>
     </div>

@@ -255,11 +255,12 @@ export default function Home() {
 
       {/* Welcome Section */}
       <section className="py-20 bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
-        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[700px] h-[700px] pointer-events-none opacity-[0.04]">
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[700px] h-[700px] pointer-events-none opacity-[0.07]">
           <img
             src="/logo_white.png"
             alt=""
             className="w-full h-full object-contain"
+            style={{ filter: 'brightness(0) sepia(1) saturate(2) hue-rotate(15deg) opacity(0.6)' }}
           />
         </div>
 
@@ -546,11 +547,12 @@ export default function Home() {
 
       {/* Get Involved Section */}
       <section className="py-20 bg-white relative overflow-hidden">
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] pointer-events-none opacity-[0.04]">
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] pointer-events-none opacity-[0.07]">
           <img
             src="/logo_white.png"
             alt=""
             className="w-full h-full object-contain"
+            style={{ filter: 'brightness(0) sepia(1) saturate(2) hue-rotate(15deg) opacity(0.6)' }}
           />
         </div>
 

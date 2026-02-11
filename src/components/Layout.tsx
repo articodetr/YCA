@@ -13,15 +13,17 @@ export default function Layout({ children }: LayoutProps) {
         <img
           src="/logo_white.png"
           alt=""
-          className="absolute -right-20 top-32 w-[500px] h-[500px] object-contain opacity-[0.03]"
+          className="absolute -right-10 top-32 w-[550px] h-[550px] object-contain opacity-[0.08]"
+          style={{ filter: 'brightness(0) sepia(1) saturate(2) hue-rotate(15deg) opacity(0.6)' }}
         />
         <img
           src="/logo_white.png"
           alt=""
-          className="absolute -left-24 bottom-40 w-[400px] h-[400px] object-contain opacity-[0.025] rotate-12"
+          className="absolute -left-16 bottom-32 w-[450px] h-[450px] object-contain opacity-[0.06] rotate-12"
+          style={{ filter: 'brightness(0) sepia(1) saturate(2) hue-rotate(15deg) opacity(0.6)' }}
         />
         <div
-          className="absolute top-0 right-0 w-16 h-full opacity-[0.06]"
+          className="absolute top-0 right-0 w-20 h-full opacity-[0.08]"
           style={{
             backgroundImage: 'url(/yca_golden_belt_transparent_clean_v2.png)',
             backgroundRepeat: 'repeat-y',
@@ -29,7 +31,7 @@ export default function Layout({ children }: LayoutProps) {
           }}
         />
         <div
-          className="absolute top-0 left-0 w-16 h-full opacity-[0.04]"
+          className="absolute top-0 left-0 w-20 h-full opacity-[0.06]"
           style={{
             backgroundImage: 'url(/yca_golden_belt_transparent_clean_v2.png)',
             backgroundRepeat: 'repeat-y',

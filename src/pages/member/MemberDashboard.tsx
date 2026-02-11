@@ -252,6 +252,12 @@ export default function MemberDashboard() {
                   }),
                 }
               );
+              const now = new Date();
+              const endOfYear = `${now.getFullYear()}-12-31`;
+              await supabase
+                .from('members')
+                .update({ start_date: now.toISOString().split('T')[0], expiry_date: endOfYear })
+                .eq('id', user.id);
             } catch (activateErr) {
               console.error('Error activating membership:', activateErr);
             }

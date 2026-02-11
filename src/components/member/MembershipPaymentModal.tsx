@@ -238,6 +238,15 @@ function PaymentForm({ amount, applicationId, onSuccess, onError }: PaymentFormP
           console.error('Activation failed:', activateData.error);
         }
 
+        if (user?.id) {
+          const now = new Date();
+          const endOfYear = `${now.getFullYear()}-12-31`;
+          await supabase
+            .from('members')
+            .update({ start_date: now.toISOString().split('T')[0], expiry_date: endOfYear })
+            .eq('id', user.id);
+        }
+
         onSuccess();
       }
     } catch (err: any) {

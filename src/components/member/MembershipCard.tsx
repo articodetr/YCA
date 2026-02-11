@@ -99,7 +99,7 @@ export default function MembershipCard() {
       <div className="bg-white/5 px-4 py-2 flex items-center justify-between">
         <p className="text-emerald-200 text-[10px]">
           {member.expiry_date
-            ? new Date(member.expiry_date).toLocaleDateString(isRTL ? 'ar-SA' : 'en-GB', { month: 'short', year: 'numeric' })
+            ? new Date(member.expiry_date).toLocaleDateString(isRTL ? 'ar-SA' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
             : '-'}
         </p>
         <p className="text-emerald-200 text-[10px] font-medium">YCA</p>

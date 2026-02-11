@@ -127,36 +127,8 @@ Deno.serve(async (req: Request) => {
     }
 
     const startDate = new Date();
-    let durationMonths = 12;
-
-    switch (application.membership_type) {
-      case "individual":
-      case "family":
-      case "student":
-      case "associate":
-        durationMonths = 12;
-        break;
-      case "business_support":
-        switch (application.payment_frequency) {
-          case "monthly":
-            durationMonths = 1;
-            break;
-          case "yearly":
-            durationMonths = 12;
-            break;
-          case "one-time":
-            durationMonths = 60;
-            break;
-          default:
-            durationMonths = 12;
-        }
-        break;
-      default:
-        durationMonths = 12;
-    }
-
-    const expiryDate = new Date(startDate);
-    expiryDate.setMonth(expiryDate.getMonth() + durationMonths);
+    const currentYear = startDate.getFullYear();
+    const expiryDate = new Date(currentYear, 11, 31);
 
     const { data: newMember, error: memberError } = await supabase
       .from("members")

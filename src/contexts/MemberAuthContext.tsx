@@ -138,7 +138,13 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
 
               const activateData = await activateResponse.json();
               if (activateResponse.ok && activateData.success) {
-                setMember(activateData.member);
+                const now = new Date();
+                const endOfYear = `${now.getFullYear()}-12-31`;
+                await supabase
+                  .from('members')
+                  .update({ start_date: now.toISOString().split('T')[0], expiry_date: endOfYear })
+                  .eq('id', userId);
+                setMember({ ...activateData.member, start_date: now.toISOString().split('T')[0], expiry_date: endOfYear });
                 setIsPaidMember(true);
                 setNeedsOnboarding(false);
                 setPendingApplication(null);

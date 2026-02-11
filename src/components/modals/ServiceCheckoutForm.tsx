@@ -5,7 +5,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
 
 export interface ServiceFormPayload {
-  table: 'translation_requests' | 'other_legal_requests';
+  table: 'translation_requests' | 'other_legal_requests' | 'wakala_applications';
   data: Record<string, unknown>;
 }
 

@@ -8,6 +8,7 @@ import {
   Search,
   Languages,
   Scale,
+  FileText,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -15,12 +16,13 @@ import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import { useSiteSettings } from '../../contexts/SiteSettingsContext';
 import Layout from '../../components/Layout';
 import AdvisoryBookingForm from './AdvisoryBookingForm';
+import WakalaBookingForm from './WakalaBookingForm';
 import TranslationBookingForm from './TranslationBookingForm';
 import OtherLegalBookingForm from './OtherLegalBookingForm';
 import BookingConfirmation from './BookingConfirmation';
 import BookingGateModal from './BookingGateModal';
 
-export type ServiceType = 'advisory' | 'translation' | 'other' | null;
+export type ServiceType = 'advisory' | 'wakala' | 'translation' | 'other' | null;
 
 export interface BookingResult {
   bookingReference: string;
@@ -33,7 +35,7 @@ export interface BookingResult {
   fee: number;
 }
 
-const VALID_SERVICES: ServiceType[] = ['advisory', 'translation', 'other'];
+const VALID_SERVICES: ServiceType[] = ['advisory', 'wakala', 'translation', 'other'];
 
 const translations = {
   en: {
@@ -43,6 +45,9 @@ const translations = {
     advisoryTitle: 'Advisory Bureau',
     advisoryDesc: 'Book an in-person consultation at our centre for advice on benefits, housing, immigration, employment, and more.',
     advisoryFeatures: ['Face-to-face consultation', 'Immediate assistance', 'Free service'],
+    wakalaTitle: 'Wakala Service',
+    wakalaDesc: 'Let us handle official procedures and paperwork on your behalf through our authorised representation service.',
+    wakalaFeatures: ['Official representation', 'Document handling', 'Professional service'],
     translationTitle: 'Translation Service',
     translationDesc: 'Professional translation of official documents including birth certificates, legal papers, and more.',
     translationFeatures: ['Certified translation', 'Multiple document types', 'Fast turnaround'],
@@ -61,6 +66,9 @@ const translations = {
     advisoryTitle: 'المكتب الاستشاري',
     advisoryDesc: 'احجز موعداً شخصياً في مركزنا للحصول على استشارات حول الإعانات والسكن والهجرة والتوظيف والمزيد.',
     advisoryFeatures: ['استشارة وجهاً لوجه', 'مساعدة فورية', 'خدمة مجانية'],
+    wakalaTitle: 'خدمة الوكالة',
+    wakalaDesc: 'دعنا نتولى الإجراءات الرسمية والأوراق نيابة عنك من خلال خدمة التمثيل المعتمدة لدينا.',
+    wakalaFeatures: ['تمثيل رسمي', 'التعامل مع الوثائق', 'خدمة احترافية'],
     translationTitle: 'خدمة الترجمة',
     translationDesc: 'ترجمة احترافية للمستندات الرسمية بما في ذلك شهادات الميلاد والأوراق القانونية والمزيد.',
     translationFeatures: ['ترجمة معتمدة', 'أنواع مستندات متعددة', 'إنجاز سريع'],
@@ -160,6 +168,14 @@ export default function BookPage() {
       description: t.advisoryDesc,
       features: t.advisoryFeatures,
       accent: 'emerald',
+    },
+    {
+      id: 'wakala' as ServiceType,
+      icon: FileText,
+      title: t.wakalaTitle,
+      description: t.wakalaDesc,
+      features: t.wakalaFeatures,
+      accent: 'blue',
     },
     {
       id: 'translation' as ServiceType,
@@ -279,6 +295,10 @@ export default function BookPage() {
 
               {selectedService === 'advisory' && (
                 <AdvisoryBookingForm onComplete={handleBookingComplete} />
+              )}
+
+              {selectedService === 'wakala' && (
+                <WakalaBookingForm onComplete={handleBookingComplete} />
               )}
 
               {selectedService === 'translation' && (

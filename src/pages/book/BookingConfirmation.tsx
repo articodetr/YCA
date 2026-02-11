@@ -26,6 +26,7 @@ const translations = {
     fee: 'Fee',
     free: 'Free',
     advisory: 'Advisory Bureau',
+    wakala: 'Wakala Service',
     translation: 'Translation Service',
     other: 'Legal/Documentation Service',
     keepRef: 'Please save your reference number. You will need it to track your booking status.',

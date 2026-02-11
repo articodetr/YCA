@@ -329,7 +329,7 @@ export default function ServiceFeedback() {
                     value={formData.service}
                     onChange={(e) => setFormData(prev => ({ ...prev, service: e.target.value }))}
                     required
-                    className="w-full px-4 py-3 bg-sand border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none appearance-none"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none appearance-none"
                   >
                     <option value="">{txt.selectService}</option>
                     {serviceOptions.map((opt) => (
@@ -347,12 +347,12 @@ export default function ServiceFeedback() {
                     id="service_date"
                     value={formData.service_date}
                     onChange={(e) => setFormData(prev => ({ ...prev, service_date: e.target.value }))}
-                    className="w-full px-4 py-3 bg-sand border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
                   />
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl border border-gray-100 p-6">
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
                 <h3 className="text-sm font-semibold text-primary mb-6 flex items-center gap-2">
                   <Star size={16} className="text-amber-400" />
                   {txt.rateExperience} <span className="text-red-400">*</span>
@@ -407,7 +407,7 @@ export default function ServiceFeedback() {
                       value={formData.what_went_well}
                       onChange={(e) => setFormData(prev => ({ ...prev, what_went_well: e.target.value }))}
                       rows={3}
-                      className="w-full px-4 py-3 bg-sand border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none resize-none"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none resize-none"
                     />
                   </div>
                   <div>
@@ -419,7 +419,7 @@ export default function ServiceFeedback() {
                       value={formData.what_to_improve}
                       onChange={(e) => setFormData(prev => ({ ...prev, what_to_improve: e.target.value }))}
                       rows={3}
-                      className="w-full px-4 py-3 bg-sand border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none resize-none"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none resize-none"
                     />
                   </div>
                   <div>
@@ -431,7 +431,7 @@ export default function ServiceFeedback() {
                       value={formData.other_comments}
                       onChange={(e) => setFormData(prev => ({ ...prev, other_comments: e.target.value }))}
                       rows={3}
-                      className="w-full px-4 py-3 bg-sand border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none resize-none"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none resize-none"
                     />
                   </div>
                 </div>
@@ -509,7 +509,7 @@ export default function ServiceFeedback() {
                           value={formData.contact_name}
                           onChange={(e) => setFormData(prev => ({ ...prev, contact_name: e.target.value }))}
                           placeholder={txt.namePlaceholder}
-                          className="w-full px-4 py-3 bg-sand border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
                         />
                       </div>
                       <div>
@@ -520,7 +520,7 @@ export default function ServiceFeedback() {
                           value={formData.contact_email}
                           onChange={(e) => setFormData(prev => ({ ...prev, contact_email: e.target.value }))}
                           placeholder={txt.emailPlaceholder}
-                          className="w-full px-4 py-3 bg-sand border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
                         />
                       </div>
                       <div>
@@ -531,7 +531,7 @@ export default function ServiceFeedback() {
                           value={formData.contact_phone}
                           onChange={(e) => setFormData(prev => ({ ...prev, contact_phone: e.target.value }))}
                           placeholder={txt.phonePlaceholder}
-                          className="w-full px-4 py-3 bg-sand border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
                         />
                       </div>
                     </motion.div>
@@ -539,7 +539,7 @@ export default function ServiceFeedback() {
                 </AnimatePresence>
               </div>
 
-              <div className="border border-gray-100 rounded-xl overflow-hidden">
+              <div className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
                 <button
                   type="button"
                   onClick={() => setShowEquality(!showEquality)}
@@ -572,7 +572,7 @@ export default function ServiceFeedback() {
                                 equality_data: { ...prev.equality_data, age_range: e.target.value },
                               }))
                             }
-                            className="w-full px-4 py-3 bg-sand border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none appearance-none"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none appearance-none"
                           >
                             <option value="">{txt.selectAge}</option>
                             {ageRanges.map((age) => (
@@ -591,7 +591,7 @@ export default function ServiceFeedback() {
                                 equality_data: { ...prev.equality_data, gender: e.target.value },
                               }))
                             }
-                            className="w-full px-4 py-3 bg-sand border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none appearance-none"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none appearance-none"
                           >
                             <option value="">{txt.selectGender}</option>
                             {genderOptions.map((opt) => (
@@ -612,7 +612,7 @@ export default function ServiceFeedback() {
                               }))
                             }
                             placeholder={txt.ethnicPlaceholder}
-                            className="w-full px-4 py-3 bg-sand border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
                           />
                         </div>
                       </div>

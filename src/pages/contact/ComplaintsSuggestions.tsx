@@ -334,7 +334,7 @@ export default function ComplaintsSuggestions() {
                         className={`relative flex flex-col items-center gap-2 p-5 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
                           active
                             ? `${type.activeBorder} bg-white shadow-md`
-                            : 'border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm'
+                            : 'border-gray-200 bg-white hover:border-gray-300 shadow-sm hover:shadow-md'
                         }`}
                       >
                         <input
@@ -361,7 +361,7 @@ export default function ComplaintsSuggestions() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-5">
                 <p className="text-sm font-medium text-muted flex items-center gap-2">
                   {txt.personalInfo}
                   <span className="text-xs bg-sand px-2 py-0.5 rounded-full">{txt.optional}</span>
@@ -376,7 +376,7 @@ export default function ComplaintsSuggestions() {
                       value={formData.name}
                       onChange={handleChange}
                       placeholder={txt.namePlaceholder}
-                      className="w-full px-4 py-3 bg-sand border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
                     />
                   </div>
                   <div>
@@ -388,7 +388,7 @@ export default function ComplaintsSuggestions() {
                       value={formData.phone}
                       onChange={handleChange}
                       placeholder={txt.phonePlaceholder}
-                      className="w-full px-4 py-3 bg-sand border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
                     />
                   </div>
                   <div>
@@ -400,7 +400,7 @@ export default function ComplaintsSuggestions() {
                       value={formData.email}
                       onChange={handleChange}
                       placeholder={txt.emailPlaceholder}
-                      className="w-full px-4 py-3 bg-sand border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
                     />
                   </div>
                   <div>
@@ -412,7 +412,7 @@ export default function ComplaintsSuggestions() {
                       value={formData.address}
                       onChange={handleChange}
                       placeholder={txt.addressPlaceholder}
-                      className="w-full px-4 py-3 bg-sand border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
                     />
                   </div>
                 </div>
@@ -430,7 +430,7 @@ export default function ComplaintsSuggestions() {
                   required
                   rows={5}
                   placeholder={txt.detailsPlaceholder}
-                  className="w-full px-4 py-3 bg-sand border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none resize-none"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none resize-none"
                 />
               </div>
 
@@ -446,7 +446,7 @@ export default function ComplaintsSuggestions() {
                   onChange={handleChange}
                   rows={3}
                   placeholder={txt.outcomePlaceholder}
-                  className="w-full px-4 py-3 bg-sand border-0 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none resize-none"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none resize-none"
                 />
               </div>
 
@@ -519,7 +519,7 @@ export default function ComplaintsSuggestions() {
                 </AnimatePresence>
               </div>
 
-              <div className="bg-sand/60 rounded-xl p-5">
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
                 <label className="flex items-start gap-3 cursor-pointer group">
                   <div className="relative flex-shrink-0 mt-0.5">
                     <input

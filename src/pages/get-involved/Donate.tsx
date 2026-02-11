@@ -21,8 +21,7 @@ export default function Donate() {
   return (
     <Layout>
       <div dir={isRTL ? 'rtl' : 'ltr'}>
-        <div className="pt-20">
-          <PageHeader
+        <PageHeader
             title={txt.title}
             breadcrumbs={[
               { label: txt.breadcrumbHome, path: '/' },
@@ -45,7 +44,6 @@ export default function Donate() {
               )}
             </div>
           </section>
-        </div>
       </div>
     </Layout>
   );

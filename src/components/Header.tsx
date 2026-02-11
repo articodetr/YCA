@@ -287,7 +287,7 @@ export default function Header() {
 
   return (
     <motion.header
-      className="fixed top-0 left-0 right-0 z-50 bg-[#1b2b45]/40 backdrop-blur-none text-white shadow-none"
+      className="fixed top-0 left-0 right-0 z-50 bg-[#1b2b45] text-white shadow-lg"
       initial={{ y: -100, opacity: 0 }}
       animate={{
         y: isVisible ? 0 : -100,
@@ -455,7 +455,7 @@ export default function Header() {
         <AnimatePresence>
           {isOpen && (
             <motion.nav
-              className="xl:hidden pb-6 space-y-2 bg-[#0b1424]/90 backdrop-blur-md rounded-b-2xl px-4 pt-4 max-h-[calc(100vh-80px)] overflow-y-auto overscroll-contain"
+              className="xl:hidden pb-6 space-y-2 bg-[#0b1424] rounded-b-2xl px-4 pt-4 max-h-[calc(100vh-80px)] overflow-y-auto overscroll-contain"
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}

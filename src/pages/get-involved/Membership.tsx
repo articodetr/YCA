@@ -101,8 +101,7 @@ export default function Membership() {
 
   return (
     <div>
-      <div className="pt-20">
-        <PageHeader
+      <PageHeader
           title={t('membership.title')}
           description=""
           breadcrumbs={[
@@ -444,8 +443,7 @@ export default function Membership() {
               })}
             </motion.div>
           </div>
-        </section>
-      </div>
+      </section>
     </div>
   );
 }

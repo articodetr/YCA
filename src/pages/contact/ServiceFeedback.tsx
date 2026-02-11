@@ -214,8 +214,7 @@ export default function ServiceFeedback() {
   if (submitStatus === 'success') {
     return (
       <div dir={isRTL ? 'rtl' : 'ltr'}>
-        <div className="pt-20">
-          <PageHeader
+        <PageHeader
             title={txt.title}
             breadcrumbs={[
               { label: txt.breadcrumbContact, path: '/contact' },
@@ -257,15 +256,13 @@ export default function ServiceFeedback() {
               </motion.div>
             </div>
           </section>
-        </div>
       </div>
     );
   }
 
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="pt-20">
-        <PageHeader
+      <PageHeader
           title={txt.title}
           breadcrumbs={[
             { label: txt.breadcrumbContact, path: '/contact' },
@@ -751,6 +748,5 @@ export default function ServiceFeedback() {
           </div>
         </section>
       </div>
-    </div>
   );
 }

@@ -87,7 +87,6 @@ export default function Partnerships() {
 
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="pt-20">
       <PageHeader
         title={t('partnerships.title')}
         description=""
@@ -319,7 +318,6 @@ export default function Partnerships() {
           </motion.div>
         </motion.div>
       </section>
-      </div>
     </div>
   );
 }

@@ -78,7 +78,6 @@ export default function Volunteer() {
 
   return (
     <div>
-      <div className="pt-20">
       <PageHeader
         title="Volunteering Opportunities"
         description=""
@@ -267,7 +266,6 @@ export default function Volunteer() {
           </div>
         </div>
       </section>
-      </div>
     </div>
   );
 }

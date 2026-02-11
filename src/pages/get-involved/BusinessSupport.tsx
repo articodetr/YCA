@@ -228,8 +228,7 @@ export default function BusinessSupport() {
 
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="pt-20">
-        <PageHeader
+      <PageHeader
           title={txt.title}
           breadcrumbs={[
             { label: txt.breadcrumbGetInvolved, path: '/get-involved/membership' },
@@ -487,8 +486,7 @@ export default function BusinessSupport() {
               <p className="text-white/60 text-sm mt-6">{txt.forIndividuals}</p>
             </motion.div>
           </div>
-        </section>
-      </div>
+      </section>
     </div>
   );
 }

@@ -164,7 +164,7 @@ export default function Home() {
 
         <div className="container mx-auto px-4 h-full flex items-center justify-center relative z-10">
           <motion.div
-            className="max-w-3xl mx-auto text-center pt-20"
+            className="max-w-3xl mx-auto text-center"
             initial="hidden"
             animate="visible"
             variants={staggerContainer}

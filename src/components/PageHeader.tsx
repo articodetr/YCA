@@ -33,7 +33,7 @@ export default function PageHeader({ title, description, breadcrumbs, image, pag
       />
 
       <motion.div
-        className="container mx-auto px-4 relative z-10 text-center pt-8"
+        className="container mx-auto px-4 relative z-10 text-center"
         variants={staggerContainer}
         initial="hidden"
         animate="visible"

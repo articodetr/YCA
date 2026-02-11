@@ -14,7 +14,6 @@ export default function YouthProgramme() {
         pageKey="programmes_youth"
       />
 
-      <div className="pt-20">
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
@@ -248,7 +247,6 @@ export default function YouthProgramme() {
           </div>
         </div>
       </section>
-      </div>
     </div>
   );
 }

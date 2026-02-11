@@ -109,7 +109,6 @@ export default function News() {
         pageKey="news"
       />
 
-      <div className="pt-20">
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <motion.div
@@ -403,7 +402,6 @@ export default function News() {
           </div>
         </motion.div>
       </section>
-      </div>
     </div>
   );
 }

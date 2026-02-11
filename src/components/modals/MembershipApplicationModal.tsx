@@ -87,7 +87,7 @@ export default function MembershipApplicationModal({ isOpen, onClose }: Props) {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">{text.loggedIn}</h3>
-                  <p className="text-gray-600">{member.full_name || member.email}</p>
+                  <p className="text-gray-600">{`${member.first_name || ''} ${member.last_name || ''}`.trim() || member.email}</p>
                 </div>
                 <button
                   onClick={handleProceed}

@@ -17,7 +17,7 @@ export default function PartnershipModal({ isOpen, onClose }: Props) {
 
   const [formData, setFormData] = useState({
     organization_name: '',
-    contact_name: '',
+    contact_person: '',
     email: '',
     phone: '',
     organization_type: '',
@@ -30,12 +30,12 @@ export default function PartnershipModal({ isOpen, onClose }: Props) {
 
   useEffect(() => {
     if (member && isOpen) {
-      setFormData({
-        ...formData,
-        contact_name: member.full_name || '',
+      const name = `${member.first_name || ''} ${member.last_name || ''}`.trim();
+      setFormData(prev => ({
+        ...prev,
+        contact_person: name,
         email: member.email || '',
-        phone: member.phone || '',
-      });
+      }));
     }
   }, [member, isOpen]);
 
@@ -107,11 +107,10 @@ export default function PartnershipModal({ isOpen, onClose }: Props) {
     setLoading(true);
 
     try {
-      const { error } = await supabase.from('partnerships').insert([
+      const { error } = await supabase.from('partnership_inquiries').insert([
         {
           ...formData,
-          status: 'pending',
-          user_id: member?.id || null,
+          status: 'new',
         },
       ]);
 
@@ -123,7 +122,7 @@ export default function PartnershipModal({ isOpen, onClose }: Props) {
         setSuccess(false);
         setFormData({
           organization_name: '',
-          contact_name: '',
+          contact_person: '',
           email: '',
           phone: '',
           organization_type: '',
@@ -196,8 +195,8 @@ export default function PartnershipModal({ isOpen, onClose }: Props) {
                     </label>
                     <input
                       type="text"
-                      value={formData.contact_name}
-                      onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
+                      value={formData.contact_person}
+                      onChange={(e) => setFormData({ ...formData, contact_person: e.target.value })}
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-0 transition-colors"
                       required
                     />

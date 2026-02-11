@@ -21,7 +21,7 @@ export default function VolunteerApplicationModal({ isOpen, onClose }: Props) {
     phone: '',
     skills: '',
     availability: '',
-    message: '',
+    why_volunteer: '',
   });
 
   const [loading, setLoading] = useState(false);
@@ -29,13 +29,14 @@ export default function VolunteerApplicationModal({ isOpen, onClose }: Props) {
 
   useEffect(() => {
     if (member && isOpen) {
+      const name = `${member.first_name || ''} ${member.last_name || ''}`.trim();
       setFormData({
-        full_name: member.full_name || '',
+        full_name: name,
         email: member.email || '',
-        phone: member.phone || '',
+        phone: '',
         skills: '',
         availability: '',
-        message: '',
+        why_volunteer: '',
       });
     }
   }, [member, isOpen]);
@@ -78,11 +79,10 @@ export default function VolunteerApplicationModal({ isOpen, onClose }: Props) {
     setLoading(true);
 
     try {
-      const { error } = await supabase.from('volunteers').insert([
+      const { error } = await supabase.from('volunteer_applications').insert([
         {
           ...formData,
           status: 'pending',
-          user_id: member?.id || null,
         },
       ]);
 
@@ -98,7 +98,7 @@ export default function VolunteerApplicationModal({ isOpen, onClose }: Props) {
           phone: '',
           skills: '',
           availability: '',
-          message: '',
+          why_volunteer: '',
         });
       }, 2000);
     } catch (error) {
@@ -219,8 +219,8 @@ export default function VolunteerApplicationModal({ isOpen, onClose }: Props) {
                     {text.message} <span className="text-red-500">*</span>
                   </label>
                   <textarea
-                    value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    value={formData.why_volunteer}
+                    onChange={(e) => setFormData({ ...formData, why_volunteer: e.target.value })}
                     rows={4}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-rose-500 focus:ring-0 transition-colors"
                     required

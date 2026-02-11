@@ -10,13 +10,16 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="flex flex-col min-h-screen relative">
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
-        <img
-          src="/backG.png"
-          alt=""
-          className="absolute top-16 right-0 w-[420px] h-auto opacity-[0.06] select-none md:w-[520px] lg:w-[620px] xl:w-[700px]"
-          draggable={false}
+        <div
+          className="absolute inset-0 opacity-[0.028]"
+          style={{
+            backgroundImage: 'url(/backG.png)',
+            backgroundRepeat: 'repeat',
+            backgroundSize: '320px 320px',
+            backgroundPosition: 'center',
+          }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-transparent to-white/60" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white/60 via-transparent to-white/60" />
         <div
           className="absolute top-0 right-0 w-16 h-full opacity-[0.06]"
           style={{

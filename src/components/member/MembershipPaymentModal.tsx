@@ -469,6 +469,48 @@ export default function MembershipPaymentModal({
     setPaymentError(null);
 
     try {
+      const { data: existing } = await supabase
+        .from('membership_applications')
+        .select('id, status, payment_status')
+        .eq('email', user.email)
+        .in('status', ['pending', 'approved'])
+        .maybeSingle();
+
+      if (existing) {
+        if (existing.payment_status === 'paid' || existing.status === 'approved') {
+          setPaymentError(language === 'ar'
+            ? 'لديك عضوية مفعلة بالفعل.'
+            : 'You already have an active membership.');
+          setSubmittingDetails(false);
+          return;
+        }
+        setApplicationId(existing.id);
+        setLoadingPayment(true);
+        setStep('payment');
+
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({
+              amount: Math.round(paymentAmount * 100),
+              currency: 'gbp',
+              metadata: { user_id: user.id, application_id: existing.id, type: 'membership' },
+            }),
+          }
+        );
+        const data = await response.json();
+        if (!response.ok || !data.clientSecret) throw new Error(data.error || 'Failed to create payment');
+        setClientSecret(data.clientSecret);
+        setSubmittingDetails(false);
+        setLoadingPayment(false);
+        return;
+      }
+
       const applicationData: any = {
         user_id: user.id,
         email: user.email,

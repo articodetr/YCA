@@ -199,6 +199,23 @@ export default function MembershipApplication() {
       ? businessSupport.amount
       : membershipPrices[membershipType];
 
+    const email = isPreAuthenticated ? user!.email : formData.email;
+    const { data: existing } = await supabase
+      .from('membership_applications')
+      .select('id, status, payment_status')
+      .eq('email', email)
+      .in('status', ['pending', 'approved'])
+      .maybeSingle();
+
+    if (existing) {
+      if (existing.payment_status === 'paid' || existing.status === 'approved') {
+        throw new Error(language === 'ar'
+          ? 'لديك عضوية مفعلة بالفعل.'
+          : 'You already have an active membership application.');
+      }
+      return { application: existing, finalAmount };
+    }
+
     const applicationData = {
       user_id: userId,
       membership_type: membershipType,

@@ -204,6 +204,7 @@ export default function EventRegistrationModal({
       }
 
       const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
+      const bookingRef = 'EVT' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + Math.floor(Math.random() * 10000).toString().padStart(4, '0');
 
       const insertData: Record<string, unknown> = {
         event_id: eventId,
@@ -214,6 +215,7 @@ export default function EventRegistrationModal({
         notes: formData.notes.trim() || null,
         skills: formData.skills.trim() || null,
         status: 'confirmed',
+        booking_reference: bookingRef,
       };
 
       if (formData.isMember === 'yes') {

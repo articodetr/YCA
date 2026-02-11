@@ -38,6 +38,7 @@ export default function MembershipsManagement() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedApp, setSelectedApp] = useState<Membership | null>(null);
   const [showAddMember, setShowAddMember] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
 
   useEffect(() => {
     fetchMemberships();
@@ -114,6 +115,31 @@ export default function MembershipsManagement() {
     return matchesSearch && matchesFilter;
   });
 
+  const handleDeleteAll = async () => {
+    if (!confirm('Are you sure you want to delete ALL membership applications? This cannot be undone.')) return;
+    if (!confirm('This will permanently remove all applications. Confirm again to proceed.')) return;
+
+    setDeletingAll(true);
+    try {
+      const { adminDeleteRecord } = await import('../../lib/admin-api');
+      let failed = 0;
+      for (const mem of memberships) {
+        const result = await adminDeleteRecord('membership_applications', mem.id);
+        if (!result.success) failed++;
+      }
+      if (failed > 0) {
+        alert(`Deleted ${memberships.length - failed} applications. ${failed} failed.`);
+      } else {
+        alert(`All ${memberships.length} applications deleted.`);
+      }
+      fetchMemberships();
+    } catch (error: any) {
+      alert(`Error: ${error.message}`);
+    } finally {
+      setDeletingAll(false);
+    }
+  };
+
   const exportToCSV = () => {
     const headers = ['Name', 'Email', 'Phone', 'Address', 'City', 'Postcode', 'Type', 'Tier', 'Amount', 'Frequency', 'Status', 'Payment', 'Date'];
     const rows = filteredMemberships.map((mem) => [
@@ -188,6 +214,16 @@ export default function MembershipsManagement() {
             <Download className="w-4 h-4" />
             Export
           </button>
+          {memberships.length > 0 && (
+            <button
+              onClick={handleDeleteAll}
+              disabled={deletingAll}
+              className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors text-sm disabled:opacity-50"
+            >
+              <Trash2 className="w-4 h-4" />
+              {deletingAll ? 'Deleting...' : 'Delete All'}
+            </button>
+          )}
         </div>
       </div>
 

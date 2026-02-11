@@ -376,7 +376,7 @@ export default function Header() {
             {user ? (
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Link
-                  to="/member/dashboard"
+                  to="/member/dashboard?tab=profile"
                   className="hover:text-accent transition-colors p-2.5 block"
                   title={language === 'ar' ? 'حسابي' : 'My Account'}
                 >
@@ -494,7 +494,7 @@ export default function Header() {
 
                   {user ? (
                     <Link
-                      to="/member/dashboard"
+                      to="/member/dashboard?tab=profile"
                       onClick={() => setIsOpen(false)}
                       className="flex items-center justify-center gap-2 w-full border border-white/30 text-white px-6 py-3 rounded-lg hover:bg-white/10 transition-colors font-semibold"
                     >

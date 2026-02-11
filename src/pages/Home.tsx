@@ -456,14 +456,18 @@ export default function Home() {
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
-            className="text-center mb-12"
+            className="text-center mb-16"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
             variants={staggerContainer}
           >
-            <motion.p className="text-base text-gray-600 max-w-3xl mx-auto leading-relaxed" variants={fadeInUp}>
-              Necessitatibus eius consequatur ex aliquid fuga eum quidem sint consectetur velit
+            <motion.h2 className="text-4xl sm:text-5xl font-bold text-primary mb-6" variants={fadeInUp}>
+              {getContent('home', 'events_section_title', 'Upcoming Events')}
+            </motion.h2>
+            <motion.div className="w-32 h-1 bg-gradient-to-r from-transparent via-[#8B4513] to-transparent mx-auto mb-6" variants={scaleIn}></motion.div>
+            <motion.p className="text-lg text-muted max-w-3xl mx-auto" variants={fadeInUp}>
+              {getContent('home', 'events_section_description', 'Join us at our upcoming community events and celebrations')}
             </motion.p>
           </motion.div>
 

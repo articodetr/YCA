@@ -126,12 +126,12 @@ export default function WakalaManagement() {
     }
 
     try {
-      const { error } = await supabase
-        .from('wakala_applications')
-        .delete()
-        .eq('id', item.id);
+      const { adminDeleteRecord } = await import('../../lib/admin-api');
+      const result = await adminDeleteRecord('wakala_applications', item.id);
 
-      if (error) throw error;
+      if (!result.success) {
+        throw new Error(result.error || 'Delete failed');
+      }
 
       alert('Wakala application deleted successfully');
       await fetchApplications();

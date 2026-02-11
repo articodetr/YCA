@@ -214,17 +214,21 @@ function PaymentForm({ amount, applicationId, onSuccess, onError }: PaymentFormP
 
       if (paymentIntent?.status === 'succeeded') {
         sessionStorage.removeItem('pending_membership_payment');
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        const authToken = currentSession?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
         const activateResponse = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/activate-membership`,
           {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+              'Authorization': `Bearer ${authToken}`,
+              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
             },
             body: JSON.stringify({
               application_id: applicationId,
               user_id: user?.id,
+              payment_intent_id: paymentIntent.id,
             }),
           }
         );

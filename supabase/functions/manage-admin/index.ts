@@ -58,12 +58,40 @@ Deno.serve(async (req: Request) => {
       .eq("is_active", true)
       .maybeSingle();
 
-    if (!callerAdmin || callerAdmin.role !== "super_admin") {
-      return errorResponse("Only super admins can manage admin accounts", 403);
+    if (!callerAdmin) {
+      return errorResponse("Only admins can perform this operation", 403);
     }
 
     const body = await req.json();
     const { action } = body;
+
+    if (action === "delete_record") {
+      const ALLOWED_TABLES = [
+        "wakala_applications", "membership_applications", "volunteer_applications",
+        "partnership_inquiries", "event_registrations", "newsletter_subscriptions",
+        "contact_submissions", "donations", "members", "member_payments",
+        "hero_slides", "form_questions", "form_responses",
+        "complaints", "service_feedback", "legal_requests",
+      ];
+
+      const { table, record_id } = body;
+      if (!table || !ALLOWED_TABLES.includes(table)) {
+        return errorResponse(`Table '${table}' is not allowed`);
+      }
+      if (!record_id) {
+        return errorResponse("record_id is required");
+      }
+
+      const { error } = await adminClient.from(table).delete().eq("id", record_id);
+      if (error) {
+        return errorResponse(error.message, 500);
+      }
+      return successResponse({ success: true, deleted: true });
+    }
+
+    if (callerAdmin.role !== "super_admin") {
+      return errorResponse("Only super admins can manage admin accounts", 403);
+    }
 
     if (action === "create") {
       const { email, password, full_name, role, permissions } = body;

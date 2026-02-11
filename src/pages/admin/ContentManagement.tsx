@@ -6,6 +6,7 @@ import { useSiteSettings } from '../../contexts/SiteSettingsContext';
 import HomePageEditor from '../../components/admin/content-editors/HomePageEditor';
 import GenericPageEditor from '../../components/admin/content-editors/GenericPageEditor';
 import { ContentSection, PageImage } from '../../components/admin/content-editors/types';
+import { getPageDefaults, hasDefaults } from '../../data/contentDefaults';
 
 export default function ContentManagement() {
   const [contentSections, setContentSections] = useState<ContentSection[]>([]);
@@ -83,7 +84,28 @@ export default function ContentManagement() {
 
       if (contentRes.error) throw contentRes.error;
 
-      setContentSections(contentRes.data || []);
+      let sections = contentRes.data || [];
+
+      const allPages = ['home', 'services', 'contact', 'footer', 'about_mission', 'about_history', 'about_team', 'about_partners', 'about_reports', 'donate', 'volunteer', 'membership', 'jobs', 'partnerships', 'events', 'news', 'resources', 'programmes'];
+      const seededPages = new Set(sections.map((s: ContentSection) => s.page));
+      const missingPages = allPages.filter(p => !seededPages.has(p) && hasDefaults(p));
+
+      if (missingPages.length > 0) {
+        const rows = missingPages.flatMap(page =>
+          getPageDefaults(page).map(d => ({
+            page,
+            section_key: d.section_key,
+            content: { text_en: d.text_en, text_ar: d.text_ar, text: d.text_en },
+            is_active: true,
+          }))
+        );
+        const { data: inserted } = await supabase.from('content_sections').upsert(rows, { onConflict: 'page,section_key' }).select('*');
+        if (inserted) {
+          sections = [...sections, ...inserted];
+        }
+      }
+
+      setContentSections(sections);
       setPageImages(imagesRes.data || []);
 
       const enMap: Record<string, string> = {};

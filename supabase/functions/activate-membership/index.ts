@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
+import Stripe from "npm:stripe@17.7.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,16 +13,15 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
+const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
+const stripe = stripeSecretKey
+  ? new Stripe(stripeSecretKey, { apiVersion: "2024-11-20.acacia" })
+  : null;
+
 interface ActivationRequest {
   application_id: string;
   user_id?: string;
-}
-
-interface ActivationResponse {
-  success: boolean;
-  member?: any;
-  message?: string;
-  error?: string;
+  payment_intent_id?: string;
 }
 
 Deno.serve(async (req: Request) => {
@@ -37,8 +37,8 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const body = await req.json() as ActivationRequest;
-    const { application_id, user_id } = body;
+    const body = (await req.json()) as ActivationRequest;
+    const { application_id, user_id, payment_intent_id } = body;
 
     if (!application_id) {
       return Response.json(
@@ -48,15 +48,6 @@ Deno.serve(async (req: Request) => {
     }
 
     console.info(`Activating membership for application: ${application_id}`);
-
-    const { error: payUpdateError } = await supabase
-      .from("membership_applications")
-      .update({ payment_status: "paid" })
-      .eq("id", application_id);
-
-    if (payUpdateError) {
-      console.error("Error updating payment status:", payUpdateError);
-    }
 
     const { data: application, error: appError } = await supabase
       .from("membership_applications")
@@ -71,6 +62,28 @@ Deno.serve(async (req: Request) => {
         { status: 404, headers: corsHeaders }
       );
     }
+
+    const piId = payment_intent_id || application.payment_intent_id;
+
+    if (stripe && piId) {
+      try {
+        const paymentIntent = await stripe.paymentIntents.retrieve(piId);
+        if (paymentIntent.status !== "succeeded") {
+          console.error(`Payment not succeeded. Status: ${paymentIntent.status}`);
+          return Response.json(
+            { success: false, error: "Payment has not been completed" },
+            { status: 400, headers: corsHeaders }
+          );
+        }
+      } catch (stripeErr: any) {
+        console.error("Stripe verification error:", stripeErr.message);
+      }
+    }
+
+    await supabase
+      .from("membership_applications")
+      .update({ payment_status: "paid" })
+      .eq("id", application_id);
 
     const memberId = user_id || application.user_id;
     if (!memberId) {
@@ -87,7 +100,9 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
 
     if (existingMember) {
-      console.info(`Member already exists with number: ${existingMember.member_number}`);
+      console.info(
+        `Member already exists with number: ${existingMember.member_number}`
+      );
 
       await supabase
         .from("membership_applications")
@@ -115,21 +130,21 @@ Deno.serve(async (req: Request) => {
     let durationMonths = 12;
 
     switch (application.membership_type) {
-      case 'individual':
-      case 'family':
-      case 'student':
-      case 'associate':
+      case "individual":
+      case "family":
+      case "student":
+      case "associate":
         durationMonths = 12;
         break;
-      case 'business_support':
+      case "business_support":
         switch (application.payment_frequency) {
-          case 'monthly':
+          case "monthly":
             durationMonths = 1;
             break;
-          case 'yearly':
+          case "yearly":
             durationMonths = 12;
             break;
-          case 'one-time':
+          case "one-time":
             durationMonths = 60;
             break;
           default:
@@ -175,7 +190,9 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    console.info(`Created member record with number: ${newMember.member_number}`);
+    console.info(
+      `Created member record with number: ${newMember.member_number}`
+    );
 
     await supabase
       .from("membership_applications")

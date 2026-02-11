@@ -65,12 +65,13 @@ export default function MembershipsManagement() {
     if (!confirm('Are you sure you want to delete this membership application?')) return;
 
     try {
-      const { error } = await supabase
-        .from('membership_applications')
-        .delete()
-        .eq('id', id);
+      const { adminDeleteRecord } = await import('../../lib/admin-api');
+      const result = await adminDeleteRecord('membership_applications', id);
 
-      if (error) throw error;
+      if (!result.success) {
+        throw new Error(result.error || 'Delete failed');
+      }
+
       alert('Membership deleted successfully');
       fetchMemberships();
     } catch (error: any) {

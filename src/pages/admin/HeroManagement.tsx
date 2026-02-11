@@ -22,7 +22,7 @@ export default function HeroManagement() {
     title: '',
     title_ar: '',
     subtitle: '',
-    subtitle_ar: '',
+    description_ar: '',
     image_url: '',
     order_number: 0,
     is_active: true
@@ -125,7 +125,7 @@ export default function HeroManagement() {
       title: '',
       title_ar: '',
       subtitle: '',
-      subtitle_ar: '',
+      description_ar: '',
       image_url: '',
       order_number: 0,
       is_active: true
@@ -140,7 +140,7 @@ export default function HeroManagement() {
       title: slide.title,
       title_ar: (slide as any).title_ar || '',
       subtitle: slide.subtitle,
-      subtitle_ar: (slide as any).subtitle_ar || '',
+      description_ar: (slide as any).description_ar || '',
       image_url: slide.image_url,
       order_number: slide.order_number,
       is_active: slide.is_active
@@ -219,8 +219,8 @@ export default function HeroManagement() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Subtitle (Arabic) <span className="text-gray-400">العنوان الفرعي</span></label>
               <input
                 type="text"
-                value={formData.subtitle_ar || ''}
-                onChange={(e) => setFormData({ ...formData, subtitle_ar: e.target.value })}
+                value={formData.description_ar || ''}
+                onChange={(e) => setFormData({ ...formData, description_ar: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                 dir="rtl"
                 placeholder="أدخل العنوان الفرعي بالعربية"

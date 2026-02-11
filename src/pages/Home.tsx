@@ -60,7 +60,7 @@ export default function Home() {
     fetchStats();
     fetchHeroSlides();
     fetchUpcomingEvents();
-  }, []);
+  }, [language]);
 
   useEffect(() => {
     if (!isAutoPlaying) return;
@@ -94,7 +94,7 @@ export default function Home() {
     try {
       const { data, error } = await supabase
         .from('hero_slides')
-        .select('title, subtitle, image_url')
+        .select('title, subtitle, title_ar, description_ar, image_url')
         .eq('is_active', true)
         .order('order_number', { ascending: true });
 
@@ -103,8 +103,8 @@ export default function Home() {
       if (data && data.length > 0) {
         setHeroSlides(data.map(slide => ({
           image: slide.image_url,
-          title: slide.title,
-          subtitle: slide.subtitle || ''
+          title: language === 'ar' && slide.title_ar ? slide.title_ar : slide.title,
+          subtitle: language === 'ar' && slide.description_ar ? slide.description_ar : (slide.subtitle || '')
         })));
       }
     } catch (error) {

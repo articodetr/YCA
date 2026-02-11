@@ -23,12 +23,12 @@ export default function Membership() {
       shortDescAr: 'لليمنيين في برمنغهام، 18+',
       popular: true,
       features: [
-        { en: 'Member rates on services', ar: 'أسعار خاصة للخدمات', included: true },
-        { en: 'Priority booking', ar: 'حجز ذو أولوية', included: true },
-        { en: 'Event discounts', ar: 'خصومات الفعاليات', included: true },
-        { en: 'Partner offers', ar: 'عروض الشركاء', included: true },
-        { en: 'Voting rights', ar: 'حقوق التصويت', included: true },
-        { en: 'Family coverage', ar: 'تغطية العائلة', included: false }
+        { en: 'Member rates on services', ar: 'أسعار أعضاء للخدمات', included: true },
+        { en: 'Priority booking', ar: 'أولوية الحجز', included: true },
+        { en: 'Discounts on events & programmes', ar: 'خصومات فعاليات وبرامج', included: true },
+        { en: 'Partner offers (where available)', ar: 'عروض الشركاء (إن وجدت)', included: true },
+        { en: 'AGM attendance (eligible)', ar: 'حضور AGM (للمؤهلين)', included: true },
+        { en: 'Family coverage', ar: 'تشمل العائلة', included: false }
       ]
     },
     {
@@ -38,16 +38,15 @@ export default function Membership() {
       nameAr: 'عائلية',
       price: '£30',
       period: language === 'ar' ? '/سنوياً' : '/year',
-      shortDescEn: 'Parents & children under 18',
-      shortDescAr: 'الوالدين والأطفال تحت 18',
+      shortDescEn: 'Parents/guardians + under-18s (same address)',
+      shortDescAr: 'ولي أمر + تحت 18 (نفس العنوان)',
       popular: false,
       features: [
-        { en: 'Member rates on services', ar: 'أسعار خاصة للخدمات', included: true },
-        { en: 'Priority booking', ar: 'حجز ذو أولوية', included: true },
-        { en: 'Event discounts', ar: 'خصومات الفعاليات', included: true },
-        { en: 'Partner offers', ar: 'عروض الشركاء', included: true },
-        { en: 'Voting rights', ar: 'حقوق التصويت', included: true },
-        { en: 'Family coverage', ar: 'تغطية العائلة', included: true }
+        { en: 'Member rates on services', ar: 'أسعار أعضاء للخدمات', included: true },
+        { en: 'Priority booking', ar: 'أولوية الحجز', included: true },
+        { en: 'Discounts on events & programmes', ar: 'خصومات فعاليات وبرامج', included: true },
+        { en: 'Partner offers (where available)', ar: 'عروض الشركاء (إن وجدت)', included: true },
+        { en: 'Family coverage (under 18)', ar: 'تشمل الأسرة (تحت 18)', included: true }
       ]
     },
     {
@@ -58,15 +57,14 @@ export default function Membership() {
       price: '£20',
       period: language === 'ar' ? '/سنوياً' : '/year',
       shortDescEn: 'Non-Yemenis & Yemenis outside Birmingham',
-      shortDescAr: 'غير اليمنيين واليمنيين خارج برمنغهام',
+      shortDescAr: 'غير يمنيين + يمنيون خارج برمنغهام',
       popular: false,
       features: [
-        { en: 'Member rates on services', ar: 'أسعار خاصة للخدمات', included: true },
-        { en: 'Priority booking', ar: 'حجز ذو أولوية', included: false },
-        { en: 'Event discounts', ar: 'خصومات الفعاليات', included: true },
-        { en: 'Partner offers', ar: 'عروض الشركاء', included: true },
-        { en: 'Voting rights', ar: 'حقوق التصويت', included: false },
-        { en: 'Family coverage', ar: 'تغطية العائلة', included: false }
+        { en: 'Member rates on services', ar: 'أسعار أعضاء للخدمات', included: true },
+        { en: 'Discounts on events & programmes', ar: 'خصومات فعاليات وبرامج', included: true },
+        { en: 'Partner offers (where available)', ar: 'عروض الشركاء (إن وجدت)', included: true },
+        { en: 'No voting/governance rights', ar: 'لا تصويت/حوكمة', included: false },
+        { en: 'Priority booking', ar: 'أولوية الحجز', included: false }
       ]
     },
     {
@@ -77,15 +75,14 @@ export default function Membership() {
       price: language === 'ar' ? 'مرن' : 'Flexible',
       period: '',
       shortDescEn: 'Support our community work',
-      shortDescAr: 'ادعم عملنا المجتمعي',
+      shortDescAr: 'دعم العمل المجتمعي',
       popular: false,
       features: [
-        { en: 'Member rates on services', ar: 'أسعار خاصة للخدمات', included: false },
-        { en: 'Priority booking', ar: 'حجز ذو أولوية', included: false },
-        { en: 'Event discounts', ar: 'خصومات الفعاليات', included: false },
-        { en: 'Partner offers', ar: 'عروض الشركاء', included: false },
-        { en: 'Voting rights', ar: 'حقوق التصويت', included: false },
-        { en: 'Business recognition', ar: 'تقدير الأعمال', included: true }
+        { en: 'Recognition on website (name/logo)', ar: 'إدراج الاسم/الشعار بالموقع', included: true },
+        { en: 'Supporter certificate', ar: 'شهادة داعم', included: true },
+        { en: 'Impact updates', ar: 'تحديثات الأثر', included: true },
+        { en: 'Bronze/Silver/Gold options', ar: 'باقات Bronze/Silver/Gold', included: true },
+        { en: 'No voting/governance rights', ar: 'بدون تصويت/حوكمة', included: false }
       ]
     }
   ];
@@ -200,25 +197,33 @@ export default function Membership() {
                       </tr>
                     </thead>
                     <tbody>
-                      {membershipTypes[0].features.map((feature, idx) => (
-                        <tr key={idx} className="border-b border-gray-100">
-                          <td className="py-3 px-4 text-gray-700">
-                            {language === 'ar' ? feature.ar : feature.en}
-                          </td>
-                          {membershipTypes.map(type => {
-                            const typeFeature = type.features[idx];
-                            return (
-                              <td key={type.id} className="text-center py-3 px-4">
-                                {typeFeature?.included ? (
-                                  <Check className="inline text-green-600" size={20} />
-                                ) : (
-                                  <X className="inline text-gray-300" size={20} />
-                                )}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
+                      {(() => {
+                        const allFeatures = new Map<string, { en: string; ar: string }>();
+                        membershipTypes.forEach(type => {
+                          type.features.forEach(f => {
+                            if (!allFeatures.has(f.en)) allFeatures.set(f.en, { en: f.en, ar: f.ar });
+                          });
+                        });
+                        return Array.from(allFeatures.values()).map((feature, idx) => (
+                          <tr key={idx} className="border-b border-gray-100">
+                            <td className="py-3 px-4 text-gray-700">
+                              {language === 'ar' ? feature.ar : feature.en}
+                            </td>
+                            {membershipTypes.map(type => {
+                              const match = type.features.find(f => f.en === feature.en);
+                              return (
+                                <td key={type.id} className="text-center py-3 px-4">
+                                  {match?.included ? (
+                                    <Check className="inline text-green-600" size={20} />
+                                  ) : (
+                                    <X className="inline text-gray-300" size={20} />
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ));
+                      })()}
                     </tbody>
                   </table>
                 </div>

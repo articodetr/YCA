@@ -22,19 +22,32 @@ export default function Volunteer() {
     responses: Array<{ question_id: string; response_text: string; response_files?: any[] }>
   ) => {
     try {
+      const fieldMap: Record<string, string> = {
+        v1: 'full_name', v2: 'email', v3: 'phone', v4: 'date_of_birth',
+        v5: 'address', v6: 'interests', v7: 'skills', v8: 'experience',
+        v9: 'why_volunteer', v10: 'availability', v11: 'emergency_contact_name',
+        v12: 'emergency_contact_phone',
+      };
+
+      const mapped: Record<string, any> = {};
+      for (const [key, value] of Object.entries(formData)) {
+        const colName = fieldMap[key] || key;
+        mapped[colName] = Array.isArray(value) ? value.join(', ') : value;
+      }
+
       const basicData = {
-        full_name: formData.full_name || '',
-        email: formData.email || '',
-        phone: formData.phone || '',
-        address: formData.address || '',
-        date_of_birth: formData.date_of_birth || null,
-        interests: formData.interests || '',
-        skills: formData.skills || '',
-        availability: formData.availability || '',
-        experience: formData.experience || '',
-        why_volunteer: formData.why_volunteer || '',
-        emergency_contact_name: formData.emergency_contact_name || '',
-        emergency_contact_phone: formData.emergency_contact_phone || '',
+        full_name: mapped.full_name || responses.find(r => r.response_text && r.question_id.startsWith('v1'))?.response_text || '',
+        email: mapped.email || '',
+        phone: mapped.phone || '',
+        address: mapped.address || '',
+        date_of_birth: mapped.date_of_birth || null,
+        interests: mapped.interests || '',
+        skills: mapped.skills || '',
+        availability: mapped.availability || '',
+        experience: mapped.experience || '',
+        why_volunteer: mapped.why_volunteer || '',
+        emergency_contact_name: mapped.emergency_contact_name || '',
+        emergency_contact_phone: mapped.emergency_contact_phone || '',
       };
 
       const { data: application, error: applicationError } = await supabase
@@ -45,19 +58,24 @@ export default function Volunteer() {
 
       if (applicationError) throw applicationError;
 
-      const responsesToInsert = responses.map(r => ({
-        form_type: 'volunteer',
-        application_id: application.id,
-        question_id: r.question_id,
-        response_text: r.response_text,
-        response_files: r.response_files || []
-      }));
+      try {
+        const isFallbackId = (id: string) => /^v\d+$/.test(id);
+        const validResponses = responses.filter(r => !isFallbackId(r.question_id));
 
-      const { error: responseError } = await supabase
-        .from('form_responses')
-        .insert(responsesToInsert);
+        if (validResponses.length > 0) {
+          const responsesToInsert = validResponses.map(r => ({
+            form_type: 'volunteer',
+            application_id: application.id,
+            question_id: r.question_id,
+            response_text: r.response_text,
+            response_files: r.response_files || []
+          }));
 
-      if (responseError) throw responseError;
+          await supabase.from('form_responses').insert(responsesToInsert);
+        }
+      } catch (e) {
+        console.warn('Could not save form responses:', e);
+      }
 
       setSubmitSuccess(true);
       setTimeout(() => setSubmitSuccess(false), 5000);

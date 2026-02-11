@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronRight, ChevronLeft, Check, Loader2, Upload, FileText } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
+import { getFallbackQuestions } from '../../data/formQuestions';
 
 interface FormQuestion {
   id: string;
@@ -62,19 +63,23 @@ export default function DynamicFormModal({
     try {
       setLoading(true);
 
-      let query = supabase
+      const { data, error } = await supabase
         .from('form_questions')
         .select('*')
         .eq('form_type', formType)
         .eq('is_active', true)
         .order('order_index');
 
-      const { data, error } = await query;
-
-      if (error) throw error;
-      setQuestions(data || []);
+      if (error || !data || data.length === 0) {
+        const fallback = getFallbackQuestions(formType);
+        setQuestions(fallback as any);
+      } else {
+        setQuestions(data);
+      }
     } catch (error) {
       console.error('Error loading questions:', error);
+      const fallback = getFallbackQuestions(formType);
+      setQuestions(fallback as any);
     } finally {
       setLoading(false);
     }

@@ -18,14 +18,25 @@ export default function Partnerships() {
     responses: Array<{ question_id: string; response_text: string; response_files?: any[] }>
   ) => {
     try {
+      const fieldMap: Record<string, string> = {
+        p1: 'organization_name', p2: 'contact_person', p3: 'email',
+        p4: 'phone', p5: 'organization_type', p6: 'partnership_interest', p7: 'message',
+      };
+
+      const mapped: Record<string, any> = {};
+      for (const [key, value] of Object.entries(formData)) {
+        const colName = fieldMap[key] || key;
+        mapped[colName] = Array.isArray(value) ? value.join(', ') : value;
+      }
+
       const basicData = {
-        organization_name: formData.organization_name || '',
-        contact_person: formData.contact_person || '',
-        email: formData.email || '',
-        phone: formData.phone || '',
-        organization_type: formData.organization_type || '',
-        partnership_interest: formData.partnership_interest || '',
-        message: formData.message || '',
+        organization_name: mapped.organization_name || '',
+        contact_person: mapped.contact_person || '',
+        email: mapped.email || '',
+        phone: mapped.phone || '',
+        organization_type: mapped.organization_type || '',
+        partnership_interest: mapped.partnership_interest || '',
+        message: mapped.message || '',
       };
 
       const { data: inquiry, error: inquiryError } = await supabase
@@ -36,19 +47,24 @@ export default function Partnerships() {
 
       if (inquiryError) throw inquiryError;
 
-      const responsesToInsert = responses.map(r => ({
-        form_type: 'partnership',
-        application_id: inquiry.id,
-        question_id: r.question_id,
-        response_text: r.response_text,
-        response_files: r.response_files || []
-      }));
+      try {
+        const isFallbackId = (id: string) => /^p\d+$/.test(id);
+        const validResponses = responses.filter(r => !isFallbackId(r.question_id));
 
-      const { error: responseError } = await supabase
-        .from('form_responses')
-        .insert(responsesToInsert);
+        if (validResponses.length > 0) {
+          const responsesToInsert = validResponses.map(r => ({
+            form_type: 'partnership',
+            application_id: inquiry.id,
+            question_id: r.question_id,
+            response_text: r.response_text,
+            response_files: r.response_files || []
+          }));
 
-      if (responseError) throw responseError;
+          await supabase.from('form_responses').insert(responsesToInsert);
+        }
+      } catch (e) {
+        console.warn('Could not save form responses:', e);
+      }
 
       setSubmitSuccess(true);
       setTimeout(() => setSubmitSuccess(false), 5000);

@@ -25,15 +25,6 @@ const translations = {
     step2: 'Complete Details & Pay',
     step3: 'Get Member ID',
     secureNote: 'Secure payment powered by Stripe',
-    termsTitle: 'Terms & Conditions',
-    termsAgree: 'I have read and agree to the Terms & Conditions',
-    termsRequired: 'You must agree to the terms to continue',
-    term1: 'All memberships are valid from the date of payment until 31 December of the same year.',
-    term2: 'Members must comply with the association\'s governing document and policies.',
-    term3: 'Your personal data is protected under our data protection policy and GDPR.',
-    term4: 'Membership fees are non-refundable once payment is processed.',
-    term5: 'The association reserves the right to revoke membership for breach of conduct.',
-    term6: 'Voting rights are only available to eligible membership types at the AGM.',
     compareTypes: 'Compare Types',
     hideComparison: 'Hide Comparison',
     features: 'Features',
@@ -57,15 +48,6 @@ const translations = {
     step2: 'أكمل البيانات والدفع',
     step3: 'احصل على رقم العضوية',
     secureNote: 'دفع آمن مدعوم من Stripe',
-    termsTitle: 'الشروط والأحكام',
-    termsAgree: 'لقد قرأت وأوافق على الشروط والأحكام',
-    termsRequired: 'يجب الموافقة على الشروط للمتابعة',
-    term1: 'جميع العضويات صالحة من تاريخ الدفع حتى 31 ديسمبر من نفس السنة.',
-    term2: 'يجب على الأعضاء الالتزام بالوثيقة التأسيسية وسياسات الجمعية.',
-    term3: 'بياناتك الشخصية محمية بموجب سياسة حماية البيانات وقانون GDPR.',
-    term4: 'رسوم العضوية غير قابلة للاسترداد بعد إتمام الدفع.',
-    term5: 'تحتفظ الجمعية بحق إلغاء العضوية في حالة مخالفة قواعد السلوك.',
-    term6: 'حقوق التصويت متاحة فقط لأنواع العضوية المؤهلة في الاجتماع العام السنوي.',
     compareTypes: 'مقارنة الأنواع',
     hideComparison: 'إخفاء المقارنة',
     features: 'الميزات',
@@ -99,8 +81,6 @@ export default function UnifiedMembership() {
   const [selectedType, setSelectedType] = useState<MembershipPlan | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [activeStepFromModal, setActiveStepFromModal] = useState(1);
-  const [termsAccepted, setTermsAccepted] = useState(false);
-  const [showTermsError, setShowTermsError] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
   const [businessSupport, setBusinessSupport] = useState<{ tier: string; amount: number; frequency: string } | null>(null);
   const [showBusinessSelector, setShowBusinessSelector] = useState(false);
@@ -134,7 +114,6 @@ export default function UnifiedMembership() {
 
       sessionStorage.removeItem('pendingMembershipSelection');
       setSelectedType(plan);
-      setTermsAccepted(true);
       if (savedBS) {
         setBusinessSupport(savedBS);
       }
@@ -147,12 +126,6 @@ export default function UnifiedMembership() {
   const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || '';
 
   const handleSelect = (type: MembershipPlan) => {
-    if (!termsAccepted) {
-      setShowTermsError(true);
-      document.getElementById('terms-section')?.scrollIntoView({ behavior: 'smooth' });
-      return;
-    }
-
     sessionStorage.setItem('pendingMembershipSelection', JSON.stringify({
       planId: type.id,
       businessSupport: null,
@@ -270,20 +243,31 @@ export default function UnifiedMembership() {
                       </tr>
                     </thead>
                     <tbody>
-                      {membershipPlans[0].features.map((feature, idx) => (
-                        <tr key={idx} className="border-b border-gray-100">
-                          <td className={`py-3 px-4 text-gray-700 ${isRTL ? 'text-right' : 'text-left'}`}>
-                            {language === 'ar' ? feature.ar : feature.en}
-                          </td>
-                          {membershipPlans.map(type => (
-                            <td key={type.id} className="text-center py-3 px-4">
-                              {type.features[idx]?.included
-                                ? <Check className="inline text-emerald-600" size={20} />
-                                : <X className="inline text-gray-300" size={20} />}
+                      {(() => {
+                        const allFeatures = new Map<string, { en: string; ar: string }>();
+                        membershipPlans.forEach(p => {
+                          p.features.forEach(f => {
+                            if (!allFeatures.has(f.en)) allFeatures.set(f.en, { en: f.en, ar: f.ar });
+                          });
+                        });
+                        return Array.from(allFeatures.values()).map((feature, idx) => (
+                          <tr key={idx} className="border-b border-gray-100">
+                            <td className={`py-3 px-4 text-gray-700 ${isRTL ? 'text-right' : 'text-left'}`}>
+                              {language === 'ar' ? feature.ar : feature.en}
                             </td>
-                          ))}
-                        </tr>
-                      ))}
+                            {membershipPlans.map(type => {
+                              const match = type.features.find(f => f.en === feature.en);
+                              return (
+                                <td key={type.id} className="text-center py-3 px-4">
+                                  {match?.included
+                                    ? <Check className="inline text-emerald-600" size={20} />
+                                    : <X className="inline text-gray-300" size={20} />}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ));
+                      })()}
                     </tbody>
                   </table>
                 </div>
@@ -404,52 +388,6 @@ export default function UnifiedMembership() {
             )}
           </AnimatePresence>
 
-          <motion.div
-            id="terms-section"
-            className="max-w-3xl mx-auto mt-12"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <div className={`bg-white rounded-2xl shadow-sm border-2 p-6 transition-colors ${
-              showTermsError && !termsAccepted ? 'border-red-300' : 'border-gray-200'
-            }`}>
-              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <Shield size={20} className="text-emerald-600" />
-                {t.termsTitle}
-              </h3>
-              <div className="bg-gray-50 rounded-xl p-4 mb-5 max-h-48 overflow-y-auto">
-                <ul className="space-y-2.5 text-sm text-gray-700">
-                  {[t.term1, t.term2, t.term3, t.term4, t.term5, t.term6].map((term, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <span className="text-emerald-600 font-bold mt-0.5">{i + 1}.</span>
-                      <span>{term}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <label className="flex items-start gap-3 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  checked={termsAccepted}
-                  onChange={(e) => {
-                    setTermsAccepted(e.target.checked);
-                    if (e.target.checked) setShowTermsError(false);
-                  }}
-                  className="mt-1 w-5 h-5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                />
-                <span className="text-sm font-medium text-gray-800 group-hover:text-emerald-700 transition-colors">
-                  {t.termsAgree}
-                </span>
-              </label>
-              {showTermsError && !termsAccepted && (
-                <p className="text-sm text-red-600 mt-2 flex items-center gap-1.5">
-                  <Info size={14} />
-                  {t.termsRequired}
-                </p>
-              )}
-            </div>
-          </motion.div>
 
           <motion.div
             className="text-center mt-10 space-y-3"

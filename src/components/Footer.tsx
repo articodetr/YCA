@@ -5,6 +5,7 @@ import { fadeInUp, staggerContainer, staggerItem } from '../lib/animations';
 import { useContent } from '../contexts/ContentContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSiteSettings } from '../contexts/SiteSettingsContext';
+import BeltDivider from './BeltDivider';
 
 export default function Footer() {
   const { getContent } = useContent();
@@ -22,7 +23,9 @@ export default function Footer() {
   const tiktokUrl = getSetting('social_tiktok', '#');
 
   return (
-    <footer className="bg-primary text-white">
+    <>
+    <BeltDivider />
+    <footer className="bg-primary text-white relative overflow-hidden">
       <div className="container mx-auto px-4 py-12">
         <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
@@ -149,5 +152,6 @@ export default function Footer() {
         </motion.div>
       </div>
     </footer>
+    </>
   );
 }

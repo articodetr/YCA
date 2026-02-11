@@ -12,6 +12,7 @@ import MembershipApplicationModal from '../components/modals/MembershipApplicati
 import VolunteerApplicationModal from '../components/modals/VolunteerApplicationModal';
 import DonationModal from '../components/modals/DonationModal';
 import PartnershipModal from '../components/modals/PartnershipModal';
+import BeltDivider from '../components/BeltDivider';
 
 interface Event {
   id: string;
@@ -250,17 +251,15 @@ export default function Home() {
         </div>
       </section>
 
+      <BeltDivider />
+
       {/* Welcome Section */}
       <section className="py-20 bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
-        {/* Background Logo Watermark */}
-        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[700px] h-[700px] pointer-events-none opacity-[0.12]">
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[700px] h-[700px] pointer-events-none opacity-[0.04]">
           <img
-            src="/logo.png"
+            src="/logo_white.png"
             alt=""
             className="w-full h-full object-contain"
-            style={{
-              filter: 'sepia(1) saturate(2.5) hue-rotate(10deg) brightness(1.1) contrast(0.9)'
-            }}
           />
         </div>
 
@@ -359,6 +358,8 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
+
+      <BeltDivider />
 
       {/* Services Section */}
       <section className="py-20 bg-white">
@@ -541,17 +542,15 @@ export default function Home() {
         </div>
       </section>
 
+      <BeltDivider />
+
       {/* Get Involved Section */}
       <section className="py-20 bg-white relative overflow-hidden">
-        {/* Background Logo Watermark */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] pointer-events-none opacity-[0.08]">
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] pointer-events-none opacity-[0.04]">
           <img
-            src="/logo.png"
+            src="/logo_white.png"
             alt=""
             className="w-full h-full object-contain"
-            style={{
-              filter: 'sepia(1) saturate(2.5) hue-rotate(10deg) brightness(1.1) contrast(0.9)'
-            }}
           />
         </div>
 
@@ -665,6 +664,8 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
+
+      <BeltDivider />
 
       {/* CTA Section */}
       <section className="py-20 bg-gradient-to-br from-[#1b2b45] via-[#1e3a5c] to-[#0f2439] text-white">

@@ -3,6 +3,7 @@ import { ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { fadeInUp, fadeInDown, staggerContainer, staggerItem } from '../lib/animations';
 import { useSiteSettings } from '../contexts/SiteSettingsContext';
+import BeltDivider from './BeltDivider';
 
 interface PageHeaderProps {
   title: string;
@@ -17,6 +18,7 @@ export default function PageHeader({ title, description, breadcrumbs, image, pag
   const backgroundImage = image || (pageKey ? getPageImage(pageKey, 'header_bg', '/image.png') : '/image.png');
 
   return (
+    <>
     <section className="relative h-80 flex items-center justify-center overflow-hidden">
       <motion.div
         className="absolute inset-0 bg-cover bg-center"
@@ -92,5 +94,7 @@ export default function PageHeader({ title, description, breadcrumbs, image, pag
         )}
       </motion.div>
     </section>
+    <BeltDivider />
+    </>
   );
 }

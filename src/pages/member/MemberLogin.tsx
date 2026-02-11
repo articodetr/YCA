@@ -36,16 +36,14 @@ export default function MemberLogin() {
   useEffect(() => {
     if (authLoading || !user) return;
 
-    if (isPaidMember) {
-      navigate('/member/dashboard', { replace: true });
-    } else if (pendingApplication?.payment_status === 'paid') {
-      navigate('/member/dashboard', { replace: true });
-    } else if (needsOnboarding) {
+    const destination = redirectPath || '/member/dashboard';
+
+    if (needsOnboarding && !redirectPath) {
       navigate('/membership', { replace: true });
     } else {
-      navigate('/member/dashboard', { replace: true });
+      navigate(destination, { replace: true });
     }
-  }, [user, authLoading, isPaidMember, needsOnboarding, pendingApplication, navigate]);
+  }, [user, authLoading, isPaidMember, needsOnboarding, pendingApplication, navigate, redirectPath]);
 
   const translations = {
     en: {

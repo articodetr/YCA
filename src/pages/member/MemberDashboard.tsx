@@ -193,6 +193,13 @@ export default function MemberDashboard() {
   };
 
   useEffect(() => {
+    const newTab = searchParams.get('tab') as TabId | null;
+    if (newTab && validTabs.includes(newTab) && newTab !== activeTab) {
+      setActiveTab(newTab);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     fetchData();
   }, [user]);
 

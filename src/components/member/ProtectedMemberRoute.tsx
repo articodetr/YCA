@@ -31,7 +31,8 @@ export default function ProtectedMemberRoute({ children }: ProtectedMemberRouteP
   }
 
   if (!user) {
-    return <Navigate to="/member/login" replace />;
+    const returnTo = location.pathname + location.search;
+    return <Navigate to={`/member/login?redirect=${encodeURIComponent(returnTo)}`} replace />;
   }
 
   return <>{children}</>;

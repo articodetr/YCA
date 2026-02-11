@@ -50,6 +50,7 @@ export default function MembershipsManagement() {
       const { data, error } = await supabase
         .from('membership_applications')
         .select('*')
+        .or('payment_status.eq.completed,status.eq.approved')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -82,15 +83,35 @@ export default function MembershipsManagement() {
     }
   };
 
+  const uniqueMemberships = useMemo(() => {
+    const emailMap = new Map<string, Membership>();
+    for (const mem of memberships) {
+      const key = mem.email.toLowerCase();
+      const existing = emailMap.get(key);
+      if (!existing) {
+        emailMap.set(key, mem);
+      } else {
+        const existingPaid = existing.payment_status === 'completed';
+        const currentPaid = mem.payment_status === 'completed';
+        if (currentPaid && !existingPaid) {
+          emailMap.set(key, mem);
+        } else if (currentPaid === existingPaid && new Date(mem.created_at) > new Date(existing.created_at)) {
+          emailMap.set(key, mem);
+        }
+      }
+    }
+    return Array.from(emailMap.values());
+  }, [memberships]);
+
   const stats = useMemo(() => {
-    const s = { total: memberships.length, pending: 0, approved: 0, rejected: 0 };
-    for (const m of memberships) {
+    const s = { total: uniqueMemberships.length, pending: 0, approved: 0, rejected: 0 };
+    for (const m of uniqueMemberships) {
       if (m.status === 'pending') s.pending++;
       else if (m.status === 'approved') s.approved++;
       else if (m.status === 'rejected') s.rejected++;
     }
     return s;
-  }, [memberships]);
+  }, [uniqueMemberships]);
 
   const getFullName = (mem: Membership): string => {
     if (mem.full_name) return mem.full_name;
@@ -107,7 +128,7 @@ export default function MembershipsManagement() {
     return mem.membership_type in prices ? `\u00A3${prices[mem.membership_type]}/year` : '-';
   };
 
-  const filteredMemberships = memberships.filter((mem) => {
+  const filteredMemberships = uniqueMemberships.filter((mem) => {
     const fullName = getFullName(mem);
     const matchesSearch =
       fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -336,7 +357,7 @@ export default function MembershipsManagement() {
         )}
 
         <div className="mt-4 text-sm text-gray-500">
-          Showing {filteredMemberships.length} of {memberships.length} applications
+          Showing {filteredMemberships.length} of {uniqueMemberships.length} unique applications
         </div>
       </div>
 

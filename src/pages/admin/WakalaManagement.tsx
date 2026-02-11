@@ -79,6 +79,7 @@ export default function WakalaManagement() {
         .from('wakala_applications')
         .select('*')
         .neq('status', 'pending_payment')
+        .neq('payment_status', 'deleted_by_admin')
         .order('created_at', { ascending: false });
 
       if (error) throw error;

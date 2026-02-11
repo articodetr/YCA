@@ -204,10 +204,10 @@ export default function TranslationBookingForm({ onComplete }: TranslationBookin
   const checkMemberEligibility = async () => {
     if (!user) return;
     try {
-      const { data: member } = await supabase.from('members').select('membership_start_date, status').eq('email', user.email).eq('status', 'active').maybeSingle();
-      if (member?.membership_start_date) {
+      const { data: member } = await supabase.from('members').select('start_date, status').eq('email', user.email).eq('status', 'active').maybeSingle();
+      if (member?.start_date) {
         setMembershipStatus('active');
-        const diffDays = Math.floor((Date.now() - new Date(member.membership_start_date).getTime()) / (1000 * 60 * 60 * 24));
+        const diffDays = Math.floor((Date.now() - new Date(member.start_date).getTime()) / (1000 * 60 * 60 * 24));
         setMemberDaysSinceJoin(diffDays);
       } else { setMembershipStatus('none'); setMemberDaysSinceJoin(0); }
 

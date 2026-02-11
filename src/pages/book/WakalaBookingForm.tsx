@@ -209,14 +209,16 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
   const checkMemberEligibility = async () => {
     if (!user) return;
     try {
-      const { data: member } = await supabase.from('members').select('membership_start_date, status').eq('email', user.email).eq('status', 'active').maybeSingle();
-      if (member?.membership_start_date) {
+      const { data: member } = await supabase.from('members').select('start_date, status').eq('email', user.email).eq('status', 'active').maybeSingle();
+      if (member?.start_date) {
         setMembershipStatus('active');
-        const diffDays = Math.floor((Date.now() - new Date(member.membership_start_date).getTime()) / (1000 * 60 * 60 * 24));
+        const diffDays = Math.floor((Date.now() - new Date(member.start_date).getTime()) / (1000 * 60 * 60 * 24));
         setMemberDaysSinceJoin(diffDays);
       } else { setMembershipStatus('none'); setMemberDaysSinceJoin(0); }
-      const { count } = await supabase.from('wakala_applications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).in('status', ['submitted', 'in_progress', 'completed', 'approved']);
-      setPreviousWakalaCount(count || 0);
+      const { count: wCount } = await supabase.from('wakala_applications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).in('status', ['submitted', 'in_progress', 'completed', 'approved']);
+      const { count: tCount } = await supabase.from('translation_requests').select('id', { count: 'exact', head: true }).eq('user_id', user.id);
+      const { count: oCount } = await supabase.from('other_legal_requests').select('id', { count: 'exact', head: true }).eq('user_id', user.id);
+      setPreviousWakalaCount((wCount || 0) + (tCount || 0) + (oCount || 0));
     } catch (err) { console.error('Error checking eligibility:', err); }
   };
 

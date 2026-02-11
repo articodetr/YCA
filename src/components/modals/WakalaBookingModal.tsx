@@ -85,13 +85,15 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
     attorneyPassport: 'جواز سفر الوكيل',
     witnessPassports: 'جوازات الشهود (اختياري)',
     pricingInfo: 'معلومات التسعير',
-    priceMember: '20 جنيه - أول وكالة للأعضاء المؤهلين (عضوية 10 أيام فأكثر)',
-    priceStandard: '40 جنيه - السعر الأساسي',
+    priceMember: 'مجاناً - أول وكالة للأعضاء المؤهلين (عضوية 10 أيام فأكثر)',
+    priceMemberSecond: '20 جنيه - الوكالات اللاحقة للأعضاء',
+    priceStandard: '40 جنيه - السعر الأساسي (غير الأعضاء)',
     yourPrice: 'السعر الخاص بك',
     specialRequests: 'ملاحظات إضافية (اختياري)',
     membershipNumber: 'رقم العضوية',
     consentLabel: 'أؤكد موافقتي على استخدام معلوماتي وفقاً لسياسات جمعية الجالية اليمنية في برمنغهام',
     submitAndPay: 'تقديم الطلب والدفع',
+    submitFree: 'تقديم الطلب',
     submitting: 'جاري المعالجة...',
     successTitle: 'تم تقديم الطلب بنجاح!',
     successMsg: 'سنراجع طلبك ونتواصل معك قريباً.',
@@ -139,13 +141,15 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
     attorneyPassport: 'Attorney Passport Copy',
     witnessPassports: 'Witness Passports (Optional)',
     pricingInfo: 'Pricing Information',
-    priceMember: '\u00A320 - First wakala for eligible members (10+ days membership)',
-    priceStandard: '\u00A340 - Standard rate',
+    priceMember: 'FREE - First wakala for eligible members (10+ days membership)',
+    priceMemberSecond: '\u00A320 - Subsequent wakalas for members',
+    priceStandard: '\u00A340 - Standard rate (non-members)',
     yourPrice: 'Your Price',
     specialRequests: 'Additional Notes (Optional)',
     membershipNumber: 'Membership Number',
     consentLabel: 'I confirm that I agree to the use of my information in line with YCA Birmingham policies',
     submitAndPay: 'Submit & Proceed to Payment',
+    submitFree: 'Submit Application',
     submitting: 'Processing...',
     successTitle: 'Application Submitted!',
     successMsg: 'We will review your application and contact you soon.',
@@ -239,14 +243,14 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
     try {
       const { data: member } = await supabase
         .from('members')
-        .select('membership_start_date, status')
+        .select('start_date, status')
         .eq('email', user.email)
         .eq('status', 'active')
         .maybeSingle();
 
-      if (member?.membership_start_date) {
+      if (member?.start_date) {
         setMembershipStatus('active');
-        const start = new Date(member.membership_start_date);
+        const start = new Date(member.start_date);
         const diffDays = Math.floor((Date.now() - start.getTime()) / (1000 * 60 * 60 * 24));
         setMemberDaysSinceJoin(diffDays);
       } else {
@@ -254,13 +258,10 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
         setMemberDaysSinceJoin(0);
       }
 
-      const { count } = await supabase
-        .from('wakala_applications')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .in('status', ['submitted', 'in_progress', 'completed', 'approved']);
-
-      setPreviousWakalaCount(count || 0);
+      const { count: wCount } = await supabase.from('wakala_applications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).in('status', ['submitted', 'in_progress', 'completed', 'approved']);
+      const { count: tCount } = await supabase.from('translation_requests').select('id', { count: 'exact', head: true }).eq('user_id', user.id);
+      const { count: oCount } = await supabase.from('other_legal_requests').select('id', { count: 'exact', head: true }).eq('user_id', user.id);
+      setPreviousWakalaCount((wCount || 0) + (tCount || 0) + (oCount || 0));
     } catch (err) {
       console.error('Error checking eligibility:', err);
     }
@@ -268,7 +269,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
 
   const calculatePrice = () => {
     if (membershipStatus === 'active' && memberDaysSinceJoin >= 10) {
-      return previousWakalaCount === 0 ? 20 : 40;
+      return previousWakalaCount === 0 ? 0 : 20;
     }
     return 40;
   };
@@ -353,6 +354,22 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
 
       setFormPayload(payload);
       setPaymentAmount(price);
+
+      if (price === 0) {
+        const bookingRef = `WK-${Date.now().toString(36).toUpperCase()}`;
+        const { error: insertError } = await supabase
+          .from('wakala_applications')
+          .insert([{
+            ...payload,
+            status: 'submitted',
+            payment_status: 'free',
+            booking_reference: bookingRef,
+          }]);
+        if (insertError) throw insertError;
+        setStep('success');
+        return;
+      }
+
       await createPaymentIntent(price);
       setStep('payment');
     } catch (err: any) {
@@ -645,11 +662,12 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
             <h4 className="text-md font-bold text-gray-900 mb-3">{t.pricingInfo}</h4>
             <div className="space-y-2 text-sm">
-              <p className={currentPrice === 20 ? 'font-bold text-emerald-700' : 'text-gray-600'}>{t.priceMember}</p>
+              <p className={currentPrice === 0 ? 'font-bold text-emerald-700' : 'text-gray-600'}>{t.priceMember}</p>
+              <p className={currentPrice === 20 ? 'font-bold text-emerald-700' : 'text-gray-600'}>{t.priceMemberSecond}</p>
               <p className={currentPrice === 40 ? 'font-bold text-emerald-700' : 'text-gray-600'}>{t.priceStandard}</p>
               <div className="border-t border-blue-300 pt-2 mt-2">
                 <span className="font-bold text-lg text-emerald-700">
-                  {t.yourPrice}: {`\u00A3${currentPrice}`}
+                  {t.yourPrice}: {currentPrice === 0 ? (isRTL ? 'مجاناً' : 'FREE') : `\u00A3${currentPrice}`}
                 </span>
               </div>
             </div>
@@ -682,7 +700,7 @@ export default function WakalaBookingModal({ isOpen, onClose, onSuccess }: Wakal
               {loading ? (
                 <><Loader2 className="w-5 h-5 animate-spin" /> {t.submitting}</>
               ) : (
-                <><Send className="w-5 h-5" /> {t.submitAndPay}</>
+                <><Send className="w-5 h-5" /> {currentPrice === 0 ? t.submitFree : t.submitAndPay}</>
               )}
             </button>
           </div>

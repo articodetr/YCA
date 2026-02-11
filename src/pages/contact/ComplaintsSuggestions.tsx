@@ -158,7 +158,6 @@ export default function ComplaintsSuggestions() {
           desired_outcome: formData.desired_outcome || null,
           contact_requested: formData.contact_requested,
           preferred_contact_method: formData.contact_requested ? formData.preferred_contact_method || null : null,
-          consent: formData.consent,
         }]);
 
       if (error) throw error;

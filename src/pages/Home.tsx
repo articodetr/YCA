@@ -466,11 +466,11 @@ export default function Home() {
             variants={staggerContainer}
           >
             <motion.h2 className="text-4xl sm:text-5xl font-bold text-primary mb-6" variants={fadeInUp}>
-              {getContent('home', 'events_section_title', 'Upcoming Events')}
+              {getContent('home', 'events_title', 'Upcoming Events')}
             </motion.h2>
             <motion.div className="w-32 h-1 bg-gradient-to-r from-transparent via-[#8B4513] to-transparent mx-auto mb-6" variants={scaleIn}></motion.div>
             <motion.p className="text-lg text-muted max-w-3xl mx-auto" variants={fadeInUp}>
-              {getContent('home', 'events_section_description', 'Join us at our upcoming community events and celebrations')}
+              {getContent('home', 'events_description', 'Join us at our upcoming community events and celebrations')}
             </motion.p>
           </motion.div>
 

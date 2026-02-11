@@ -11,8 +11,8 @@ export default function HomePageEditor(props: SectionEditorProps) {
   return (
     <div className="space-y-4">
       <HomeHeroEditor {...props} />
-      <HomeStatsEditor {...props} />
       <HomeWelcomeEditor {...props} />
+      <HomeStatsEditor {...props} />
       <HomeServicesEditor {...props} />
       <HomeEventsEditor {...props} />
       <HomeGetInvolvedEditor {...props} />

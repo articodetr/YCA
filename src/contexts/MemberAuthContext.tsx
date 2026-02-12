@@ -28,6 +28,7 @@ interface MemberAuthContextType {
   member: Member | null;
   loading: boolean;
   isPaidMember: boolean;
+  isExpired: boolean;
   needsOnboarding: boolean;
   pendingApplication: PendingApplication | null;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -55,6 +56,7 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
   const [member, setMember] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPaidMember, setIsPaidMember] = useState(false);
+  const [isExpired, setIsExpired] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [pendingApplication, setPendingApplication] = useState<PendingApplication | null>(null);
 
@@ -69,6 +71,7 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
       if (memberById) {
         setMember(memberById);
         setIsPaidMember(true);
+        setIsExpired(memberById.expiry_date ? new Date(memberById.expiry_date) < new Date() : false);
         setNeedsOnboarding(false);
         setPendingApplication(null);
         return;
@@ -87,6 +90,7 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
       if (memberByEmail) {
         setMember(memberByEmail);
         setIsPaidMember(true);
+        setIsExpired(memberByEmail.expiry_date ? new Date(memberByEmail.expiry_date) < new Date() : false);
         setNeedsOnboarding(false);
         setPendingApplication(null);
         return;
@@ -94,6 +98,7 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
 
       setMember(null);
       setIsPaidMember(false);
+      setIsExpired(false);
 
       {
         const { data: appByUserId } = await supabase
@@ -171,6 +176,7 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
       console.error('Error fetching member data:', error);
       setMember(null);
       setIsPaidMember(false);
+      setIsExpired(false);
     }
   };
 
@@ -201,6 +207,7 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
         } else {
           setMember(null);
           setIsPaidMember(false);
+          setIsExpired(false);
           setNeedsOnboarding(false);
           setPendingApplication(null);
           if (!initialSessionHandled) {
@@ -277,7 +284,7 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <MemberAuthContext.Provider value={{ user, session, member, loading, isPaidMember, needsOnboarding, pendingApplication, signIn, signInWithGoogle, signUp, signOut, resetPassword, refreshMember }}>
+    <MemberAuthContext.Provider value={{ user, session, member, loading, isPaidMember, isExpired, needsOnboarding, pendingApplication, signIn, signInWithGoogle, signUp, signOut, resetPassword, refreshMember }}>
       {children}
     </MemberAuthContext.Provider>
   );

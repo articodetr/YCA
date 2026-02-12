@@ -45,6 +45,7 @@ import MemberLogin from './pages/member/MemberLogin';
 import MemberSignup from './pages/member/MemberSignup';
 import AuthCallback from './pages/member/AuthCallback';
 import MemberDashboard from './pages/member/MemberDashboard';
+import MemberRenewal from './pages/member/MemberRenewal';
 import AdminLayout from './components/admin/AdminLayout';
 import Dashboard from './pages/admin/Dashboard';
 import NewsManagement from './pages/admin/NewsManagement';
@@ -141,6 +142,15 @@ function App() {
 
           <Route path="/member/membership/apply" element={<Navigate to="/membership" replace />} />
           <Route path="/member/choose-membership" element={<Navigate to="/membership" replace />} />
+
+          <Route
+            path="/member/renew"
+            element={
+              <ProtectedMemberRoute allowExpired>
+                <MemberRenewal />
+              </ProtectedMemberRoute>
+            }
+          />
 
           <Route
             path="/member/*"

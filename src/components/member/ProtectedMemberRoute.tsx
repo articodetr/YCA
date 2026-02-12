@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 
 interface ProtectedMemberRouteProps {
   children: React.ReactNode;
+  allowExpired?: boolean;
 }
 
 function hasOAuthParams() {
@@ -13,8 +14,8 @@ function hasOAuthParams() {
   return params.has('code') || hash.includes('access_token');
 }
 
-export default function ProtectedMemberRoute({ children }: ProtectedMemberRouteProps) {
-  const { user, loading } = useMemberAuth();
+export default function ProtectedMemberRoute({ children, allowExpired }: ProtectedMemberRouteProps) {
+  const { user, loading, isExpired, isPaidMember } = useMemberAuth();
   const { language } = useLanguage();
   const location = useLocation();
   const isRTL = language === 'ar';
@@ -33,6 +34,10 @@ export default function ProtectedMemberRoute({ children }: ProtectedMemberRouteP
   if (!user) {
     const returnTo = location.pathname + location.search;
     return <Navigate to={`/member/login?redirect=${encodeURIComponent(returnTo)}`} replace />;
+  }
+
+  if (isPaidMember && isExpired && !allowExpired && !location.pathname.includes('/member/renew')) {
+    return <Navigate to="/member/renew" replace />;
   }
 
   return <>{children}</>;

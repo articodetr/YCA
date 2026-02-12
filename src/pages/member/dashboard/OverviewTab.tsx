@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Shield, CreditCard, Plus, MessageSquare,
-  Bell, Calendar, Handshake, BookOpen,
+  Bell, Calendar, Handshake, BookOpen, AlertTriangle, ArrowRight,
 } from 'lucide-react';
 import { staggerContainer, staggerItem } from '../../../lib/animations';
 import { useLanguage } from '../../../contexts/LanguageContext';
@@ -69,11 +69,60 @@ export default function OverviewTab({ memberRecord, membershipApp, bookings, pay
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
 
+  const daysUntilExpiry = memberRecord?.expiry_date
+    ? Math.ceil((new Date(memberRecord.expiry_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    : null;
+
+  const showRenewalBanner = memberRecord && daysUntilExpiry !== null && daysUntilExpiry <= 30;
+
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
       {memberRecord && (
         <motion.div variants={staggerItem}>
           <MembershipCard />
+        </motion.div>
+      )}
+
+      {showRenewalBanner && (
+        <motion.div variants={staggerItem}>
+          <div className={`rounded-xl p-5 border ${
+            daysUntilExpiry <= 0
+              ? 'bg-red-50 border-red-200'
+              : 'bg-amber-50 border-amber-200'
+          }`}>
+            <div className="flex items-start gap-3">
+              <AlertTriangle className={`w-6 h-6 flex-shrink-0 mt-0.5 ${
+                daysUntilExpiry <= 0 ? 'text-red-600' : 'text-amber-600'
+              }`} />
+              <div className="flex-1">
+                <h3 className={`font-bold ${daysUntilExpiry <= 0 ? 'text-red-800' : 'text-amber-800'}`}>
+                  {daysUntilExpiry <= 0
+                    ? (language === 'ar' ? 'انتهت عضويتك!' : 'Your membership has expired!')
+                    : (language === 'ar'
+                        ? `عضويتك ستنتهي خلال ${daysUntilExpiry} يوم`
+                        : `Your membership expires in ${daysUntilExpiry} days`)
+                  }
+                </h3>
+                <p className={`text-sm mt-1 ${daysUntilExpiry <= 0 ? 'text-red-700' : 'text-amber-700'}`}>
+                  {language === 'ar'
+                    ? 'جدد عضويتك الآن للاستمرار في الاستفادة من المزايا.'
+                    : 'Renew now to keep enjoying your member benefits.'
+                  }
+                </p>
+                <Link
+                  to="/member/renew"
+                  className={`inline-flex items-center gap-2 mt-3 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors ${
+                    daysUntilExpiry <= 0
+                      ? 'bg-red-600 hover:bg-red-700'
+                      : 'bg-amber-600 hover:bg-amber-700'
+                  }`}
+                >
+                  {language === 'ar' ? 'جدد الآن' : 'Renew Now'}
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            </div>
+          </div>
         </motion.div>
       )}
 

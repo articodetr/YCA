@@ -9,6 +9,7 @@ import MemberProfileModal from '../../components/admin/MemberProfileModal';
 
 interface Membership {
   id: string;
+  user_id: string | null;
   full_name: string | null;
   first_name: string | null;
   last_name: string | null;
@@ -75,27 +76,21 @@ export default function MembershipsManagement() {
     setMemberships((prev) => prev.filter((m) => m.id !== id));
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
+      await supabase
+        .from('membership_application_family_members')
+        .delete()
+        .eq('application_id', id);
 
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-operations`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-          },
-          body: JSON.stringify({ action: 'delete', table: 'membership_applications', id }),
-        }
-      );
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || `Server error ${res.status}`);
+      if (mem.user_id) {
+        await supabase.from('members').delete().eq('id', mem.user_id);
       }
-      const result = await res.json();
-      if (!result.success) throw new Error(result.error || 'Delete failed');
+
+      const { error } = await supabase
+        .from('membership_applications')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
     } catch (error: any) {
       console.error('Error deleting membership:', error);
       setMemberships(previous);
@@ -165,12 +160,28 @@ export default function MembershipsManagement() {
     setDeletingAll(true);
     const total = memberships.length;
     try {
-      const { adminDeleteRecord } = await import('../../lib/admin-api');
       let failed = 0;
       for (const mem of memberships) {
-        const result = await adminDeleteRecord('membership_applications', mem.id);
-        if (!result.success) failed++;
-        else setMemberships((prev) => prev.filter((m) => m.id !== mem.id));
+        try {
+          await supabase
+            .from('membership_application_family_members')
+            .delete()
+            .eq('application_id', mem.id);
+
+          if (mem.user_id) {
+            await supabase.from('members').delete().eq('id', mem.user_id);
+          }
+
+          const { error } = await supabase
+            .from('membership_applications')
+            .delete()
+            .eq('id', mem.id);
+
+          if (error) throw error;
+          setMemberships((prev) => prev.filter((m) => m.id !== mem.id));
+        } catch {
+          failed++;
+        }
       }
       if (failed > 0) {
         alert(`Deleted ${total - failed} applications. ${failed} failed.`);

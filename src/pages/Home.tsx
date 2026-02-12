@@ -57,7 +57,7 @@ export default function Home() {
     subtitle: string;
   }>>([
     {
-      image: 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=1920',
+      image: 'https://hilarious-white-ucpcnwuigy.edgeone.app/121.jpg',
       title: 'Empowering the Yemeni Community',
       subtitle: 'in Birmingham'
     }

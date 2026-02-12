@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Search, Loader2, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Loader2, X, Images } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import ImageUploader from '../../components/admin/ImageUploader';
+import MultiImageUploader from '../../components/admin/MultiImageUploader';
 
 interface Article {
   id: string;
@@ -12,6 +13,7 @@ interface Article {
   author: string;
   published_at: string;
   image_url: string | null;
+  gallery_images: string[];
 }
 
 export default function NewsManagement() {
@@ -30,6 +32,7 @@ export default function NewsManagement() {
     category: 'Community',
     author: 'YCA Birmingham',
     image_url: '',
+    gallery_images: [] as string[],
   });
   const [saving, setSaving] = useState(false);
 
@@ -67,6 +70,7 @@ export default function NewsManagement() {
         category: article.category,
         author: article.author,
         image_url: article.image_url || '',
+        gallery_images: Array.isArray(article.gallery_images) ? article.gallery_images : [],
       });
     } else {
       setEditingArticle(null);
@@ -80,6 +84,7 @@ export default function NewsManagement() {
         category: 'Community',
         author: 'YCA Birmingham',
         image_url: '',
+        gallery_images: [],
       });
     }
     setShowModal(true);
@@ -105,6 +110,7 @@ export default function NewsManagement() {
         category: formData.category,
         author: formData.author,
         image_url: formData.image_url || null,
+        gallery_images: formData.gallery_images,
         published_at: editingArticle?.published_at || new Date().toISOString(),
       };
 
@@ -204,6 +210,9 @@ export default function NewsManagement() {
                     Author
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                    Images
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
                     Published
                   </th>
                   <th className="px-4 py-3 text-right text-sm font-semibold text-gray-900">
@@ -220,6 +229,16 @@ export default function NewsManagement() {
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-600">{article.category}</td>
                     <td className="px-4 py-4 text-sm text-gray-600">{article.author}</td>
+                    <td className="px-4 py-4">
+                      {(Array.isArray(article.gallery_images) && article.gallery_images.length > 0) ? (
+                        <span className="inline-flex items-center gap-1 text-sm text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full">
+                          <Images className="w-3.5 h-3.5" />
+                          {article.gallery_images.length}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-gray-400">--</span>
+                      )}
+                    </td>
                     <td className="px-4 py-4 text-sm text-gray-600">
                       {new Date(article.published_at).toLocaleDateString()}
                     </td>
@@ -318,7 +337,18 @@ export default function NewsManagement() {
                   bucket="news-images"
                   currentImage={formData.image_url}
                   onUploadSuccess={(url) => setFormData({ ...formData, image_url: url })}
-                  label="Article Image (optional)"
+                  label="Cover Image (optional)"
+                  maxSizeMB={5}
+                />
+              </div>
+
+              <div>
+                <MultiImageUploader
+                  bucket="news-images"
+                  images={formData.gallery_images}
+                  onChange={(imgs) => setFormData({ ...formData, gallery_images: imgs })}
+                  label="Gallery Images (optional)"
+                  maxImages={10}
                   maxSizeMB={5}
                 />
               </div>

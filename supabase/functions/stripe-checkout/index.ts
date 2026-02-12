@@ -177,10 +177,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // create Checkout Session
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: any = {
       customer: customerId,
-      payment_method_types: ['card'],
       line_items: [
         {
           price: price_id,
@@ -190,7 +188,20 @@ Deno.serve(async (req) => {
       mode,
       success_url,
       cancel_url,
-    });
+      payment_method_options: {
+        card: {
+          request_three_d_secure: 'automatic',
+        },
+      },
+    };
+
+    if (mode === 'payment') {
+      sessionParams.payment_method_types = ['card', 'paypal', 'link'];
+    } else {
+      sessionParams.payment_method_types = ['card', 'link'];
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     console.log(`Created checkout session ${session.id} for customer ${customerId}`);
 

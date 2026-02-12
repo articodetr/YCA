@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar,
   User,
@@ -12,7 +12,11 @@ import {
   Twitter,
   Linkedin,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Images
 } from 'lucide-react';
 import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../lib/animations';
 import { supabase } from '../lib/supabase';
@@ -30,6 +34,7 @@ interface Article {
   author: string;
   published_at: string;
   image_url: string | null;
+  gallery_images?: string[];
 }
 
 export default function NewsDetail() {
@@ -42,6 +47,43 @@ export default function NewsDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  const allImages = article
+    ? [
+        ...(article.image_url ? [article.image_url] : []),
+        ...(Array.isArray(article.gallery_images) ? article.gallery_images : []),
+      ]
+    : [];
+
+  const openLightbox = useCallback((index: number) => {
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  }, []);
+
+  const closeLightbox = useCallback(() => {
+    setLightboxOpen(false);
+  }, []);
+
+  const goNext = useCallback(() => {
+    setLightboxIndex((prev) => (prev + 1) % allImages.length);
+  }, [allImages.length]);
+
+  const goPrev = useCallback(() => {
+    setLightboxIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+  }, [allImages.length]);
+
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowRight') goNext();
+      if (e.key === 'ArrowLeft') goPrev();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [lightboxOpen, closeLightbox, goNext, goPrev]);
 
   useEffect(() => {
     if (id) {
@@ -318,9 +360,109 @@ export default function NewsDetail() {
                 ))}
               </div>
             </div>
+
+            {allImages.length > 1 && (
+              <div className="mt-12 pt-8 border-t border-border">
+                <div className="flex items-center gap-3 mb-6">
+                  <Images size={24} className="text-primary" />
+                  <h3 className="text-2xl font-bold text-primary">
+                    {isRTL ? 'معرض الصور' : 'Photo Gallery'}
+                  </h3>
+                  <span className="text-sm text-muted bg-sand px-3 py-1 rounded-full">
+                    {allImages.length} {isRTL ? 'صور' : 'photos'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {allImages.map((img, idx) => (
+                    <motion.button
+                      key={idx}
+                      onClick={() => openLightbox(idx)}
+                      className="relative group overflow-hidden rounded-xl aspect-[4/3]"
+                      whileHover={{ scale: 1.02 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <img
+                        src={img}
+                        alt={`${articleTitle} - ${idx + 1}`}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300" />
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+            )}
           </motion.div>
         </div>
       </article>
+
+      <AnimatePresence>
+        {lightboxOpen && allImages.length > 0 && (
+          <motion.div
+            className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closeLightbox}
+          >
+            <button
+              onClick={closeLightbox}
+              className="absolute top-6 right-6 text-white/70 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors z-10"
+            >
+              <X size={28} />
+            </button>
+
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 text-white/60 text-sm font-medium">
+              {lightboxIndex + 1} / {allImages.length}
+            </div>
+
+            {allImages.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); goPrev(); }}
+                  className="absolute left-4 md:left-8 text-white/70 hover:text-white p-3 rounded-full hover:bg-white/10 transition-colors z-10"
+                >
+                  <ChevronLeft size={36} />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); goNext(); }}
+                  className="absolute right-4 md:right-8 text-white/70 hover:text-white p-3 rounded-full hover:bg-white/10 transition-colors z-10"
+                >
+                  <ChevronRight size={36} />
+                </button>
+              </>
+            )}
+
+            <motion.img
+              key={lightboxIndex}
+              src={allImages[lightboxIndex]}
+              alt={`${articleTitle} - ${lightboxIndex + 1}`}
+              className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
+            />
+
+            {allImages.length > 1 && (
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2" onClick={(e) => e.stopPropagation()}>
+                {allImages.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setLightboxIndex(idx)}
+                    className={`w-12 h-9 rounded overflow-hidden border-2 transition-all ${
+                      idx === lightboxIndex ? 'border-white scale-110' : 'border-transparent opacity-50 hover:opacity-80'
+                    }`}
+                  >
+                    <img src={img} alt="" className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {relatedArticles.length > 0 && (
         <section className="py-16 bg-sand">

@@ -187,7 +187,8 @@ export default function Home() {
                 backgroundRepeat: 'no-repeat',
               }}
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-[#0a1628]/90 via-[#0a1628]/1 to-transparent"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-[#f6efe3]/45 via-[#f6efe3]/20 to-transparent"></div>
+
             </div>
           </motion.div>
         </AnimatePresence>

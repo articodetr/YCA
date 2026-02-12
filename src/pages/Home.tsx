@@ -388,6 +388,129 @@ export default function Home() {
         </div>
       </section>
 
+      {latestNews.length > 0 && (
+        <>
+          <BeltDivider />
+
+          <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+              <motion.div
+                className="text-center mb-16"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={staggerContainer}
+              >
+                <motion.h2 className="text-4xl sm:text-5xl font-bold text-primary mb-6" variants={fadeInUp}>
+                  {isRTL ? 'آخر الأخبار' : 'Latest News'}
+                </motion.h2>
+                <motion.div className="w-32 h-1 bg-gradient-to-r from-transparent via-[#8B4513] to-transparent mx-auto mb-6" variants={scaleIn}></motion.div>
+                <motion.p className="text-lg text-muted max-w-3xl mx-auto" variants={fadeInUp}>
+                  {isRTL ? 'تابع آخر أخبار وأنشطة الجمعية' : 'Stay updated with the latest from our community'}
+                </motion.p>
+              </motion.div>
+
+              <motion.div
+                className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto"
+                variants={staggerContainer}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+              >
+                {latestNews.map((article, idx) => {
+                  const publishDate = new Date(article.published_at);
+                  const formattedDate = publishDate.toLocaleDateString(isRTL ? 'ar-SA' : 'en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  });
+
+                  const defaultNewsImages = [
+                    'https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=600',
+                    'https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&w=600',
+                    'https://images.pexels.com/photos/3184339/pexels-photo-3184339.jpeg?auto=compress&cs=tinysrgb&w=600'
+                  ];
+
+                  const title = isRTL && article.title_ar ? article.title_ar : article.title;
+                  const excerpt = isRTL && article.description_ar ? article.description_ar : article.excerpt;
+
+                  return (
+                    <motion.div
+                      key={article.id}
+                      className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all group border border-gray-100"
+                      variants={staggerItem}
+                      whileHover={{ y: -8 }}
+                    >
+                      <div className="relative h-52 overflow-hidden">
+                        <img
+                          src={article.image_url || defaultNewsImages[idx % 3]}
+                          alt={title}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                        <div className="absolute top-4 left-4">
+                          <span className="inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm text-[#8B4513] text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
+                            <Tag size={12} />
+                            {article.category}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="p-6">
+                        <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
+                          <span className="inline-flex items-center gap-1.5">
+                            <Calendar size={14} />
+                            {formattedDate}
+                          </span>
+                          <span className="inline-flex items-center gap-1.5">
+                            <User size={14} />
+                            {article.author}
+                          </span>
+                        </div>
+
+                        <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2 min-h-[3.5rem] group-hover:text-[#8B4513] transition-colors">
+                          <Link to={`/news/${article.id}`}>{title}</Link>
+                        </h3>
+
+                        <p className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-3">
+                          {excerpt}
+                        </p>
+
+                        <Link
+                          to={`/news/${article.id}`}
+                          className="inline-flex items-center gap-2 text-[#8B4513] font-semibold text-sm hover:gap-3 transition-all group/link"
+                        >
+                          {isRTL ? 'اقرأ المزيد' : 'Read More'}
+                          <ArrowRight size={16} className="group-hover/link:translate-x-1 transition-transform" />
+                        </Link>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
+
+              <motion.div
+                className="text-center mt-12"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={fadeInUp}
+              >
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Link
+                    to="/news"
+                    className="inline-flex items-center gap-2 bg-primary text-white px-8 py-3 rounded-xl hover:bg-secondary transition-colors font-semibold shadow-lg"
+                  >
+                    <Newspaper size={18} />
+                    {isRTL ? 'عرض جميع الأخبار' : 'View All News'}
+                    <ArrowRight size={18} />
+                  </Link>
+                </motion.div>
+              </motion.div>
+            </div>
+          </section>
+        </>
+      )}
+
       <BeltDivider />
 
       {/* Services Section */}
@@ -572,129 +695,6 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
-
-      {latestNews.length > 0 && (
-        <>
-          <BeltDivider />
-
-          <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-              <motion.div
-                className="text-center mb-16"
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true }}
-                variants={staggerContainer}
-              >
-                <motion.h2 className="text-4xl sm:text-5xl font-bold text-primary mb-6" variants={fadeInUp}>
-                  {isRTL ? 'آخر الأخبار' : 'Latest News'}
-                </motion.h2>
-                <motion.div className="w-32 h-1 bg-gradient-to-r from-transparent via-[#8B4513] to-transparent mx-auto mb-6" variants={scaleIn}></motion.div>
-                <motion.p className="text-lg text-muted max-w-3xl mx-auto" variants={fadeInUp}>
-                  {isRTL ? 'تابع آخر أخبار وأنشطة الجمعية' : 'Stay updated with the latest from our community'}
-                </motion.p>
-              </motion.div>
-
-              <motion.div
-                className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto"
-                variants={staggerContainer}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true }}
-              >
-                {latestNews.map((article, idx) => {
-                  const publishDate = new Date(article.published_at);
-                  const formattedDate = publishDate.toLocaleDateString(isRTL ? 'ar-SA' : 'en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  });
-
-                  const defaultNewsImages = [
-                    'https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=600',
-                    'https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&w=600',
-                    'https://images.pexels.com/photos/3184339/pexels-photo-3184339.jpeg?auto=compress&cs=tinysrgb&w=600'
-                  ];
-
-                  const title = isRTL && article.title_ar ? article.title_ar : article.title;
-                  const excerpt = isRTL && article.description_ar ? article.description_ar : article.excerpt;
-
-                  return (
-                    <motion.div
-                      key={article.id}
-                      className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all group border border-gray-100"
-                      variants={staggerItem}
-                      whileHover={{ y: -8 }}
-                    >
-                      <div className="relative h-52 overflow-hidden">
-                        <img
-                          src={article.image_url || defaultNewsImages[idx % 3]}
-                          alt={title}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        />
-                        <div className="absolute top-4 left-4">
-                          <span className="inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm text-[#8B4513] text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
-                            <Tag size={12} />
-                            {article.category}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="p-6">
-                        <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
-                          <span className="inline-flex items-center gap-1.5">
-                            <Calendar size={14} />
-                            {formattedDate}
-                          </span>
-                          <span className="inline-flex items-center gap-1.5">
-                            <User size={14} />
-                            {article.author}
-                          </span>
-                        </div>
-
-                        <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2 min-h-[3.5rem] group-hover:text-[#8B4513] transition-colors">
-                          <Link to={`/news/${article.id}`}>{title}</Link>
-                        </h3>
-
-                        <p className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-3">
-                          {excerpt}
-                        </p>
-
-                        <Link
-                          to={`/news/${article.id}`}
-                          className="inline-flex items-center gap-2 text-[#8B4513] font-semibold text-sm hover:gap-3 transition-all group/link"
-                        >
-                          {isRTL ? 'اقرأ المزيد' : 'Read More'}
-                          <ArrowRight size={16} className="group-hover/link:translate-x-1 transition-transform" />
-                        </Link>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </motion.div>
-
-              <motion.div
-                className="text-center mt-12"
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true }}
-                variants={fadeInUp}
-              >
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Link
-                    to="/news"
-                    className="inline-flex items-center gap-2 bg-primary text-white px-8 py-3 rounded-xl hover:bg-secondary transition-colors font-semibold shadow-lg"
-                  >
-                    <Newspaper size={18} />
-                    {isRTL ? 'عرض جميع الأخبار' : 'View All News'}
-                    <ArrowRight size={18} />
-                  </Link>
-                </motion.div>
-              </motion.div>
-            </div>
-          </section>
-        </>
-      )}
 
       <BeltDivider />
 

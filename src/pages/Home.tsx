@@ -283,7 +283,7 @@ export default function Home() {
       <BeltDivider />
 
       {/* Welcome Section */}
-      <section className="py-20 bg-gradient-to-b from-[#FDFDF6] via-[#FAF5EB] to-[#F5F0E6] relative overflow-hidden">
+      <section className="py-20 bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
         <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[700px] h-[700px] pointer-events-none opacity-[0.04]">
           <img
             src="/logo_white.png"
@@ -392,7 +392,7 @@ export default function Home() {
         <>
           <BeltDivider />
 
-          <section className="py-20 bg-gradient-to-b from-[#F5E6D3] via-[#F9E4B7] to-[#FDF5E6]">
+          <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
               <motion.div
                 className="text-center mb-16"
@@ -514,7 +514,7 @@ export default function Home() {
       <BeltDivider />
 
       {/* Services Section */}
-      <section className="py-20 bg-gradient-to-b from-[#FDFDF8] via-[#FAF8F3] to-[#F8F6F0]">
+      <section className="py-20 bg-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             className="text-center mb-16"
@@ -608,7 +608,7 @@ export default function Home() {
       <BeltDivider />
 
       {/* Upcoming Events Section */}
-      <section className="py-20 bg-gradient-to-b from-[#FAF0E6] via-[#F4E4C1] to-[#F5E6D3]">
+      <section className="py-20 bg-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             className="text-center mb-16"
@@ -699,7 +699,7 @@ export default function Home() {
       <BeltDivider />
 
       {/* Get Involved Section */}
-      <section className="py-20 bg-gradient-to-b from-[#FDF5E6] via-[#F9E4B7] to-[#F5DDA8] relative overflow-hidden">
+      <section className="py-20 bg-white relative overflow-hidden">
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] pointer-events-none opacity-[0.04]">
           <img
             src="/logo_white.png"

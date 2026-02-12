@@ -115,10 +115,20 @@ Deno.serve(async (req: Request) => {
       }
 
       if (table === "membership_applications") {
+        const { data: app } = await adminClient
+          .from("membership_applications")
+          .select("user_id")
+          .eq("id", id)
+          .maybeSingle();
+
         await adminClient
           .from("membership_application_family_members")
           .delete()
           .eq("application_id", id);
+
+        if (app?.user_id) {
+          await adminClient.from("members").delete().eq("id", app.user_id);
+        }
       }
 
       const { data: deleted, error } = await adminClient

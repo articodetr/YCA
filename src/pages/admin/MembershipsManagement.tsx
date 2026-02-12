@@ -78,24 +78,22 @@ export default function MembershipsManagement() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
-      const headers = {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${session.access_token}`,
-        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-      };
-
-      if (mem.user_id) {
-        await supabase.from('members').delete().eq('user_id', mem.user_id);
-      }
-
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-operations`,
         {
           method: 'POST',
-          headers,
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
           body: JSON.stringify({ action: 'delete', table: 'membership_applications', id }),
         }
       );
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `Server error ${res.status}`);
+      }
       const result = await res.json();
       if (!result.success) throw new Error(result.error || 'Delete failed');
     } catch (error: any) {

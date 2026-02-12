@@ -125,7 +125,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
   if (metadata.application_id) {
     const { error: updateError } = await supabase
       .from("membership_applications")
-      .update({ payment_status: "paid" })
+      .update({ payment_status: "completed" })
       .eq("id", metadata.application_id);
 
     if (updateError) {

@@ -82,7 +82,7 @@ Deno.serve(async (req: Request) => {
 
     await supabase
       .from("membership_applications")
-      .update({ payment_status: "paid" })
+      .update({ payment_status: "completed" })
       .eq("id", application_id);
 
     const memberId = user_id || application.user_id;

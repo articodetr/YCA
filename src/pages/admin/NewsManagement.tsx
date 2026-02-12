@@ -100,7 +100,7 @@ export default function NewsManagement() {
     setSaving(true);
 
     try {
-      const articleData = {
+      const articleData: Record<string, any> = {
         title: formData.title,
         title_ar: formData.title_ar || null,
         excerpt: formData.excerpt,
@@ -114,18 +114,22 @@ export default function NewsManagement() {
         published_at: editingArticle?.published_at || new Date().toISOString(),
       };
 
-      if (editingArticle) {
-        const { error } = await supabase
-          .from('news')
-          .update(articleData)
-          .eq('id', editingArticle.id);
+      const saveArticle = async (data: Record<string, any>) => {
+        if (editingArticle) {
+          return supabase.from('news').update(data).eq('id', editingArticle.id);
+        }
+        return supabase.from('news').insert([data]);
+      };
 
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('news').insert([articleData]);
+      let { error } = await saveArticle(articleData);
 
-        if (error) throw error;
+      if (error && error.message?.includes('gallery_images')) {
+        const { gallery_images, ...withoutGallery } = articleData;
+        const retry = await saveArticle(withoutGallery);
+        error = retry.error;
       }
+
+      if (error) throw error;
 
       await fetchArticles();
       handleCloseModal();

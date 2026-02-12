@@ -49,19 +49,10 @@ export default function Home() {
     news: 0
   });
 
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  const [heroSlides, setHeroSlides] = useState<Array<{
-    image: string;
-    title: string;
-    subtitle: string;
-  }>>([
-    {
-      image: 'https://hilarious-white-ucpcnwuigy.edgeone.app/121.jpg',
-      title: 'Empowering the Yemeni Community',
-      subtitle: 'in Birmingham'
-    }
-  ]);
+  const [heroImage, setHeroImage] = useState<string>(
+  'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=1920'
+);
+
 
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
   const [latestNews, setLatestNews] = useState<NewsArticle[]>([]);

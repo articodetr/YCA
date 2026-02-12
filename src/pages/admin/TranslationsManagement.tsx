@@ -12,7 +12,7 @@ interface TranslationRequest {
   file_url: string | null;
   urgency: string;
   status: string;
-  amount: number;
+  amount: number | null;
   is_member: boolean;
   is_first_request: boolean;
   created_at: string;
@@ -170,7 +170,7 @@ export default function TranslationsManagement() {
 
   const pendingCount = items.filter((i) => i.status === 'pending').length;
   const inProgressCount = items.filter((i) => i.status === 'in_progress').length;
-  const totalRevenue = items.filter((i) => i.status === 'completed').reduce((sum, i) => sum + i.amount, 0);
+  const totalRevenue = items.filter((i) => i.status === 'completed').reduce((sum, i) => sum + (i.amount || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -327,7 +327,7 @@ export default function TranslationsManagement() {
                       {i.source_language} &rarr; {i.target_language}
                     </td>
                     <td className="px-4 py-3.5">{getMemberBadge(i.is_member)}</td>
-                    <td className="px-4 py-3.5 text-sm font-semibold text-gray-900">{'\u00A3'}{i.amount.toLocaleString()}</td>
+                    <td className="px-4 py-3.5 text-sm font-semibold text-gray-900">{i.amount != null ? `\u00A3${i.amount.toLocaleString()}` : '-'}</td>
                     <td className="px-4 py-3.5">{getStatusBadge(i.status)}</td>
                     <td className="px-4 py-3.5">{getUrgencyBadge(i.urgency)}</td>
                     <td className="px-4 py-3.5 text-sm text-gray-600">{new Date(i.created_at).toLocaleDateString()}</td>
@@ -384,7 +384,7 @@ export default function TranslationsManagement() {
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-500 uppercase">Amount</label>
-                  <p className="text-sm font-semibold text-gray-900 mt-0.5">{'\u00A3'}{selected.amount.toLocaleString()}</p>
+                  <p className="text-sm font-semibold text-gray-900 mt-0.5">{selected.amount != null ? `\u00A3${selected.amount.toLocaleString()}` : '-'}</p>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-500 uppercase">Source Language</label>

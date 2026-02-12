@@ -50,7 +50,6 @@ export default function MembershipsManagement() {
       const { data, error } = await supabase
         .from('membership_applications')
         .select('*')
-        .or('payment_status.eq.completed,status.eq.approved')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -64,18 +63,41 @@ export default function MembershipsManagement() {
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm('Are you sure you want to delete this membership application?')) return;
+    const mem = memberships.find((m) => m.id === id);
+    if (!mem) return;
+
+    const msg = mem.status === 'approved' || mem.payment_status === 'completed'
+      ? 'This member has an active membership. Deleting will remove their application, member record, and account from the database. Continue?'
+      : 'Are you sure you want to delete this membership application?';
+    if (!confirm(msg)) return;
 
     const previous = memberships;
     setMemberships((prev) => prev.filter((m) => m.id !== id));
 
     try {
-      const { adminDeleteRecord } = await import('../../lib/admin-api');
-      const result = await adminDeleteRecord('membership_applications', id);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
 
-      if (!result.success) {
-        throw new Error(result.error || 'Delete failed');
+      const headers = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+      };
+
+      if (mem.user_id) {
+        await supabase.from('members').delete().eq('user_id', mem.user_id);
       }
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-operations`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ action: 'delete', table: 'membership_applications', id }),
+        }
+      );
+      const result = await res.json();
+      if (!result.success) throw new Error(result.error || 'Delete failed');
     } catch (error: any) {
       console.error('Error deleting membership:', error);
       setMemberships(previous);
@@ -133,7 +155,8 @@ export default function MembershipsManagement() {
     const matchesSearch =
       fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       mem.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || mem.status === filterStatus;
+    const matchesFilter = filterStatus === 'all'
+      || (filterStatus === 'paid' ? mem.payment_status === 'completed' : mem.status === filterStatus);
     return matchesSearch && matchesFilter;
   });
 
@@ -296,6 +319,7 @@ export default function MembershipsManagement() {
             <option value="pending">Pending</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
+            <option value="paid">Paid</option>
           </select>
         </div>
 

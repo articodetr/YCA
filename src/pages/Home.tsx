@@ -317,7 +317,7 @@ export default function Home() {
               variants={fadeInLeft}
             >
               <motion.img
-                src={getPageImage('home', 'welcome_section', 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=800')}
+                src={getPageImage('home', 'welcome_section', 'https://hilarious-white-ucpcnwuigy.edgeone.app/121.jpg')}
                 alt="Community gathering"
                 className="rounded-2xl shadow-2xl"
                 whileHover={{ scale: 1.02 }}

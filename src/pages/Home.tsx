@@ -63,7 +63,7 @@ export default function Home() {
 
   useEffect(() => {
     fetchStats();
-    fetchHeroSlides();
+    fetchHeroImage();
     fetchUpcomingEvents();
     fetchLatestNews();
   }, [language]);

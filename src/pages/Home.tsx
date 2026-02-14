@@ -168,8 +168,7 @@ export default function Home() {
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Hero Section */}
-      <section className="relative min-h-[100svh] md:min-h-screen text-white overflow-hidden bg-[#0a1628]">
-
+      <section className="relative h-screen text-white overflow-hidden bg-[#0a1628]">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Menu, X, ChevronDown, ChevronRight, Globe, UserCircle, LogIn, UserPlus, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -26,17 +26,12 @@ export default function Header() {
   const logoMain = getSetting('site_logo', '/logo.png');
   const logoText = getSetting('site_logo_text', '/logo_text.png');
   const orgName = getSetting('org_name_en', 'Yemeni Community Association');
-
-  const location = useLocation();
-  const isHomePage = location.pathname === '/';
-
   const [isOpen, setIsOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [activeDesktopMenu, setActiveDesktopMenu] = useState<string | null>(null);
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
-  const [isAtTop, setIsAtTop] = useState(true);
 
   const toggleDropdown = (menu: string) => {
     setOpenDropdown(openDropdown === menu ? null : menu);
@@ -53,16 +48,11 @@ export default function Header() {
 
   useEffect(() => {
     const controlHeader = () => {
-      const currentScrollY = window.scrollY;
-      setIsAtTop(currentScrollY < 10);
-
-      // Keep header visible while mobile menu is open
       if (isOpen) {
         setIsVisible(true);
-        setLastScrollY(currentScrollY);
         return;
       }
-
+      const currentScrollY = window.scrollY;
       if (currentScrollY < 10) {
         setIsVisible(true);
       } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
@@ -72,10 +62,6 @@ export default function Header() {
       }
       setLastScrollY(currentScrollY);
     };
-
-    // Run once on mount to set initial states correctly
-    controlHeader();
-
     window.addEventListener('scroll', controlHeader);
     return () => window.removeEventListener('scroll', controlHeader);
   }, [lastScrollY, isOpen]);
@@ -86,9 +72,7 @@ export default function Header() {
     } else {
       document.body.style.overflow = '';
     }
-    return () => {
-      document.body.style.overflow = '';
-    };
+    return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
   const servicesDropdown: NavDropdown = {
@@ -181,7 +165,6 @@ export default function Header() {
           className={`transition-transform duration-300 ${activeDesktopMenu === dropdown.key ? 'rotate-180' : ''}`}
         />
       </button>
-
       <AnimatePresence>
         {activeDesktopMenu === dropdown.key && (
           <motion.div
@@ -191,75 +174,124 @@ export default function Header() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
           >
-            <div className="py-2">
-              {dropdown.items.map((item) => (
-                <div
-                  key={item.path}
-                  className="relative"
-                  onMouseEnter={() => item.children && setActiveSubmenu(item.path)}
-                  onMouseLeave={() => item.children && setActiveSubmenu(null)}
-                >
-                  <Link
-                    to={item.path}
-                    className="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 transition-colors"
-                    onClick={() => {
-                      setActiveDesktopMenu(null);
-                      setActiveSubmenu(null);
-                    }}
-                  >
-                    <span className="text-sm">{item.label}</span>
-                    {item.children && <ChevronRight size={14} className={isRTL ? 'rotate-180' : ''} />}
-                  </Link>
-
-                  <AnimatePresence>
-                    {item.children && activeSubmenu === item.path && (
-                      <motion.div
-                        className={`absolute top-0 ${isRTL ? 'right-full mr-1' : 'left-full ml-1'} w-64 bg-white text-primary shadow-xl rounded-lg overflow-hidden z-50`}
-                        initial={{ opacity: 0, x: isRTL ? 10 : -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: isRTL ? 10 : -10 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <div className="py-2">
+            {dropdown.items.map((item) => (
+              <div
+                key={item.path}
+                className="relative"
+                onMouseEnter={() => item.children && setActiveSubmenu(item.path)}
+                onMouseLeave={() => setActiveSubmenu(null)}
+              >
+                {item.children ? (
+                  <>
+                    <Link
+                      to={item.path}
+                      className="flex items-center justify-between px-5 py-3 hover:bg-sand transition-colors text-sm"
+                    >
+                      <span>{item.label}</span>
+                      <ChevronRight size={14} className={isRTL ? 'rotate-180' : ''} />
+                    </Link>
+                    <AnimatePresence>
+                      {activeSubmenu === item.path && (
+                        <motion.div
+                          className={`absolute top-0 ${isRTL ? 'right-full mr-1' : 'left-full ml-1'} w-64 bg-white text-primary shadow-xl rounded-lg overflow-hidden z-50`}
+                          initial={{ opacity: 0, x: isRTL ? 10 : -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: isRTL ? 10 : -10 }}
+                          transition={{ duration: 0.15 }}
+                        >
                           {item.children.map((child) => (
                             <Link
                               key={child.path}
                               to={child.path}
-                              className="block px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors"
-                              onClick={() => {
-                                setActiveDesktopMenu(null);
-                                setActiveSubmenu(null);
-                              }}
+                              className="block px-5 py-3 hover:bg-sand transition-colors text-sm"
                             >
                               {child.label}
                             </Link>
                           ))}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              ))}
-            </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </>
+                ) : (
+                  <Link
+                    to={item.path}
+                    className="block px-5 py-3 hover:bg-sand transition-colors text-sm"
+                  >
+                    {item.label}
+                  </Link>
+                )}
+              </div>
+            ))}
           </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
 
-  const isTransparent = isHomePage && isAtTop && !isOpen;
+  const renderMobileDropdown = (dropdown: NavDropdown, delay: number) => (
+    <motion.div
+      key={dropdown.key}
+      initial={{ x: -20, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      transition={{ delay }}
+    >
+      <button
+        onClick={() => toggleDropdown(dropdown.key)}
+        className="flex items-center justify-between w-full py-2 hover:text-accent transition-colors"
+      >
+        {dropdown.label}
+        <ChevronDown
+          size={16}
+          className={`transition-transform duration-300 ${openDropdown === dropdown.key ? 'rotate-180' : ''}`}
+        />
+      </button>
+      <AnimatePresence>
+        {openDropdown === dropdown.key && (
+          <motion.div
+            className={`${isRTL ? 'pr-4' : 'pl-4'} space-y-1 mt-1`}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            {dropdown.items.map((item) => (
+              <div key={item.path}>
+                <Link
+                  to={item.path}
+                  onClick={() => !item.children && setIsOpen(false)}
+                  className="block py-1.5 text-sm hover:text-accent transition-colors"
+                >
+                  {item.label}
+                </Link>
+                {item.children && (
+                  <div className={`${isRTL ? 'pr-4' : 'pl-4'} space-y-1`}>
+                    {item.children.map((child) => (
+                      <Link
+                        key={child.path}
+                        to={child.path}
+                        onClick={() => setIsOpen(false)}
+                        className="block py-1 text-xs text-gray-300 hover:text-accent transition-colors"
+                      >
+                        {child.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
 
   return (
     <motion.header
-      className={`fixed top-0 left-0 right-0 z-50 transition-colors ${
-        isTransparent
-          ? 'bg-transparent text-white shadow-none border-b border-transparent'
-          : 'bg-white/85 backdrop-blur-md text-primary shadow-sm border-b border-black/5'
-      }`}
+      className="fixed top-0 left-0 right-0 z-50 bg-white/85 backdrop-blur-md text-primary shadow-sm border-b border-black/5"
       initial={{ y: -100, opacity: 0 }}
       animate={{
         y: isVisible ? 0 : -100,
-        opacity: isVisible ? 1 : 0,
+        opacity: isVisible ? 1 : 0
       }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
     >
@@ -275,252 +307,242 @@ export default function Header() {
               <img
                 src={logoText}
                 alt={orgName}
-                className="hidden sm:block h-7 sm:h-8 md:h-10 w-auto transition-opacity group-hover:opacity-90 duration-300"
+                className="h-8 sm:h-10 md:h-12 w-auto transition-opacity group-hover:opacity-80 duration-300 hidden xl:block"
               />
             </div>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-8">
-            <Link
-              to="/"
-              className="text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors"
-            >
-              {t('nav.home')}
-            </Link>
+          <div className="absolute left-1/2 -translate-x-1/2 xl:hidden flex items-center justify-center pointer-events-none">
+            <img
+              src={logoText}
+              alt={getSetting('org_name_ar', 'الجالية اليمنية')}
+              className="h-7 sm:h-8 md:h-12 w-auto opacity-95"
+            />
+          </div>
 
-            {allDropdowns.map(renderDesktopDropdown)}
-
-            <Link
-              to="/contact"
-              className="text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors"
-            >
-              {t('nav.contact')}
-            </Link>
-          </nav>
-
-          {/* Right Side Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 xl:hidden flex-shrink-0">
             <motion.button
               onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-              className={`${isTransparent ? 'text-white border-white/40' : 'text-primary border-black/20'} border px-2 py-1 rounded text-xs font-semibold`}
+              className="text-primary border border-black/20 px-2 py-1 rounded text-xs font-semibold"
               whileTap={{ scale: 0.9 }}
               aria-label="Toggle language"
             >
               {language === 'en' ? 'AR' : 'EN'}
             </motion.button>
-
-            <Link
-              to="/donate"
-              className="hidden md:inline-flex items-center gap-2 text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors"
-            >
-              <Heart size={16} />
-              {t('nav.donate')}
-            </Link>
-
-            <div className="hidden md:flex items-center gap-3">
-              {user ? (
-                <div className="relative" onMouseEnter={() => setActiveDesktopMenu('member')} onMouseLeave={handleMouseLeave}>
-                  <button className="flex items-center gap-2 text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
-                    <UserCircle size={18} />
-                    {t('nav.member')}
-                    <ChevronDown
-                      size={14}
-                      className={`transition-transform duration-300 ${activeDesktopMenu === 'member' ? 'rotate-180' : ''}`}
-                    />
-                  </button>
-
-                  <AnimatePresence>
-                    {activeDesktopMenu === 'member' && (
-                      <motion.div
-                        className={`absolute top-full ${isRTL ? 'left-0' : 'right-0'} mt-2 w-56 bg-white text-primary shadow-xl rounded-lg overflow-hidden z-50`}
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <div className="py-2">
-                          <Link
-                            to="/member/dashboard"
-                            className="block px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors"
-                          >
-                            {language === 'ar' ? 'لوحة العضو' : 'Member Dashboard'}
-                          </Link>
-                          <Link
-                            to="/member/profile"
-                            className="block px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors"
-                          >
-                            {language === 'ar' ? 'الملف الشخصي' : 'Profile'}
-                          </Link>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              ) : (
-                <Link
-                  to="/member/login"
-                  className="flex items-center gap-2 text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors"
-                >
-                  <LogIn size={18} />
-                  {t('nav.memberLogin')}
-                </Link>
-              )}
-            </div>
-
             <Link
               to="/book"
               className="hidden sm:inline-flex bg-accent text-primary px-5 py-2 hover:bg-hover transition-colors font-semibold text-xs uppercase tracking-wider whitespace-nowrap"
             >
               {t('button.book')}
             </Link>
-
             <motion.button
-              className={isTransparent ? 'text-white' : 'text-primary'}
+              className="text-primary"
               onClick={() => setIsOpen(!isOpen)}
               whileTap={{ scale: 0.9 }}
               aria-label={isOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={isOpen}
             >
-              {isOpen ? <X size={28} /> : <Menu size={28} />}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={isOpen ? 'close' : 'open'}
+                  initial={{ rotate: -90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: 90, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {isOpen ? <X size={28} /> : <Menu size={28} />}
+                </motion.div>
+              </AnimatePresence>
+            </motion.button>
+          </div>
+
+          <nav className="hidden xl:flex items-center justify-center flex-1 gap-3 2xl:gap-4">
+            <Link to="/" className="text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
+              {t('nav.home')}
+            </Link>
+            {allDropdowns.map((dropdown) => renderDesktopDropdown(dropdown))}
+          </nav>
+
+          <div className="hidden xl:flex items-center gap-3 flex-shrink-0">
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Link
+                to="/book"
+                className="bg-accent text-primary px-5 py-2.5 hover:bg-hover transition-colors font-semibold text-sm uppercase tracking-wider whitespace-nowrap"
+              >
+                {t('button.book')}
+              </Link>
+            </motion.div>
+
+            {user ? (
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Link
+                  to="/member/dashboard?tab=profile"
+                  className="hover:text-accent transition-colors p-2.5 block"
+                  title={language === 'ar' ? 'حسابي' : 'My Account'}
+                >
+                  <UserCircle size={20} />
+                </Link>
+              </motion.div>
+            ) : (
+              <div
+                className="relative"
+                onMouseEnter={() => handleMouseEnter('account')}
+                onMouseLeave={handleMouseLeave}
+              >
+                <motion.button
+                  className="hover:text-accent transition-colors p-2.5 flex items-center gap-1 text-sm"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  title={language === 'ar' ? 'تسجيل الدخول' : 'Member Login'}
+                >
+                  <LogIn size={18} />
+                  <span className="hidden 2xl:inline text-xs uppercase tracking-wider">
+                    {language === 'ar' ? 'الدخول' : 'Login'}
+                  </span>
+                </motion.button>
+                <AnimatePresence>
+                  {activeDesktopMenu === 'account' && (
+                    <motion.div
+                      className={`absolute top-full ${isRTL ? 'left-0' : 'right-0'} mt-2 w-56 bg-white text-primary shadow-xl rounded-lg overflow-hidden z-50`}
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Link
+                        to="/member/login"
+                        className="flex items-center gap-3 px-6 py-3 hover:bg-sand transition-colors text-sm"
+                      >
+                        <LogIn size={18} />
+                        <span>{language === 'ar' ? 'تسجيل الدخول' : 'Member Login'}</span>
+                      </Link>
+                      <Link
+                        to="/membership"
+                        className="flex items-center gap-3 px-6 py-3 hover:bg-sand transition-colors text-sm"
+                      >
+                        <UserPlus size={18} />
+                        <span>{language === 'ar' ? 'تسجيل عضوية جديدة' : 'Register New Membership'}</span>
+                      </Link>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Link
+                to="/get-involved/donate"
+                className="hover:text-accent transition-colors p-2.5 block text-red-300 hover:text-red-200"
+                title={language === 'ar' ? 'تبرع' : 'Donate'}
+              >
+                <Heart size={20} />
+              </Link>
+            </motion.div>
+
+            <motion.button
+              onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
+              className="flex items-center gap-2 text-sm uppercase tracking-wider hover:text-accent transition-colors px-3 py-2 border border-white/30 rounded-lg"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              aria-label="Toggle language"
+            >
+              <Globe size={16} />
+              <span>{language === 'en' ? 'AR' : 'EN'}</span>
             </motion.button>
           </div>
         </div>
 
-        {/* Mobile Menu */}
         <AnimatePresence>
           {isOpen && (
             <motion.nav
-              className="lg:hidden fixed inset-0 top-20 md:top-24 bg-white z-40 overflow-y-auto"
-              initial={{ opacity: 0, x: isRTL ? 100 : -100 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: isRTL ? 100 : -100 }}
-              transition={{ duration: 0.25 }}
+              className="xl:hidden pb-6 space-y-2 bg-[#0b1424] rounded-b-2xl px-4 pt-4 max-h-[calc(100vh-80px)] overflow-y-auto overscroll-contain"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3 }}
             >
-              <motion.div className="container mx-auto px-4 py-6">
-                <div className="flex flex-col gap-2">
+              <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
+                <Link to="/" onClick={() => setIsOpen(false)} className="block py-2 hover:text-accent transition-colors">
+                  {t('nav.home')}
+                </Link>
+              </motion.div>
+
+              {allDropdowns.map((dropdown, index) =>
+                renderMobileDropdown(dropdown, 0.15 + index * 0.05)
+              )}
+
+              <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.45 }}>
+                <div className="pt-4 space-y-3">
                   <Link
-                    to="/"
+                    to="/book"
                     onClick={() => setIsOpen(false)}
-                    className="py-2 text-sm uppercase tracking-wider hover:text-accent transition-colors"
+                    className="block bg-accent text-primary px-6 py-3 rounded-lg hover:bg-hover transition-colors font-semibold text-center whitespace-nowrap"
                   >
-                    {t('nav.home')}
+                    {t('button.book')}
                   </Link>
 
-                  {allDropdowns.map((dropdown) => (
-                    <div key={dropdown.key}>
-                      <button
-                        onClick={() => toggleDropdown(dropdown.key)}
-                        className="flex w-full items-center justify-between py-2 text-sm uppercase tracking-wider hover:text-accent transition-colors"
-                      >
-                        {dropdown.label}
-                        <ChevronDown
-                          size={16}
-                          className={`transition-transform ${openDropdown === dropdown.key ? 'rotate-180' : ''}`}
-                        />
-                      </button>
+                  <Link
+                    to="/get-involved/donate"
+                    onClick={() => setIsOpen(false)}
+                    className="block bg-red-600/80 text-white px-6 py-3 rounded-lg hover:bg-red-700/80 transition-colors font-semibold text-center whitespace-nowrap"
+                  >
+                    <span className="flex items-center justify-center gap-2">
+                      <Heart size={18} />
+                      {language === 'ar' ? 'تبرع' : 'Donate'}
+                    </span>
+                  </Link>
 
+                  {user ? (
+                    <Link
+                      to="/member/dashboard?tab=profile"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center justify-center gap-2 w-full border border-white/30 text-white px-6 py-3 rounded-lg hover:bg-white/10 transition-colors font-semibold"
+                    >
+                      <UserCircle size={18} />
+                      {language === 'ar' ? 'حسابي' : 'My Account'}
+                    </Link>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => toggleDropdown('account')}
+                        className="flex items-center justify-between w-full border border-white/30 text-white px-6 py-3 rounded-lg hover:bg-white/10 transition-colors font-semibold"
+                      >
+                        <div className="flex items-center gap-2">
+                          <LogIn size={18} />
+                          {language === 'ar' ? 'تسجيل الدخول' : 'Member Login'}
+                        </div>
+                        <ChevronDown size={16} className={`transition-transform duration-300 ${openDropdown === 'account' ? 'rotate-180' : ''}`} />
+                      </button>
                       <AnimatePresence>
-                        {openDropdown === dropdown.key && (
+                        {openDropdown === 'account' && (
                           <motion.div
-                            className="pl-4 space-y-1"
+                            className={`${isRTL ? 'pr-4' : 'pl-4'} space-y-2 mt-2`}
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: 'auto', opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
                             transition={{ duration: 0.2 }}
                           >
-                            {dropdown.items.map((item) => (
-                              <div key={item.path}>
-                                <Link
-                                  to={item.path}
-                                  onClick={() => setIsOpen(false)}
-                                  className="block py-2 text-sm hover:text-accent transition-colors"
-                                >
-                                  {item.label}
-                                </Link>
-
-                                {item.children && (
-                                  <div className="pl-4 space-y-1">
-                                    {item.children.map((child) => (
-                                      <Link
-                                        key={child.path}
-                                        to={child.path}
-                                        onClick={() => setIsOpen(false)}
-                                        className="block py-2 text-sm hover:text-accent transition-colors"
-                                      >
-                                        {child.label}
-                                      </Link>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
+                            <Link
+                              to="/member/login"
+                              onClick={() => setIsOpen(false)}
+                              className="flex items-center gap-2 py-2 text-sm hover:text-accent transition-colors"
+                            >
+                              <LogIn size={16} />
+                              {language === 'ar' ? 'تسجيل الدخول' : 'Login'}
+                            </Link>
+                            <Link
+                              to="/membership"
+                              onClick={() => setIsOpen(false)}
+                              className="flex items-center gap-2 py-2 text-sm hover:text-accent transition-colors"
+                            >
+                              <UserPlus size={16} />
+                              {language === 'ar' ? 'تسجيل عضوية جديدة' : 'Register New Membership'}
+                            </Link>
                           </motion.div>
                         )}
                       </AnimatePresence>
-                    </div>
-                  ))}
-
-                  <div className="pt-4 border-t border-black/10 mt-4 space-y-3">
-                    <Link
-                      to="/donate"
-                      onClick={() => setIsOpen(false)}
-                      className="flex items-center gap-2 py-2 text-sm hover:text-accent transition-colors"
-                    >
-                      <Heart size={16} />
-                      {t('nav.donate')}
-                    </Link>
-
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Link
-                        to="/book"
-                        className="bg-accent text-primary px-5 py-2.5 hover:bg-hover transition-colors font-semibold text-sm uppercase tracking-wider whitespace-nowrap"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        {t('button.book')}
-                      </Link>
-                    </motion.div>
-
-                    {user ? (
-                      <>
-                        <Link
-                          to="/member/dashboard"
-                          onClick={() => setIsOpen(false)}
-                          className="flex items-center gap-2 py-2 text-sm hover:text-accent transition-colors"
-                        >
-                          <UserCircle size={16} />
-                          {language === 'ar' ? 'لوحة العضو' : 'Member Dashboard'}
-                        </Link>
-                        <Link
-                          to="/member/profile"
-                          onClick={() => setIsOpen(false)}
-                          className="flex items-center gap-2 py-2 text-sm hover:text-accent transition-colors"
-                        >
-                          <UserCircle size={16} />
-                          {language === 'ar' ? 'الملف الشخصي' : 'Profile'}
-                        </Link>
-                      </>
-                    ) : (
-                      <>
-                        <Link
-                          to="/member/login"
-                          onClick={() => setIsOpen(false)}
-                          className="flex items-center gap-2 py-2 text-sm hover:text-accent transition-colors"
-                        >
-                          <LogIn size={16} />
-                          {language === 'ar' ? 'تسجيل الدخول' : 'Login'}
-                        </Link>
-                        <Link
-                          to="/membership"
-                          onClick={() => setIsOpen(false)}
-                          className="flex items-center gap-2 py-2 text-sm hover:text-accent transition-colors"
-                        >
-                          <UserPlus size={16} />
-                          {language === 'ar' ? 'تسجيل عضوية جديدة' : 'Register New Membership'}
-                        </Link>
-                      </>
-                    )}
-                  </div>
+                    </>
+                  )}
                 </div>
               </motion.div>
             </motion.nav>

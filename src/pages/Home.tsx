@@ -193,7 +193,7 @@ export default function Home() {
           </motion.div>
         </AnimatePresence>
 
-        <div className="container mx-auto px-4 h-full flex items-center justify-center relative z-10 pt-20 md:pt-24>
+        <div className="container mx-auto px-4 h-full flex items-center justify-center relative z-10 pt-20 md:pt-0">">
           <motion.div
   className="max-w-3xl mx-auto text-center mt-10 sm:mt-12 md:mt-20"
   initial="hidden"

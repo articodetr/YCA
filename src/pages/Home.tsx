@@ -193,14 +193,13 @@ export default function Home() {
           </motion.div>
         </AnimatePresence>
 
-        <div className="container mx-auto px-4 h-full flex items-center justify-center relative z-10 pt-20 md:pt-24">
+        <div className="container mx-auto px-4 h-full flex items-center justify-center relative z-10 pt-20 md:pt-0">
           <motion.div
-  className="max-w-3xl mx-auto text-center mt-10 sm:mt-12 md:mt-20"
-  initial="hidden"
-  animate="visible"
-  variants={staggerContainer}
->
-
+            className="max-w-3xl mx-auto text-center"
+            initial="hidden"
+            animate="visible"
+            variants={staggerContainer}
+          >
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentSlide}
@@ -209,11 +208,11 @@ export default function Home() {
                 exit={{ y: -30, opacity: 0 }}
                 transition={{ duration: 0.6 }}
               >
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif font-light mb-3 md:mb-4 leading-tight text-shadow-white-strong">
-  {heroSlides[currentSlide].title}
-</h1>
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-serif font-light mb-6 md:mb-8 text-accent text-shadow-white-strong">
+  {heroSlides[currentSlide].subtitle}
+</h2>
 
-                <h2 className="text-xl sm:text-2xl md:text-3xl font-serif font-light mb-6 md:mb-8 text-accent drop-shadow-lg" style={{ textShadow: '0 2px 8px rgba(255, 255, 255, 0.3), 0 0 20px rgba(255, 255, 255, 0.15)' }}>
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-serif font-light mb-6 md:mb-8 text-accent drop-shadow-lg">
                   {heroSlides[currentSlide].subtitle}
                 </h2>
               </motion.div>
@@ -222,7 +221,6 @@ export default function Home() {
             <motion.p
               className="text-sm sm:text-base md:text-lg mb-8 md:mb-12 text-gray-200 leading-relaxed max-w-2xl mx-auto drop-shadow-md"
               variants={fadeInUp}
-              style={{ textShadow: '0 2px 6px rgba(255, 255, 255, 0.25), 0 0 15px rgba(255, 255, 255, 0.1)' }}
             >
               {getContent('home', 'hero_subtitle', '')}
             </motion.p>

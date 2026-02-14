@@ -209,9 +209,10 @@ export default function Home() {
                 exit={{ y: -30, opacity: 0 }}
                 transition={{ duration: 0.6 }}
               >
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif font-light mb-3 md:mb-4 leading-tight drop-shadow-lg" style={{ textShadow: '0 2px 8px rgba(255, 255, 255, 0.3), 0 0 20px rgba(255, 255, 255, 0.15)' }}>
-                  {heroSlides[currentSlide].title}
-                </h1>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif font-light mb-3 md:mb-4 leading-tight text-shadow-white-strong">
+  {heroSlides[currentSlide].title}
+</h1>
+
                 <h2 className="text-xl sm:text-2xl md:text-3xl font-serif font-light mb-6 md:mb-8 text-accent drop-shadow-lg" style={{ textShadow: '0 2px 8px rgba(255, 255, 255, 0.3), 0 0 20px rgba(255, 255, 255, 0.15)' }}>
                   {heroSlides[currentSlide].subtitle}
                 </h2>

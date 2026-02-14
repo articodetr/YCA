@@ -376,7 +376,7 @@ export default function Header() {
           </div>
 
           <nav className="hidden xl:flex items-center justify-center flex-1 gap-3 2xl:gap-4">
-            <Link to="/" className={`text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors ${isHomePage && scrollY < 100 ? 'drop-shadow-lg' : ''}`}>
+            <Link to="/" className={`text-sm font-semibold uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors ${isHomePage && scrollY < 100 ? 'drop-shadow-lg' : ''}`}>
               {t('nav.home')}
             </Link>
             {allDropdowns.map((dropdown) => renderDesktopDropdown(dropdown))}

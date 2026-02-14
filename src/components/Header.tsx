@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, ChevronDown, ChevronRight, Globe, UserCircle, LogIn, UserPlus, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -21,6 +21,12 @@ interface NavDropdown {
 export default function Header() {
   const { language, setLanguage, t } = useLanguage();
   const isRTL = language === 'ar';
+  const location = useLocation();
+const [isTop, setIsTop] = useState(true);
+
+const isHome = location.pathname === '/';
+const isTransparentHeader = isHome && isTop && !isOpen;
+
   const { getSetting } = useSiteSettings();
   const { user } = useMemberAuth();
   const logoMain = getSetting('site_logo', '/logo.png');
@@ -53,6 +59,8 @@ export default function Header() {
         return;
       }
       const currentScrollY = window.scrollY;
+      setIsTop(currentScrollY < 10);
+
       if (currentScrollY < 10) {
         setIsVisible(true);
       } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
@@ -287,7 +295,12 @@ export default function Header() {
 
   return (
     <motion.header
-      className="fixed top-0 left-0 right-0 z-50 bg-white/85 backdrop-blur-md text-primary shadow-sm border-b border-black/5"
+      className={`fixed top-0 left-0 right-0 z-50 backdrop-blur-md transition-colors duration-300
+  ${isTransparentHeader
+    ? 'bg-transparent text-white border-b border-white/15 shadow-none'
+    : 'bg-white/85 text-primary shadow-sm border-b border-black/5'
+  }`}
+
       initial={{ y: -100, opacity: 0 }}
       animate={{
         y: isVisible ? 0 : -100,

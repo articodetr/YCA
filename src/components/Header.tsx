@@ -351,7 +351,7 @@ const isTransparentHeader = isHome && isTop && !isOpen;
               {t('button.book')}
             </Link>
             <motion.button
-              className="text-primary"
+              className={isTransparentHeader ? 'text-white' : 'text-primary'}
               onClick={() => setIsOpen(!isOpen)}
               whileTap={{ scale: 0.9 }}
               aria-label={isOpen ? 'Close menu' : 'Open menu'}
@@ -456,7 +456,9 @@ const isTransparentHeader = isHome && isTop && !isOpen;
 
             <motion.button
               onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-              className="flex items-center gap-2 text-sm uppercase tracking-wider hover:text-accent transition-colors px-3 py-2 border border-white/30 rounded-lg"
+              className={`flex items-center gap-2 text-sm uppercase tracking-wider hover:text-accent transition-colors px-3 py-2 border rounded-lg
+  ${isTransparentHeader ? 'border-white/30 text-white hover:bg-white/10' : 'border-black/20 text-primary'}`}
+
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               aria-label="Toggle language"

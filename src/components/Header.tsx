@@ -35,6 +35,7 @@ export default function Header() {
 const location = useLocation();
 const isHomePage = location.pathname === '/';
 const [isAtTop, setIsAtTop] = useState(true);
+const isTransparent = isHomePage && isAtTop && !isOpen;
 
   const toggleDropdown = (menu: string) => {
     setOpenDropdown(openDropdown === menu ? null : menu);
@@ -288,14 +289,14 @@ const [isAtTop, setIsAtTop] = useState(true);
 
   return (
     <motion.header
-      className="fixed top-0 left-0 right-0 z-50 bg-white/85 backdrop-blur-md text-primary shadow-sm border-b border-black/5"
-      initial={{ y: -100, opacity: 0 }}
-      animate={{
-        y: isVisible ? 0 : -100,
-        opacity: isVisible ? 1 : 0
-      }}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
-    >
+  className={`fixed top-0 left-0 right-0 z-50 transition-colors ${
+    isTransparent
+      ? 'bg-transparent text-white shadow-none border-b border-transparent'
+      : 'bg-white/85 backdrop-blur-md text-primary shadow-sm border-b border-black/5'
+  }`}
+  ...
+>
+
       <div className="container mx-auto px-4">
         <div className="relative flex items-center justify-between h-20 md:h-24">
           <Link to="/" className="flex items-center gap-3 group flex-shrink-0">

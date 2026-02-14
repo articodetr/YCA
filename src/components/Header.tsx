@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, ChevronDown, ChevronRight, Globe, UserCircle, LogIn, UserPlus, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -23,6 +23,8 @@ export default function Header() {
   const isRTL = language === 'ar';
   const { getSetting } = useSiteSettings();
   const { user } = useMemberAuth();
+  const location = useLocation();
+  const isHomePage = location.pathname === '/';
   const logoMain = getSetting('site_logo', '/logo.png');
   const logoText = getSetting('site_logo_text', '/logo_text.png');
   const orgName = getSetting('org_name_en', 'Yemeni Community Association');
@@ -32,6 +34,7 @@ export default function Header() {
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [scrollY, setScrollY] = useState(0);
 
   const toggleDropdown = (menu: string) => {
     setOpenDropdown(openDropdown === menu ? null : menu);
@@ -53,6 +56,8 @@ export default function Header() {
         return;
       }
       const currentScrollY = window.scrollY;
+      setScrollY(currentScrollY);
+
       if (currentScrollY < 10) {
         setIsVisible(true);
       } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
@@ -158,7 +163,7 @@ export default function Header() {
       onMouseEnter={() => handleMouseEnter(dropdown.key)}
       onMouseLeave={handleMouseLeave}
     >
-      <button className="flex items-center gap-1 text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
+      <button className={`flex items-center gap-1 text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors ${isHomePage && scrollY < 100 ? 'drop-shadow-lg' : ''}`}>
         {dropdown.label}{' '}
         <ChevronDown
           size={14}
@@ -285,9 +290,23 @@ export default function Header() {
     </motion.div>
   );
 
+  const headerOpacity = isHomePage
+    ? Math.min(scrollY / 250, 1)
+    : 1;
+
+  const headerBgClass = isHomePage && scrollY < 250
+    ? `bg-white/${Math.round(20 + headerOpacity * 65)}`
+    : 'bg-white/85';
+
+  const textColorClass = isHomePage && scrollY < 100 ? 'text-white' : 'text-primary';
+
+  const borderClass = isHomePage && scrollY < 100
+    ? 'border-white/10'
+    : 'border-black/5';
+
   return (
     <motion.header
-      className="fixed top-0 left-0 right-0 z-50 bg-white/85 backdrop-blur-md text-primary shadow-sm border-b border-black/5"
+      className={`fixed top-0 left-0 right-0 z-50 ${headerBgClass} backdrop-blur-md ${textColorClass} transition-all duration-300 shadow-sm border-b ${borderClass}`}
       initial={{ y: -100, opacity: 0 }}
       animate={{
         y: isVisible ? 0 : -100,
@@ -323,7 +342,7 @@ export default function Header() {
           <div className="flex items-center gap-2 xl:hidden flex-shrink-0">
             <motion.button
               onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-              className="text-primary border border-black/20 px-2 py-1 rounded text-xs font-semibold"
+              className={`${textColorClass} border ${isHomePage && scrollY < 100 ? 'border-white/30' : 'border-black/20'} px-2 py-1 rounded text-xs font-semibold transition-colors`}
               whileTap={{ scale: 0.9 }}
               aria-label="Toggle language"
             >
@@ -336,7 +355,7 @@ export default function Header() {
               {t('button.book')}
             </Link>
             <motion.button
-              className="text-primary"
+              className={textColorClass}
               onClick={() => setIsOpen(!isOpen)}
               whileTap={{ scale: 0.9 }}
               aria-label={isOpen ? 'Close menu' : 'Open menu'}
@@ -357,7 +376,7 @@ export default function Header() {
           </div>
 
           <nav className="hidden xl:flex items-center justify-center flex-1 gap-3 2xl:gap-4">
-            <Link to="/" className="text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
+            <Link to="/" className={`text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors ${isHomePage && scrollY < 100 ? 'drop-shadow-lg' : ''}`}>
               {t('nav.home')}
             </Link>
             {allDropdowns.map((dropdown) => renderDesktopDropdown(dropdown))}
@@ -441,7 +460,7 @@ export default function Header() {
 
             <motion.button
               onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-              className="flex items-center gap-2 text-sm uppercase tracking-wider hover:text-accent transition-colors px-3 py-2 border border-white/30 rounded-lg"
+              className={`flex items-center gap-2 text-sm uppercase tracking-wider hover:text-accent transition-colors px-3 py-2 border ${isHomePage && scrollY < 100 ? 'border-white/40' : 'border-white/30'} rounded-lg`}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               aria-label="Toggle language"

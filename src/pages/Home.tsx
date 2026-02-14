@@ -168,7 +168,7 @@ export default function Home() {
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Hero Section */}
-      <section className="relative h-screen text-white overflow-hidden bg-[#0a1628]">
+      <section className="relative h-screen sm:h-[85vh] md:h-screen text-white overflow-hidden bg-[#0a1628]">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
@@ -183,17 +183,17 @@ export default function Home() {
               style={{
                 backgroundImage: `url('${heroSlides[currentSlide].image}')`,
                 backgroundSize: 'cover',
-                backgroundPosition: 'center',
+                backgroundPosition: 'center 35%',
                 backgroundRepeat: 'no-repeat',
               }}
             >
-              <div className="absolute inset-0 bg-black/20"></div>
+              <div className="absolute inset-0 bg-black/30"></div>
 
             </div>
           </motion.div>
         </AnimatePresence>
 
-        <div className="container mx-auto px-4 h-full flex items-center justify-center relative z-10">
+        <div className="container mx-auto px-4 h-full flex items-center justify-center relative z-10 pt-20 md:pt-0">
           <motion.div
             className="max-w-3xl mx-auto text-center"
             initial="hidden"
@@ -208,38 +208,38 @@ export default function Home() {
                 exit={{ y: -30, opacity: 0 }}
                 transition={{ duration: 0.6 }}
               >
-                <h1 className="text-3xl md:text-4xl font-serif font-light mb-4 leading-tight">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif font-light mb-3 md:mb-4 leading-tight drop-shadow-lg">
                   {heroSlides[currentSlide].title}
                 </h1>
-                <h2 className="text-2xl md:text-3xl font-serif font-light mb-8 text-accent">
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-serif font-light mb-6 md:mb-8 text-accent drop-shadow-lg">
                   {heroSlides[currentSlide].subtitle}
                 </h2>
               </motion.div>
             </AnimatePresence>
 
             <motion.p
-              className="text-base md:text-lg mb-12 text-gray-300 leading-relaxed max-w-2xl mx-auto"
+              className="text-sm sm:text-base md:text-lg mb-8 md:mb-12 text-gray-200 leading-relaxed max-w-2xl mx-auto drop-shadow-md"
               variants={fadeInUp}
             >
               {getContent('home', 'hero_subtitle', '')}
             </motion.p>
 
             <motion.div
-              className="flex flex-wrap gap-3 mb-16 justify-center"
+              className="flex flex-wrap gap-2 sm:gap-3 mb-12 md:mb-16 justify-center"
               variants={staggerContainer}
             >
               <motion.div variants={staggerItem}>
                 <Link
                   to="/services"
-                  className="inline-flex items-center gap-2 bg-accent text-primary px-6 py-3 hover:bg-hover transition-all font-semibold text-base uppercase tracking-wider"
+                  className="inline-flex items-center gap-1 sm:gap-2 bg-accent text-primary px-4 sm:px-6 py-2.5 sm:py-3 hover:bg-hover transition-all font-semibold text-xs sm:text-sm md:text-base uppercase tracking-wider"
                 >
-                  {getContent('home', 'hero_button_services', 'Discover Our Services')} <ArrowRight size={18} />
+                  {getContent('home', 'hero_button_services', 'Discover Our Services')} <ArrowRight size={16} className="sm:w-[18px] sm:h-[18px]" />
                 </Link>
               </motion.div>
               <motion.div variants={staggerItem}>
                 <Link
                   to="/contact"
-                  className="inline-flex items-center gap-2 bg-transparent border-2 border-white text-white px-6 py-3 hover:bg-white hover:text-primary transition-all font-semibold text-base uppercase tracking-wider"
+                  className="inline-flex items-center gap-1 sm:gap-2 bg-transparent border-2 border-white text-white px-4 sm:px-6 py-2.5 sm:py-3 hover:bg-white hover:text-primary transition-all font-semibold text-xs sm:text-sm md:text-base uppercase tracking-wider"
                 >
                   {getContent('home', 'hero_button_contact', 'Get In Touch')}
                 </Link>
@@ -248,12 +248,12 @@ export default function Home() {
           </motion.div>
         </div>
 
-        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 z-20 flex items-center gap-4 bg-black/30 backdrop-blur-sm px-4 py-2 rounded-full">
+        <div className="absolute bottom-4 sm:bottom-2 left-1/2 transform -translate-x-1/2 z-20 flex items-center gap-2 sm:gap-4 bg-black/30 backdrop-blur-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-full">
           {heroSlides.map((_, index) => (
             <div key={index} className="flex flex-col items-center">
               <button
                 onClick={() => goToSlide(index)}
-                className={`text-base font-medium transition-all ${
+                className={`text-sm sm:text-base font-medium transition-all ${
                   currentSlide === index
                     ? 'text-white scale-110'
                     : 'text-gray-400 hover:text-white'
@@ -264,7 +264,7 @@ export default function Home() {
               >
                 {String(index + 1).padStart(2, '0')}
               </button>
-              <div className="w-12 h-0.5 bg-gray-600 mt-2 rounded-full overflow-hidden">
+              <div className="w-8 sm:w-12 h-0.5 bg-gray-600 mt-1.5 sm:mt-2 rounded-full overflow-hidden">
                 <motion.div
                   className="h-full bg-accent"
                   initial={{ width: '0%' }}

@@ -323,7 +323,7 @@ export default function Header() {
           <div className="flex items-center gap-2 xl:hidden flex-shrink-0">
             <motion.button
               onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-              className="text-white border border-white/30 px-2 py-1 rounded text-xs font-semibold"
+              className="text-primary border border-black/20 px-2 py-1 rounded text-xs font-semibold"
               whileTap={{ scale: 0.9 }}
               aria-label="Toggle language"
             >

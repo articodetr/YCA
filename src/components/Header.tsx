@@ -336,7 +336,9 @@ const isTransparentHeader = isHome && isTop && !isOpen;
           <div className="flex items-center gap-2 xl:hidden flex-shrink-0">
             <motion.button
               onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-              className="text-primary border border-black/20 px-2 py-1 rounded text-xs font-semibold"
+              className={`px-2 py-1 rounded text-xs font-semibold border transition-colors
+  ${isTransparentHeader ? 'text-white border-white/30 hover:bg-white/10' : 'text-primary border-black/20'}`}
+
               whileTap={{ scale: 0.9 }}
               aria-label="Toggle language"
             >

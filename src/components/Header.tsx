@@ -163,7 +163,7 @@ export default function Header() {
       onMouseEnter={() => handleMouseEnter(dropdown.key)}
       onMouseLeave={handleMouseLeave}
     >
-      <button className={`flex items-center gap-1 text-sm font-semibold uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors ${isHomePage && scrollY < 100 ? 'drop-shadow-lg' : ''}`}>
+      <button className={`flex items-center gap-1 text-sm font-semibold uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors ${isHomePage && scrollY < 100 ? 'drop-shadow-lg' : ''}`} style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)' }}>
         {dropdown.label}{' '}
         <ChevronDown
           size={14}
@@ -376,7 +376,7 @@ export default function Header() {
           </div>
 
           <nav className="hidden xl:flex items-center justify-center flex-1 gap-3 2xl:gap-4">
-            <Link to="/" className={`text-sm font-semibold uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors ${isHomePage && scrollY < 100 ? 'drop-shadow-lg' : ''}`}>
+            <Link to="/" className={`text-sm font-semibold uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors ${isHomePage && scrollY < 100 ? 'drop-shadow-lg' : ''}`} style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.3)' }}>
               {t('nav.home')}
             </Link>
             {allDropdowns.map((dropdown) => renderDesktopDropdown(dropdown))}

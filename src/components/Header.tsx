@@ -23,9 +23,11 @@ export default function Header() {
   const isRTL = language === 'ar';
   const { getSetting } = useSiteSettings();
   const { user } = useMemberAuth();
+
   const logoMain = getSetting('site_logo', '/logo.png');
   const logoText = getSetting('site_logo_text', '/logo_text.png');
   const orgName = getSetting('org_name_en', 'Yemeni Community Association');
+
   const [isOpen, setIsOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [activeDesktopMenu, setActiveDesktopMenu] = useState<string | null>(null);
@@ -168,7 +170,7 @@ export default function Header() {
       <AnimatePresence>
         {activeDesktopMenu === dropdown.key && (
           <motion.div
-            className={`absolute top-full ${isRTL ? 'right-0' : 'left-0'} mt-2 w-72 bg-white text-primary shadow-xl rounded-lg overflow-visible z-50`}
+            className={`absolute top-full ${isRTL ? 'right-0' : 'left-0'} mt-2 w-72 bg-white text-primary shadow-xl rounded-xl overflow-visible z-50 border border-gray-100`}
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -193,7 +195,7 @@ export default function Header() {
                     <AnimatePresence>
                       {activeSubmenu === item.path && (
                         <motion.div
-                          className={`absolute top-0 ${isRTL ? 'right-full mr-1' : 'left-full ml-1'} w-64 bg-white text-primary shadow-xl rounded-lg overflow-hidden z-50`}
+                          className={`absolute top-0 ${isRTL ? 'right-full mr-1' : 'left-full ml-1'} w-64 bg-white text-primary shadow-xl rounded-xl overflow-hidden z-50 border border-gray-100`}
                           initial={{ opacity: 0, x: isRTL ? 10 : -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: isRTL ? 10 : -10 }}
@@ -237,7 +239,7 @@ export default function Header() {
     >
       <button
         onClick={() => toggleDropdown(dropdown.key)}
-        className="flex items-center justify-between w-full py-2 hover:text-accent transition-colors"
+        className="flex items-center justify-between w-full py-2 hover:text-accent transition-colors text-primary"
       >
         {dropdown.label}
         <ChevronDown
@@ -259,7 +261,7 @@ export default function Header() {
                 <Link
                   to={item.path}
                   onClick={() => !item.children && setIsOpen(false)}
-                  className="block py-1.5 text-sm hover:text-accent transition-colors"
+                  className="block py-1.5 text-sm hover:text-accent transition-colors text-primary"
                 >
                   {item.label}
                 </Link>
@@ -270,7 +272,7 @@ export default function Header() {
                         key={child.path}
                         to={child.path}
                         onClick={() => setIsOpen(false)}
-                        className="block py-1 text-xs text-gray-300 hover:text-accent transition-colors"
+                        className="block py-1 text-xs text-muted hover:text-accent transition-colors"
                       >
                         {child.label}
                       </Link>
@@ -287,7 +289,7 @@ export default function Header() {
 
   return (
     <motion.header
-      className="fixed top-0 left-0 right-0 z-50 bg-white/85 backdrop-blur-md text-primary shadow-sm border-b border-black/5"
+      className="fixed top-0 left-0 right-0 z-50 bg-white/85 backdrop-blur-md text-primary border-b border-gray-200"
       initial={{ y: -100, opacity: 0 }}
       animate={{
         y: isVisible ? 0 : -100,
@@ -297,44 +299,49 @@ export default function Header() {
     >
       <div className="container mx-auto px-4">
         <div className="relative flex items-center justify-between h-20 md:h-24">
+          {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group flex-shrink-0">
             <div className="flex items-center gap-3">
               <img
                 src={logoMain}
                 alt={orgName}
-                className="h-10 sm:h-12 md:h-14 lg:h-16 w-auto transition-transform group-hover:scale-105 duration-300"
+                className="h-10 sm:h-12 md:h-12 w-auto transition-transform group-hover:scale-105 duration-300"
               />
               <img
                 src={logoText}
                 alt={orgName}
-                className="h-8 sm:h-10 md:h-12 w-auto transition-opacity group-hover:opacity-80 duration-300 hidden xl:block"
+                className="h-8 sm:h-10 md:h-10 w-auto transition-opacity group-hover:opacity-80 duration-300 hidden xl:block"
               />
             </div>
           </Link>
 
+          {/* Mobile center logo text */}
           <div className="absolute left-1/2 -translate-x-1/2 xl:hidden flex items-center justify-center pointer-events-none">
             <img
               src={logoText}
               alt={getSetting('org_name_ar', 'الجالية اليمنية')}
-              className="h-7 sm:h-8 md:h-12 w-auto opacity-95"
+              className="h-7 sm:h-8 md:h-10 w-auto opacity-95"
             />
           </div>
 
+          {/* Mobile actions */}
           <div className="flex items-center gap-2 xl:hidden flex-shrink-0">
             <motion.button
               onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-              className="text-primary border border-black/20 px-2 py-1 rounded text-xs font-semibold"
+              className="text-primary border border-gray-300 px-2 py-1 rounded text-xs font-semibold bg-white"
               whileTap={{ scale: 0.9 }}
               aria-label="Toggle language"
             >
               {language === 'en' ? 'AR' : 'EN'}
             </motion.button>
+
             <Link
               to="/book"
-              className="hidden sm:inline-flex bg-accent text-primary px-5 py-2 hover:bg-hover transition-colors font-semibold text-xs uppercase tracking-wider whitespace-nowrap"
+              className="hidden sm:inline-flex bg-accent text-primary px-5 py-2 rounded-full hover:bg-hover transition-colors font-semibold text-xs uppercase tracking-wider whitespace-nowrap"
             >
               {t('button.book')}
             </Link>
+
             <motion.button
               className="text-primary"
               onClick={() => setIsOpen(!isOpen)}
@@ -356,6 +363,7 @@ export default function Header() {
             </motion.button>
           </div>
 
+          {/* Desktop nav */}
           <nav className="hidden xl:flex items-center justify-center flex-1 gap-3 2xl:gap-4">
             <Link to="/" className="text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
               {t('nav.home')}
@@ -363,11 +371,12 @@ export default function Header() {
             {allDropdowns.map((dropdown) => renderDesktopDropdown(dropdown))}
           </nav>
 
+          {/* Desktop right */}
           <div className="hidden xl:flex items-center gap-3 flex-shrink-0">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 to="/book"
-                className="bg-accent text-primary px-5 py-2.5 hover:bg-hover transition-colors font-semibold text-sm uppercase tracking-wider whitespace-nowrap"
+                className="bg-accent text-primary px-5 py-2.5 rounded-full hover:bg-hover transition-colors font-semibold text-sm uppercase tracking-wider whitespace-nowrap shadow-sm"
               >
                 {t('button.book')}
               </Link>
@@ -400,10 +409,11 @@ export default function Header() {
                     {language === 'ar' ? 'الدخول' : 'Login'}
                   </span>
                 </motion.button>
+
                 <AnimatePresence>
                   {activeDesktopMenu === 'account' && (
                     <motion.div
-                      className={`absolute top-full ${isRTL ? 'left-0' : 'right-0'} mt-2 w-56 bg-white text-primary shadow-xl rounded-lg overflow-hidden z-50`}
+                      className={`absolute top-full ${isRTL ? 'left-0' : 'right-0'} mt-2 w-56 bg-white text-primary shadow-xl rounded-xl overflow-hidden z-50 border border-gray-100`}
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
@@ -432,7 +442,7 @@ export default function Header() {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 to="/get-involved/donate"
-                className="hover:text-accent transition-colors p-2.5 block text-red-300 hover:text-red-200"
+                className="transition-colors p-2.5 block text-red-600 hover:text-red-700"
                 title={language === 'ar' ? 'تبرع' : 'Donate'}
               >
                 <Heart size={20} />
@@ -441,7 +451,7 @@ export default function Header() {
 
             <motion.button
               onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-              className="flex items-center gap-2 text-sm uppercase tracking-wider hover:text-accent transition-colors px-3 py-2 border border-white/30 rounded-lg"
+              className="flex items-center gap-2 text-sm uppercase tracking-wider hover:text-accent transition-colors px-3 py-2 border border-gray-300 rounded-full bg-white"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               aria-label="Toggle language"
@@ -452,17 +462,18 @@ export default function Header() {
           </div>
         </div>
 
+        {/* Mobile menu */}
         <AnimatePresence>
           {isOpen && (
             <motion.nav
-              className="xl:hidden pb-6 space-y-2 bg-[#0b1424] rounded-b-2xl px-4 pt-4 max-h-[calc(100vh-80px)] overflow-y-auto overscroll-contain"
+              className="xl:hidden pb-6 space-y-2 bg-white rounded-b-2xl px-4 pt-4 max-h-[calc(100vh-80px)] overflow-y-auto overscroll-contain border-t border-gray-100"
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.3 }}
             >
               <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
-                <Link to="/" onClick={() => setIsOpen(false)} className="block py-2 hover:text-accent transition-colors">
+                <Link to="/" onClick={() => setIsOpen(false)} className="block py-2 hover:text-accent transition-colors text-primary">
                   {t('nav.home')}
                 </Link>
               </motion.div>
@@ -476,7 +487,7 @@ export default function Header() {
                   <Link
                     to="/book"
                     onClick={() => setIsOpen(false)}
-                    className="block bg-accent text-primary px-6 py-3 rounded-lg hover:bg-hover transition-colors font-semibold text-center whitespace-nowrap"
+                    className="block bg-accent text-primary px-6 py-3 rounded-full hover:bg-hover transition-colors font-semibold text-center whitespace-nowrap"
                   >
                     {t('button.book')}
                   </Link>
@@ -484,7 +495,7 @@ export default function Header() {
                   <Link
                     to="/get-involved/donate"
                     onClick={() => setIsOpen(false)}
-                    className="block bg-red-600/80 text-white px-6 py-3 rounded-lg hover:bg-red-700/80 transition-colors font-semibold text-center whitespace-nowrap"
+                    className="block bg-red-600 text-white px-6 py-3 rounded-full hover:bg-red-700 transition-colors font-semibold text-center whitespace-nowrap"
                   >
                     <span className="flex items-center justify-center gap-2">
                       <Heart size={18} />
@@ -496,7 +507,7 @@ export default function Header() {
                     <Link
                       to="/member/dashboard?tab=profile"
                       onClick={() => setIsOpen(false)}
-                      className="flex items-center justify-center gap-2 w-full border border-white/30 text-white px-6 py-3 rounded-lg hover:bg-white/10 transition-colors font-semibold"
+                      className="flex items-center justify-center gap-2 w-full border border-gray-300 text-primary px-6 py-3 rounded-full hover:bg-gray-50 transition-colors font-semibold"
                     >
                       <UserCircle size={18} />
                       {language === 'ar' ? 'حسابي' : 'My Account'}
@@ -505,7 +516,7 @@ export default function Header() {
                     <>
                       <button
                         onClick={() => toggleDropdown('account')}
-                        className="flex items-center justify-between w-full border border-white/30 text-white px-6 py-3 rounded-lg hover:bg-white/10 transition-colors font-semibold"
+                        className="flex items-center justify-between w-full border border-gray-300 text-primary px-6 py-3 rounded-full hover:bg-gray-50 transition-colors font-semibold"
                       >
                         <div className="flex items-center gap-2">
                           <LogIn size={18} />
@@ -513,6 +524,7 @@ export default function Header() {
                         </div>
                         <ChevronDown size={16} className={`transition-transform duration-300 ${openDropdown === 'account' ? 'rotate-180' : ''}`} />
                       </button>
+
                       <AnimatePresence>
                         {openDropdown === 'account' && (
                           <motion.div
@@ -525,7 +537,7 @@ export default function Header() {
                             <Link
                               to="/member/login"
                               onClick={() => setIsOpen(false)}
-                              className="flex items-center gap-2 py-2 text-sm hover:text-accent transition-colors"
+                              className="flex items-center gap-2 py-2 text-sm hover:text-accent transition-colors text-primary"
                             >
                               <LogIn size={16} />
                               {language === 'ar' ? 'تسجيل الدخول' : 'Login'}
@@ -533,7 +545,7 @@ export default function Header() {
                             <Link
                               to="/membership"
                               onClick={() => setIsOpen(false)}
-                              className="flex items-center gap-2 py-2 text-sm hover:text-accent transition-colors"
+                              className="flex items-center gap-2 py-2 text-sm hover:text-accent transition-colors text-primary"
                             >
                               <UserPlus size={16} />
                               {language === 'ar' ? 'تسجيل عضوية جديدة' : 'Register New Membership'}

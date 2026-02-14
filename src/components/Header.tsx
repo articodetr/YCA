@@ -336,7 +336,7 @@ export default function Header() {
               {t('button.book')}
             </Link>
             <motion.button
-              className="text-white"
+              className="text-primary"
               onClick={() => setIsOpen(!isOpen)}
               whileTap={{ scale: 0.9 }}
               aria-label={isOpen ? 'Close menu' : 'Open menu'}

@@ -168,118 +168,118 @@ export default function Home() {
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Hero Section */}
-      <section className="relative h-screen text-white overflow-hidden bg-[#0a1628]">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentSlide}
-            className="absolute inset-0"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1 }}
+<section className="relative h-screen overflow-hidden bg-white text-primary">
+  <AnimatePresence mode="wait">
+    <motion.div
+      key={currentSlide}
+      className="absolute inset-0"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 1 }}
+    >
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `url('${heroSlides[currentSlide].image}')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          filter: 'saturate(1.05) contrast(1.05) brightness(1.03)',
+        }}
+      >
+        {/* ✅ Light overlay like reference (no dark color) */}
+        <div className="absolute inset-0 bg-gradient-to-b from-white/85 via-white/35 to-transparent"></div>
+      </div>
+    </motion.div>
+  </AnimatePresence>
+
+  <div className="container mx-auto px-4 h-full flex items-center justify-center relative z-10 pt-20">
+    <motion.div
+      className="max-w-3xl mx-auto text-center"
+      initial="hidden"
+      animate="visible"
+      variants={staggerContainer}
+    >
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentSlide}
+          initial={{ y: 30, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -30, opacity: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <h1 className="text-3xl md:text-4xl font-serif font-semibold mb-4 leading-tight text-primary">
+            {heroSlides[currentSlide].title}
+          </h1>
+          <h2 className="text-2xl md:text-3xl font-serif font-medium mb-8 text-[#8B4513]">
+            {heroSlides[currentSlide].subtitle}
+          </h2>
+        </motion.div>
+      </AnimatePresence>
+
+      <motion.p
+        className="text-base md:text-lg mb-12 text-gray-700 leading-relaxed max-w-2xl mx-auto"
+        variants={fadeInUp}
+      >
+        {getContent('home', 'hero_subtitle', '')}
+      </motion.p>
+
+      <motion.div
+        className="flex flex-wrap gap-3 mb-16 justify-center"
+        variants={staggerContainer}
+      >
+        <motion.div variants={staggerItem}>
+          <Link
+            to="/services"
+            className="inline-flex items-center gap-2 bg-[#8B4513] text-white px-6 py-3 hover:opacity-90 transition-all font-semibold text-base uppercase tracking-wider"
           >
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage: `url('${heroSlides[currentSlide].image}')`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat',
-              }}
-            >
-              <div className="absolute inset-0 bg-black/20"></div>
+            {getContent('home', 'hero_button_services', 'Discover Our Services')} <ArrowRight size={18} />
+          </Link>
+        </motion.div>
 
-            </div>
-          </motion.div>
-        </AnimatePresence>
-
-        <div className="container mx-auto px-4 h-full flex items-center justify-center relative z-10">
-          <motion.div
-            className="max-w-3xl mx-auto text-center"
-            initial="hidden"
-            animate="visible"
-            variants={staggerContainer}
+        <motion.div variants={staggerItem}>
+          <Link
+            to="/contact"
+            className="inline-flex items-center gap-2 bg-white/70 backdrop-blur-sm border-2 border-primary text-primary px-6 py-3 hover:bg-primary hover:text-white transition-all font-semibold text-base uppercase tracking-wider"
           >
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentSlide}
-                initial={{ y: 30, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: -30, opacity: 0 }}
-                transition={{ duration: 0.6 }}
-              >
-                <h1 className="text-3xl md:text-4xl font-serif font-light mb-4 leading-tight">
-                  {heroSlides[currentSlide].title}
-                </h1>
-                <h2 className="text-2xl md:text-3xl font-serif font-light mb-8 text-accent">
-                  {heroSlides[currentSlide].subtitle}
-                </h2>
-              </motion.div>
-            </AnimatePresence>
+            {getContent('home', 'hero_button_contact', 'Get In Touch')}
+          </Link>
+        </motion.div>
+      </motion.div>
+    </motion.div>
+  </div>
 
-            <motion.p
-              className="text-base md:text-lg mb-12 text-gray-300 leading-relaxed max-w-2xl mx-auto"
-              variants={fadeInUp}
-            >
-              {getContent('home', 'hero_subtitle', '')}
-            </motion.p>
+  <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 z-20 flex items-center gap-4 bg-white/70 backdrop-blur-sm px-4 py-2 rounded-full border border-black/10">
+    {heroSlides.map((_, index) => (
+      <div key={index} className="flex flex-col items-center">
+        <button
+          onClick={() => goToSlide(index)}
+          className={`text-base font-medium transition-all ${
+            currentSlide === index
+              ? 'text-primary scale-110'
+              : 'text-gray-500 hover:text-primary'
+          }`}
+        >
+          {String(index + 1).padStart(2, '0')}
+        </button>
 
-            <motion.div
-              className="flex flex-wrap gap-3 mb-16 justify-center"
-              variants={staggerContainer}
-            >
-              <motion.div variants={staggerItem}>
-                <Link
-                  to="/services"
-                  className="inline-flex items-center gap-2 bg-accent text-primary px-6 py-3 hover:bg-hover transition-all font-semibold text-base uppercase tracking-wider"
-                >
-                  {getContent('home', 'hero_button_services', 'Discover Our Services')} <ArrowRight size={18} />
-                </Link>
-              </motion.div>
-              <motion.div variants={staggerItem}>
-                <Link
-                  to="/contact"
-                  className="inline-flex items-center gap-2 bg-transparent border-2 border-white text-white px-6 py-3 hover:bg-white hover:text-primary transition-all font-semibold text-base uppercase tracking-wider"
-                >
-                  {getContent('home', 'hero_button_contact', 'Get In Touch')}
-                </Link>
-              </motion.div>
-            </motion.div>
-          </motion.div>
+        <div className="w-12 h-0.5 bg-gray-300 mt-2 rounded-full overflow-hidden">
+          <motion.div
+            className="h-full bg-[#8B4513]"
+            initial={{ width: '0%' }}
+            animate={{ width: currentSlide === index ? '100%' : '0%' }}
+            transition={{
+              duration: currentSlide === index ? 5 : 0,
+              ease: 'linear'
+            }}
+            key={`progress-${currentSlide}-${index}`}
+          />
         </div>
-
-        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 z-20 flex items-center gap-4 bg-black/30 backdrop-blur-sm px-4 py-2 rounded-full">
-          {heroSlides.map((_, index) => (
-            <div key={index} className="flex flex-col items-center">
-              <button
-                onClick={() => goToSlide(index)}
-                className={`text-base font-medium transition-all ${
-                  currentSlide === index
-                    ? 'text-white scale-110'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-                style={{
-                  textShadow: currentSlide === index ? '0 2px 8px rgba(228, 212, 181, 0.6)' : 'none'
-                }}
-              >
-                {String(index + 1).padStart(2, '0')}
-              </button>
-              <div className="w-12 h-0.5 bg-gray-600 mt-2 rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full bg-accent"
-                  initial={{ width: '0%' }}
-                  animate={{ width: currentSlide === index ? '100%' : '0%' }}
-                  transition={{
-                    duration: currentSlide === index ? 5 : 0,
-                    ease: 'linear'
-                  }}
-                  key={`progress-${currentSlide}-${index}`}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      </div>
+    ))}
+  </div>
+</section>
 
       <BeltDivider />
 

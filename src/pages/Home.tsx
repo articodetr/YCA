@@ -178,15 +178,7 @@ export default function Home() {
             exit={{ opacity: 0 }}
             transition={{ duration: 1 }}
           >
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage: `url('${heroSlides[currentSlide].image}')`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat',
-              }}
-            >
+           
               <div className="absolute inset-0 bg-gradient-to-br from-[#0a1628]/90 via-[#0a1628]/70 to-transparent"></div>
             </div>
           </motion.div>

@@ -219,11 +219,12 @@ export default function Home() {
             </AnimatePresence>
 
             <motion.p
-              className="text-sm sm:text-base md:text-lg mb-8 md:mb-12 text-gray-200 leading-relaxed max-w-2xl mx-auto drop-shadow-md"
-              variants={fadeInUp}
-            >
-              {getContent('home', 'hero_subtitle', '')}
-            </motion.p>
+  className="text-sm sm:text-base md:text-lg mb-8 md:mb-12 text-gray-200 leading-relaxed max-w-2xl mx-auto text-shadow-white-soft"
+  variants={fadeInUp}
+>
+  {getContent('home', 'hero_subtitle', '')}
+</motion.p>
+
 
             <motion.div
               className="flex flex-wrap gap-2 sm:gap-3 mb-12 md:mb-16 justify-center"

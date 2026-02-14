@@ -51,20 +51,18 @@ const [isAtTop, setIsAtTop] = useState(true);
 
   useEffect(() => {
     const controlHeader = () => {
-      if (isOpen) {
-        setIsVisible(true);
-        return;
-      }
-      const currentScrollY = window.scrollY;
-      if (currentScrollY < 10) {
-        setIsVisible(true);
-      } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        setIsVisible(false);
-      } else if (currentScrollY < lastScrollY) {
-        setIsVisible(true);
-      }
-      setLastScrollY(currentScrollY);
-    };
+  const currentScrollY = window.scrollY;
+  setIsAtTop(currentScrollY < 10);
+
+  if (isOpen) {
+    setIsVisible(true);
+    setLastScrollY(currentScrollY);
+    return;
+  }
+
+  // بقية منطق إظهار/إخفاء الهيدر...
+};
+
     window.addEventListener('scroll', controlHeader);
     return () => window.removeEventListener('scroll', controlHeader);
   }, [lastScrollY, isOpen]);

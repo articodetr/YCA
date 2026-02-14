@@ -178,8 +178,20 @@ export default function Home() {
             exit={{ opacity: 0 }}
             transition={{ duration: 1 }}
           >
-           
-              <div className="absolute inset-0 bg-gradient-to-br from-[#0a1628]/90 via-[#0a1628]/70 to-transparent"></div>
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: `url('${heroSlides[currentSlide].image}')`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+              }}
+            >
+              <div className="absolute inset-0 bg-black/20"></div>
+
+            </div>
+          </motion.div>
+        </AnimatePresence>
 
         <div className="container mx-auto px-4 h-full flex items-center justify-center relative z-10">
           <motion.div

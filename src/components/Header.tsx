@@ -148,7 +148,6 @@ export default function Header() {
     label: t('nav.contact'),
     items: [
       { label: t('nav.contact.details'), path: '/contact' },
-      { label: t('nav.contact.location'), path: '/contact#map' },
       { label: t('nav.contact.complaints'), path: '/contact/complaints' },
       { label: t('nav.contact.feedback'), path: '/contact/feedback' },
     ],

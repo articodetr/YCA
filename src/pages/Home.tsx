@@ -180,9 +180,6 @@ export default function Home() {
           >
            
               <div className="absolute inset-0 bg-gradient-to-br from-[#0a1628]/90 via-[#0a1628]/70 to-transparent"></div>
-            </div>
-          </motion.div>
-        </AnimatePresence>
 
         <div className="container mx-auto px-4 h-full flex items-center justify-center relative z-10">
           <motion.div

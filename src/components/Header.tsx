@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, ChevronDown, ChevronRight, Globe, UserCircle, LogIn, UserPlus, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -21,17 +21,25 @@ interface NavDropdown {
 export default function Header() {
   const { language, setLanguage, t } = useLanguage();
   const isRTL = language === 'ar';
+  const location = useLocation();
+
   const { getSetting } = useSiteSettings();
   const { user } = useMemberAuth();
+
   const logoMain = getSetting('site_logo', '/logo.png');
   const logoText = getSetting('site_logo_text', '/logo_text.png');
   const orgName = getSetting('org_name_en', 'Yemeni Community Association');
+
   const [isOpen, setIsOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [activeDesktopMenu, setActiveDesktopMenu] = useState<string | null>(null);
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [isTop, setIsTop] = useState(true);
+
+  const isHome = location.pathname === '/';
+  const isTransparentHeader = isHome && isTop;
 
   const toggleDropdown = (menu: string) => {
     setOpenDropdown(openDropdown === menu ? null : menu);
@@ -50,9 +58,13 @@ export default function Header() {
     const controlHeader = () => {
       if (isOpen) {
         setIsVisible(true);
-        return;
+        // keep isTop in sync even if menu is open
       }
+
       const currentScrollY = window.scrollY;
+
+      setIsTop(currentScrollY < 10);
+
       if (currentScrollY < 10) {
         setIsVisible(true);
       } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
@@ -60,9 +72,13 @@ export default function Header() {
       } else if (currentScrollY < lastScrollY) {
         setIsVisible(true);
       }
+
       setLastScrollY(currentScrollY);
     };
+
     window.addEventListener('scroll', controlHeader);
+    controlHeader();
+
     return () => window.removeEventListener('scroll', controlHeader);
   }, [lastScrollY, isOpen]);
 
@@ -72,7 +88,9 @@ export default function Header() {
     } else {
       document.body.style.overflow = '';
     }
-    return () => { document.body.style.overflow = ''; };
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [isOpen]);
 
   const servicesDropdown: NavDropdown = {
@@ -165,6 +183,7 @@ export default function Header() {
           className={`transition-transform duration-300 ${activeDesktopMenu === dropdown.key ? 'rotate-180' : ''}`}
         />
       </button>
+
       <AnimatePresence>
         {activeDesktopMenu === dropdown.key && (
           <motion.div
@@ -190,6 +209,7 @@ export default function Header() {
                       <span>{item.label}</span>
                       <ChevronRight size={14} className={isRTL ? 'rotate-180' : ''} />
                     </Link>
+
                     <AnimatePresence>
                       {activeSubmenu === item.path && (
                         <motion.div
@@ -213,10 +233,7 @@ export default function Header() {
                     </AnimatePresence>
                   </>
                 ) : (
-                  <Link
-                    to={item.path}
-                    className="block px-5 py-3 hover:bg-sand transition-colors text-sm"
-                  >
+                  <Link to={item.path} className="block px-5 py-3 hover:bg-sand transition-colors text-sm">
                     {item.label}
                   </Link>
                 )}
@@ -245,6 +262,7 @@ export default function Header() {
           className={`transition-transform duration-300 ${openDropdown === dropdown.key ? 'rotate-180' : ''}`}
         />
       </button>
+
       <AnimatePresence>
         {openDropdown === dropdown.key && (
           <motion.div
@@ -263,6 +281,7 @@ export default function Header() {
                 >
                   {item.label}
                 </Link>
+
                 {item.children && (
                   <div className={`${isRTL ? 'pr-4' : 'pl-4'} space-y-1`}>
                     {item.children.map((child) => (
@@ -287,11 +306,15 @@ export default function Header() {
 
   return (
     <motion.header
-      className="fixed top-0 left-0 right-0 z-50 bg-white/85 backdrop-blur-md text-primary shadow-sm border-b border-black/5"
+      className={`fixed top-0 left-0 right-0 z-50 backdrop-blur-md transition-colors duration-300 ${
+        isTransparentHeader
+          ? 'bg-white/10 text-white border-b border-white/15 shadow-none'
+          : 'bg-white/85 text-primary shadow-sm border-b border-black/5'
+      }`}
       initial={{ y: -100, opacity: 0 }}
       animate={{
         y: isVisible ? 0 : -100,
-        opacity: isVisible ? 1 : 0
+        opacity: isVisible ? 1 : 0,
       }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
     >
@@ -316,27 +339,33 @@ export default function Header() {
             <img
               src={logoText}
               alt={getSetting('org_name_ar', 'الجالية اليمنية')}
-              className="h-7 sm:h-8 md:h-12 w-auto opacity-95"
+              className={`h-7 sm:h-8 md:h-12 w-auto opacity-95 ${isTransparentHeader ? 'brightness-0 invert' : ''}`}
             />
           </div>
 
           <div className="flex items-center gap-2 xl:hidden flex-shrink-0">
             <motion.button
               onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-              className="text-primary border border-black/20 px-2 py-1 rounded text-xs font-semibold"
+              className={`px-2 py-1 rounded text-xs font-semibold border transition-colors ${
+                isTransparentHeader
+                  ? 'text-white border-white/30 hover:bg-white/10'
+                  : 'text-primary border-black/20 hover:bg-accent/10'
+              }`}
               whileTap={{ scale: 0.9 }}
               aria-label="Toggle language"
             >
               {language === 'en' ? 'AR' : 'EN'}
             </motion.button>
+
             <Link
               to="/book"
               className="hidden sm:inline-flex bg-accent text-primary px-5 py-2 hover:bg-hover transition-colors font-semibold text-xs uppercase tracking-wider whitespace-nowrap"
             >
               {t('button.book')}
             </Link>
+
             <motion.button
-              className="text-primary"
+              className={`${isTransparentHeader ? 'text-white' : 'text-primary'}`}
               onClick={() => setIsOpen(!isOpen)}
               whileTap={{ scale: 0.9 }}
               aria-label={isOpen ? 'Close menu' : 'Open menu'}
@@ -400,6 +429,7 @@ export default function Header() {
                     {language === 'ar' ? 'الدخول' : 'Login'}
                   </span>
                 </motion.button>
+
                 <AnimatePresence>
                   {activeDesktopMenu === 'account' && (
                     <motion.div
@@ -441,7 +471,11 @@ export default function Header() {
 
             <motion.button
               onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-              className="flex items-center gap-2 text-sm uppercase tracking-wider hover:text-accent transition-colors px-3 py-2 border border-white/30 rounded-lg"
+              className={`flex items-center gap-2 text-sm uppercase tracking-wider transition-colors px-3 py-2 border rounded-lg ${
+                isTransparentHeader
+                  ? 'border-white/30 text-white hover:bg-white/10'
+                  : 'border-black/20 text-primary hover:bg-accent/10 hover:border-accent/30'
+              }`}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               aria-label="Toggle language"
@@ -467,9 +501,7 @@ export default function Header() {
                 </Link>
               </motion.div>
 
-              {allDropdowns.map((dropdown, index) =>
-                renderMobileDropdown(dropdown, 0.15 + index * 0.05)
-              )}
+              {allDropdowns.map((dropdown, index) => renderMobileDropdown(dropdown, 0.15 + index * 0.05))}
 
               <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.45 }}>
                 <div className="pt-4 space-y-3">
@@ -511,8 +543,12 @@ export default function Header() {
                           <LogIn size={18} />
                           {language === 'ar' ? 'تسجيل الدخول' : 'Member Login'}
                         </div>
-                        <ChevronDown size={16} className={`transition-transform duration-300 ${openDropdown === 'account' ? 'rotate-180' : ''}`} />
+                        <ChevronDown
+                          size={16}
+                          className={`transition-transform duration-300 ${openDropdown === 'account' ? 'rotate-180' : ''}`}
+                        />
                       </button>
+
                       <AnimatePresence>
                         {openDropdown === 'account' && (
                           <motion.div
@@ -530,6 +566,7 @@ export default function Header() {
                               <LogIn size={16} />
                               {language === 'ar' ? 'تسجيل الدخول' : 'Login'}
                             </Link>
+
                             <Link
                               to="/membership"
                               onClick={() => setIsOpen(false)}

@@ -168,7 +168,7 @@ export default function Home() {
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Hero Section */}
-      <section className="relative h-screen text-white overflow-hidden bg-[#0a1628]">
+      <section className="relative min-h-screen text-white overflow-hidden bg-[#0a1628]">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
@@ -179,7 +179,7 @@ export default function Home() {
             transition={{ duration: 1 }}
           >
             <div
-              className="absolute inset-0"
+              className="absolute inset-0 hero-background"
               style={{
                 backgroundImage: `url('${heroSlides[currentSlide].image}')`,
                 backgroundSize: 'cover',
@@ -187,13 +187,13 @@ export default function Home() {
                 backgroundRepeat: 'no-repeat',
               }}
             >
-              <div className="absolute inset-0 bg-black/20"></div>
+              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-black/60"></div>
 
             </div>
           </motion.div>
         </AnimatePresence>
 
-        <div className="container mx-auto px-4 h-full flex items-center justify-center relative z-10">
+        <div className="container mx-auto px-4 min-h-screen flex items-center justify-center relative z-10 py-32 md:py-20">
           <motion.div
             className="max-w-3xl mx-auto text-center"
             initial="hidden"
@@ -208,30 +208,43 @@ export default function Home() {
                 exit={{ y: -30, opacity: 0 }}
                 transition={{ duration: 0.6 }}
               >
-                <h1 className="text-3xl md:text-4xl font-serif font-light mb-4 leading-tight">
+                <h1
+                  className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-4 leading-tight"
+                  style={{
+                    textShadow: '0 4px 12px rgba(0,0,0,0.9), 0 8px 24px rgba(0,0,0,0.7), 0 2px 4px rgba(0,0,0,1)'
+                  }}
+                >
                   {heroSlides[currentSlide].title}
                 </h1>
-                <h2 className="text-2xl md:text-3xl font-serif font-light mb-8 text-accent">
+                <h2
+                  className="text-2xl md:text-4xl lg:text-5xl font-serif font-bold mb-8 text-accent"
+                  style={{
+                    textShadow: '0 4px 12px rgba(0,0,0,0.9), 0 8px 24px rgba(0,0,0,0.7), 0 2px 4px rgba(0,0,0,1)'
+                  }}
+                >
                   {heroSlides[currentSlide].subtitle}
                 </h2>
               </motion.div>
             </AnimatePresence>
 
             <motion.p
-              className="text-base md:text-lg mb-12 text-gray-300 leading-relaxed max-w-2xl mx-auto"
+              className="text-base md:text-xl mb-12 text-white leading-relaxed max-w-2xl mx-auto font-medium"
               variants={fadeInUp}
+              style={{
+                textShadow: '0 3px 8px rgba(0,0,0,0.8), 0 6px 16px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,1)'
+              }}
             >
               {getContent('home', 'hero_subtitle', '')}
             </motion.p>
 
             <motion.div
-              className="flex flex-wrap gap-3 mb-16 justify-center"
+              className="flex flex-wrap gap-4 mb-16 justify-center"
               variants={staggerContainer}
             >
               <motion.div variants={staggerItem}>
                 <Link
                   to="/services"
-                  className="inline-flex items-center gap-2 bg-accent text-primary px-6 py-3 hover:bg-hover transition-all font-semibold text-base uppercase tracking-wider"
+                  className="inline-flex items-center gap-2 bg-accent text-primary px-8 py-4 hover:bg-hover transition-all font-bold text-base uppercase tracking-wider shadow-[0_8px_24px_rgba(0,0,0,0.6)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.8)] rounded-lg"
                 >
                   {getContent('home', 'hero_button_services', 'Discover Our Services')} <ArrowRight size={18} />
                 </Link>
@@ -239,7 +252,7 @@ export default function Home() {
               <motion.div variants={staggerItem}>
                 <Link
                   to="/contact"
-                  className="inline-flex items-center gap-2 bg-transparent border-2 border-white text-white px-6 py-3 hover:bg-white hover:text-primary transition-all font-semibold text-base uppercase tracking-wider"
+                  className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border-2 border-white text-white px-8 py-4 hover:bg-white hover:text-primary transition-all font-bold text-base uppercase tracking-wider shadow-[0_8px_24px_rgba(0,0,0,0.6)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.8)] rounded-lg"
                 >
                   {getContent('home', 'hero_button_contact', 'Get In Touch')}
                 </Link>
@@ -248,25 +261,25 @@ export default function Home() {
           </motion.div>
         </div>
 
-        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 z-20 flex items-center gap-4 bg-black/30 backdrop-blur-sm px-4 py-2 rounded-full">
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20 flex items-center gap-4 bg-black/60 backdrop-blur-md px-6 py-3 rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.6)]">
           {heroSlides.map((_, index) => (
             <div key={index} className="flex flex-col items-center">
               <button
                 onClick={() => goToSlide(index)}
-                className={`text-base font-medium transition-all ${
+                className={`text-base font-bold transition-all ${
                   currentSlide === index
                     ? 'text-white scale-110'
                     : 'text-gray-400 hover:text-white'
                 }`}
                 style={{
-                  textShadow: currentSlide === index ? '0 2px 8px rgba(228, 212, 181, 0.6)' : 'none'
+                  textShadow: currentSlide === index ? '0 2px 8px rgba(228, 212, 181, 0.8), 0 4px 16px rgba(228, 212, 181, 0.4)' : '0 2px 4px rgba(0,0,0,0.8)'
                 }}
               >
                 {String(index + 1).padStart(2, '0')}
               </button>
-              <div className="w-12 h-0.5 bg-gray-600 mt-2 rounded-full overflow-hidden">
+              <div className="w-12 h-1 bg-gray-700 mt-2 rounded-full overflow-hidden shadow-inner">
                 <motion.div
-                  className="h-full bg-accent"
+                  className="h-full bg-accent shadow-[0_0_8px_rgba(228,212,181,0.8)]"
                   initial={{ width: '0%' }}
                   animate={{ width: currentSlide === index ? '100%' : '0%' }}
                   transition={{

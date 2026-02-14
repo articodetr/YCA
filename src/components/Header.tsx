@@ -32,6 +32,7 @@ export default function Header() {
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [scrolled, setScrolled] = useState(false);
 
   const toggleDropdown = (menu: string) => {
     setOpenDropdown(openDropdown === menu ? null : menu);
@@ -53,6 +54,7 @@ export default function Header() {
         return;
       }
       const currentScrollY = window.scrollY;
+      setScrolled(currentScrollY > 50);
       if (currentScrollY < 10) {
         setIsVisible(true);
       } else if (currentScrollY > lastScrollY && currentScrollY > 100) {
@@ -158,7 +160,9 @@ export default function Header() {
       onMouseEnter={() => handleMouseEnter(dropdown.key)}
       onMouseLeave={handleMouseLeave}
     >
-      <button className="flex items-center gap-1 text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
+      <button className={`flex items-center gap-1 text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors font-semibold ${
+        scrolled ? '' : 'drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]'
+      }`}>
         {dropdown.label}{' '}
         <ChevronDown
           size={14}
@@ -287,13 +291,20 @@ export default function Header() {
 
   return (
     <motion.header
-      className="fixed top-0 left-0 right-0 z-50 bg-white/85 backdrop-blur-md text-primary shadow-sm border-b border-black/5"
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? 'bg-white/90 backdrop-blur-md text-primary shadow-md border-b border-black/10'
+          : 'bg-transparent backdrop-blur-sm text-white border-b border-white/10'
+      }`}
       initial={{ y: -100, opacity: 0 }}
       animate={{
         y: isVisible ? 0 : -100,
         opacity: isVisible ? 1 : 0
       }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
+      style={{
+        textShadow: scrolled ? 'none' : '0 2px 8px rgba(0,0,0,0.8), 0 4px 16px rgba(0,0,0,0.6)'
+      }}
     >
       <div className="container mx-auto px-4">
         <div className="relative flex items-center justify-between h-20 md:h-24">
@@ -302,12 +313,16 @@ export default function Header() {
               <img
                 src={logoMain}
                 alt={orgName}
-                className="h-10 sm:h-12 md:h-14 lg:h-16 w-auto transition-transform group-hover:scale-105 duration-300"
+                className={`h-10 sm:h-12 md:h-14 lg:h-16 w-auto transition-all group-hover:scale-105 duration-300 ${
+                  scrolled ? '' : 'drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]'
+                }`}
               />
               <img
                 src={logoText}
                 alt={orgName}
-                className="h-8 sm:h-10 md:h-12 w-auto transition-opacity group-hover:opacity-80 duration-300 hidden xl:block"
+                className={`h-8 sm:h-10 md:h-12 w-auto transition-all group-hover:opacity-80 duration-300 hidden xl:block ${
+                  scrolled ? '' : 'drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]'
+                }`}
               />
             </div>
           </Link>
@@ -316,14 +331,20 @@ export default function Header() {
             <img
               src={logoText}
               alt={getSetting('org_name_ar', 'الجالية اليمنية')}
-              className="h-7 sm:h-8 md:h-12 w-auto opacity-95"
+              className={`h-7 sm:h-8 md:h-12 w-auto opacity-95 ${
+                scrolled ? '' : 'drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]'
+              }`}
             />
           </div>
 
           <div className="flex items-center gap-2 xl:hidden flex-shrink-0">
             <motion.button
               onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-              className="text-primary border border-black/20 px-2 py-1 rounded text-xs font-semibold"
+              className={`px-2 py-1 rounded text-xs font-semibold transition-colors ${
+                scrolled
+                  ? 'text-primary border border-black/20'
+                  : 'text-white border border-white/50 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]'
+              }`}
               whileTap={{ scale: 0.9 }}
               aria-label="Toggle language"
             >
@@ -331,12 +352,14 @@ export default function Header() {
             </motion.button>
             <Link
               to="/book"
-              className="hidden sm:inline-flex bg-accent text-primary px-5 py-2 hover:bg-hover transition-colors font-semibold text-xs uppercase tracking-wider whitespace-nowrap"
+              className={`hidden sm:inline-flex bg-accent text-primary px-5 py-2 hover:bg-hover transition-colors font-semibold text-xs uppercase tracking-wider whitespace-nowrap ${
+                scrolled ? '' : 'shadow-[0_4px_16px_rgba(0,0,0,0.5)]'
+              }`}
             >
               {t('button.book')}
             </Link>
             <motion.button
-              className="text-primary"
+              className={scrolled ? 'text-primary' : 'text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]'}
               onClick={() => setIsOpen(!isOpen)}
               whileTap={{ scale: 0.9 }}
               aria-label={isOpen ? 'Close menu' : 'Open menu'}
@@ -357,7 +380,9 @@ export default function Header() {
           </div>
 
           <nav className="hidden xl:flex items-center justify-center flex-1 gap-3 2xl:gap-4">
-            <Link to="/" className="text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors">
+            <Link to="/" className={`text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors font-semibold ${
+              scrolled ? '' : 'drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]'
+            }`}>
               {t('nav.home')}
             </Link>
             {allDropdowns.map((dropdown) => renderDesktopDropdown(dropdown))}
@@ -367,7 +392,9 @@ export default function Header() {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 to="/book"
-                className="bg-accent text-primary px-5 py-2.5 hover:bg-hover transition-colors font-semibold text-sm uppercase tracking-wider whitespace-nowrap"
+                className={`bg-accent text-primary px-5 py-2.5 hover:bg-hover transition-colors font-semibold text-sm uppercase tracking-wider whitespace-nowrap ${
+                  scrolled ? '' : 'shadow-[0_4px_16px_rgba(0,0,0,0.5)]'
+                }`}
               >
                 {t('button.book')}
               </Link>
@@ -377,7 +404,9 @@ export default function Header() {
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Link
                   to="/member/dashboard?tab=profile"
-                  className="hover:text-accent transition-colors p-2.5 block"
+                  className={`hover:text-accent transition-colors p-2.5 block ${
+                    scrolled ? '' : 'drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]'
+                  }`}
                   title={language === 'ar' ? 'حسابي' : 'My Account'}
                 >
                   <UserCircle size={20} />
@@ -390,13 +419,15 @@ export default function Header() {
                 onMouseLeave={handleMouseLeave}
               >
                 <motion.button
-                  className="hover:text-accent transition-colors p-2.5 flex items-center gap-1 text-sm"
+                  className={`hover:text-accent transition-colors p-2.5 flex items-center gap-1 text-sm ${
+                    scrolled ? '' : 'drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]'
+                  }`}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   title={language === 'ar' ? 'تسجيل الدخول' : 'Member Login'}
                 >
                   <LogIn size={18} />
-                  <span className="hidden 2xl:inline text-xs uppercase tracking-wider">
+                  <span className="hidden 2xl:inline text-xs uppercase tracking-wider font-semibold">
                     {language === 'ar' ? 'الدخول' : 'Login'}
                   </span>
                 </motion.button>
@@ -432,7 +463,11 @@ export default function Header() {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 to="/get-involved/donate"
-                className="hover:text-accent transition-colors p-2.5 block text-red-300 hover:text-red-200"
+                className={`transition-colors p-2.5 block ${
+                  scrolled
+                    ? 'text-red-600 hover:text-red-700'
+                    : 'text-red-300 hover:text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]'
+                }`}
                 title={language === 'ar' ? 'تبرع' : 'Donate'}
               >
                 <Heart size={20} />
@@ -441,7 +476,11 @@ export default function Header() {
 
             <motion.button
               onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
-              className="flex items-center gap-2 text-sm uppercase tracking-wider hover:text-accent transition-colors px-3 py-2 border border-white/30 rounded-lg"
+              className={`flex items-center gap-2 text-sm uppercase tracking-wider hover:text-accent transition-colors px-3 py-2 rounded-lg font-semibold ${
+                scrolled
+                  ? 'border border-primary/30'
+                  : 'border border-white/50 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]'
+              }`}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               aria-label="Toggle language"

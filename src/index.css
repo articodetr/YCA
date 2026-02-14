@@ -82,3 +82,34 @@ img {
   height: auto;
   display: block;
 }
+
+/* Hero background optimizations */
+.hero-background {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Mobile optimizations for hero section */
+@media (max-width: 768px) {
+  .hero-background {
+    background-size: cover;
+    background-position: center;
+  }
+}
+
+/* Very small screens - ensure full image visibility */
+@media (max-width: 640px) {
+  .hero-background {
+    background-size: cover;
+    background-position: center top;
+  }
+}
+
+/* Ensure minimum height on mobile */
+@media (max-width: 768px) {
+  section.min-h-screen {
+    min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height for mobile browsers */
+  }
+}

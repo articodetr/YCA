@@ -271,8 +271,8 @@ export default function ComplaintsSuggestions() {
               viewport={{ once: true }}
               variants={fadeInUp}
             >
-              <p className="text-muted leading-relaxed max-w-lg mx-auto">{txt.subtitle}</p>
-              <p className="text-sm text-muted/70 mt-2">{txt.confidentiality}</p>
+              <p className="text-lg text-muted leading-relaxed max-w-lg mx-auto">{txt.subtitle}</p>
+              <p className="text-base text-muted/70 mt-2">{txt.confidentiality}</p>
             </motion.div>
 
             <motion.div
@@ -282,10 +282,10 @@ export default function ComplaintsSuggestions() {
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
             >
-              <ShieldAlert size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
+              <ShieldAlert size={22} className="text-red-500 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold text-sm text-red-800 mb-0.5">{txt.safeguardingTitle}</p>
-                <p className="text-sm text-red-700/80 leading-relaxed">{txt.safeguarding}</p>
+                <p className="font-semibold text-base text-red-800 mb-1">{txt.safeguardingTitle}</p>
+                <p className="text-base text-red-700/80 leading-relaxed">{txt.safeguarding}</p>
               </div>
             </motion.div>
 
@@ -297,8 +297,8 @@ export default function ComplaintsSuggestions() {
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
                 >
-                  <p className="font-semibold text-sm">{txt.errorTitle}</p>
-                  <p className="text-sm text-red-700">{txt.errorMessage}</p>
+                  <p className="font-semibold text-base">{txt.errorTitle}</p>
+                  <p className="text-base text-red-700">{txt.errorMessage}</p>
                 </motion.div>
               )}
               {validationError && (
@@ -308,7 +308,7 @@ export default function ComplaintsSuggestions() {
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
                 >
-                  <p className="text-sm font-medium">{validationError}</p>
+                  <p className="text-base font-medium">{validationError}</p>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -322,7 +322,7 @@ export default function ComplaintsSuggestions() {
               transition={{ delay: 0.2 }}
             >
               <div>
-                <label className="block text-sm font-semibold text-primary mb-4">{txt.feedbackTypeLabel}</label>
+                <label className="block text-base font-semibold text-primary mb-4">{txt.feedbackTypeLabel}</label>
                 <div className="grid sm:grid-cols-3 gap-3">
                   {feedbackTypes.map((type) => {
                     const active = formData.feedback_type === type.value;
@@ -345,15 +345,15 @@ export default function ComplaintsSuggestions() {
                           required
                           className="sr-only"
                         />
-                        <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 ${
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200 ${
                           active ? `${type.activeBg} text-white` : `${type.bg} ${type.color}`
                         }`}>
-                          <Icon size={20} />
+                          <Icon size={22} />
                         </div>
-                        <span className={`font-semibold text-sm transition-colors ${active ? 'text-primary' : 'text-muted'}`}>
+                        <span className={`font-semibold text-base transition-colors ${active ? 'text-primary' : 'text-muted'}`}>
                           {type.label}
                         </span>
-                        <span className="text-xs text-muted/70">{type.desc}</span>
+                        <span className="text-sm text-muted/70">{type.desc}</span>
                       </label>
                     );
                   })}
@@ -361,13 +361,13 @@ export default function ComplaintsSuggestions() {
               </div>
 
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-5">
-                <p className="text-sm font-medium text-muted flex items-center gap-2">
+                <p className="text-base font-medium text-muted flex items-center gap-2">
                   {txt.personalInfo}
-                  <span className="text-xs bg-sand px-2 py-0.5 rounded-full">{txt.optional}</span>
+                  <span className="text-sm bg-sand px-2 py-0.5 rounded-full">{txt.optional}</span>
                 </p>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="name" className="block text-xs font-medium text-muted mb-1.5">{txt.name}</label>
+                    <label htmlFor="name" className="block text-sm font-medium text-muted mb-2">{txt.name}</label>
                     <input
                       type="text"
                       id="name"
@@ -375,11 +375,11 @@ export default function ComplaintsSuggestions() {
                       value={formData.name}
                       onChange={handleChange}
                       placeholder={txt.namePlaceholder}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
                     />
                   </div>
                   <div>
-                    <label htmlFor="phone" className="block text-xs font-medium text-muted mb-1.5">{txt.phone}</label>
+                    <label htmlFor="phone" className="block text-sm font-medium text-muted mb-2">{txt.phone}</label>
                     <input
                       type="tel"
                       id="phone"
@@ -387,11 +387,11 @@ export default function ComplaintsSuggestions() {
                       value={formData.phone}
                       onChange={handleChange}
                       placeholder={txt.phonePlaceholder}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
                     />
                   </div>
                   <div>
-                    <label htmlFor="email" className="block text-xs font-medium text-muted mb-1.5">{txt.email}</label>
+                    <label htmlFor="email" className="block text-sm font-medium text-muted mb-2">{txt.email}</label>
                     <input
                       type="email"
                       id="email"
@@ -399,11 +399,11 @@ export default function ComplaintsSuggestions() {
                       value={formData.email}
                       onChange={handleChange}
                       placeholder={txt.emailPlaceholder}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
                     />
                   </div>
                   <div>
-                    <label htmlFor="address" className="block text-xs font-medium text-muted mb-1.5">{txt.address}</label>
+                    <label htmlFor="address" className="block text-sm font-medium text-muted mb-2">{txt.address}</label>
                     <input
                       type="text"
                       id="address"
@@ -411,14 +411,14 @@ export default function ComplaintsSuggestions() {
                       value={formData.address}
                       onChange={handleChange}
                       placeholder={txt.addressPlaceholder}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
                     />
                   </div>
                 </div>
               </div>
 
               <div>
-                <label htmlFor="details" className="block text-sm font-semibold text-primary mb-2">
+                <label htmlFor="details" className="block text-base font-semibold text-primary mb-2">
                   {txt.detailsLabel} <span className="text-red-400">*</span>
                 </label>
                 <textarea
@@ -429,14 +429,14 @@ export default function ComplaintsSuggestions() {
                   required
                   rows={5}
                   placeholder={txt.detailsPlaceholder}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none resize-none"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none resize-none"
                 />
               </div>
 
               <div>
-                <label htmlFor="desired_outcome" className="block text-sm font-semibold text-primary mb-2">
+                <label htmlFor="desired_outcome" className="block text-base font-semibold text-primary mb-2">
                   {txt.outcomeLabel}
-                  <span className="text-xs font-normal text-muted ms-2">({txt.optional})</span>
+                  <span className="text-sm font-normal text-muted ms-2">({txt.optional})</span>
                 </label>
                 <textarea
                   id="desired_outcome"
@@ -445,12 +445,12 @@ export default function ComplaintsSuggestions() {
                   onChange={handleChange}
                   rows={3}
                   placeholder={txt.outcomePlaceholder}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none resize-none"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none resize-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-primary mb-4">{txt.contactQuestion}</label>
+                <label className="block text-base font-semibold text-primary mb-4">{txt.contactQuestion}</label>
                 <div className="flex gap-3">
                   {[
                     { val: true, label: txt.yes },
@@ -467,7 +467,7 @@ export default function ComplaintsSuggestions() {
                         }));
                         setValidationError('');
                       }}
-                      className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                      className={`px-6 py-3 rounded-xl text-base font-semibold transition-all duration-200 ${
                         formData.contact_requested === opt.val
                           ? 'bg-primary text-white shadow-md'
                           : 'bg-sand text-muted hover:bg-gray-100'
@@ -487,7 +487,7 @@ export default function ComplaintsSuggestions() {
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <label className="block text-xs font-medium text-muted mb-2">{txt.preferredMethod}</label>
+                      <label className="block text-sm font-medium text-muted mb-2">{txt.preferredMethod}</label>
                       <div className="flex flex-wrap gap-2">
                         {[
                           { value: 'phone' as ContactPreference, label: txt.methodPhone, icon: Phone },
@@ -501,13 +501,13 @@ export default function ComplaintsSuggestions() {
                               key={method.value}
                               type="button"
                               onClick={() => setFormData(prev => ({ ...prev, preferred_contact_method: method.value }))}
-                              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-base font-medium transition-all duration-200 ${
                                 active
                                   ? 'bg-primary text-white'
                                   : 'bg-sand text-muted hover:bg-gray-100'
                               }`}
                             >
-                              <Icon size={14} />
+                              <Icon size={16} />
                               {method.label}
                             </button>
                           );
@@ -520,7 +520,7 @@ export default function ComplaintsSuggestions() {
 
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
                 <label className="flex items-start gap-3 cursor-pointer group">
-                  <div className="relative flex-shrink-0 mt-0.5">
+                  <div className="relative flex-shrink-0 mt-1">
                     <input
                       type="checkbox"
                       checked={formData.consent}
@@ -532,7 +532,7 @@ export default function ComplaintsSuggestions() {
                       {formData.consent && <Check size={14} className="text-white" />}
                     </div>
                   </div>
-                  <span className="text-sm text-muted leading-relaxed group-hover:text-primary transition-colors">
+                  <span className="text-base text-muted leading-relaxed group-hover:text-primary transition-colors">
                     {txt.consentLabel}
                   </span>
                 </label>
@@ -541,18 +541,18 @@ export default function ComplaintsSuggestions() {
               <motion.button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-primary text-white py-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2.5 hover:bg-secondary transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/10 hover:shadow-xl hover:shadow-primary/20"
+                className="w-full bg-primary text-white py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2.5 hover:bg-secondary transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/10 hover:shadow-xl hover:shadow-primary/20"
                 whileHover={{ scale: isSubmitting ? 1 : 1.01 }}
                 whileTap={{ scale: isSubmitting ? 1 : 0.99 }}
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 size={18} className="animate-spin" />
+                    <Loader2 size={20} className="animate-spin" />
                     {txt.submitting}
                   </>
                 ) : (
                   <>
-                    <Send size={18} />
+                    <Send size={20} />
                     {txt.submit}
                   </>
                 )}

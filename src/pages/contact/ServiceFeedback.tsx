@@ -288,7 +288,7 @@ export default function ServiceFeedback() {
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto">
             <motion.p
-              className="text-center text-muted mb-10 leading-relaxed"
+              className="text-center text-lg text-muted mb-10 leading-relaxed"
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
@@ -305,8 +305,8 @@ export default function ServiceFeedback() {
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
                 >
-                  <p className="font-semibold text-sm">{txt.errorTitle}</p>
-                  <p className="text-sm text-red-700">{txt.errorMessage}</p>
+                  <p className="font-semibold text-base">{txt.errorTitle}</p>
+                  <p className="text-base text-red-700">{txt.errorMessage}</p>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -321,7 +321,7 @@ export default function ServiceFeedback() {
             >
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="service" className="block text-sm font-semibold text-primary mb-2">
+                  <label htmlFor="service" className="block text-base font-semibold text-primary mb-2">
                     {txt.serviceLabel} <span className="text-red-400">*</span>
                   </label>
                   <select
@@ -329,7 +329,7 @@ export default function ServiceFeedback() {
                     value={formData.service}
                     onChange={(e) => setFormData(prev => ({ ...prev, service: e.target.value }))}
                     required
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none appearance-none"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none appearance-none"
                   >
                     <option value="">{txt.selectService}</option>
                     {serviceOptions.map((opt) => (
@@ -338,23 +338,23 @@ export default function ServiceFeedback() {
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="service_date" className="block text-sm font-semibold text-primary mb-2">
+                  <label htmlFor="service_date" className="block text-base font-semibold text-primary mb-2">
                     {txt.serviceDateLabel}
-                    <span className="text-xs font-normal text-muted ms-2">({txt.optional})</span>
+                    <span className="text-sm font-normal text-muted ms-2">({txt.optional})</span>
                   </label>
                   <input
                     type="date"
                     id="service_date"
                     value={formData.service_date}
                     onChange={(e) => setFormData(prev => ({ ...prev, service_date: e.target.value }))}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
                   />
                 </div>
               </div>
 
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-                <h3 className="text-sm font-semibold text-primary mb-6 flex items-center gap-2">
-                  <Star size={16} className="text-amber-400" />
+                <h3 className="text-base font-semibold text-primary mb-6 flex items-center gap-2">
+                  <Star size={18} className="text-amber-400" />
                   {txt.rateExperience} <span className="text-red-400">*</span>
                 </h3>
                 <div className="space-y-5">
@@ -363,7 +363,7 @@ export default function ServiceFeedback() {
                     const hovered = hoveredRating[row.key] || 0;
                     return (
                       <div key={row.key} className="flex items-center justify-between gap-4">
-                        <span className="text-sm text-muted font-medium min-w-[100px]">{row.label}</span>
+                        <span className="text-base text-muted font-medium min-w-[120px]">{row.label}</span>
                         <div className="flex gap-1.5">
                           {[1, 2, 3, 4, 5].map((star) => {
                             const filled = hovered ? star <= hovered : star <= currentStars;
@@ -377,7 +377,7 @@ export default function ServiceFeedback() {
                                 className="p-0.5 transition-transform hover:scale-110"
                               >
                                 <Star
-                                  size={24}
+                                  size={26}
                                   className={`transition-colors duration-150 ${
                                     filled ? 'text-amber-400 fill-amber-400' : 'text-gray-200'
                                   }`}
@@ -393,13 +393,13 @@ export default function ServiceFeedback() {
               </div>
 
               <div>
-                <h3 className="text-sm font-semibold text-primary mb-4">
+                <h3 className="text-base font-semibold text-primary mb-4">
                   {txt.commentsLabel}
-                  <span className="text-xs font-normal text-muted ms-2">({txt.optional})</span>
+                  <span className="text-sm font-normal text-muted ms-2">({txt.optional})</span>
                 </h3>
                 <div className="space-y-4">
                   <div>
-                    <label htmlFor="what_went_well" className="block text-xs font-medium text-muted mb-1.5">
+                    <label htmlFor="what_went_well" className="block text-sm font-medium text-muted mb-2">
                       {txt.whatWentWell}
                     </label>
                     <textarea
@@ -407,11 +407,11 @@ export default function ServiceFeedback() {
                       value={formData.what_went_well}
                       onChange={(e) => setFormData(prev => ({ ...prev, what_went_well: e.target.value }))}
                       rows={3}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none resize-none"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none resize-none"
                     />
                   </div>
                   <div>
-                    <label htmlFor="what_to_improve" className="block text-xs font-medium text-muted mb-1.5">
+                    <label htmlFor="what_to_improve" className="block text-sm font-medium text-muted mb-2">
                       {txt.whatToImprove}
                     </label>
                     <textarea
@@ -419,11 +419,11 @@ export default function ServiceFeedback() {
                       value={formData.what_to_improve}
                       onChange={(e) => setFormData(prev => ({ ...prev, what_to_improve: e.target.value }))}
                       rows={3}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none resize-none"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none resize-none"
                     />
                   </div>
                   <div>
-                    <label htmlFor="other_comments" className="block text-xs font-medium text-muted mb-1.5">
+                    <label htmlFor="other_comments" className="block text-sm font-medium text-muted mb-2">
                       {txt.otherComments}
                     </label>
                     <textarea
@@ -431,14 +431,14 @@ export default function ServiceFeedback() {
                       value={formData.other_comments}
                       onChange={(e) => setFormData(prev => ({ ...prev, other_comments: e.target.value }))}
                       rows={3}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none resize-none"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none resize-none"
                     />
                   </div>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-primary mb-3">
+                <label className="block text-base font-semibold text-primary mb-3">
                   {txt.recommendLabel} <span className="text-red-400">*</span>
                 </label>
                 <div className="flex gap-2">
@@ -451,7 +451,7 @@ export default function ServiceFeedback() {
                       key={opt.value}
                       type="button"
                       onClick={() => setFormData(prev => ({ ...prev, recommend: opt.value }))}
-                      className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                      className={`px-6 py-3 rounded-xl text-base font-semibold transition-all duration-200 ${
                         formData.recommend === opt.value
                           ? 'bg-primary text-white shadow-md'
                           : 'bg-sand text-muted hover:bg-gray-100'
@@ -465,7 +465,7 @@ export default function ServiceFeedback() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-primary mb-3">{txt.contactLabel}</label>
+                <label className="block text-base font-semibold text-primary mb-3">{txt.contactLabel}</label>
                 <div className="flex gap-2 mb-4">
                   {[
                     { val: true, label: txt.yes },
@@ -481,7 +481,7 @@ export default function ServiceFeedback() {
                           ...(opt.val === false ? { contact_name: '', contact_email: '', contact_phone: '' } : {}),
                         }))
                       }
-                      className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                      className={`px-6 py-3 rounded-xl text-base font-semibold transition-all duration-200 ${
                         formData.contact_requested === opt.val
                           ? 'bg-primary text-white shadow-md'
                           : 'bg-sand text-muted hover:bg-gray-100'
@@ -502,36 +502,36 @@ export default function ServiceFeedback() {
                       transition={{ duration: 0.2 }}
                     >
                       <div>
-                        <label htmlFor="contact_name" className="block text-xs font-medium text-muted mb-1.5">{txt.contactName}</label>
+                        <label htmlFor="contact_name" className="block text-sm font-medium text-muted mb-2">{txt.contactName}</label>
                         <input
                           type="text"
                           id="contact_name"
                           value={formData.contact_name}
                           onChange={(e) => setFormData(prev => ({ ...prev, contact_name: e.target.value }))}
                           placeholder={txt.namePlaceholder}
-                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
                         />
                       </div>
                       <div>
-                        <label htmlFor="contact_email" className="block text-xs font-medium text-muted mb-1.5">{txt.contactEmail}</label>
+                        <label htmlFor="contact_email" className="block text-sm font-medium text-muted mb-2">{txt.contactEmail}</label>
                         <input
                           type="email"
                           id="contact_email"
                           value={formData.contact_email}
                           onChange={(e) => setFormData(prev => ({ ...prev, contact_email: e.target.value }))}
                           placeholder={txt.emailPlaceholder}
-                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
                         />
                       </div>
                       <div>
-                        <label htmlFor="contact_phone" className="block text-xs font-medium text-muted mb-1.5">{txt.contactPhone}</label>
+                        <label htmlFor="contact_phone" className="block text-sm font-medium text-muted mb-2">{txt.contactPhone}</label>
                         <input
                           type="tel"
                           id="contact_phone"
                           value={formData.contact_phone}
                           onChange={(e) => setFormData(prev => ({ ...prev, contact_phone: e.target.value }))}
                           placeholder={txt.phonePlaceholder}
-                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
                         />
                       </div>
                     </motion.div>
@@ -543,13 +543,13 @@ export default function ServiceFeedback() {
                 <button
                   type="button"
                   onClick={() => setShowEquality(!showEquality)}
-                  className="w-full flex items-center justify-between px-5 py-4 text-sm font-medium text-muted hover:bg-sand/50 transition-colors"
+                  className="w-full flex items-center justify-between px-5 py-4 text-base font-medium text-muted hover:bg-sand/50 transition-colors"
                 >
                   <div>
                     <span>{txt.equalityLabel}</span>
-                    <span className="text-xs text-muted/60 ms-2">- {txt.equalityDesc}</span>
+                    <span className="text-sm text-muted/60 ms-2">- {txt.equalityDesc}</span>
                   </div>
-                  <ChevronDown size={18} className={`transition-transform duration-200 ${showEquality ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={20} className={`transition-transform duration-200 ${showEquality ? 'rotate-180' : ''}`} />
                 </button>
                 <AnimatePresence>
                   {showEquality && (
@@ -562,7 +562,7 @@ export default function ServiceFeedback() {
                     >
                       <div className="grid sm:grid-cols-3 gap-3 pt-1">
                         <div>
-                          <label htmlFor="age_range" className="block text-xs font-medium text-muted mb-1.5">{txt.ageRange}</label>
+                          <label htmlFor="age_range" className="block text-sm font-medium text-muted mb-2">{txt.ageRange}</label>
                           <select
                             id="age_range"
                             value={formData.equality_data.age_range}
@@ -572,7 +572,7 @@ export default function ServiceFeedback() {
                                 equality_data: { ...prev.equality_data, age_range: e.target.value },
                               }))
                             }
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none appearance-none"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none appearance-none"
                           >
                             <option value="">{txt.selectAge}</option>
                             {ageRanges.map((age) => (
@@ -581,7 +581,7 @@ export default function ServiceFeedback() {
                           </select>
                         </div>
                         <div>
-                          <label htmlFor="gender" className="block text-xs font-medium text-muted mb-1.5">{txt.gender}</label>
+                          <label htmlFor="gender" className="block text-sm font-medium text-muted mb-2">{txt.gender}</label>
                           <select
                             id="gender"
                             value={formData.equality_data.gender}
@@ -591,7 +591,7 @@ export default function ServiceFeedback() {
                                 equality_data: { ...prev.equality_data, gender: e.target.value },
                               }))
                             }
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none appearance-none"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none appearance-none"
                           >
                             <option value="">{txt.selectGender}</option>
                             {genderOptions.map((opt) => (
@@ -600,7 +600,7 @@ export default function ServiceFeedback() {
                           </select>
                         </div>
                         <div>
-                          <label htmlFor="ethnic_background" className="block text-xs font-medium text-muted mb-1.5">{txt.ethnicBackground}</label>
+                          <label htmlFor="ethnic_background" className="block text-sm font-medium text-muted mb-2">{txt.ethnicBackground}</label>
                           <input
                             type="text"
                             id="ethnic_background"
@@ -612,7 +612,7 @@ export default function ServiceFeedback() {
                               }))
                             }
                             placeholder={txt.ethnicPlaceholder}
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
                           />
                         </div>
                       </div>
@@ -622,25 +622,25 @@ export default function ServiceFeedback() {
               </div>
 
               <div className="flex items-start gap-3 px-1">
-                <ShieldCheck size={16} className="text-muted/50 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-muted/70 leading-relaxed">{txt.privacyNote}</p>
+                <ShieldCheck size={18} className="text-muted/50 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-muted/70 leading-relaxed">{txt.privacyNote}</p>
               </div>
 
               <motion.button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-primary text-white py-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2.5 hover:bg-secondary transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/10 hover:shadow-xl hover:shadow-primary/20"
+                className="w-full bg-primary text-white py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2.5 hover:bg-secondary transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/10 hover:shadow-xl hover:shadow-primary/20"
                 whileHover={{ scale: isSubmitting ? 1 : 1.01 }}
                 whileTap={{ scale: isSubmitting ? 1 : 0.99 }}
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 size={18} className="animate-spin" />
+                    <Loader2 size={20} className="animate-spin" />
                     {txt.submitting}
                   </>
                 ) : (
                   <>
-                    <Send size={18} />
+                    <Send size={20} />
                     {txt.submit}
                   </>
                 )}

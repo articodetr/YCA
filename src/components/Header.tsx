@@ -163,7 +163,7 @@ export default function Header() {
       onMouseEnter={() => handleMouseEnter(dropdown.key)}
       onMouseLeave={handleMouseLeave}
     >
-      <button className={`flex items-center gap-1 text-sm uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors ${isHomePage && scrollY < 100 ? 'drop-shadow-lg' : ''}`}>
+      <button className={`flex items-center gap-1 text-sm font-semibold uppercase tracking-wider whitespace-nowrap hover:text-accent transition-colors ${isHomePage && scrollY < 100 ? 'drop-shadow-lg' : ''}`}>
         {dropdown.label}{' '}
         <ChevronDown
           size={14}

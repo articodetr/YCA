@@ -24,24 +24,54 @@ export default function MemberLogin() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-
-  const {
-    user,
-    loading: authLoading,
-    isPaidMember,
-    isExpired,
-    needsOnboarding,
-    pendingApplication,
-    signIn,
-    signInWithGoogle,
-  } = useMemberAuth();
-
+  const { user, loading: authLoading, isPaidMember, isExpired, needsOnboarding, pendingApplication, signIn, signInWithGoogle } = useMemberAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
 
   const redirectPath = searchParams.get('redirect');
   const serviceType = searchParams.get('service');
+
   const isRTL = language === 'ar';
+
+  useEffect(() => {
+    if (authLoading || !user) return;
+
+    // Rule: if the user is NOT an active paid member, send them to the
+    // membership selection/payment flow first.
+    if (!isPaidMember || needsOnboarding) {
+      try {
+        if (redirectPath) sessionStorage.setItem('post_membership_redirect', redirectPath);
+        if (serviceType) sessionStorage.setItem('post_membership_service', serviceType);
+      } catch {
+        // ignore
+      }
+      navigate('/membership?notice=membership_required', { replace: true });
+      return;
+    }
+
+    if (isExpired) {
+      navigate('/member/renew', { replace: true });
+      return;
+    }
+
+    // Handle special redirects that also depend on query params.
+    if (redirectPath === '/book' && serviceType) {
+      navigate(`/book?service=${serviceType}`, { replace: true });
+      return;
+    }
+
+    if (redirectPath === '/apply' && serviceType) {
+      if (serviceType === 'in_person') {
+        navigate('/member/dashboard?openAdvisory=true', { replace: true });
+      } else {
+        navigate('/member/dashboard', { replace: true });
+      }
+      return;
+    }
+
+    const destination = redirectPath || '/member/dashboard';
+    navigate(destination, { replace: true });
+  }, [user, authLoading, isPaidMember, isExpired, needsOnboarding, pendingApplication, navigate, redirectPath, serviceType]);
 
   const translations = {
     en: {
@@ -78,74 +108,6 @@ export default function MemberLogin() {
 
   const t = translations[language];
 
-  useEffect(() => {
-    if (authLoading || !user) return;
-
-    const destination = redirectPath || '/member/dashboard';
-
-    if (redirectPath) {
-      try {
-        sessionStorage.setItem('post_membership_redirect', destination);
-      } catch {}
-    }
-
-    if (isPaidMember && isExpired) {
-      navigate('/member/renew', { replace: true });
-      return;
-    }
-
-    if (!isPaidMember || needsOnboarding) {
-      try {
-        sessionStorage.setItem('post_membership_redirect', destination);
-      } catch {}
-
-      if (serviceType) {
-        try {
-          sessionStorage.setItem('auth_redirect_service', serviceType);
-        } catch {}
-      }
-      if (redirectPath) {
-        try {
-          sessionStorage.setItem('auth_redirect_path', redirectPath);
-        } catch {}
-      }
-
-      navigate('/membership?notice=membership_required', { replace: true });
-      return;
-    }
-
-    const savedRedirect = sessionStorage.getItem('auth_redirect_path');
-    const savedService = sessionStorage.getItem('auth_redirect_service');
-    sessionStorage.removeItem('auth_redirect_path');
-    sessionStorage.removeItem('auth_redirect_service');
-
-    if (savedRedirect === '/book' && savedService) {
-      navigate(`/book?service=${savedService}`, { replace: true });
-      return;
-    }
-
-    if (savedRedirect === '/apply' && savedService) {
-      if (savedService === 'in_person') {
-        navigate('/member/dashboard?openAdvisory=true', { replace: true });
-      } else {
-        navigate('/member/dashboard', { replace: true });
-      }
-      return;
-    }
-
-    navigate(destination, { replace: true });
-  }, [
-    user,
-    authLoading,
-    isPaidMember,
-    isExpired,
-    needsOnboarding,
-    pendingApplication,
-    navigate,
-    redirectPath,
-    serviceType,
-  ]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -166,11 +128,6 @@ export default function MemberLogin() {
     setError('');
     setGoogleLoading(true);
 
-    const destination = redirectPath || '/member/dashboard';
-    try {
-      sessionStorage.setItem('post_membership_redirect', destination);
-    } catch {}
-
     if (redirectPath) sessionStorage.setItem('auth_redirect_path', redirectPath);
     if (serviceType) sessionStorage.setItem('auth_redirect_service', serviceType);
 
@@ -190,8 +147,16 @@ export default function MemberLogin() {
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
             <div className="flex justify-center items-center gap-3 mb-6">
-              <img src="/logo.png" alt="YCA Birmingham Logo" className="h-16 w-auto" />
-              <img src="/logo_text.png" alt="Yemeni Community Association" className="h-10 w-auto" />
+              <img
+                src="/logo.png"
+                alt="YCA Birmingham Logo"
+                className="h-16 w-auto"
+              />
+              <img
+                src="/logo_text.png"
+                alt="Yemeni Community Association"
+                className="h-10 w-auto"
+              />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">{t.title}</h1>
             <p className="text-gray-600">{t.subtitle}</p>

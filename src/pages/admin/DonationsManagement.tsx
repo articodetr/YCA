@@ -201,7 +201,7 @@ const averagePaidDonation = paidDonations.length > 0
                       </span>
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-600">
-                      {new Date(don.created_at).toLocaleDateString()}
+                      {new Date(don.created_at).toLocaleString()}
                     </td>
                   </tr>
                 ))}

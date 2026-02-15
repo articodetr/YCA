@@ -131,7 +131,8 @@ const averagePaidDonation = paidDonations.length > 0
             <div>
               <p className="text-sm text-gray-600">Average Donation</p>
               <p className="text-2xl font-bold text-gray-900">
-                £{donations.length > 0 ? Math.round(totalAmount / donations.length) : 0}
+                £{averagePaidDonation}
+
               </p>
             </div>
           </div>

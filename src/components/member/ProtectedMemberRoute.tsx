@@ -31,23 +31,25 @@ export default function ProtectedMemberRoute({ children, allowExpired }: Protect
     );
   }
 
-  // Not logged in -> go to login, with redirect back
   if (!user) {
     const returnTo = location.pathname + location.search;
     return <Navigate to={`/member/login?redirect=${encodeURIComponent(returnTo)}`} replace />;
   }
 
-  // Paid but expired -> renewal page
-  if (isPaidMember && isExpired && !allowExpired && !location.pathname.includes('/member/renew')) {
-    return <Navigate to="/member/renew" replace />;
-  }
-
-  // Logged in but NOT a paid member yet -> must choose a plan and pay first
-  if ((!isPaidMember || needsOnboarding) && !location.pathname.includes('/member/renew')) {
+  // Enforce: a user must have an active paid membership to access member routes.
+  // If they are not a paid member (or they still need onboarding), send them to the
+  // membership selection/payment flow first.
+  if (!isPaidMember || needsOnboarding) {
     try {
       sessionStorage.setItem('post_membership_redirect', location.pathname + location.search);
-    } catch {}
+    } catch {
+      // ignore
+    }
     return <Navigate to="/membership?notice=membership_required" replace />;
+  }
+
+  if (isPaidMember && isExpired && !allowExpired && !location.pathname.includes('/member/renew')) {
+    return <Navigate to="/member/renew" replace />;
   }
 
   return <>{children}</>;

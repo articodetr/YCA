@@ -507,6 +507,14 @@ export default function MembershipPaymentModal({
 
         const { data: sessionData } = await supabase.auth.getSession();
         const accessToken = sessionData.session?.access_token;
+        if (!accessToken) {
+  setPaymentError(language === 'ar'
+    ? 'انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.'
+    : 'Session expired. Please sign in again.');
+  setStep('auth');
+  return;
+}
+
 
         const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`, {
           method: 'POST',

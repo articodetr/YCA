@@ -15,7 +15,7 @@ function hasOAuthParams() {
 }
 
 export default function ProtectedMemberRoute({ children, allowExpired }: ProtectedMemberRouteProps) {
-  const { user, loading, isExpired, isPaidMember } = useMemberAuth();
+  const { user, loading, isExpired, isPaidMember, needsOnboarding } = useMemberAuth();
   const { language } = useLanguage();
   const location = useLocation();
   const isRTL = language === 'ar';
@@ -26,33 +26,20 @@ export default function ProtectedMemberRoute({ children, allowExpired }: Protect
     return (
       <div className="min-h-screen flex items-center justify-center" dir={isRTL ? 'rtl' : 'ltr'}>
         <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
-        <span className={`${isRTL ? 'mr-3' : 'ml-3'} text-gray-600`}>{isRTL ? 'جاري التحميل...' : 'Loading...'}</span>
+        <span className={`${isRTL ? 'mr-3' : 'ml-3'} text-gray-600`}>
+          {isRTL ? 'جاري التحميل...' : 'Loading...'}
+        </span>
       </div>
     );
   }
 
+  // غير مسجل دخول -> حوله لصفحة الدخول
   if (!user) {
     const returnTo = location.pathname + location.search;
     return <Navigate to={`/member/login?redirect=${encodeURIComponent(returnTo)}`} replace />;
   }
 
-  if (isPaidMember && isExpired && !allowExpired && !location.pathname.includes('/member/renew')) {
-    return <Navigate to="/member/renew" replace />;
-  }
-
-  return <>{children}</>;
-}
-// ...
-export default function ProtectedMemberRoute({ children, allowExpired }: ProtectedMemberRouteProps) {
-  const { user, loading, isExpired, isPaidMember, needsOnboarding } = useMemberAuth();
-  // ...
-
-  if (!user) {
-    const returnTo = location.pathname + location.search;
-    return <Navigate to={`/member/login?redirect=${encodeURIComponent(returnTo)}`} replace />;
-  }
-
-  // ✅ NEW: enforce paid membership for member routes
+  // ✅ غير عضو مدفوع (أو يحتاج onboarding) -> حوله لصفحة الباقات
   if (!isPaidMember || needsOnboarding) {
     try {
       sessionStorage.setItem('post_membership_redirect', location.pathname + location.search);
@@ -60,7 +47,8 @@ export default function ProtectedMemberRoute({ children, allowExpired }: Protect
     return <Navigate to="/membership" replace />;
   }
 
-  if (isPaidMember && isExpired && !allowExpired && !location.pathname.includes('/member/renew')) {
+  // عضو مدفوع لكنه منتهي -> صفحة التجديد (إلا إذا allowExpired)
+  if (isExpired && !allowExpired && !location.pathname.includes('/member/renew')) {
     return <Navigate to="/member/renew" replace />;
   }
 

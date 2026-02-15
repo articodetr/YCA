@@ -215,7 +215,7 @@ function PaymentForm({ amount, applicationId, onSuccess, onError }: PaymentFormP
       if (paymentIntent?.status === 'succeeded') {
         sessionStorage.removeItem('pending_membership_payment');
         const { data: { session: currentSession } } = await supabase.auth.getSession();
-        const authToken = currentSession?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
+        const authToken = currentSession?.access_token;
         const activateResponse = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/activate-membership`,
           {

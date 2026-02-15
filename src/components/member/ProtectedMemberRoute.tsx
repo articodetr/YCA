@@ -42,3 +42,27 @@ export default function ProtectedMemberRoute({ children, allowExpired }: Protect
 
   return <>{children}</>;
 }
+// ...
+export default function ProtectedMemberRoute({ children, allowExpired }: ProtectedMemberRouteProps) {
+  const { user, loading, isExpired, isPaidMember, needsOnboarding } = useMemberAuth();
+  // ...
+
+  if (!user) {
+    const returnTo = location.pathname + location.search;
+    return <Navigate to={`/member/login?redirect=${encodeURIComponent(returnTo)}`} replace />;
+  }
+
+  // ✅ NEW: enforce paid membership for member routes
+  if (!isPaidMember || needsOnboarding) {
+    try {
+      sessionStorage.setItem('post_membership_redirect', location.pathname + location.search);
+    } catch {}
+    return <Navigate to="/membership" replace />;
+  }
+
+  if (isPaidMember && isExpired && !allowExpired && !location.pathname.includes('/member/renew')) {
+    return <Navigate to="/member/renew" replace />;
+  }
+
+  return <>{children}</>;
+}

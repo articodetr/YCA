@@ -165,7 +165,7 @@ export default function Dashboard() {
       link: '/admin/donations',
     },
     {
-      title: 'Memberships',
+      title: 'Members',
       value: stats.totalMemberships.toString(),
       subtitle: stats.pendingMemberships > 0 ? `${stats.pendingMemberships} pending` : 'Applications',
       icon: UserCheck,

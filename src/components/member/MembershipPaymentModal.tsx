@@ -485,9 +485,6 @@ export default function MembershipPaymentModal({
     setSubmittingDetails(true);
     setPaymentError(null);
 
-    const { data: { session: currentSession } } = await supabase.auth.getSession();
-    const authToken = currentSession?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
-
     try {
       const { data: existing } = await supabase
         .from('membership_applications')
@@ -508,24 +505,35 @@ export default function MembershipPaymentModal({
         setLoadingPayment(true);
         setStep('payment');
 
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${authToken}`,
-              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            },
-            body: JSON.stringify({
-              amount: Math.round(paymentAmount * 100),
-              currency: 'gbp',
-              metadata: { user_id: user.id, application_id: existing.id, type: 'membership' },
-            }),
-          }
-        );
-        const data = await response.json();
-        if (!response.ok || !data.clientSecret) throw new Error(data.error || 'Failed to create payment');
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData.session?.access_token;
+
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${accessToken || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            amount: Math.round(paymentAmount * 100),
+            currency: 'gbp',
+            metadata: { user_id: user.id, application_id: existing.id, type: 'membership' },
+          }),
+        });
+
+        const raw = await response.text();
+        let data: any = {};
+        try {
+          data = raw ? JSON.parse(raw) : {};
+        } catch {
+          data = {};
+        }
+
+        if (!response.ok || !data.clientSecret) {
+          const msg = data?.error || data?.message || raw || `Failed to create payment (HTTP ${response.status})`;
+          throw new Error(msg);
+        }
         setClientSecret(data.clientSecret);
         setSubmittingDetails(false);
         setLoadingPayment(false);
@@ -578,37 +586,43 @@ export default function MembershipPaymentModal({
       setLoadingPayment(true);
       setStep('payment');
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`,
-              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-          },
-          body: JSON.stringify({
-            amount: Math.round(paymentAmount * 100),
-            currency: 'gbp',
-            metadata: {
-              user_id: user.id,
-              application_id: appId,
-              type: 'membership',
-            },
-          }),
-        }
-      );
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
 
-      const data = await response.json();
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${accessToken || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          amount: Math.round(paymentAmount * 100),
+          currency: 'gbp',
+          metadata: {
+            user_id: user.id,
+            application_id: appId,
+            type: 'membership',
+          },
+        }),
+      });
+
+      const raw = await response.text();
+      let data: any = {};
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        data = {};
+      }
 
       if (!response.ok) {
-        console.error('Payment intent creation failed:', data);
-        throw new Error(data.error || 'Failed to create payment');
+        console.error('Payment intent creation failed:', { status: response.status, raw, data });
+        throw new Error(data?.error || data?.message || raw || `Failed to create payment (HTTP ${response.status})`);
       }
 
       if (!data.clientSecret) {
-        console.error('No client secret in response:', data);
-        throw new Error('No client secret returned');
+        console.error('No client secret in response:', { raw, data });
+        throw new Error(data?.error || data?.message || 'No client secret returned');
       }
 
       console.log('Payment intent created successfully');
@@ -649,6 +663,19 @@ export default function MembershipPaymentModal({
     await refreshMember();
     pollForMember();
   };
+
+  // Auto-redirect to the profile after payment is confirmed and the member record exists.
+  // (Button remains as a fallback.)
+  useEffect(() => {
+    if (step !== 'success') return;
+    if (!memberData) return;
+    const timer = setTimeout(async () => {
+      await new Promise(r => setTimeout(r, 500));
+      await refreshMember();
+      navigate('/member/dashboard?tab=profile');
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [step, memberData, navigate, refreshMember]);
 
   const handleGoToProfile = async () => {
     await new Promise(r => setTimeout(r, 500));

@@ -94,6 +94,7 @@ const translations = {
     passwordMinLength: 'Password must be at least 6 characters',
     authError: 'Authentication failed. Please try again.',
     userExists: 'An account with this email already exists. Please sign in instead.',
+    sessionExpired: 'Session expired. Please sign in again.',
   },
   ar: {
     stepAuth: 'تسجيل الدخول أو إنشاء حساب',
@@ -155,6 +156,7 @@ const translations = {
     passwordMinLength: 'يجب أن تكون كلمة المرور 6 أحرف على الأقل',
     authError: 'فشل التحقق. يرجى المحاولة مرة أخرى.',
     userExists: 'يوجد حساب بهذا البريد الإلكتروني. يرجى تسجيل الدخول بدلاً من ذلك.',
+    sessionExpired: 'انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.',
   },
 };
 
@@ -214,16 +216,23 @@ function PaymentForm({ amount, applicationId, onSuccess, onError }: PaymentFormP
 
       if (paymentIntent?.status === 'succeeded') {
         sessionStorage.removeItem('pending_membership_payment');
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        const authToken = currentSession?.access_token;
+
+        // ✅ Activation requires a valid JWT
+        const { data: sessionWrap } = await supabase.auth.getSession();
+        const authToken = sessionWrap.session?.access_token;
+
+        if (!authToken) {
+          throw new Error(t.sessionExpired);
+        }
+
         const activateResponse = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/activate-membership`,
           {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${authToken}`,
-              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+              apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${authToken}`,
             },
             body: JSON.stringify({
               application_id: applicationId,
@@ -233,11 +242,20 @@ function PaymentForm({ amount, applicationId, onSuccess, onError }: PaymentFormP
           }
         );
 
-        const activateData = await activateResponse.json();
-        if (!activateResponse.ok || !activateData.success) {
-          console.error('Activation failed:', activateData.error);
+        const activateRaw = await activateResponse.text();
+        let activateData: any = {};
+        try {
+          activateData = activateRaw ? JSON.parse(activateRaw) : {};
+        } catch {
+          activateData = { error: activateRaw };
         }
 
+        if (!activateResponse.ok || !activateData.success) {
+          console.error('Activation failed:', activateData?.error || activateData);
+          // لا نمنع المستخدم من الإكمال، لكن نعرض الخطأ في console
+        }
+
+        // (اختياري) تحديث تواريخ العضوية (إذا نظامك يعتمد السنة)
         if (user?.id) {
           const now = new Date();
           const endOfYear = `${now.getFullYear()}-12-31`;
@@ -263,15 +281,12 @@ function PaymentForm({ amount, applicationId, onSuccess, onError }: PaymentFormP
     <form onSubmit={handleSubmit} className="space-y-6">
       <PaymentElement
         onReady={() => {
-          console.log('Payment element ready');
           setElementReady(true);
         }}
         onChange={(e) => {
-          console.log('Payment element changed:', e.complete);
           setElementComplete(!!e.complete);
         }}
         onLoadError={(error) => {
-          console.error('Payment element load error:', error);
           setElementError(error.message);
           onError(error.message);
         }}
@@ -372,12 +387,13 @@ export default function MembershipPaymentModal({
       if (step === 'auth') {
         setStep('details');
       }
-      const meta = user.user_metadata || {};
+      const meta = (user as any)?.user_metadata || {};
       const fullName = meta.full_name || meta.name || '';
       const parts = fullName.split(' ');
       if (!firstName) setFirstName(parts[0] || '');
       if (!lastName) setLastName(parts.slice(1).join(' ') || '');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, user]);
 
   useEffect(() => {
@@ -400,6 +416,7 @@ export default function MembershipPaymentModal({
       setFirstName('');
       setLastName('');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   useEffect(() => {
@@ -440,7 +457,7 @@ export default function MembershipPaymentModal({
           setAuthLoading(false);
           return;
         }
-        if (data?.user && (!data.user.identities || data.user.identities.length === 0)) {
+        if (data?.user && (!(data.user as any).identities || (data.user as any).identities.length === 0)) {
           setAuthError(t.userExists);
           setAuthLoading(false);
           return;
@@ -479,6 +496,20 @@ export default function MembershipPaymentModal({
     return Object.keys(errs).length === 0;
   };
 
+  const requireAccessToken = async (): Promise<string | null> => {
+    const { data: sessionWrap } = await supabase.auth.getSession();
+    const token = sessionWrap.session?.access_token;
+
+    if (!token) {
+      setPaymentError(t.sessionExpired);
+      setStep('auth');
+      setSubmittingDetails(false);
+      setLoadingPayment(false);
+      return null;
+    }
+    return token;
+  };
+
   const handleContinueToPayment = async () => {
     if (!validate() || !user) return;
 
@@ -493,6 +524,7 @@ export default function MembershipPaymentModal({
         .in('status', ['pending', 'approved'])
         .maybeSingle();
 
+      // If there is an existing application
       if (existing) {
         if (existing.payment_status === 'paid' || existing.status === 'approved') {
           setPaymentError(language === 'ar'
@@ -501,28 +533,20 @@ export default function MembershipPaymentModal({
           setSubmittingDetails(false);
           return;
         }
+
         setApplicationId(existing.id);
         setLoadingPayment(true);
         setStep('payment');
 
-        const { data: sessionData } = await supabase.auth.getSession();
-        const accessToken = sessionData.session?.access_token;
-        if (!accessToken) {
-  setPaymentError(language === 'ar'
-    ? 'انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.'
-    : 'Session expired. Please sign in again.');
-  setStep('auth');
-  return;
-}
-
+        const accessToken = await requireAccessToken();
+        if (!accessToken) return;
 
         const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${accessToken}`,
-
+            Authorization: `Bearer ${accessToken}`, // ✅ NO fallback
           },
           body: JSON.stringify({
             amount: Math.round(paymentAmount * 100),
@@ -533,22 +557,20 @@ export default function MembershipPaymentModal({
 
         const raw = await response.text();
         let data: any = {};
-        try {
-          data = raw ? JSON.parse(raw) : {};
-        } catch {
-          data = {};
-        }
+        try { data = raw ? JSON.parse(raw) : {}; } catch { data = { error: raw }; }
 
         if (!response.ok || !data.clientSecret) {
           const msg = data?.error || data?.message || raw || `Failed to create payment (HTTP ${response.status})`;
           throw new Error(msg);
         }
+
         setClientSecret(data.clientSecret);
         setSubmittingDetails(false);
         setLoadingPayment(false);
         return;
       }
 
+      // Create a new application
       const applicationData: any = {
         user_id: user.id,
         email: user.email,
@@ -595,15 +617,15 @@ export default function MembershipPaymentModal({
       setLoadingPayment(true);
       setStep('payment');
 
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
+      const accessToken = await requireAccessToken();
+      if (!accessToken) return;
 
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${accessToken}`, // ✅ must be JWT
         },
         body: JSON.stringify({
           amount: Math.round(paymentAmount * 100),
@@ -618,11 +640,7 @@ export default function MembershipPaymentModal({
 
       const raw = await response.text();
       let data: any = {};
-      try {
-        data = raw ? JSON.parse(raw) : {};
-      } catch {
-        data = {};
-      }
+      try { data = raw ? JSON.parse(raw) : {}; } catch { data = { error: raw }; }
 
       if (!response.ok) {
         console.error('Payment intent creation failed:', { status: response.status, raw, data });
@@ -634,7 +652,6 @@ export default function MembershipPaymentModal({
         throw new Error(data?.error || data?.message || 'No client secret returned');
       }
 
-      console.log('Payment intent created successfully');
       setClientSecret(data.clientSecret);
     } catch (err: any) {
       console.error('Application/payment setup error:', err);
@@ -673,8 +690,6 @@ export default function MembershipPaymentModal({
     pollForMember();
   };
 
-  // Auto-redirect to the profile after payment is confirmed and the member record exists.
-  // (Button remains as a fallback.)
   useEffect(() => {
     if (step !== 'success') return;
     if (!memberData) return;
@@ -713,7 +728,7 @@ export default function MembershipPaymentModal({
     });
   };
 
-  const typeLabel = t[membershipType.id as keyof typeof t] || membershipType.nameEn;
+  const typeLabel = (t as any)[membershipType.id] || membershipType.nameEn;
 
   if (!isOpen) return null;
 
@@ -928,6 +943,12 @@ export default function MembershipPaymentModal({
               </motion.div>
             )}
 
+            {/* التفاصيل + الدفع + النجاح */}
+            {/* ✅ باقي الكود تحت كما هو (لم أغير واجهة/حقول) */}
+            {/* ملاحظة: هذا الملف طويل جدًا، لكن ما يهمنا كان إصلاح JWT في 3 نقاط */}
+            {/* (تم الحفاظ على بقية الأقسام كما هي في ملفك) */}
+
+            {/* --- DETAILS --- */}
             {step === 'details' && (
               <motion.div
                 key="details"
@@ -1137,6 +1158,7 @@ export default function MembershipPaymentModal({
               </motion.div>
             )}
 
+            {/* --- PAYMENT --- */}
             {step === 'payment' && (
               <motion.div
                 key="payment"
@@ -1205,6 +1227,7 @@ export default function MembershipPaymentModal({
               </motion.div>
             )}
 
+            {/* --- SUCCESS --- */}
             {step === 'success' && (
               <motion.div
                 key="success"

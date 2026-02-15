@@ -341,7 +341,7 @@ export default function MembershipPaymentModal({
   preSelectedBusinessSupport,
 }: MembershipPaymentModalProps) {
   const { language } = useLanguage();
-  const { user, refreshMember, signIn, signUp, signInWithGoogle } = useMemberAuth();
+  const { user, session: contextSession, refreshMember, signIn, signUp, signInWithGoogle } = useMemberAuth();
   const navigate = useNavigate();
   const isRTL = language === 'ar';
   const t = translations[language];
@@ -462,6 +462,16 @@ export default function MembershipPaymentModal({
           setAuthLoading(false);
           return;
         }
+
+        const signUpSession = (data as any)?.session;
+        if (!signUpSession) {
+          setAuthError(language === 'ar'
+            ? 'يرجى التحقق من بريدك الإلكتروني لتأكيد حسابك ثم تسجيل الدخول.'
+            : 'Please check your email to confirm your account, then sign in.');
+          setAuthMode('login');
+          setAuthLoading(false);
+          return;
+        }
       }
     } catch (err: any) {
       setAuthError(err.message || t.authError);
@@ -497,17 +507,28 @@ export default function MembershipPaymentModal({
   };
 
   const requireAccessToken = async (): Promise<string | null> => {
-    const { data: sessionWrap } = await supabase.auth.getSession();
-    const token = sessionWrap.session?.access_token;
-
-    if (!token) {
-      setPaymentError(t.sessionExpired);
-      setStep('auth');
-      setSubmittingDetails(false);
-      setLoadingPayment(false);
-      return null;
+    if (contextSession?.access_token) {
+      const exp = contextSession.expires_at;
+      if (exp && exp > Math.floor(Date.now() / 1000) + 60) {
+        return contextSession.access_token;
+      }
     }
-    return token;
+
+    const { data: sessionWrap } = await supabase.auth.getSession();
+    if (sessionWrap.session?.access_token) {
+      return sessionWrap.session.access_token;
+    }
+
+    const { data: refreshData } = await supabase.auth.refreshSession();
+    if (refreshData.session?.access_token) {
+      return refreshData.session.access_token;
+    }
+
+    setPaymentError(t.sessionExpired);
+    setStep('auth');
+    setSubmittingDetails(false);
+    setLoadingPayment(false);
+    return null;
   };
 
   const handleContinueToPayment = async () => {

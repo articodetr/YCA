@@ -217,41 +217,18 @@ function PaymentForm({ amount, applicationId, onSuccess, onError }: PaymentFormP
       if (paymentIntent?.status === 'succeeded') {
         sessionStorage.removeItem('pending_membership_payment');
 
-        // ✅ Activation requires a valid JWT
-        const { data: sessionWrap } = await supabase.auth.getSession();
-        const authToken = sessionWrap.session?.access_token;
+        // ✅ Activation via Edge Function
+        // Using `invoke` ensures a valid JWT is attached (prevents "Invalid JWT" gateway errors).
+        const { data: activateData, error: activateError } = await supabase.functions.invoke('activate-membership', {
+          body: {
+            application_id: applicationId,
+            user_id: user?.id,
+            payment_intent_id: paymentIntent.id,
+          },
+        });
 
-        if (!authToken) {
-          throw new Error(t.sessionExpired);
-        }
-
-        const activateResponse = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/activate-membership`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-              Authorization: `Bearer ${authToken}`,
-            },
-            body: JSON.stringify({
-              application_id: applicationId,
-              user_id: user?.id,
-              payment_intent_id: paymentIntent.id,
-            }),
-          }
-        );
-
-        const activateRaw = await activateResponse.text();
-        let activateData: any = {};
-        try {
-          activateData = activateRaw ? JSON.parse(activateRaw) : {};
-        } catch {
-          activateData = { error: activateRaw };
-        }
-
-        if (!activateResponse.ok || !activateData.success) {
-          console.error('Activation failed:', activateData?.error || activateData);
+        if (activateError || !(activateData as any)?.success) {
+          console.error('Activation failed:', activateError?.message || (activateData as any)?.error || activateData);
           // لا نمنع المستخدم من الإكمال، لكن نعرض الخطأ في console
         }
 
@@ -506,42 +483,34 @@ export default function MembershipPaymentModal({
     return Object.keys(errs).length === 0;
   };
 
-  const requireAccessToken = async (): Promise<string | null> => {
-    if (contextSession?.access_token) {
-      const exp = contextSession.expires_at;
-      if (exp && exp > Math.floor(Date.now() / 1000) + 60) {
-        return contextSession.access_token;
-      }
+  // NOTE:
+  // Supabase Edge Functions (gateway) require a valid JWT in the Authorization header.
+  // Using `supabase.functions.invoke(...)` is the safest way because it automatically
+  // attaches a valid JWT (user access token when logged-in, otherwise anon JWT).
+  const createPaymentIntent = async (applicationIdToUse: string) => {
+    const { data, error } = await supabase.functions.invoke('create-payment-intent', {
+      body: {
+        amount: Math.round(paymentAmount * 100),
+        currency: 'gbp',
+        metadata: {
+          user_id: user.id,
+          application_id: applicationIdToUse,
+          type: 'membership',
+        },
+      },
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Failed to create payment intent');
     }
 
-    const { data: sessionWrap } = await supabase.auth.getSession();
-    if (sessionWrap.session?.access_token) {
-      return sessionWrap.session.access_token;
+    const clientSecretFromFn = (data as any)?.clientSecret;
+    if (!clientSecretFromFn) {
+      throw new Error((data as any)?.error || (data as any)?.message || 'No client secret returned');
     }
 
-    const { data: refreshData } = await supabase.auth.refreshSession();
-    if (refreshData.session?.access_token) {
-      return refreshData.session.access_token;
-    }
-
-    setPaymentError(t.sessionExpired);
-    setStep('auth');
-    setSubmittingDetails(false);
-    setLoadingPayment(false);
-    return null;
+    return clientSecretFromFn as string;
   };
-const requireAccessToken = async () => {
-  const { data, error } = await supabase.auth.getSession();
-  const token = data?.session?.access_token;
-
-  if (error || !token) {
-    throw new Error(language === 'ar'
-      ? 'انتهت الجلسة أو لم يتم تأكيد البريد بعد. يرجى تسجيل الدخول مرة أخرى.'
-      : 'Session missing/expired (or email not confirmed). Please sign in again.');
-  }
-
-  return token;
-};
 
   const handleContinueToPayment = async () => {
     if (!validate() || !user) return;
@@ -571,33 +540,8 @@ const requireAccessToken = async () => {
         setLoadingPayment(true);
         setStep('payment');
 
-        const accessToken = await requireAccessToken();
-        if (!accessToken) return;
-
-        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${accessToken}`, // ✅ NO fallback
-          },
-          body: JSON.stringify({
-            amount: Math.round(paymentAmount * 100),
-            currency: 'gbp',
-            metadata: { user_id: user.id, application_id: existing.id, type: 'membership' },
-          }),
-        });
-
-        const raw = await response.text();
-        let data: any = {};
-        try { data = raw ? JSON.parse(raw) : {}; } catch { data = { error: raw }; }
-
-        if (!response.ok || !data.clientSecret) {
-          const msg = data?.error || data?.message || raw || `Failed to create payment (HTTP ${response.status})`;
-          throw new Error(msg);
-        }
-
-        setClientSecret(data.clientSecret);
+        const clientSecretValue = await createPaymentIntent(existing.id);
+        setClientSecret(clientSecretValue);
         setSubmittingDetails(false);
         setLoadingPayment(false);
         return;
@@ -650,42 +594,8 @@ const requireAccessToken = async () => {
       setLoadingPayment(true);
       setStep('payment');
 
-      const accessToken = await requireAccessToken();
-      if (!accessToken) return;
-
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${accessToken}`, // ✅ must be JWT
-        },
-        body: JSON.stringify({
-          amount: Math.round(paymentAmount * 100),
-          currency: 'gbp',
-          metadata: {
-            user_id: user.id,
-            application_id: appId,
-            type: 'membership',
-          },
-        }),
-      });
-
-      const raw = await response.text();
-      let data: any = {};
-      try { data = raw ? JSON.parse(raw) : {}; } catch { data = { error: raw }; }
-
-      if (!response.ok) {
-        console.error('Payment intent creation failed:', { status: response.status, raw, data });
-        throw new Error(data?.error || data?.message || raw || `Failed to create payment (HTTP ${response.status})`);
-      }
-
-      if (!data.clientSecret) {
-        console.error('No client secret in response:', { raw, data });
-        throw new Error(data?.error || data?.message || 'No client secret returned');
-      }
-
-      setClientSecret(data.clientSecret);
+      const clientSecretValue = await createPaymentIntent(appId);
+      setClientSecret(clientSecretValue);
     } catch (err: any) {
       console.error('Application/payment setup error:', err);
       setPaymentError(err.message);

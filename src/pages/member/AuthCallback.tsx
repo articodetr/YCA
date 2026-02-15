@@ -5,7 +5,7 @@ import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function AuthCallback() {
-  const { user, loading, isPaidMember, needsOnboarding, pendingApplication } = useMemberAuth();
+  const { user, loading, isPaidMember, isExpired, needsOnboarding, pendingApplication } = useMemberAuth();
   const navigate = useNavigate();
   const { language } = useLanguage();
   const [timedOut, setTimedOut] = useState(false);
@@ -34,6 +34,27 @@ export default function AuthCallback() {
     sessionStorage.removeItem('auth_redirect_path');
     sessionStorage.removeItem('auth_redirect_service');
 
+    const hasMembership =
+      isPaidMember ||
+      (pendingApplication && ['paid', 'completed'].includes(pendingApplication.payment_status));
+
+    // ✅ If not a paid member, force package selection first
+    if (!hasMembership || needsOnboarding) {
+      try {
+        if (savedRedirect) sessionStorage.setItem('post_membership_redirect', savedRedirect);
+        if (savedService) sessionStorage.setItem('post_membership_service', savedService);
+      } catch {}
+      navigate('/membership', { replace: true });
+      return;
+    }
+
+    // ✅ Paid but expired -> renew
+    if (isExpired) {
+      navigate('/member/renew', { replace: true });
+      return;
+    }
+
+    // ✅ Paid & active -> honor redirects
     if (savedRedirect === '/book' && savedService) {
       navigate(`/book?service=${savedService}`, { replace: true });
       return;
@@ -48,16 +69,8 @@ export default function AuthCallback() {
       return;
     }
 
-    if (isPaidMember) {
-      navigate('/member/dashboard', { replace: true });
-    } else if (pendingApplication && pendingApplication.payment_status === 'paid') {
-      navigate('/member/dashboard', { replace: true });
-    } else if (needsOnboarding) {
-      navigate('/membership', { replace: true });
-    } else {
-      navigate('/member/dashboard', { replace: true });
-    }
-  }, [user, loading, isPaidMember, needsOnboarding, pendingApplication, timedOut, navigate]);
+    navigate('/member/dashboard', { replace: true });
+  }, [user, loading, isPaidMember, isExpired, needsOnboarding, pendingApplication, timedOut, navigate]);
 
   useEffect(() => {
     if (timedOut && !user) {

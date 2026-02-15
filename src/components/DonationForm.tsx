@@ -249,7 +249,6 @@ export default function DonationForm({ onSuccess }: Props = {}) {
       }
 
       setClientSecret(data.clientSecret);
-      setDonationId(data.donationId || null);
       setStep('payment');
     } catch (error) {
       setPaymentStatus({

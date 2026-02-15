@@ -530,6 +530,18 @@ export default function MembershipPaymentModal({
     setLoadingPayment(false);
     return null;
   };
+const requireAccessToken = async () => {
+  const { data, error } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+
+  if (error || !token) {
+    throw new Error(language === 'ar'
+      ? 'انتهت الجلسة أو لم يتم تأكيد البريد بعد. يرجى تسجيل الدخول مرة أخرى.'
+      : 'Session missing/expired (or email not confirmed). Please sign in again.');
+  }
+
+  return token;
+};
 
   const handleContinueToPayment = async () => {
     if (!validate() || !user) return;

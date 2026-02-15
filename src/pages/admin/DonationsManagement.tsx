@@ -70,7 +70,7 @@ const averagePaidDonation = paidDonations.length > 0
       don.donation_type,
       don.payment_status,
       don.stripe_payment_id || '',
-      new Date(don.created_at).toLocaleDateString(),
+      new Date(don.created_at).toLocaleString(),
     ]);
 
     const csv = [headers, ...rows].map((row) => row.join(',')).join('\n');

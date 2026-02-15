@@ -84,7 +84,7 @@ export default function Dashboard() {
         expiredMembersRes,
         urgentExpiryRes,
       ] = await Promise.all([
-        supabase.from('donations').select('amount', { count: 'exact' }),
+        supabase.from('donations').select('amount', { count: 'exact' }).eq('payment_status', 'succeeded'),
         supabase.from('events').select('*', { count: 'exact' }),
         supabase.from('event_registrations').select('*', { count: 'exact' }),
         supabase.from('membership_applications').select('*', { count: 'exact' }),

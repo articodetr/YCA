@@ -91,7 +91,7 @@ export default function Dashboard() {
         supabase.from('newsletter_subscribers').select('*', { count: 'exact' }),
         supabase.from('contact_submissions').select('*', { count: 'exact' }),
         supabase.from('membership_applications').select('*', { count: 'exact' }).eq('status', 'pending'),
-        supabase.from('donations').select('*').order('created_at', { ascending: false }).limit(5),
+        supabase.from('donations').select('*').eq('payment_status', 'succeeded').order('created_at', { ascending: false }).limit(5),
         supabase.from('event_registrations').select('*, events(title)').order('created_at', { ascending: false }).limit(5),
         supabase.from('contact_submissions').select('*').order('created_at', { ascending: false }).limit(4),
         supabase.from('expiring_memberships').select('*').order('days_until_expiry', { ascending: true }).limit(5),

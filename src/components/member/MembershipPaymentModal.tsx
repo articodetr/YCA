@@ -7,25 +7,12 @@ import {
   Lock, Mail,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { loadStripe } from '@stripe/stripe-js';
+import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
-import { supabase } from '../../lib/supabase';
-import { stripePromise } from '../../lib/stripe';
-import BusinessSupportSelector from '../BusinessSupportSelector';
 
-interface MembershipPaymentModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  membershipType: {
-    id: string;
-    nameEn: string;
-    nameAr: string;
-    price: number;
-    priceLabel: string;
-  };
-  onStepChange?: (step: number) => void;
-  preSelectedBusinessSupport?: { tier: string; amount: number; frequency: string } | null;
-}
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
 
 interface FamilyMember {
   name: string;
@@ -33,152 +20,25 @@ interface FamilyMember {
   date_of_birth: string;
 }
 
-const translations = {
-  en: {
-    stepAuth: 'Sign In or Create Account',
-    stepDetails: 'Complete Your Details',
-    stepPayment: 'Make Payment',
-    firstName: 'First Name',
-    lastName: 'Last Name',
-    phone: 'Phone Number',
-    dateOfBirth: 'Date of Birth',
-    address: 'Address',
-    city: 'City',
-    postcode: 'Postcode',
-    continueToPayment: 'Continue to Payment',
-    back: 'Back',
-    payNow: 'Pay Now',
-    processing: 'Processing payment...',
-    required: 'This field is required',
-    membershipPlan: 'Membership Plan',
-    total: 'Total',
-    paymentSuccess: 'Membership Activated!',
-    memberNumber: 'Your Membership Number',
-    startDate: 'Start Date',
-    endDate: 'End Date',
-    membershipType: 'Membership Type',
-    goToProfile: 'Go to My Profile',
-    creatingApplication: 'Saving your details...',
-    settingUpPayment: 'Setting up payment...',
-    paymentError: 'Payment failed. Please try again.',
-    familyMembers: 'Family Members',
-    addFamilyMember: 'Add Family Member',
-    memberName: 'Member Name',
-    relationship: 'Relationship',
-    spouse: 'Spouse',
-    child: 'Child',
-    parent: 'Parent',
-    sibling: 'Sibling',
-    other: 'Other',
-    removeMember: 'Remove',
-    individual: 'Individual',
-    family: 'Family',
-    associate: 'Associate',
-    business_support: 'Business Support',
-    waitingConfirmation: 'Confirming membership...',
-    continueWithGoogle: 'Continue with Google',
-    or: 'OR',
-    email: 'Email Address',
-    password: 'Password',
-    confirmPassword: 'Confirm Password',
-    fullName: 'Full Name',
-    signIn: 'Sign In',
-    createAccount: 'Create Account',
-    signingIn: 'Signing in...',
-    creatingAccount: 'Creating account...',
-    noAccount: "Don't have an account?",
-    register: 'Register',
-    haveAccount: 'Already have an account?',
-    login: 'Sign In',
-    passwordMismatch: 'Passwords do not match',
-    passwordMinLength: 'Password must be at least 6 characters',
-    authError: 'Authentication failed. Please try again.',
-    userExists: 'An account with this email already exists. Please sign in instead.',
-  },
-  ar: {
-    stepAuth: 'تسجيل الدخول أو إنشاء حساب',
-    stepDetails: 'أكمل بياناتك',
-    stepPayment: 'ادفع الرسوم',
-    firstName: 'الاسم الأول',
-    lastName: 'اسم العائلة',
-    phone: 'رقم الهاتف',
-    dateOfBirth: 'تاريخ الميلاد',
-    address: 'العنوان',
-    city: 'المدينة',
-    postcode: 'الرمز البريدي',
-    continueToPayment: 'متابعة للدفع',
-    back: 'رجوع',
-    payNow: 'ادفع الآن',
-    processing: 'جاري معالجة الدفع...',
-    required: 'هذا الحقل مطلوب',
-    membershipPlan: 'خطة العضوية',
-    total: 'المجموع',
-    paymentSuccess: 'تم تفعيل العضوية!',
-    memberNumber: 'رقم عضويتك',
-    startDate: 'تاريخ البدء',
-    endDate: 'تاريخ الانتهاء',
-    membershipType: 'نوع العضوية',
-    goToProfile: 'الذهاب إلى ملفي الشخصي',
-    creatingApplication: 'جاري حفظ البيانات...',
-    settingUpPayment: 'جاري تجهيز الدفع...',
-    paymentError: 'فشل الدفع. يرجى المحاولة مرة أخرى.',
-    familyMembers: 'أفراد العائلة',
-    addFamilyMember: 'إضافة فرد عائلة',
-    memberName: 'اسم الفرد',
-    relationship: 'صلة القرابة',
-    spouse: 'زوج/زوجة',
-    child: 'ابن/ابنة',
-    parent: 'والد/والدة',
-    sibling: 'أخ/أخت',
-    other: 'أخرى',
-    removeMember: 'إزالة',
-    individual: 'فردية',
-    family: 'عائلية',
-    associate: 'منتسب',
-    business_support: 'دعم الأعمال',
-    waitingConfirmation: 'جاري تأكيد العضوية...',
-    continueWithGoogle: 'المتابعة مع جوجل',
-    or: 'أو',
-    email: 'البريد الإلكتروني',
-    password: 'كلمة المرور',
-    confirmPassword: 'تأكيد كلمة المرور',
-    fullName: 'الاسم الكامل',
-    signIn: 'تسجيل الدخول',
-    createAccount: 'إنشاء حساب',
-    signingIn: 'جاري تسجيل الدخول...',
-    creatingAccount: 'جاري إنشاء الحساب...',
-    noAccount: 'ليس لديك حساب؟',
-    register: 'سجل الآن',
-    haveAccount: 'لديك حساب بالفعل؟',
-    login: 'تسجيل الدخول',
-    passwordMismatch: 'كلمات المرور غير متطابقة',
-    passwordMinLength: 'يجب أن تكون كلمة المرور 6 أحرف على الأقل',
-    authError: 'فشل التحقق. يرجى المحاولة مرة أخرى.',
-    userExists: 'يوجد حساب بهذا البريد الإلكتروني. يرجى تسجيل الدخول بدلاً من ذلك.',
-  },
-};
-
-function GoogleIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)">
-        <path fill="#4285F4" d="M -3.264 51.509 C -3.264 50.719 -3.334 49.969 -3.454 49.239 L -14.754 49.239 L -14.754 53.749 L -8.284 53.749 C -8.574 55.229 -9.424 56.479 -10.684 57.329 L -10.684 60.329 L -6.824 60.329 C -4.564 58.239 -3.264 55.159 -3.264 51.509 Z"/>
-        <path fill="#34A853" d="M -14.754 63.239 C -11.514 63.239 -8.804 62.159 -6.824 60.329 L -10.684 57.329 C -11.764 58.049 -13.134 58.489 -14.754 58.489 C -17.884 58.489 -20.534 56.379 -21.484 53.529 L -25.464 53.529 L -25.464 56.619 C -23.494 60.539 -19.444 63.239 -14.754 63.239 Z"/>
-        <path fill="#FBBC05" d="M -21.484 53.529 C -21.734 52.809 -21.864 52.039 -21.864 51.239 C -21.864 50.439 -21.724 49.669 -21.484 48.949 L -21.484 45.859 L -25.464 45.859 C -26.284 47.479 -26.754 49.299 -26.754 51.239 C -26.754 53.179 -26.284 54.999 -25.464 56.619 L -21.484 53.529 Z"/>
-        <path fill="#EA4335" d="M -14.754 43.989 C -12.984 43.989 -11.404 44.599 -10.154 45.789 L -6.734 42.369 C -8.804 40.429 -11.514 39.239 -14.754 39.239 C -19.444 39.239 -23.494 41.939 -25.464 45.859 L -21.484 48.949 C -20.534 46.099 -17.884 43.989 -14.754 43.989 Z"/>
-      </g>
-    </svg>
-  );
+interface MembershipPaymentModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  membershipType: string;
+  onStepChange?: (step: string) => void;
+  preSelectedBusinessSupport?: string | null;
 }
 
-interface PaymentFormProps {
-  amount: number;
-  applicationId: string;
+function PaymentForm({
+  clientSecret,
+  onBack,
+  onSuccess,
+  membershipType,
+}: {
+  clientSecret: string;
+  onBack: () => void;
   onSuccess: () => void;
-  onError: (msg: string) => void;
-}
-
-function PaymentForm({ amount, applicationId, onSuccess, onError }: PaymentFormProps) {
+  membershipType: string;
+}) {
   const stripe = useStripe();
   const elements = useElements();
   const { language } = useLanguage();
@@ -186,134 +46,139 @@ function PaymentForm({ amount, applicationId, onSuccess, onError }: PaymentFormP
   const [processing, setProcessing] = useState(false);
   const [elementReady, setElementReady] = useState(false);
   const [elementComplete, setElementComplete] = useState(false);
-  const [elementError, setElementError] = useState<string | null>(null);
-  const t = translations[language];
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const isRTL = language === 'ar';
+
+  const translations = {
+    en: {
+      title: 'Payment',
+      subtitle: 'Complete your membership payment',
+      payNow: 'Pay Now',
+      processing: 'Processing...',
+      secure: 'Secure payment',
+      back: 'Back',
+      paymentNotReady: 'Payment form is still loading...',
+      paymentIncomplete: 'Please complete the payment information.',
+      paymentError: 'Payment failed. Please try again.',
+    },
+    ar: {
+      title: 'الدفع',
+      subtitle: 'أكمل دفع رسوم العضوية',
+      payNow: 'ادفع الآن',
+      processing: 'جاري المعالجة...',
+      secure: 'دفع آمن',
+      back: 'رجوع',
+      paymentNotReady: 'نموذج الدفع لا يزال قيد التحميل...',
+      paymentIncomplete: 'يرجى إكمال معلومات الدفع.',
+      paymentError: 'فشل الدفع. يرجى المحاولة مرة أخرى.',
+    },
+  };
+
+  const t = translations[language as 'en' | 'ar'];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setMessage(null);
+    setError(null);
+
     if (!stripe || !elements) return;
 
+    if (!elementReady) {
+      setError(t.paymentNotReady);
+      return;
+    }
+
+    if (!elementComplete) {
+      setError(t.paymentIncomplete);
+      return;
+    }
+
     setProcessing(true);
-    setElementError(null);
 
     try {
-      const { error: submitError } = await elements.submit();
-      if (submitError) throw submitError;
-
-      sessionStorage.setItem('pending_membership_payment', applicationId);
-
-      const { error: confirmError, paymentIntent } = await stripe.confirmPayment({
+      const result = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: `${window.location.origin}/member/dashboard`,
+          return_url: `${window.location.origin}/membership/success`,
         },
         redirect: 'if_required',
       });
 
-      if (confirmError) throw confirmError;
-
-      if (paymentIntent?.status === 'succeeded') {
-        sessionStorage.removeItem('pending_membership_payment');
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        const authToken = currentSession?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
-        const activateResponse = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/activate-membership`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${authToken}`,
-              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            },
-            body: JSON.stringify({
-              application_id: applicationId,
-              user_id: user?.id,
-              payment_intent_id: paymentIntent.id,
-            }),
-          }
-        );
-
-        const activateData = await activateResponse.json();
-        if (!activateResponse.ok || !activateData.success) {
-          console.error('Activation failed:', activateData.error);
-        }
-
-        if (user?.id) {
-          const now = new Date();
-          const endOfYear = `${now.getFullYear()}-12-31`;
-          await supabase
-            .from('members')
-            .update({ start_date: now.toISOString().split('T')[0], expiry_date: endOfYear })
-            .eq('id', user.id);
-        }
-
-        onSuccess();
+      if (result.error) {
+        console.error('Payment error:', result.error);
+        setError(result.error.message || t.paymentError);
+        setProcessing(false);
+        return;
       }
+
+      setMessage(language === 'ar' ? 'تم الدفع بنجاح!' : 'Payment successful!');
+      onSuccess();
     } catch (err: any) {
-      console.error('Payment error:', err);
-      const errorMessage = err.message || t.paymentError;
-      setElementError(errorMessage);
-      onError(errorMessage);
+      console.error('Unexpected payment error:', err);
+      setError(t.paymentError);
     } finally {
       setProcessing(false);
     }
   };
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <PaymentElement
-        onReady={() => {
-          console.log('Payment element ready');
-          setElementReady(true);
-        }}
-        onChange={(e) => {
-          console.log('Payment element changed:', e.complete);
-          setElementComplete(!!e.complete);
-        }}
-        onLoadError={(error) => {
-          console.error('Payment element load error:', error);
-          setElementError(error.message);
-          onError(error.message);
-        }}
-        options={{
-          layout: {
-            type: 'accordion',
-            defaultCollapsed: false,
-            radios: true,
-            spacedAccordionItems: true,
-          },
-        }}
-      />
+  useEffect(() => {
+    if (!elements) return;
+    const paymentElement = elements.getElement('payment');
+    if (paymentElement) {
+      setElementReady(true);
+    }
+  }, [elements]);
 
-      {elementError && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-          <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-red-700">{elementError}</p>
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
+      <div className="text-center mb-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">{t.title}</h2>
+        <p className="text-gray-600 text-sm">{t.subtitle}</p>
+      </div>
+
+      <div className="bg-gray-50 rounded-xl p-4">
+        <PaymentElement
+          onReady={() => setElementReady(true)}
+          onChange={(e) => setElementComplete(e.complete)}
+        />
+      </div>
+
+      {(message || error) && (
+        <div className={`p-4 rounded-xl ${message ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+          <p className={`text-sm ${message ? 'text-green-700' : 'text-red-700'}`}>{message || error}</p>
         </div>
       )}
 
-      <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
-        <Lock className="w-3.5 h-3.5" />
-        <span>{language === 'ar' ? 'الدفع يتم بأمان عبر Stripe' : 'Your payment is processed securely by Stripe'}</span>
+      <div className="flex gap-3">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-3 rounded-xl font-semibold transition-colors"
+        >
+          {t.back}
+        </button>
+        <button
+          type="submit"
+          disabled={processing || !stripe}
+          className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+        >
+          {processing ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin mr-2" />
+              {t.processing}
+            </>
+          ) : (
+            <>
+              <CreditCard className="w-5 h-5 mr-2" />
+              {t.payNow}
+            </>
+          )}
+        </button>
       </div>
 
-      <button
-        type="submit"
-        disabled={!stripe || !elements || !elementReady || !elementComplete || processing}
-        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3.5 px-6 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-      >
-        {processing ? (
-          <>
-            <Loader2 className="w-5 h-5 animate-spin" />
-            {t.processing}
-          </>
-        ) : (
-          <>
-            <CreditCard className="w-5 h-5" />
-            {t.payNow} - £{amount}
-          </>
-        )}
-      </button>
+      <p className="text-xs text-gray-500 text-center">{t.secure}</p>
     </form>
   );
 }
@@ -329,312 +194,220 @@ export default function MembershipPaymentModal({
   const { user, refreshMember, signIn, signUp, signInWithGoogle } = useMemberAuth();
   const navigate = useNavigate();
   const isRTL = language === 'ar';
-  const t = translations[language];
+
+  const translations = {
+    en: {
+      title: 'Membership',
+      subtitle: 'Join the Yemeni Community Association',
+      close: 'Close',
+      continue: 'Continue',
+      back: 'Back',
+      firstName: 'First Name',
+      lastName: 'Last Name',
+      email: 'Email Address',
+      password: 'Password',
+      phone: 'Phone Number',
+      address: 'Address',
+      dob: 'Date of Birth',
+      familyMembers: 'Family Members',
+      addFamilyMember: 'Add Family Member',
+      remove: 'Remove',
+      relationship: 'Relationship',
+      child: 'Child',
+      spouse: 'Spouse',
+      parent: 'Parent',
+      other: 'Other',
+      payment: 'Payment',
+      successTitle: 'Welcome!',
+      successSubtitle: 'Your membership is now active.',
+      goToProfile: 'Go to Profile',
+      creatingPayment: 'Preparing payment...',
+      errorTitle: 'Something went wrong',
+      tryAgain: 'Try Again',
+      google: 'Continue with Google',
+      or: 'OR',
+      signInTitle: 'Sign In',
+      signUpTitle: 'Create Account',
+      haveAccount: 'Already have an account?',
+      noAccount: "Don't have an account?",
+      signIn: 'Sign In',
+      signUp: 'Create Account',
+      signingIn: 'Signing in...',
+      signingUp: 'Creating account...',
+      invalidEmail: 'Please enter a valid email.',
+      required: 'This field is required.',
+    },
+    ar: {
+      title: 'العضوية',
+      subtitle: 'انضم إلى جمعية الجالية اليمنية',
+      close: 'إغلاق',
+      continue: 'متابعة',
+      back: 'رجوع',
+      firstName: 'الاسم الأول',
+      lastName: 'اسم العائلة',
+      email: 'البريد الإلكتروني',
+      password: 'كلمة المرور',
+      phone: 'رقم الهاتف',
+      address: 'العنوان',
+      dob: 'تاريخ الميلاد',
+      familyMembers: 'أفراد العائلة',
+      addFamilyMember: 'إضافة فرد',
+      remove: 'حذف',
+      relationship: 'صلة القرابة',
+      child: 'طفل',
+      spouse: 'زوج/زوجة',
+      parent: 'أب/أم',
+      other: 'أخرى',
+      payment: 'الدفع',
+      successTitle: 'مرحباً بك!',
+      successSubtitle: 'تم تفعيل عضويتك بنجاح.',
+      goToProfile: 'الذهاب للملف الشخصي',
+      creatingPayment: 'جاري تجهيز الدفع...',
+      errorTitle: 'حدث خطأ',
+      tryAgain: 'حاول مرة أخرى',
+      google: 'التسجيل عبر جوجل',
+      or: 'أو',
+      signInTitle: 'تسجيل الدخول',
+      signUpTitle: 'إنشاء حساب',
+      haveAccount: 'لديك حساب بالفعل؟',
+      noAccount: 'ليس لديك حساب؟',
+      signIn: 'تسجيل الدخول',
+      signUp: 'إنشاء حساب',
+      signingIn: 'جاري تسجيل الدخول...',
+      signingUp: 'جاري إنشاء الحساب...',
+      invalidEmail: 'يرجى إدخال بريد إلكتروني صحيح.',
+      required: 'هذا الحقل مطلوب.',
+    },
+  };
+
+  const t = translations[language as 'en' | 'ar'];
 
   type ModalStep = 'auth' | 'details' | 'payment' | 'success';
 
   const [step, setStep] = useState<ModalStep>(!user ? 'auth' : 'details');
+  const [autoRedirecting, setAutoRedirecting] = useState(false);
+
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
   const [phone, setPhone] = useState('');
-  const [dateOfBirth, setDateOfBirth] = useState('');
   const [address, setAddress] = useState('');
-  const [city, setCity] = useState('');
-  const [postcode, setPostcode] = useState('');
+  const [dob, setDob] = useState('');
+
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
-  const [businessSupport, setBusinessSupport] = useState<{ tier: string; amount: number; frequency: string } | null>(
-    preSelectedBusinessSupport || null
-  );
-  const [errors, setErrors] = useState<Record<string, boolean>>({});
-  const [applicationId, setApplicationId] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [processingAuth, setProcessingAuth] = useState(false);
+
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [loadingPayment, setLoadingPayment] = useState(false);
-  const [submittingDetails, setSubmittingDetails] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+
   const [memberData, setMemberData] = useState<{ member_number: string; start_date: string; expiry_date: string } | null>(null);
   const [pollingMember, setPollingMember] = useState(false);
 
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
-  const [authEmail, setAuthEmail] = useState('');
-  const [authPassword, setAuthPassword] = useState('');
-  const [authConfirmPassword, setAuthConfirmPassword] = useState('');
-  const [authFullName, setAuthFullName] = useState('');
-  const [authError, setAuthError] = useState('');
-  const [authLoading, setAuthLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-
-  const paymentAmount = membershipType.id === 'business_support'
-    ? (businessSupport?.amount || 0)
-    : membershipType.price;
+  useEffect(() => {
+    if (!isOpen) return;
+    if (onStepChange) onStepChange(step);
+  }, [step, isOpen, onStepChange]);
 
   useEffect(() => {
-    if (isOpen && user) {
-      if (step === 'auth') {
-        setStep('details');
-      }
-      const meta = user.user_metadata || {};
-      const fullName = meta.full_name || meta.name || '';
-      const parts = fullName.split(' ');
-      if (!firstName) setFirstName(parts[0] || '');
-      if (!lastName) setLastName(parts.slice(1).join(' ') || '');
+    if (!isOpen) return;
+
+    if (user) {
+      setStep('details');
+    } else {
+      setStep('auth');
     }
   }, [isOpen, user]);
 
-  useEffect(() => {
-    if (!isOpen) {
-      setStep(!user ? 'auth' : 'details');
-      setErrors({});
-      setApplicationId(null);
-      setClientSecret(null);
-      setPaymentError(null);
-      setMemberData(null);
-      setFamilyMembers([]);
-      setBusinessSupport(preSelectedBusinessSupport || null);
-      setPollingMember(false);
-      setAuthError('');
-      setAuthEmail('');
-      setAuthPassword('');
-      setAuthConfirmPassword('');
-      setAuthFullName('');
-      setAuthMode('login');
-      setFirstName('');
-      setLastName('');
-    }
-  }, [isOpen]);
+  const validateDetails = () => {
+    const newErrors: Record<string, string> = {};
 
-  useEffect(() => {
-    if (onStepChange) {
-      const stepMap: Record<ModalStep, number> = { auth: 1, details: 2, payment: 2, success: 3 };
-      onStepChange(stepMap[step]);
-    }
-  }, [step, onStepChange]);
+    if (!firstName.trim()) newErrors.firstName = t.required;
+    if (!lastName.trim()) newErrors.lastName = t.required;
 
-  const handleAuthSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError('');
-    setAuthLoading(true);
+    if (!phone.trim()) newErrors.phone = t.required;
+    if (!address.trim()) newErrors.address = t.required;
+    if (!dob.trim()) newErrors.dob = t.required;
 
-    try {
-      if (authMode === 'login') {
-        const { error } = await signIn(authEmail, authPassword);
-        if (error) throw error;
-      } else {
-        if (authPassword !== authConfirmPassword) {
-          setAuthError(t.passwordMismatch);
-          setAuthLoading(false);
-          return;
-        }
-        if (authPassword.length < 6) {
-          setAuthError(t.passwordMinLength);
-          setAuthLoading(false);
-          return;
-        }
-        const { data, error } = await signUp(authEmail, authPassword, { full_name: authFullName });
-        if (error) {
-          const msg = error.message.toLowerCase();
-          if (msg.includes('already registered') || msg.includes('user already exists')) {
-            setAuthError(t.userExists);
-          } else {
-            throw error;
-          }
-          setAuthLoading(false);
-          return;
-        }
-        if (data?.user && (!data.user.identities || data.user.identities.length === 0)) {
-          setAuthError(t.userExists);
-          setAuthLoading(false);
-          return;
-        }
-      }
-    } catch (err: any) {
-      setAuthError(err.message || t.authError);
-    } finally {
-      setAuthLoading(false);
-    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleGoogleAuth = async () => {
-    setAuthError('');
-    setGoogleLoading(true);
-    try {
-      const { error } = await signInWithGoogle();
-      if (error) throw error;
-    } catch (err: any) {
-      setAuthError(err.message || t.authError);
-      setGoogleLoading(false);
-    }
+  const buildMembershipMeta = () => {
+    return {
+      first_name: firstName,
+      last_name: lastName,
+      phone,
+      address,
+      date_of_birth: dob,
+      membership_type: membershipType,
+      family_members: familyMembers,
+      business_support_level: preSelectedBusinessSupport || null,
+    };
   };
 
-  const validate = () => {
-    const errs: Record<string, boolean> = {};
-    if (!firstName.trim()) errs.firstName = true;
-    if (!lastName.trim()) errs.lastName = true;
-    if (!phone.trim()) errs.phone = true;
-    if (!dateOfBirth) errs.dateOfBirth = true;
-    if (!address.trim()) errs.address = true;
-    if (!city.trim()) errs.city = true;
-    if (!postcode.trim()) errs.postcode = true;
-    if (membershipType.id === 'business_support' && !businessSupport) errs.businessSupport = true;
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
-
-  const handleContinueToPayment = async () => {
-    if (!validate() || !user) return;
-
-    setSubmittingDetails(true);
+  const createPaymentIntent = async () => {
+    setPaymentLoading(true);
     setPaymentError(null);
 
     try {
-      const { data: existing } = await supabase
-        .from('membership_applications')
-        .select('id, status, payment_status')
-        .eq('email', user.email)
-        .in('status', ['pending', 'approved'])
-        .maybeSingle();
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-membership-payment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          membership_type: membershipType,
+          business_support_level: preSelectedBusinessSupport || null,
+          user_id: user?.id,
+          email: user?.email || email,
+          meta: buildMembershipMeta(),
+        }),
+      });
 
-      if (existing) {
-        if (existing.payment_status === 'paid' || existing.status === 'approved') {
-          setPaymentError(language === 'ar'
-            ? 'لديك عضوية مفعلة بالفعل.'
-            : 'You already have an active membership.');
-          setSubmittingDetails(false);
-          return;
-        }
-        setApplicationId(existing.id);
-        setLoadingPayment(true);
-        setStep('payment');
-
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            },
-            body: JSON.stringify({
-              amount: Math.round(paymentAmount * 100),
-              currency: 'gbp',
-              metadata: { user_id: user.id, application_id: existing.id, type: 'membership' },
-            }),
-          }
-        );
-        const data = await response.json();
-        if (!response.ok || !data.clientSecret) throw new Error(data.error || 'Failed to create payment');
-        setClientSecret(data.clientSecret);
-        setSubmittingDetails(false);
-        setLoadingPayment(false);
-        return;
+      const data = await resp.json();
+      if (!resp.ok) {
+        throw new Error(data?.error || 'Failed to create payment intent');
       }
 
-      const applicationData: any = {
-        user_id: user.id,
-        email: user.email,
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
-        full_name: `${firstName.trim()} ${lastName.trim()}`,
-        phone: phone.trim(),
-        date_of_birth: dateOfBirth,
-        address: address.trim(),
-        city: city.trim(),
-        postcode: postcode.trim(),
-        membership_type: membershipType.id,
-        status: 'pending',
-        payment_status: 'pending',
-      };
-
-      if (membershipType.id === 'business_support' && businessSupport) {
-        applicationData.business_support_tier = businessSupport.tier;
-        applicationData.custom_amount = businessSupport.amount;
-        applicationData.payment_frequency = businessSupport.frequency;
-      }
-
-      const { data: appData, error: appError } = await supabase
-        .from('membership_applications')
-        .insert(applicationData)
-        .select('id')
-        .single();
-
-      if (appError) throw appError;
-
-      const appId = appData.id;
-      setApplicationId(appId);
-
-      if (membershipType.id === 'family' && familyMembers.length > 0) {
-        const familyData = familyMembers.map(fm => ({
-          application_id: appId,
-          name: fm.name,
-          relationship: fm.relationship,
-          date_of_birth: fm.date_of_birth || null,
-        }));
-        await supabase.from('membership_application_family_members').insert(familyData);
-      }
-
-      setLoadingPayment(true);
-      setStep('payment');
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
-            amount: Math.round(paymentAmount * 100),
-            currency: 'gbp',
-            metadata: {
-              user_id: user.id,
-              application_id: appId,
-              type: 'membership',
-            },
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error('Payment intent creation failed:', data);
-        throw new Error(data.error || 'Failed to create payment');
-      }
-
-      if (!data.clientSecret) {
-        console.error('No client secret in response:', data);
-        throw new Error('No client secret returned');
-      }
-
-      console.log('Payment intent created successfully');
       setClientSecret(data.clientSecret);
+      setStep('payment');
     } catch (err: any) {
-      console.error('Application/payment setup error:', err);
-      setPaymentError(err.message);
-      setStep('details');
+      console.error('Payment intent error:', err);
+      setPaymentError(err.message || 'Payment setup failed');
     } finally {
-      setSubmittingDetails(false);
-      setLoadingPayment(false);
+      setPaymentLoading(false);
     }
   };
 
   const pollForMember = async () => {
+    if (!user?.id) return;
     setPollingMember(true);
-    for (let i = 0; i < 5; i++) {
-      await new Promise(r => setTimeout(r, 500));
-      const { data } = await supabase
-        .from('members')
-        .select('member_number, start_date, expiry_date')
-        .eq('user_id', user?.id)
-        .maybeSingle();
 
-      if (data) {
-        setMemberData(data);
-        await refreshMember();
-        setPollingMember(false);
-        return;
+    try {
+      for (let i = 0; i < 10; i++) {
+        await new Promise(r => setTimeout(r, 1200));
+        const { data } = await supabase
+          .from('members')
+          .select('member_number, start_date, expiry_date')
+          .eq('user_id', user?.id)
+          .maybeSingle();
+
+        if (data) {
+          setMemberData(data);
+          await refreshMember();
+          setPollingMember(false);
+          return;
+        }
       }
+    } catch (err) {
+      console.error('Polling member failed:', err);
     }
+
     await refreshMember();
     setPollingMember(false);
   };
@@ -651,6 +424,25 @@ export default function MembershipPaymentModal({
     navigate('/member/dashboard?tab=profile');
   };
 
+  // ✅ Auto-redirect to profile after successful payment + membership activation
+  useEffect(() => {
+    if (step !== 'success') return;
+    if (!memberData) return;
+    if (autoRedirecting) return;
+
+    setAutoRedirecting(true);
+
+    const timer = setTimeout(() => {
+      (async () => {
+        await new Promise(r => setTimeout(r, 500));
+        await refreshMember();
+        navigate('/member/dashboard?tab=profile');
+      })();
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, [step, memberData, autoRedirecting, navigate, refreshMember]);
+
   const addFamilyMember = () => {
     setFamilyMembers([...familyMembers, { name: '', relationship: 'child', date_of_birth: '' }]);
   };
@@ -665,574 +457,367 @@ export default function MembershipPaymentModal({
     setFamilyMembers(updated);
   };
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '';
-    return new Date(dateStr).toLocaleDateString(language === 'ar' ? 'ar-GB' : 'en-GB', {
-      day: 'numeric', month: 'long', year: 'numeric',
-    });
+  const handleAuthSubmit = async (mode: 'signin' | 'signup') => {
+    setErrors({});
+    setPaymentError(null);
+
+    const newErrors: Record<string, string> = {};
+    if (!email.trim()) newErrors.email = t.required;
+    if (!password.trim()) newErrors.password = t.required;
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) return;
+
+    setProcessingAuth(true);
+
+    try {
+      if (mode === 'signin') {
+        const { error } = await signIn(email, password);
+        if (error) throw error;
+        setStep('details');
+      } else {
+        const { error } = await signUp(email, password, buildMembershipMeta());
+        if (error) throw error;
+        setStep('details');
+      }
+    } catch (err: any) {
+      console.error('Auth error:', err);
+      setPaymentError(language === 'ar' ? 'فشل تسجيل الدخول/إنشاء الحساب' : 'Authentication failed');
+    } finally {
+      setProcessingAuth(false);
+    }
   };
 
-  const typeLabel = t[membershipType.id as keyof typeof t] || membershipType.nameEn;
+  const handleGoogle = async () => {
+    setPaymentError(null);
+    setProcessingAuth(true);
 
-  if (!isOpen) return null;
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) throw error;
+    } catch (err: any) {
+      console.error('Google auth error:', err);
+      setPaymentError(language === 'ar' ? 'فشل تسجيل الدخول عبر جوجل' : 'Google sign in failed');
+      setProcessingAuth(false);
+    }
+  };
 
-  const getStepTitle = () => {
-    switch (step) {
-      case 'auth': return t.stepAuth;
-      case 'details': return t.stepDetails;
-      case 'payment': return t.stepPayment;
-      default: return '';
+  const handleNext = async () => {
+    if (step === 'auth') return;
+    if (step === 'details') {
+      if (!validateDetails()) return;
+      await createPaymentIntent();
+      return;
     }
   };
 
   const handleBack = () => {
-    if (step === 'payment') {
-      setStep('details');
-      setClientSecret(null);
-      setPaymentError(null);
-    }
+    if (step === 'payment') setStep('details');
+    if (step === 'details' && !user) setStep('auth');
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={step !== 'success' ? onClose : undefined}
-      />
+  const handleClose = () => {
+    setClientSecret(null);
+    setPaymentError(null);
+    setMemberData(null);
+    setPollingMember(false);
+    setAutoRedirecting(false);
+    onClose();
+  };
 
+  if (!isOpen) return null;
+
+  const stripeElementsOptions = clientSecret
+    ? { clientSecret }
+    : undefined;
+
+  return (
+    <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        transition={{ duration: 0.25 }}
-        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
         dir={isRTL ? 'rtl' : 'ltr'}
       >
-        {step !== 'success' && (
-          <div className="sticky top-0 bg-white z-10 flex items-center justify-between px-6 py-4 border-b border-gray-100">
-            <div className="flex items-center gap-3">
-              {step === 'payment' && (
-                <button
-                  onClick={handleBack}
-                  className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <ChevronLeft className={`w-5 h-5 text-gray-500 ${isRTL ? 'rotate-180' : ''}`} />
-                </button>
-              )}
-              <h2 className="text-lg font-bold text-gray-900">{getStepTitle()}</h2>
+        <motion.div
+          className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden"
+          initial={{ y: 30, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 30, opacity: 0 }}
+        >
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">{t.title}</h2>
+              <p className="text-sm text-gray-600">{t.subtitle}</p>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5 text-gray-500" />
+            <button onClick={handleClose} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
+              <X className="w-5 h-5 text-gray-600" />
             </button>
           </div>
-        )}
 
-        <div className="p-6">
-          <AnimatePresence mode="wait">
+          <div className="p-6">
+            {paymentError && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-red-700">{paymentError}</p>
+              </div>
+            )}
+
             {step === 'auth' && (
-              <motion.div
-                key="auth"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                className="space-y-5"
-              >
-                <div className="bg-emerald-50 rounded-xl p-4 text-center">
-                  <p className="text-sm text-emerald-700 font-medium">{t.membershipPlan}</p>
-                  <p className="font-bold text-emerald-800 text-lg">
-                    {language === 'ar' ? membershipType.nameAr : membershipType.nameEn}
-                    {membershipType.id !== 'business_support' && (
-                      <span className="text-emerald-600 mx-2">{membershipType.priceLabel}</span>
-                    )}
-                    {membershipType.id === 'business_support' && businessSupport && (
-                      <span className="text-emerald-600 mx-2">£{businessSupport.amount}</span>
-                    )}
-                  </p>
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-1">{t.signInTitle}</h3>
+                  <p className="text-sm text-gray-600">{language === 'ar' ? 'قم بتسجيل الدخول للمتابعة' : 'Sign in to continue'}</p>
                 </div>
 
                 <button
-                  type="button"
-                  onClick={handleGoogleAuth}
-                  disabled={googleLoading || authLoading}
-                  className="w-full bg-white hover:bg-gray-50 text-gray-700 font-semibold py-3 px-6 rounded-lg border-2 border-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                  onClick={handleGoogle}
+                  disabled={processingAuth}
+                  className="w-full border border-gray-200 hover:bg-gray-50 text-gray-700 py-3 rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {googleLoading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      {t.signingIn}
-                    </>
-                  ) : (
-                    <>
-                      <GoogleIcon />
-                      {t.continueWithGoogle}
-                    </>
-                  )}
+                  {processingAuth ? <Loader2 className="w-5 h-5 animate-spin" /> : <span className="inline-flex"><Mail className="w-5 h-5" /></span>}
+                  {t.google}
                 </button>
 
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300" />
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white text-gray-500 font-medium">{t.or}</span>
-                  </div>
+                <div className="my-2 flex items-center">
+                  <div className="flex-1 border-t border-gray-200" />
+                  <span className="px-4 text-sm text-gray-500">{t.or}</span>
+                  <div className="flex-1 border-t border-gray-200" />
                 </div>
 
-                {authError && (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-red-700">{authError}</p>
-                  </div>
-                )}
-
-                <form onSubmit={handleAuthSubmit} className="space-y-4">
-                  {authMode === 'signup' && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.fullName}</label>
-                      <div className="relative">
-                        <UserIcon className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400`} />
-                        <input
-                          type="text"
-                          value={authFullName}
-                          onChange={e => setAuthFullName(e.target.value)}
-                          className={`w-full ${isRTL ? 'pr-10 pl-3' : 'pl-10 pr-3'} py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm`}
-                          required
-                          disabled={authLoading}
-                        />
-                      </div>
-                    </div>
-                  )}
-
+                <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.email}</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.email}</label>
                     <div className="relative">
-                      <Mail className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400`} />
+                      <Mail className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 ${isRTL ? 'right-4' : 'left-4'}`} />
                       <input
                         type="email"
-                        value={authEmail}
-                        onChange={e => setAuthEmail(e.target.value)}
-                        className={`w-full ${isRTL ? 'pr-10 pl-3' : 'pl-10 pr-3'} py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm`}
-                        placeholder="member@example.com"
-                        required
-                        disabled={authLoading}
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className={`w-full py-3 px-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all ${isRTL ? 'pr-12' : 'pl-12'}`}
                       />
                     </div>
+                    {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.password}</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.password}</label>
                     <div className="relative">
-                      <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400`} />
+                      <Lock className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 ${isRTL ? 'right-4' : 'left-4'}`} />
                       <input
                         type="password"
-                        value={authPassword}
-                        onChange={e => setAuthPassword(e.target.value)}
-                        className={`w-full ${isRTL ? 'pr-10 pl-3' : 'pl-10 pr-3'} py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm`}
-                        placeholder="••••••••"
-                        required
-                        minLength={6}
-                        disabled={authLoading}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className={`w-full py-3 px-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all ${isRTL ? 'pr-12' : 'pl-12'}`}
                       />
                     </div>
+                    {errors.password && <p className="text-xs text-red-600 mt-1">{errors.password}</p>}
                   </div>
 
-                  {authMode === 'signup' && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.confirmPassword}</label>
-                      <div className="relative">
-                        <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400`} />
-                        <input
-                          type="password"
-                          value={authConfirmPassword}
-                          onChange={e => setAuthConfirmPassword(e.target.value)}
-                          className={`w-full ${isRTL ? 'pr-10 pl-3' : 'pl-10 pr-3'} py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm`}
-                          placeholder="••••••••"
-                          required
-                          minLength={6}
-                          disabled={authLoading}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={authLoading}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {authLoading ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        {authMode === 'login' ? t.signingIn : t.creatingAccount}
-                      </>
-                    ) : (
-                      authMode === 'login' ? t.signIn : t.createAccount
-                    )}
-                  </button>
-                </form>
-
-                <p className="text-sm text-gray-600 text-center">
-                  {authMode === 'login' ? t.noAccount : t.haveAccount}{' '}
-                  <button
-                    type="button"
-                    onClick={() => { setAuthMode(authMode === 'login' ? 'signup' : 'login'); setAuthError(''); }}
-                    className="text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
-                  >
-                    {authMode === 'login' ? t.register : t.login}
-                  </button>
-                </p>
-              </motion.div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => handleAuthSubmit('signin')}
+                      disabled={processingAuth}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-semibold transition-colors disabled:opacity-50 flex items-center justify-center"
+                    >
+                      {processingAuth ? <Loader2 className="w-5 h-5 animate-spin" /> : t.signIn}
+                    </button>
+                    <button
+                      onClick={() => handleAuthSubmit('signup')}
+                      disabled={processingAuth}
+                      className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 py-3 rounded-xl font-semibold transition-colors disabled:opacity-50 flex items-center justify-center"
+                    >
+                      {processingAuth ? <Loader2 className="w-5 h-5 animate-spin" /> : t.signUp}
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
 
             {step === 'details' && (
-              <motion.div
-                key="details"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                className="space-y-5"
-              >
-                <div className="bg-emerald-50 rounded-xl p-4 flex items-center justify-between">
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-emerald-700 font-medium">{t.membershipPlan}</p>
-                    <p className="font-bold text-emerald-800">
-                      {language === 'ar' ? membershipType.nameAr : membershipType.nameEn}
-                    </p>
-                  </div>
-                  {membershipType.id !== 'business_support' && (
-                    <span className="text-2xl font-bold text-emerald-600">{membershipType.priceLabel}</span>
-                  )}
-                  {membershipType.id === 'business_support' && businessSupport && (
-                    <span className="text-2xl font-bold text-emerald-600">£{businessSupport.amount}</span>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.firstName} *</label>
-                    <div className="relative">
-                      <UserIcon className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400`} />
-                      <input
-                        type="text"
-                        value={firstName}
-                        onChange={e => { setFirstName(e.target.value); setErrors(p => ({ ...p, firstName: false })); }}
-                        className={`w-full ${isRTL ? 'pr-10 pl-3' : 'pl-10 pr-3'} py-2.5 border ${errors.firstName ? 'border-red-400 bg-red-50' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm`}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.lastName} *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.firstName}</label>
                     <input
-                      type="text"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      className="w-full py-3 px-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                    />
+                    {errors.firstName && <p className="text-xs text-red-600 mt-1">{errors.firstName}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.lastName}</label>
+                    <input
                       value={lastName}
-                      onChange={e => { setLastName(e.target.value); setErrors(p => ({ ...p, lastName: false })); }}
-                      className={`w-full px-3 py-2.5 border ${errors.lastName ? 'border-red-400 bg-red-50' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm`}
+                      onChange={(e) => setLastName(e.target.value)}
+                      className="w-full py-3 px-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                     />
+                    {errors.lastName && <p className="text-xs text-red-600 mt-1">{errors.lastName}</p>}
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.phone} *</label>
-                  <div className="relative">
-                    <Phone className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400`} />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.phone}</label>
                     <input
-                      type="tel"
                       value={phone}
-                      onChange={e => { setPhone(e.target.value); setErrors(p => ({ ...p, phone: false })); }}
-                      className={`w-full ${isRTL ? 'pr-10 pl-3' : 'pl-10 pr-3'} py-2.5 border ${errors.phone ? 'border-red-400 bg-red-50' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm`}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="w-full py-3 px-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                     />
+                    {errors.phone && <p className="text-xs text-red-600 mt-1">{errors.phone}</p>}
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.dateOfBirth} *</label>
-                  <div className="relative">
-                    <Calendar className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400`} />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.address}</label>
+                    <input
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      className="w-full py-3 px-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                    />
+                    {errors.address && <p className="text-xs text-red-600 mt-1">{errors.address}</p>}
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.dob}</label>
                     <input
                       type="date"
-                      value={dateOfBirth}
-                      onChange={e => { setDateOfBirth(e.target.value); setErrors(p => ({ ...p, dateOfBirth: false })); }}
-                      className={`w-full ${isRTL ? 'pr-10 pl-3' : 'pl-10 pr-3'} py-2.5 border ${errors.dateOfBirth ? 'border-red-400 bg-red-50' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm`}
+                      value={dob}
+                      onChange={(e) => setDob(e.target.value)}
+                      className="w-full py-3 px-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                     />
+                    {errors.dob && <p className="text-xs text-red-600 mt-1">{errors.dob}</p>}
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.address} *</label>
-                  <div className="relative">
-                    <MapPin className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-3 w-4 h-4 text-gray-400`} />
-                    <input
-                      type="text"
-                      value={address}
-                      onChange={e => { setAddress(e.target.value); setErrors(p => ({ ...p, address: false })); }}
-                      className={`w-full ${isRTL ? 'pr-10 pl-3' : 'pl-10 pr-3'} py-2.5 border ${errors.address ? 'border-red-400 bg-red-50' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm`}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.city} *</label>
-                    <input
-                      type="text"
-                      value={city}
-                      onChange={e => { setCity(e.target.value); setErrors(p => ({ ...p, city: false })); }}
-                      className={`w-full px-3 py-2.5 border ${errors.city ? 'border-red-400 bg-red-50' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm`}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t.postcode} *</label>
-                    <input
-                      type="text"
-                      value={postcode}
-                      onChange={e => { setPostcode(e.target.value); setErrors(p => ({ ...p, postcode: false })); }}
-                      className={`w-full px-3 py-2.5 border ${errors.postcode ? 'border-red-400 bg-red-50' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm`}
-                    />
-                  </div>
-                </div>
-
-                {membershipType.id === 'family' && (
-                  <div className="border border-gray-200 rounded-xl p-4 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-gray-900">{t.familyMembers}</h3>
+                {/* Family members (optional for certain plans) */}
+                {membershipType === 'family' && (
+                  <div className="mt-2">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-semibold text-gray-900">{t.familyMembers}</h4>
                       <button
                         type="button"
                         onClick={addFamilyMember}
-                        className="flex items-center gap-1.5 text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+                        className="text-sm text-emerald-600 hover:text-emerald-700 font-semibold flex items-center gap-1"
                       >
                         <UserPlus className="w-4 h-4" />
                         {t.addFamilyMember}
                       </button>
                     </div>
-                    {familyMembers.map((fm, idx) => (
-                      <div key={idx} className="bg-gray-50 rounded-lg p-3 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-gray-700">
-                            {language === 'ar' ? `فرد ${idx + 1}` : `Member ${idx + 1}`}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => removeFamilyMember(idx)}
-                            className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                            {t.removeMember}
-                          </button>
+
+                    <div className="space-y-3">
+                      {familyMembers.map((fm, idx) => (
+                        <div key={idx} className="bg-gray-50 rounded-xl p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 flex-1">
+                              <input
+                                value={fm.name}
+                                onChange={(e) => updateFamilyMember(idx, 'name', e.target.value)}
+                                placeholder={language === 'ar' ? 'الاسم' : 'Name'}
+                                className="w-full py-2.5 px-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                              />
+                              <select
+                                value={fm.relationship}
+                                onChange={(e) => updateFamilyMember(idx, 'relationship', e.target.value)}
+                                className="w-full py-2.5 px-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all bg-white"
+                              >
+                                <option value="child">{t.child}</option>
+                                <option value="spouse">{t.spouse}</option>
+                                <option value="parent">{t.parent}</option>
+                                <option value="other">{t.other}</option>
+                              </select>
+                              <input
+                                type="date"
+                                value={fm.date_of_birth}
+                                onChange={(e) => updateFamilyMember(idx, 'date_of_birth', e.target.value)}
+                                className="w-full py-2.5 px-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeFamilyMember(idx)}
+                              className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                              aria-label="Remove"
+                            >
+                              <Trash2 className="w-5 h-5 text-gray-500" />
+                            </button>
+                          </div>
                         </div>
-                        <input
-                          type="text"
-                          placeholder={t.memberName}
-                          value={fm.name}
-                          onChange={e => updateFamilyMember(idx, 'name', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                        />
-                        <div className="grid grid-cols-2 gap-3">
-                          <select
-                            value={fm.relationship}
-                            onChange={e => updateFamilyMember(idx, 'relationship', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                          >
-                            <option value="spouse">{t.spouse}</option>
-                            <option value="child">{t.child}</option>
-                            <option value="parent">{t.parent}</option>
-                            <option value="sibling">{t.sibling}</option>
-                            <option value="other">{t.other}</option>
-                          </select>
-                          <input
-                            type="date"
-                            value={fm.date_of_birth}
-                            onChange={e => updateFamilyMember(idx, 'date_of_birth', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                          />
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
 
-                {membershipType.id === 'business_support' && !preSelectedBusinessSupport && (
-                  <div className={`border rounded-xl p-4 ${errors.businessSupport ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}>
-                    <BusinessSupportSelector
-                      onSelect={(data) => {
-                        setBusinessSupport(data);
-                        setErrors(p => ({ ...p, businessSupport: false }));
-                      }}
-                    />
-                  </div>
-                )}
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-3 rounded-xl font-semibold transition-colors flex items-center justify-center"
+                  >
+                    <ChevronLeft className={`w-5 h-5 ${isRTL ? 'ml-2 rotate-180' : 'mr-2'}`} />
+                    {t.back}
+                  </button>
 
-                {paymentError && (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-red-700">{paymentError}</p>
-                  </div>
-                )}
-
-                <button
-                  onClick={handleContinueToPayment}
-                  disabled={submittingDetails || loadingPayment || (membershipType.id === 'business_support' && paymentAmount === 0)}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3.5 px-6 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {submittingDetails ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      {t.creatingApplication}
-                    </>
-                  ) : loadingPayment ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      {t.settingUpPayment}
-                    </>
-                  ) : (
-                    <>
-                      {t.continueToPayment}
-                      <ArrowRight className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
-                    </>
-                  )}
-                </button>
-              </motion.div>
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    disabled={paymentLoading}
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  >
+                    {paymentLoading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                        {t.creatingPayment}
+                      </>
+                    ) : (
+                      <>
+                        {t.continue}
+                        <ArrowRight className={`w-5 h-5 ${isRTL ? 'mr-2 rotate-180' : 'ml-2'}`} />
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             )}
 
-            {step === 'payment' && (
-              <motion.div
-                key="payment"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-5"
-              >
-                <div className="bg-gray-50 rounded-xl p-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">{t.membershipPlan}</p>
-                    <p className="font-semibold text-gray-900">
-                      {language === 'ar' ? membershipType.nameAr : membershipType.nameEn}
-                    </p>
-                  </div>
-                  <div className="text-end">
-                    <p className="text-sm text-gray-600">{t.total}</p>
-                    <p className="text-2xl font-bold text-emerald-600">£{paymentAmount}</p>
-                  </div>
-                </div>
-
-                {paymentError && (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-red-700">{paymentError}</p>
-                  </div>
-                )}
-
-                {!clientSecret && (
-                  <div className="flex items-center justify-center gap-2 py-8">
-                    <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
-                    <span className="text-gray-600">{t.settingUpPayment}</span>
-                  </div>
-                )}
-
-                {clientSecret && stripePromise && (
-                  <Elements
-                    key={clientSecret}
-                    stripe={stripePromise}
-                    options={{
-                      clientSecret,
-                      appearance: {
-                        theme: 'stripe',
-                        variables: { colorPrimary: '#059669' },
-                      },
-                      loader: 'auto',
-                    }}
-                  >
-                    <PaymentForm
-                      amount={paymentAmount}
-                      applicationId={applicationId!}
-                      onSuccess={handlePaymentSuccess}
-                      onError={(msg) => setPaymentError(msg)}
-                    />
-                  </Elements>
-                )}
-
-                {clientSecret && !stripePromise && (
-                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-center">
-                    <AlertCircle className="w-6 h-6 text-amber-600 mx-auto mb-2" />
-                    <p className="text-sm text-amber-800">
-                      {language === 'ar' ? 'نظام الدفع غير متوفر حالياً' : 'Payment system is not configured'}
-                    </p>
-                  </div>
-                )}
-              </motion.div>
+            {step === 'payment' && clientSecret && (
+              <Elements stripe={stripePromise} options={stripeElementsOptions}>
+                <PaymentForm
+                  clientSecret={clientSecret}
+                  onBack={handleBack}
+                  onSuccess={handlePaymentSuccess}
+                  membershipType={membershipType}
+                />
+              </Elements>
             )}
 
             {step === 'success' && (
-              <motion.div
-                key="success"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="text-center py-4 space-y-6"
-              >
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
-                >
-                  <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
-                    <CheckCircle className="w-10 h-10 text-emerald-600" />
-                  </div>
-                </motion.div>
-
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-1">{t.paymentSuccess}</h2>
+              <div className="text-center py-6 space-y-4">
+                <div className="mx-auto w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center">
+                  <CheckCircle className="w-8 h-8 text-emerald-600" />
                 </div>
+                <h3 className="text-2xl font-bold text-gray-900">{t.successTitle}</h3>
+                <p className="text-gray-600">{t.successSubtitle}</p>
 
-                {pollingMember && !memberData && (
-                  <div className="flex items-center justify-center gap-2 text-gray-500">
+                {pollingMember && (
+                  <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span className="text-sm">{t.waitingConfirmation}</span>
+                    {language === 'ar' ? 'جاري تفعيل العضوية...' : 'Activating membership...'}
                   </div>
-                )}
-
-                {memberData && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-6 space-y-4 border border-emerald-200"
-                  >
-                    <div>
-                      <p className="text-sm text-emerald-700 mb-1">{t.memberNumber}</p>
-                      <p className="text-3xl font-black text-emerald-800 tracking-wider">{memberData.member_number}</p>
-                    </div>
-                    <div className="h-px bg-emerald-200" />
-                    <div className="grid grid-cols-2 gap-4 text-start">
-                      <div>
-                        <p className="text-xs text-emerald-600 mb-0.5">{t.membershipType}</p>
-                        <p className="text-sm font-semibold text-gray-900">{typeLabel}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-emerald-600 mb-0.5">{t.startDate}</p>
-                        <p className="text-sm font-semibold text-gray-900">{formatDate(memberData.start_date)}</p>
-                      </div>
-                      <div className="col-span-2">
-                        <p className="text-xs text-emerald-600 mb-0.5">{t.endDate}</p>
-                        <p className="text-sm font-semibold text-gray-900">{formatDate(memberData.expiry_date)}</p>
-                      </div>
-                    </div>
-                  </motion.div>
                 )}
 
                 <button
                   onClick={handleGoToProfile}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3.5 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
+                  className="inline-flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
                 >
                   {t.goToProfile}
-                  <ArrowRight className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
+                  <ArrowRight className={`w-5 h-5 ${isRTL ? 'mr-2 rotate-180' : 'ml-2'}`} />
                 </button>
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
-        </div>
+          </div>
+        </motion.div>
       </motion.div>
-    </div>
+    </AnimatePresence>
   );
 }

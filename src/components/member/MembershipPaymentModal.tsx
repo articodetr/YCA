@@ -94,7 +94,6 @@ const translations = {
     passwordMinLength: 'Password must be at least 6 characters',
     authError: 'Authentication failed. Please try again.',
     userExists: 'An account with this email already exists. Please sign in instead.',
-    sessionExpired: 'Session expired. Please sign in again.',
   },
   ar: {
     stepAuth: 'تسجيل الدخول أو إنشاء حساب',
@@ -156,7 +155,6 @@ const translations = {
     passwordMinLength: 'يجب أن تكون كلمة المرور 6 أحرف على الأقل',
     authError: 'فشل التحقق. يرجى المحاولة مرة أخرى.',
     userExists: 'يوجد حساب بهذا البريد الإلكتروني. يرجى تسجيل الدخول بدلاً من ذلك.',
-    sessionExpired: 'انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.',
   },
 };
 
@@ -216,23 +214,30 @@ function PaymentForm({ amount, applicationId, onSuccess, onError }: PaymentFormP
 
       if (paymentIntent?.status === 'succeeded') {
         sessionStorage.removeItem('pending_membership_payment');
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        const authToken = currentSession?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
+        const activateResponse = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/activate-membership`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authToken}`,
+              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            },
+            body: JSON.stringify({
+              application_id: applicationId,
+              user_id: user?.id,
+              payment_intent_id: paymentIntent.id,
+            }),
+          }
+        );
 
-        // ✅ Activation via Edge Function
-        // Using `invoke` ensures a valid JWT is attached (prevents "Invalid JWT" gateway errors).
-        const { data: activateData, error: activateError } = await supabase.functions.invoke('activate-membership', {
-          body: {
-            application_id: applicationId,
-            user_id: user?.id,
-            payment_intent_id: paymentIntent.id,
-          },
-        });
-
-        if (activateError || !(activateData as any)?.success) {
-          console.error('Activation failed:', activateError?.message || (activateData as any)?.error || activateData);
-          // لا نمنع المستخدم من الإكمال، لكن نعرض الخطأ في console
+        const activateData = await activateResponse.json();
+        if (!activateResponse.ok || !activateData.success) {
+          console.error('Activation failed:', activateData.error);
         }
 
-        // (اختياري) تحديث تواريخ العضوية (إذا نظامك يعتمد السنة)
         if (user?.id) {
           const now = new Date();
           const endOfYear = `${now.getFullYear()}-12-31`;
@@ -258,12 +263,15 @@ function PaymentForm({ amount, applicationId, onSuccess, onError }: PaymentFormP
     <form onSubmit={handleSubmit} className="space-y-6">
       <PaymentElement
         onReady={() => {
+          console.log('Payment element ready');
           setElementReady(true);
         }}
         onChange={(e) => {
+          console.log('Payment element changed:', e.complete);
           setElementComplete(!!e.complete);
         }}
         onLoadError={(error) => {
+          console.error('Payment element load error:', error);
           setElementError(error.message);
           onError(error.message);
         }}
@@ -318,7 +326,7 @@ export default function MembershipPaymentModal({
   preSelectedBusinessSupport,
 }: MembershipPaymentModalProps) {
   const { language } = useLanguage();
-  const { user, session: contextSession, refreshMember, signIn, signUp, signInWithGoogle } = useMemberAuth();
+  const { user, refreshMember, signIn, signUp, signInWithGoogle } = useMemberAuth();
   const navigate = useNavigate();
   const isRTL = language === 'ar';
   const t = translations[language];
@@ -364,13 +372,12 @@ export default function MembershipPaymentModal({
       if (step === 'auth') {
         setStep('details');
       }
-      const meta = (user as any)?.user_metadata || {};
+      const meta = user.user_metadata || {};
       const fullName = meta.full_name || meta.name || '';
       const parts = fullName.split(' ');
       if (!firstName) setFirstName(parts[0] || '');
       if (!lastName) setLastName(parts.slice(1).join(' ') || '');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, user]);
 
   useEffect(() => {
@@ -393,7 +400,6 @@ export default function MembershipPaymentModal({
       setFirstName('');
       setLastName('');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   useEffect(() => {
@@ -434,18 +440,8 @@ export default function MembershipPaymentModal({
           setAuthLoading(false);
           return;
         }
-        if (data?.user && (!(data.user as any).identities || (data.user as any).identities.length === 0)) {
+        if (data?.user && (!data.user.identities || data.user.identities.length === 0)) {
           setAuthError(t.userExists);
-          setAuthLoading(false);
-          return;
-        }
-
-        const signUpSession = (data as any)?.session;
-        if (!signUpSession) {
-          setAuthError(language === 'ar'
-            ? 'يرجى التحقق من بريدك الإلكتروني لتأكيد حسابك ثم تسجيل الدخول.'
-            : 'Please check your email to confirm your account, then sign in.');
-          setAuthMode('login');
           setAuthLoading(false);
           return;
         }
@@ -483,35 +479,6 @@ export default function MembershipPaymentModal({
     return Object.keys(errs).length === 0;
   };
 
-  // NOTE:
-  // Supabase Edge Functions (gateway) require a valid JWT in the Authorization header.
-  // Using `supabase.functions.invoke(...)` is the safest way because it automatically
-  // attaches a valid JWT (user access token when logged-in, otherwise anon JWT).
-  const createPaymentIntent = async (applicationIdToUse: string) => {
-    const { data, error } = await supabase.functions.invoke('create-payment-intent', {
-      body: {
-        amount: Math.round(paymentAmount * 100),
-        currency: 'gbp',
-        metadata: {
-          user_id: user.id,
-          application_id: applicationIdToUse,
-          type: 'membership',
-        },
-      },
-    });
-
-    if (error) {
-      throw new Error(error.message || 'Failed to create payment intent');
-    }
-
-    const clientSecretFromFn = (data as any)?.clientSecret;
-    if (!clientSecretFromFn) {
-      throw new Error((data as any)?.error || (data as any)?.message || 'No client secret returned');
-    }
-
-    return clientSecretFromFn as string;
-  };
-
   const handleContinueToPayment = async () => {
     if (!validate() || !user) return;
 
@@ -526,7 +493,6 @@ export default function MembershipPaymentModal({
         .in('status', ['pending', 'approved'])
         .maybeSingle();
 
-      // If there is an existing application
       if (existing) {
         if (existing.payment_status === 'paid' || existing.status === 'approved') {
           setPaymentError(language === 'ar'
@@ -535,19 +501,33 @@ export default function MembershipPaymentModal({
           setSubmittingDetails(false);
           return;
         }
-
         setApplicationId(existing.id);
         setLoadingPayment(true);
         setStep('payment');
 
-        const clientSecretValue = await createPaymentIntent(existing.id);
-        setClientSecret(clientSecretValue);
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({
+              amount: Math.round(paymentAmount * 100),
+              currency: 'gbp',
+              metadata: { user_id: user.id, application_id: existing.id, type: 'membership' },
+            }),
+          }
+        );
+        const data = await response.json();
+        if (!response.ok || !data.clientSecret) throw new Error(data.error || 'Failed to create payment');
+        setClientSecret(data.clientSecret);
         setSubmittingDetails(false);
         setLoadingPayment(false);
         return;
       }
 
-      // Create a new application
       const applicationData: any = {
         user_id: user.id,
         email: user.email,
@@ -594,8 +574,40 @@ export default function MembershipPaymentModal({
       setLoadingPayment(true);
       setStep('payment');
 
-      const clientSecretValue = await createPaymentIntent(appId);
-      setClientSecret(clientSecretValue);
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            amount: Math.round(paymentAmount * 100),
+            currency: 'gbp',
+            metadata: {
+              user_id: user.id,
+              application_id: appId,
+              type: 'membership',
+            },
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('Payment intent creation failed:', data);
+        throw new Error(data.error || 'Failed to create payment');
+      }
+
+      if (!data.clientSecret) {
+        console.error('No client secret in response:', data);
+        throw new Error('No client secret returned');
+      }
+
+      console.log('Payment intent created successfully');
+      setClientSecret(data.clientSecret);
     } catch (err: any) {
       console.error('Application/payment setup error:', err);
       setPaymentError(err.message);
@@ -613,7 +625,7 @@ export default function MembershipPaymentModal({
       const { data } = await supabase
         .from('members')
         .select('member_number, start_date, expiry_date')
-        .eq('id', user?.id)
+        .eq('user_id', user?.id)
         .maybeSingle();
 
       if (data) {
@@ -632,17 +644,6 @@ export default function MembershipPaymentModal({
     await refreshMember();
     pollForMember();
   };
-
-  useEffect(() => {
-    if (step !== 'success') return;
-    if (!memberData) return;
-    const timer = setTimeout(async () => {
-      await new Promise(r => setTimeout(r, 500));
-      await refreshMember();
-      navigate('/member/dashboard?tab=profile');
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, [step, memberData, navigate, refreshMember]);
 
   const handleGoToProfile = async () => {
     await new Promise(r => setTimeout(r, 500));
@@ -671,7 +672,7 @@ export default function MembershipPaymentModal({
     });
   };
 
-  const typeLabel = (t as any)[membershipType.id] || membershipType.nameEn;
+  const typeLabel = t[membershipType.id as keyof typeof t] || membershipType.nameEn;
 
   if (!isOpen) return null;
 
@@ -886,12 +887,6 @@ export default function MembershipPaymentModal({
               </motion.div>
             )}
 
-            {/* التفاصيل + الدفع + النجاح */}
-            {/* ✅ باقي الكود تحت كما هو (لم أغير واجهة/حقول) */}
-            {/* ملاحظة: هذا الملف طويل جدًا، لكن ما يهمنا كان إصلاح JWT في 3 نقاط */}
-            {/* (تم الحفاظ على بقية الأقسام كما هي في ملفك) */}
-
-            {/* --- DETAILS --- */}
             {step === 'details' && (
               <motion.div
                 key="details"
@@ -1101,7 +1096,6 @@ export default function MembershipPaymentModal({
               </motion.div>
             )}
 
-            {/* --- PAYMENT --- */}
             {step === 'payment' && (
               <motion.div
                 key="payment"
@@ -1170,7 +1164,6 @@ export default function MembershipPaymentModal({
               </motion.div>
             )}
 
-            {/* --- SUCCESS --- */}
             {step === 'success' && (
               <motion.div
                 key="success"

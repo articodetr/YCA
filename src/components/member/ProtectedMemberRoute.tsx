@@ -15,7 +15,7 @@ function hasOAuthParams() {
 }
 
 export default function ProtectedMemberRoute({ children, allowExpired }: ProtectedMemberRouteProps) {
-  const { user, loading, isExpired, isPaidMember, needsOnboarding } = useMemberAuth();
+  const { user, loading, isExpired, isPaidMember } = useMemberAuth();
   const { language } = useLanguage();
   const location = useLocation();
   const isRTL = language === 'ar';
@@ -34,18 +34,6 @@ export default function ProtectedMemberRoute({ children, allowExpired }: Protect
   if (!user) {
     const returnTo = location.pathname + location.search;
     return <Navigate to={`/member/login?redirect=${encodeURIComponent(returnTo)}`} replace />;
-  }
-
-  // Enforce: a user must have an active paid membership to access member routes.
-  // If they are not a paid member (or they still need onboarding), send them to the
-  // membership selection/payment flow first.
-  if (!isPaidMember || needsOnboarding) {
-    try {
-      sessionStorage.setItem('post_membership_redirect', location.pathname + location.search);
-    } catch {
-      // ignore
-    }
-    return <Navigate to="/membership?notice=membership_required" replace />;
   }
 
   if (isPaidMember && isExpired && !allowExpired && !location.pathname.includes('/member/renew')) {

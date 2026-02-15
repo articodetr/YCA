@@ -34,8 +34,11 @@ export default function DonationsManagement() {
       if (error) throw error;
       setDonations(data || []);
 
-      const total = data?.reduce((sum, d) => sum + d.amount, 0) || 0;
-      setTotalAmount(total);
+      const paidStatuses = new Set(['succeeded', 'completed']);
+const paid = (data || []).filter((d) => paidStatuses.has(d.payment_status));
+const total = paid.reduce((sum, d) => sum + (d.amount || 0), 0);
+setTotalAmount(total);
+
     } catch (error) {
       console.error('Error fetching donations:', error);
     } finally {

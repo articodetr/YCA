@@ -1,9 +1,20 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Phone, User, MessageSquare, Check, AlertCircle, Loader2, Heart, ArrowRight, ChevronLeft, Wallet } from 'lucide-react';
+import {
+  Mail,
+  Phone,
+  User,
+  MessageSquare,
+  Check,
+  AlertCircle,
+  Loader2,
+  Heart,
+  ArrowRight,
+  ChevronLeft,
+  Wallet,
+} from 'lucide-react';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { stripePromise } from '../lib/stripe';
-import { supabase } from '../lib/supabase';
 import { fadeInUp, scaleIn } from '../lib/animations';
 
 interface FormData {
@@ -27,13 +38,11 @@ interface Props {
 
 function PaymentStep({
   formData,
-  donationId,
   onSuccess,
   onBack,
   onError,
 }: {
   formData: FormData;
-  donationId: string | null;
   onSuccess: (message: string) => void;
   onBack: () => void;
   onError: (msg: string) => void;
@@ -66,23 +75,11 @@ function PaymentStep({
       });
 
       if (error) {
-        if (donationId) {
-          await supabase
-            .from('donations')
-            .update({ payment_status: 'failed' })
-            .eq('id', donationId);
-        }
         throw new Error(error.message || 'Payment failed');
       }
 
       if (paymentIntent?.status === 'succeeded') {
-        if (donationId) {
-          await supabase
-            .from('donations')
-            .update({ payment_status: 'succeeded' })
-            .eq('id', donationId);
-        }
-        onSuccess(`Thank you for your \u00A3${formData.amount} donation!`);
+        onSuccess(`Thank you for your £${formData.amount} donation!`);
       }
     } catch (err) {
       onError(err instanceof Error ? err.message : 'An error occurred');
@@ -107,10 +104,15 @@ function PaymentStep({
       <div className="bg-gray-50 rounded-xl p-4 flex items-center justify-between">
         <div>
           <p className="text-sm text-gray-500">Donation Amount</p>
-          <p className="text-2xl font-bold text-primary">{'\u00A3'}{formData.amount.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-primary">
+            {'£'}
+            {formData.amount.toFixed(2)}
+          </p>
         </div>
         <div className="text-right">
-          <p className="text-sm text-gray-500">{formData.donationType === 'monthly' ? 'Monthly' : 'One-time'}</p>
+          <p className="text-sm text-gray-500">
+            {formData.donationType === 'monthly' ? 'Monthly' : 'One-time'}
+          </p>
           <p className="text-sm font-medium text-gray-700">{formData.fullName}</p>
         </div>
       </div>
@@ -144,7 +146,8 @@ function PaymentStep({
         ) : (
           <>
             <Wallet size={20} />
-            Donate {'\u00A3'}{formData.amount.toFixed(2)}
+            Donate {'£'}
+            {formData.amount.toFixed(2)}
           </>
         )}
       </motion.button>
@@ -174,7 +177,6 @@ export default function DonationForm({ onSuccess }: Props = {}) {
   });
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [donationId, setDonationId] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [creatingIntent, setCreatingIntent] = useState(false);
 
@@ -228,7 +230,7 @@ export default function DonationForm({ onSuccess }: Props = {}) {
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
@@ -236,7 +238,7 @@ export default function DonationForm({ onSuccess }: Props = {}) {
             fullName: formData.fullName,
             email: formData.email,
             phone: formData.phone,
-            donationType: formData.donationType,
+            donationType: formData.donationType, // one-time | monthly (as type only)
             message: formData.message,
           }),
         }
@@ -345,7 +347,10 @@ export default function DonationForm({ onSuccess }: Props = {}) {
           <PaymentStep
             formData={formData}
             onSuccess={handlePaymentSuccess}
-            onBack={() => { setStep('details'); setClientSecret(null); }}
+            onBack={() => {
+              setStep('details');
+              setClientSecret(null);
+            }}
             onError={handlePaymentError}
           />
         </Elements>
@@ -386,9 +391,7 @@ export default function DonationForm({ onSuccess }: Props = {}) {
           <Heart size={32} className="text-primary" />
         </motion.div>
         <h2 className="text-3xl font-bold text-primary mb-2">Make a Donation</h2>
-        <p className="text-muted">
-          Your generous support helps us continue serving the community
-        </p>
+        <p className="text-muted">Your generous support helps us continue serving the community</p>
       </div>
 
       <div className="space-y-8">
@@ -449,7 +452,8 @@ export default function DonationForm({ onSuccess }: Props = {}) {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  {'\u00A3'}{amount}
+                  {'£'}
+                  {amount}
                 </motion.button>
               );
             })}
@@ -457,7 +461,7 @@ export default function DonationForm({ onSuccess }: Props = {}) {
 
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-primary">
-              {'\u00A3'}
+              {'£'}
             </span>
             <input
               type="number"
@@ -469,6 +473,7 @@ export default function DonationForm({ onSuccess }: Props = {}) {
               step="0.01"
             />
           </div>
+
           {errors.amount && (
             <p className="text-red-600 text-sm mt-2 flex items-center gap-1">
               <AlertCircle size={16} />
@@ -479,14 +484,9 @@ export default function DonationForm({ onSuccess }: Props = {}) {
 
         <div className="grid md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-semibold text-primary mb-2">
-              Full Name *
-            </label>
+            <label className="block text-sm font-semibold text-primary mb-2">Full Name *</label>
             <div className="relative">
-              <User
-                size={20}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
-              />
+              <User size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
               <input
                 type="text"
                 value={formData.fullName}
@@ -504,14 +504,9 @@ export default function DonationForm({ onSuccess }: Props = {}) {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-primary mb-2">
-              Email Address *
-            </label>
+            <label className="block text-sm font-semibold text-primary mb-2">Email Address *</label>
             <div className="relative">
-              <Mail
-                size={20}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
-              />
+              <Mail size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
               <input
                 type="email"
                 value={formData.email}
@@ -529,14 +524,9 @@ export default function DonationForm({ onSuccess }: Props = {}) {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-primary mb-2">
-              Phone Number *
-            </label>
+            <label className="block text-sm font-semibold text-primary mb-2">Phone Number *</label>
             <div className="relative">
-              <Phone
-                size={20}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
-              />
+              <Phone size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
               <input
                 type="tel"
                 value={formData.phone}
@@ -554,14 +544,9 @@ export default function DonationForm({ onSuccess }: Props = {}) {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-primary mb-2">
-              Message (Optional)
-            </label>
+            <label className="block text-sm font-semibold text-primary mb-2">Message (Optional)</label>
             <div className="relative">
-              <MessageSquare
-                size={20}
-                className="absolute left-3 top-4 text-muted"
-              />
+              <MessageSquare size={20} className="absolute left-3 top-4 text-muted" />
               <textarea
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}

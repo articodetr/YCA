@@ -344,7 +344,6 @@ export default function DonationForm({ onSuccess }: Props = {}) {
         >
           <PaymentStep
             formData={formData}
-            donationId={donationId}
             onSuccess={handlePaymentSuccess}
             onBack={() => { setStep('details'); setClientSecret(null); }}
             onError={handlePaymentError}

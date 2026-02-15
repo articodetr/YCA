@@ -51,6 +51,15 @@ setTotalAmount(total);
       don.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       don.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  const paidStatuses = new Set(['succeeded', 'completed']);
+const paidDonations = donations.filter((d) => paidStatuses.has(d.payment_status));
+const uniqueDonorsCount = new Set(
+  paidDonations.map((d) => (d.email || '').toLowerCase().trim())
+).size;
+const averagePaidDonation = paidDonations.length > 0
+  ? Math.round(totalAmount / paidDonations.length)
+  : 0;
+
 
   const exportToCSV = () => {
     const headers = ['Name', 'Email', 'Amount', 'Type', 'Status', 'Payment ID', 'Date'];

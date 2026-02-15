@@ -118,7 +118,7 @@ const averagePaidDonation = paidDonations.length > 0
             </div>
             <div>
               <p className="text-sm text-gray-600">Number of Donors</p>
-              <p className="text-2xl font-bold text-gray-900">{donations.length}</p>
+              <p className="text-2xl font-bold text-gray-900">{uniqueDonorsCount}</p>
             </div>
           </div>
         </div>

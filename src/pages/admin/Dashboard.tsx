@@ -87,7 +87,7 @@ export default function Dashboard() {
         supabase.from('donations').select('amount', { count: 'exact' }).eq('payment_status', 'succeeded'),
         supabase.from('events').select('*', { count: 'exact' }),
         supabase.from('event_registrations').select('*', { count: 'exact' }),
-        supabase.from('membership_applications').select('*', { count: 'exact' }),
+        supabase.from('members').select('id', { count: 'exact' }),
         supabase.from('newsletter_subscribers').select('*', { count: 'exact' }),
         supabase.from('contact_submissions').select('*', { count: 'exact' }),
         supabase.from('membership_applications').select('*', { count: 'exact' }).eq('status', 'pending'),

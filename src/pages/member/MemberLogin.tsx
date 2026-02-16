@@ -24,7 +24,7 @@ export default function MemberLogin() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { user, loading: authLoading, isPaidMember, needsOnboarding, pendingApplication, signIn, signInWithGoogle } = useMemberAuth();
+  const { user, loading: authLoading, isPaidMember, isExpired, needsOnboarding, pendingApplication, signIn, signInWithGoogle } = useMemberAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
 
@@ -36,14 +36,42 @@ export default function MemberLogin() {
   useEffect(() => {
     if (authLoading || !user) return;
 
-    const destination = redirectPath || '/member/dashboard';
-
-    if (needsOnboarding && !redirectPath) {
-      navigate('/membership', { replace: true });
-    } else {
-      navigate(destination, { replace: true });
+    // Rule: if the user is NOT an active paid member, send them to the
+    // membership selection/payment flow first.
+    if (!isPaidMember || needsOnboarding) {
+      try {
+        if (redirectPath) sessionStorage.setItem('post_membership_redirect', redirectPath);
+        if (serviceType) sessionStorage.setItem('post_membership_service', serviceType);
+      } catch {
+        // ignore
+      }
+      navigate('/membership?notice=membership_required', { replace: true });
+      return;
     }
-  }, [user, authLoading, isPaidMember, needsOnboarding, pendingApplication, navigate, redirectPath]);
+
+    if (isExpired) {
+      navigate('/member/renew', { replace: true });
+      return;
+    }
+
+    // Handle special redirects that also depend on query params.
+    if (redirectPath === '/book' && serviceType) {
+      navigate(`/book?service=${serviceType}`, { replace: true });
+      return;
+    }
+
+    if (redirectPath === '/apply' && serviceType) {
+      if (serviceType === 'in_person') {
+        navigate('/member/dashboard?openAdvisory=true', { replace: true });
+      } else {
+        navigate('/member/dashboard', { replace: true });
+      }
+      return;
+    }
+
+    const destination = redirectPath || '/member/dashboard';
+    navigate(destination, { replace: true });
+  }, [user, authLoading, isPaidMember, isExpired, needsOnboarding, pendingApplication, navigate, redirectPath, serviceType]);
 
   const translations = {
     en: {
@@ -88,18 +116,6 @@ export default function MemberLogin() {
     try {
       const { error } = await signIn(email, password);
       if (error) throw error;
-
-      if (redirectPath === '/book' && serviceType) {
-        navigate(`/book?service=${serviceType}`);
-      } else if (redirectPath === '/apply' && serviceType) {
-        if (serviceType === 'in_person') {
-          navigate('/member/dashboard?openAdvisory=true');
-        } else {
-          navigate('/member/dashboard');
-        }
-      } else {
-        navigate('/member/dashboard');
-      }
     } catch (err: any) {
       console.error('Login error:', err);
       setError(t.errorMessage);

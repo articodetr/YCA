@@ -34,6 +34,21 @@ export default function AuthCallback() {
     sessionStorage.removeItem('auth_redirect_path');
     sessionStorage.removeItem('auth_redirect_service');
 
+    const hasMembership = isPaidMember || (pendingApplication && ['paid', 'completed'].includes(pendingApplication.payment_status));
+
+    // Enforce: if the user is NOT an active paid member, always send them to the
+    // membership selection/payment page first (even if they came from /book or /apply).
+    if (!hasMembership || needsOnboarding) {
+      try {
+        if (savedRedirect) sessionStorage.setItem('post_membership_redirect', savedRedirect);
+        if (savedService) sessionStorage.setItem('post_membership_service', savedService);
+      } catch {
+        // ignore
+      }
+      navigate('/membership?notice=membership_required', { replace: true });
+      return;
+    }
+
     if (savedRedirect === '/book' && savedService) {
       navigate(`/book?service=${savedService}`, { replace: true });
       return;
@@ -50,10 +65,6 @@ export default function AuthCallback() {
 
     if (isPaidMember) {
       navigate('/member/dashboard', { replace: true });
-    } else if (pendingApplication && pendingApplication.payment_status === 'paid') {
-      navigate('/member/dashboard', { replace: true });
-    } else if (needsOnboarding) {
-      navigate('/membership', { replace: true });
     } else {
       navigate('/member/dashboard', { replace: true });
     }

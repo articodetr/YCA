@@ -4,7 +4,7 @@ import {
   ArrowRight, Check, X, Shield, Info, ChevronDown, ChevronUp,
   Users, CheckCircle, Heart, Globe2, Building2,
 } from 'lucide-react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useMemberAuth } from '../contexts/MemberAuthContext';
 import Layout from '../components/Layout';
@@ -36,11 +36,6 @@ const translations = {
     existingMember: 'Already a member?',
     loginLink: 'Sign in to your account',
     haveQuestions: 'Have Questions?',
-    membershipRequiredTitle: 'Membership required',
-    membershipRequiredDesc: 'To access member-only features, please choose a membership plan and complete payment to activate your account.',
-    membershipRequiredDescLoggedOut: 'To access member-only features, please sign in first, then choose a membership plan and complete payment.',
-    dismiss: 'Dismiss',
-    signIn: 'Sign in',
   },
   ar: {
     title: 'انضم كعضو',
@@ -64,11 +59,6 @@ const translations = {
     existingMember: 'عضو بالفعل؟',
     loginLink: 'سجل دخولك',
     haveQuestions: 'هل لديك أسئلة؟',
-    membershipRequiredTitle: 'مطلوب تفعيل العضوية',
-    membershipRequiredDesc: 'لاستخدام ميزات الأعضاء يجب اختيار باقة عضوية وإكمال الدفع لتفعيل حسابك والحصول على رقم عضوية.',
-    membershipRequiredDescLoggedOut: 'لاستخدام ميزات الأعضاء: سجّل دخولك أولاً، ثم اختر باقة عضوية وأكمل الدفع لتفعيل الحساب.',
-    dismiss: 'إخفاء',
-    signIn: 'تسجيل الدخول',
   },
 };
 
@@ -85,12 +75,8 @@ export default function UnifiedMembership() {
   const { language } = useLanguage();
   const { user, isPaidMember } = useMemberAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const isRTL = language === 'ar';
   const t = translations[language];
-
-  const shouldShowNotice = searchParams.get('notice') === 'membership_required';
-  const [noticeVisible, setNoticeVisible] = useState<boolean>(shouldShowNotice);
 
   const [selectedType, setSelectedType] = useState<MembershipPlan | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -178,48 +164,6 @@ export default function UnifiedMembership() {
     <Layout>
       <div className="min-h-screen bg-gradient-to-b from-sand/30 to-white" dir={isRTL ? 'rtl' : 'ltr'}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-16">
-
-          {noticeVisible && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-8"
-            >
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 sm:p-5 flex items-start gap-3">
-                <Info className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-amber-900 mb-1">{t.membershipRequiredTitle}</p>
-                      <p className="text-sm text-amber-900/80">
-                        {user ? t.membershipRequiredDesc : t.membershipRequiredDescLoggedOut}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setNoticeVisible(false)}
-                      className="text-amber-800 hover:text-amber-900 p-1"
-                      aria-label={t.dismiss}
-                    >
-                      <X size={18} />
-                    </button>
-                  </div>
-
-                  {!user && (
-                    <div className="mt-3">
-                      <Link
-                        to="/member/login"
-                        className="inline-flex items-center gap-2 bg-amber-700 hover:bg-amber-800 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
-                      >
-                        {t.signIn}
-                        <ArrowRight className={isRTL ? 'rotate-180' : ''} size={16} />
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          )}
 
           <motion.div
             className="text-center mb-8"

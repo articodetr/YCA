@@ -126,24 +126,13 @@ export function MemberAuthProvider({ children }: { children: ReactNode }) {
           const isPaid = appData.payment_status === 'paid' || appData.payment_status === 'completed';
           if (isPaid) {
             try {
-              const { data: { session: currentSession } } = await supabase.auth.getSession();
-              const authToken = currentSession?.access_token;
-
-              if (!authToken) {
-                console.error('No valid session for auto-activation');
-                setIsPaidMember(true);
-                setNeedsOnboarding(false);
-                setPendingApplication(appData);
-                return;
-              }
-
               const activateResponse = await fetch(
                 `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/activate-membership`,
                 {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authToken}`,
+                    'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
                   },
                   body: JSON.stringify({
                     application_id: appData.id,

@@ -133,8 +133,9 @@ export default function ProgrammeDetail() {
   }, [lightboxOpen, closeLightbox, goNext, goPrev]);
 
   useEffect(() => {
-    if (slug) fetchProgramme();
-  }, [slug]);
+  if (id) fetchProgramme();
+}, [id]);
+
 
   const fetchProgramme = async () => {
     try {

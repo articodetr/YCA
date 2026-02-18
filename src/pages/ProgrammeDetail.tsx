@@ -141,14 +141,30 @@ export default function ProgrammeDetail() {
       setLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await supabase
+      let data: Programme | null = null;
+
+      const { data: bySlug, error: slugError } = await supabase
         .from('programmes_items')
         .select('*')
         .eq('slug', slug)
         .eq('is_active', true)
         .maybeSingle();
 
-      if (fetchError) throw fetchError;
+      if (slugError) throw slugError;
+
+      if (bySlug) {
+        data = bySlug;
+      } else {
+        const { data: byCategory, error: catError } = await supabase
+          .from('programmes_items')
+          .select('*')
+          .eq('category', slug)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (catError) throw catError;
+        data = byCategory;
+      }
 
       if (!data) {
         setError(isRTL ? 'البرنامج غير موجود' : 'Programme not found');
@@ -162,7 +178,7 @@ export default function ProgrammeDetail() {
         .from('programmes_items')
         .select('*')
         .eq('is_active', true)
-        .neq('slug', slug)
+        .neq('id', data.id)
         .limit(3);
 
       setRelatedProgrammes(related || []);

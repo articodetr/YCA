@@ -18,13 +18,13 @@ interface EqualityData {
 
 interface FeedbackRecord {
   id: string;
-  service: string;
+  service_type: string;
   service_date: string;
   ratings: Ratings;
   what_went_well: string | null;
   what_to_improve: string | null;
   other_comments: string | null;
-  recommend: string;
+  would_recommend: string;
   contact_requested: boolean;
   contact_name: string | null;
   contact_email: string | null;
@@ -118,14 +118,14 @@ export default function FeedbackManagement() {
     }
   };
 
-  const serviceTypes = Array.from(new Set(items.map((i) => i.service))).sort();
+  const serviceTypes = Array.from(new Set(items.map((i) => i.service_type))).sort();
 
   const filtered = items.filter((i) => {
     const matchesSearch =
-      i.service.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      i.service_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (i.contact_name && i.contact_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (i.contact_email && i.contact_email.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesService = filterService === 'all' || i.service === filterService;
+    const matchesService = filterService === 'all' || i.service_type === filterService;
     const matchesRating =
       filterRating === 'all' || i.ratings.overall === filterRating;
     return matchesSearch && matchesService && matchesRating;
@@ -160,7 +160,7 @@ export default function FeedbackManagement() {
       return val;
     };
     const rows = filtered.map((i) => [
-      escape(i.service),
+      escape(i.service_type),
       i.service_date,
       ratingLabel(i.ratings.access),
       ratingLabel(i.ratings.communication),
@@ -170,7 +170,7 @@ export default function FeedbackManagement() {
       escape(i.what_went_well || ''),
       escape(i.what_to_improve || ''),
       escape(i.other_comments || ''),
-      i.recommend,
+      i.would_recommend,
       i.contact_requested ? 'Yes' : 'No',
       escape(i.contact_name || ''),
       escape(i.contact_email || ''),
@@ -196,7 +196,7 @@ export default function FeedbackManagement() {
 
   const recommendPercent =
     items.length > 0
-      ? Math.round((items.filter((i) => i.recommend === 'yes').length / items.length) * 100)
+      ? Math.round((items.filter((i) => i.would_recommend === 'yes').length / items.length) * 100)
       : 0;
 
   const contactCount = items.filter((i) => i.contact_requested).length;
@@ -328,7 +328,7 @@ export default function FeedbackManagement() {
                     onClick={() => setSelected(i)}
                   >
                     <td className="px-4 py-3.5 font-medium text-sm text-gray-900">
-                      {formatServiceName(i.service)}
+                      {formatServiceName(i.service_type)}
                     </td>
                     <td className="px-4 py-3.5 text-sm text-gray-600">
                       {new Date(i.service_date).toLocaleDateString()}
@@ -337,7 +337,7 @@ export default function FeedbackManagement() {
                       <StarDisplay count={ratingToNumber(i.ratings.overall)} />
                     </td>
                     <td className="px-4 py-3.5">
-                      <RecommendBadge value={i.recommend} />
+                      <RecommendBadge value={i.would_recommend} />
                     </td>
                     <td className="px-4 py-3.5 text-sm text-gray-600">
                       {i.contact_requested ? (
@@ -378,7 +378,7 @@ export default function FeedbackManagement() {
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">
-                  {formatServiceName(selected.service)} Feedback
+                  {formatServiceName(selected.service_type)} Feedback
                 </h2>
                 <p className="text-sm text-gray-500 mt-1">
                   Service date: {new Date(selected.service_date).toLocaleDateString()} &middot; Submitted: {new Date(selected.created_at).toLocaleString()}
@@ -422,7 +422,7 @@ export default function FeedbackManagement() {
                 <div>
                   <label className="text-xs font-medium text-gray-500 uppercase">Recommend</label>
                   <div className="mt-1">
-                    <RecommendBadge value={selected.recommend} />
+                    <RecommendBadge value={selected.would_recommend} />
                   </div>
                 </div>
               </div>

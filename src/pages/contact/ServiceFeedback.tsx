@@ -23,13 +23,13 @@ interface EqualityData {
 }
 
 interface FormData {
-  service: string;
+  service_type: string;
   service_date: string;
   ratings: RatingsData;
   what_went_well: string;
   what_to_improve: string;
   other_comments: string;
-  recommend: string;
+  would_recommend: string;
   contact_requested: boolean | null;
   contact_name: string;
   contact_email: string;
@@ -38,7 +38,7 @@ interface FormData {
 }
 
 const initialFormData: FormData = {
-  service: '',
+  service_type: '',
   service_date: '',
   ratings: {
     access: '',
@@ -50,7 +50,7 @@ const initialFormData: FormData = {
   what_went_well: '',
   what_to_improve: '',
   other_comments: '',
-  recommend: '',
+  would_recommend: '',
   contact_requested: null,
   contact_name: '',
   contact_email: '',
@@ -189,13 +189,13 @@ export default function ServiceFeedback() {
       const { error } = await supabase
         .from('service_feedback')
         .insert([{
-          service: formData.service,
+          service_type: formData.service_type,
           service_date: formData.service_date || null,
           ratings: formData.ratings,
           what_went_well: formData.what_went_well || null,
           what_to_improve: formData.what_to_improve || null,
           other_comments: formData.other_comments || null,
-          recommend: formData.recommend || null,
+          would_recommend: formData.would_recommend || null,
           contact_requested: formData.contact_requested,
           contact_name: formData.contact_requested ? formData.contact_name || null : null,
           contact_email: formData.contact_requested ? formData.contact_email || null : null,
@@ -326,8 +326,8 @@ export default function ServiceFeedback() {
                   </label>
                   <select
                     id="service"
-                    value={formData.service}
-                    onChange={(e) => setFormData(prev => ({ ...prev, service: e.target.value }))}
+                    value={formData.service_type}
+                    onChange={(e) => setFormData(prev => ({ ...prev, service_type: e.target.value }))}
                     required
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none appearance-none"
                   >
@@ -450,9 +450,9 @@ export default function ServiceFeedback() {
                     <button
                       key={opt.value}
                       type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, recommend: opt.value }))}
+                      onClick={() => setFormData(prev => ({ ...prev, would_recommend: opt.value }))}
                       className={`px-6 py-3 rounded-xl text-base font-semibold transition-all duration-200 ${
-                        formData.recommend === opt.value
+                        formData.would_recommend === opt.value
                           ? 'bg-primary text-white shadow-md'
                           : 'bg-sand text-muted hover:bg-gray-100'
                       }`}
@@ -460,7 +460,7 @@ export default function ServiceFeedback() {
                       {opt.label}
                     </button>
                   ))}
-                  <input type="hidden" name="recommend" value={formData.recommend} required />
+                  <input type="hidden" name="would_recommend" value={formData.would_recommend} required />
                 </div>
               </div>
 

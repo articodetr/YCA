@@ -393,7 +393,7 @@ export default function BusinessSupport() {
                     >
                       {tier.popular && (
                         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
-                          <span className="bg-accent text-white px-4 py-1 rounded-full text-xs font-bold uppercase">
+                          <span className="bg-emerald-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase">
                             {isAr ? 'الأكثر شيوعاً' : 'Popular'}
                           </span>
                         </div>
@@ -420,13 +420,13 @@ export default function BusinessSupport() {
                           {tier.name}
                         </h3>
                         <div className="text-center mb-6">
-                          <span className="text-4xl font-bold text-accent">{tier.price}</span>
+                          <span className="text-4xl font-bold text-emerald-600">{tier.price}</span>
                           <span className="text-muted text-sm">{txt.perYear}</span>
                         </div>
                         <ul className="space-y-3 flex-1 mb-8">
                           {tier.benefits.map((benefit, index) => (
                             <li key={index} className="flex items-start gap-3">
-                              <Award size={18} className="text-accent flex-shrink-0 mt-0.5" />
+                              <Award size={18} className="text-emerald-600 flex-shrink-0 mt-0.5" />
                               <span className="text-muted">{benefit}</span>
                             </li>
                           ))}
@@ -440,7 +440,7 @@ export default function BusinessSupport() {
                             isSelected
                               ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
                               : tier.popular
-                              ? 'bg-accent hover:bg-hover text-white'
+                              ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
                               : 'bg-primary/10 hover:bg-primary/20 text-primary'
                           }`}
                         >
@@ -475,8 +475,8 @@ export default function BusinessSupport() {
                         onClick={() => handleFlexAmountSelect(amount)}
                         className={`py-3 rounded-lg border-2 font-bold text-sm transition-all ${
                           flexAmount === amount
-                            ? 'border-accent bg-accent/5 text-accent shadow-md'
-                            : 'border-gray-200 text-gray-700 hover:border-accent/50'
+                            ? 'border-emerald-600 bg-emerald-50 text-emerald-600 shadow-md'
+                            : 'border-gray-200 text-gray-700 hover:border-emerald-600/50'
                         }`}
                       >
                         £{amount}
@@ -493,7 +493,7 @@ export default function BusinessSupport() {
                         value={customInput}
                         onChange={(e) => handleCustomInput(e.target.value)}
                         placeholder="10"
-                        className={`w-full ${isRTL ? 'pr-8 pl-4' : 'pl-8 pr-4'} py-3 border-2 border-gray-200 rounded-lg focus:border-accent focus:outline-none text-sm`}
+                        className={`w-full ${isRTL ? 'pr-8 pl-4' : 'pl-8 pr-4'} py-3 border-2 border-gray-200 rounded-lg focus:border-emerald-600 focus:outline-none text-sm`}
                       />
                     </div>
                   </div>
@@ -543,7 +543,7 @@ export default function BusinessSupport() {
                           : txt.oneTimeTab}
                       </p>
                     </div>
-                    <p className="text-3xl font-black text-accent">£{computedAmount()}</p>
+                    <p className="text-3xl font-black text-emerald-600">£{computedAmount()}</p>
                   </div>
                 </motion.div>
               )}
@@ -551,7 +551,7 @@ export default function BusinessSupport() {
               <button
                 onClick={handleProceedToPayment}
                 disabled={computedAmount() <= 0}
-                className="w-full bg-accent hover:bg-hover text-white font-semibold py-4 px-6 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 px-6 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base"
               >
                 {txt.proceedToPay}
               </button>

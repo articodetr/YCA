@@ -233,7 +233,7 @@ export default function Header() {
     >
       <button
         onClick={() => toggleDropdown(dropdown.key)}
-        className="flex items-center justify-between w-full py-2 hover:text-accent transition-colors"
+        className="flex items-center justify-between w-full py-2 text-white hover:text-accent transition-colors"
       >
         {dropdown.label}
         <ChevronDown
@@ -255,7 +255,7 @@ export default function Header() {
                 <Link
                   to={item.path}
                   onClick={() => !item.children && setIsOpen(false)}
-                  className="block py-1.5 text-sm hover:text-accent transition-colors"
+                  className="block py-1.5 text-sm text-white hover:text-accent transition-colors"
                 >
                   {item.label}
                 </Link>
@@ -266,7 +266,7 @@ export default function Header() {
                         key={child.path}
                         to={child.path}
                         onClick={() => setIsOpen(false)}
-                        className="block py-1 text-xs text-gray-300 hover:text-accent transition-colors"
+                        className="block py-1 text-xs text-white/80 hover:text-accent transition-colors"
                       >
                         {child.label}
                       </Link>
@@ -472,7 +472,7 @@ export default function Header() {
               transition={{ duration: 0.3 }}
             >
               <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
-                <Link to="/" onClick={() => setIsOpen(false)} className="block py-2 hover:text-accent transition-colors">
+                <Link to="/" onClick={() => setIsOpen(false)} className="block py-2 text-white hover:text-accent transition-colors">
                   {t('nav.home')}
                 </Link>
               </motion.div>

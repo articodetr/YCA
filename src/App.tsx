@@ -172,7 +172,8 @@ function App() {
                 <Route path="/services" element={<Services />} />
 
                 <Route path="/programmes" element={<Programmes />} />
-                <Route path="/programmes/:slug" element={<ProgrammeDetail />} />
+                <Route path="/programmes/:id" element={<ProgrammeDetail />} />
+
 
                 <Route path="/events" element={<Events />} />
                 <Route path="/event-gallery/:id" element={<EventGallery />} />

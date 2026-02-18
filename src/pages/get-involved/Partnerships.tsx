@@ -5,8 +5,6 @@ import { useState } from 'react';
 import PageHeader from '../../components/PageHeader';
 import { fadeInUp, fadeInLeft, fadeInRight, staggerContainer, staggerItem, scaleIn } from '../../lib/animations';
 import { supabase } from '../../lib/supabase';
-const SERVICE_REQUEST_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-service-request`;
-const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 import { useLanguage } from '../../contexts/LanguageContext';
 import DynamicFormModal from '../../components/modals/DynamicFormModal';
 
@@ -15,11 +13,15 @@ export default function Partnerships() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
+  const isUuid = (id: string) =>
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+
   const handleFormSubmit = async (
     formData: Record<string, any>,
     responses: Array<{ question_id: string; response_text: string; response_files?: any[] }>
   ) => {
     try {
+      // 1) Fallback mapping (when IDs are p1, p2, ...)
       const fieldMap: Record<string, string> = {
         p1: 'organization_name', p2: 'contact_person', p3: 'email',
         p4: 'phone', p5: 'organization_type', p6: 'partnership_interest', p7: 'message',
@@ -31,25 +33,81 @@ export default function Partnerships() {
         mapped[colName] = Array.isArray(value) ? value.join(', ') : value;
       }
 
-      const basicData = {
-        organization_name: mapped.organization_name || '',
-        contact_person: mapped.contact_person || '',
-        email: mapped.email || '',
-        phone: mapped.phone || '',
-        organization_type: mapped.organization_type || '',
-        partnership_interest: mapped.partnership_interest || '',
-        message: mapped.message || '',
+      let basicData: any = {
+        organization_name: (mapped.organization_name || '').trim(),
+        contact_person: (mapped.contact_person || '').trim(),
+        email: (mapped.email || '').trim(),
+        phone: (mapped.phone || '').trim(),
+        organization_type: (mapped.organization_type || '').trim(),
+        partnership_interest: (mapped.partnership_interest || '').trim(),
+        message: (mapped.message || '').trim(),
       };
 
-      const res = await fetch(SERVICE_REQUEST_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ANON_KEY}`, 'Apikey': ANON_KEY },
-        body: JSON.stringify({ table: 'partnership_inquiries', data: basicData }),
-      });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || 'Submission failed');
-      const inquiry = { id: result.id };
+      // 2) If questions come from DB (UUID IDs), infer fields by question_type + order_index
+      const uuidIds = responses.map(r => r.question_id).filter(isUuid);
+      if (uuidIds.length > 0) {
+        const { data: qMeta, error: qMetaError } = await supabase
+          .from('form_questions')
+          .select('id, question_type, order_index')
+          .in('id', uuidIds);
 
+        if (!qMetaError && qMeta && qMeta.length > 0) {
+          const metaMap = new Map(qMeta.map((q: any) => [q.id, q]));
+
+          const enriched = responses
+            .map(r => ({ ...r, meta: metaMap.get(r.question_id) }))
+            .filter((r): r is typeof r & { meta: { id: string; question_type: string; order_index: number } } => !!r.meta)
+            .sort((a, b) => (a.meta.order_index ?? 0) - (b.meta.order_index ?? 0));
+
+          const byType = (type: string) =>
+            enriched
+              .filter(r => r.meta.question_type === type)
+              .map(r => (r.response_text || '').trim())
+              .filter(Boolean);
+
+          const textVals = byType('text');
+          const emailVals = byType('email');
+          const phoneVals = byType('phone');
+          const selectVals = byType('select');
+          const textareaVals = byType('textarea');
+
+          const inferred = {
+            organization_name: textVals[0] || '',
+            contact_person: textVals[1] || '',
+            email: emailVals[0] || '',
+            phone: phoneVals[0] || '',
+            organization_type: selectVals[0] || '',
+            partnership_interest: selectVals[1] || '',
+            message: textareaVals[0] || '',
+          };
+
+          basicData = {
+            ...basicData,
+            organization_name: basicData.organization_name || inferred.organization_name,
+            contact_person: basicData.contact_person || inferred.contact_person,
+            email: basicData.email || inferred.email,
+            phone: basicData.phone || inferred.phone,
+            organization_type: basicData.organization_type || inferred.organization_type,
+            partnership_interest: basicData.partnership_interest || inferred.partnership_interest,
+            message: basicData.message || inferred.message,
+          };
+        }
+      }
+
+      // Required columns in partnership_inquiries
+      if (!basicData.organization_name || !basicData.contact_person || !basicData.email || !basicData.phone) {
+        throw new Error('Missing required fields (organization_name / contact_person / email / phone).');
+      }
+
+      const { data: inquiry, error: inquiryError } = await supabase
+        .from('partnership_inquiries')
+        .insert([basicData])
+        .select()
+        .single();
+
+      if (inquiryError) throw inquiryError;
+
+      // Save detailed dynamic responses (DB questions only)
       try {
         const isFallbackId = (id: string) => /^p\d+$/.test(id);
         const validResponses = responses.filter(r => !isFallbackId(r.question_id));

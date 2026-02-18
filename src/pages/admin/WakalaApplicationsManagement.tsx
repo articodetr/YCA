@@ -19,11 +19,18 @@ interface WakalaApplication {
   full_name: string;
   email: string;
   phone: string;
+  principal_name: string | null;
+  principal_phone: string | null;
+  principal_email: string | null;
+  agent_name: string | null;
   wakala_type: string;
   wakala_format: string;
   beneficiary_name: string | null;
   notes: string | null;
   file_url: string | null;
+  agent_passport_url: string | null;
+  principal_passport_url: string | null;
+  witnesses_passports_url: string | null;
   status: string;
   amount: number | null;
   is_member: boolean;
@@ -45,9 +52,13 @@ const STATUS_COLORS: Record<string, string> = {
 
 const TYPE_LABELS: Record<string, string> = {
   general: 'General',
+  private: 'Private',
+  sale: 'Sale',
+  purchase: 'Purchase',
   property: 'Property',
   court: 'Court',
   business: 'Business',
+  other: 'Other Procedures',
 };
 
 const FORMAT_LABELS: Record<string, string> = {
@@ -160,10 +171,13 @@ export default function WakalaApplicationsManagement() {
   };
 
   const filtered = applications.filter((a) => {
+    const principalName = a.principal_name || a.full_name || '';
+    const agentName = a.agent_name || '';
     const matchesSearch =
-      a.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.phone.includes(searchTerm);
+      principalName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      agentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (a.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (a.phone || '').includes(searchTerm);
     const matchesStatus = filterStatus === 'all' || a.status === filterStatus;
     const matchesType = filterType === 'all' || a.wakala_type === filterType;
     return matchesSearch && matchesStatus && matchesType;
@@ -171,17 +185,18 @@ export default function WakalaApplicationsManagement() {
 
   const exportToCSV = () => {
     const headers = [
-      'Name', 'Email', 'Phone', 'Wakala Type', 'Format', 'Beneficiary',
-      'Amount', 'Status', 'Payment', 'Member', 'First Wakala', 'Date',
+      'Principal Name', 'Agent Name', 'Phone', 'Email',
+      'Wakala Type', 'Format', 'Amount', 'Status', 'Payment', 'First Wakala', 'Date',
     ];
     const rows = filtered.map((a) => [
-      `"${a.full_name}"`, a.email, a.phone,
+      `"${a.principal_name || a.full_name || ''}"`,
+      `"${a.agent_name || ''}"`,
+      a.principal_phone || a.phone,
+      a.principal_email || a.email,
       TYPE_LABELS[a.wakala_type] || a.wakala_type,
       FORMAT_LABELS[a.wakala_format] || a.wakala_format,
-      `"${a.beneficiary_name || ''}"`,
       a.amount != null ? a.amount : '',
       a.status, a.payment_status || 'pending',
-      a.is_member ? 'Yes' : 'No',
       a.is_first_wakala ? 'Yes' : 'No',
       new Date(a.created_at).toLocaleDateString(),
     ]);
@@ -316,9 +331,13 @@ export default function WakalaApplicationsManagement() {
             >
               <option value="all">All Types</option>
               <option value="general">General</option>
+              <option value="private">Private</option>
+              <option value="sale">Sale</option>
+              <option value="purchase">Purchase</option>
               <option value="property">Property</option>
               <option value="court">Court</option>
               <option value="business">Business</option>
+              <option value="other">Other Procedures</option>
             </select>
           </div>
         </div>
@@ -337,7 +356,8 @@ export default function WakalaApplicationsManagement() {
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Applicant</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Principal (Muwakkil)</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Agent (Wakeel)</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Type</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Format</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Amount</th>
@@ -355,8 +375,11 @@ export default function WakalaApplicationsManagement() {
                     onClick={() => openModal(a)}
                   >
                     <td className="px-4 py-3.5">
-                      <div className="text-sm font-medium text-gray-900">{a.full_name}</div>
-                      <div className="text-xs text-gray-500">{a.email}</div>
+                      <div className="text-sm font-medium text-gray-900">{a.principal_name || a.full_name}</div>
+                      <div className="text-xs text-gray-500">{a.principal_phone || a.phone}</div>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <div className="text-sm text-gray-900">{a.agent_name || '-'}</div>
                     </td>
                     <td className="px-4 py-3.5 text-sm text-gray-700 capitalize">
                       {TYPE_LABELS[a.wakala_type] || a.wakala_type}
@@ -430,39 +453,49 @@ export default function WakalaApplicationsManagement() {
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-medium text-gray-500 uppercase">Full Name</label>
-                  <p className="text-sm text-gray-900 mt-0.5">{selected.full_name}</p>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-500 uppercase">Email</label>
-                  <p className="text-sm text-gray-900 mt-0.5">{selected.email}</p>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-500 uppercase">Phone</label>
-                  <p className="text-sm text-gray-900 mt-0.5">{selected.phone}</p>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-500 uppercase">Amount</label>
-                  <p className="text-sm font-semibold text-gray-900 mt-0.5">
-                    {selected.amount != null ? `\u00a3${Number(selected.amount).toLocaleString()}` : 'Free'}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-500 uppercase">Wakala Type</label>
-                  <p className="text-sm text-gray-900 mt-0.5 capitalize">{TYPE_LABELS[selected.wakala_type] || selected.wakala_type}</p>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-500 uppercase">Format</label>
-                  <p className="text-sm text-gray-900 mt-0.5 capitalize">{FORMAT_LABELS[selected.wakala_format] || selected.wakala_format}</p>
-                </div>
-                {selected.beneficiary_name && (
-                  <div className="col-span-2">
-                    <label className="text-xs font-medium text-gray-500 uppercase">Beneficiary</label>
-                    <p className="text-sm text-gray-900 mt-0.5">{selected.beneficiary_name}</p>
+              <div className="space-y-4">
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <h4 className="text-xs font-semibold text-gray-500 uppercase mb-3">Principal (Muwakkil)</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-gray-500">Name</label>
+                      <p className="text-sm text-gray-900 mt-0.5">{selected.principal_name || selected.full_name || '-'}</p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500">Phone</label>
+                      <p className="text-sm text-gray-900 mt-0.5">{selected.principal_phone || selected.phone || '-'}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-xs font-medium text-gray-500">Email</label>
+                      <p className="text-sm text-gray-900 mt-0.5">{selected.principal_email || selected.email || '-'}</p>
+                    </div>
                   </div>
-                )}
+                </div>
+
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <h4 className="text-xs font-semibold text-gray-500 uppercase mb-3">Agent (Wakeel)</h4>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500">Name</label>
+                    <p className="text-sm text-gray-900 mt-0.5">{selected.agent_name || '-'}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 uppercase">Wakala Type</label>
+                    <p className="text-sm text-gray-900 mt-0.5 capitalize">{TYPE_LABELS[selected.wakala_type] || selected.wakala_type}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 uppercase">Format</label>
+                    <p className="text-sm text-gray-900 mt-0.5 capitalize">{FORMAT_LABELS[selected.wakala_format] || selected.wakala_format}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 uppercase">Amount</label>
+                    <p className="text-sm font-semibold text-gray-900 mt-0.5">
+                      {selected.amount != null ? `\u00a3${Number(selected.amount).toLocaleString()}` : 'Free'}
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {selected.notes && (
@@ -476,19 +509,62 @@ export default function WakalaApplicationsManagement() {
                 </div>
               )}
 
-              {selected.file_url && (
+              {(selected.agent_passport_url || selected.principal_passport_url || selected.witnesses_passports_url) && (
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 space-y-3">
+                  <label className="text-xs font-semibold text-gray-500 uppercase block">Documents</label>
+                  {selected.agent_passport_url && (
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Agent Passport</p>
+                      <a href={selected.agent_passport_url} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-white hover:bg-blue-50 text-blue-700 rounded-lg text-sm font-medium transition-colors border border-blue-200">
+                        <ExternalLink className="w-3.5 h-3.5" /> View
+                      </a>
+                    </div>
+                  )}
+                  {selected.principal_passport_url && (
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Principal Passport</p>
+                      <a href={selected.principal_passport_url} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-white hover:bg-blue-50 text-blue-700 rounded-lg text-sm font-medium transition-colors border border-blue-200">
+                        <ExternalLink className="w-3.5 h-3.5" /> View
+                      </a>
+                    </div>
+                  )}
+                  {selected.witnesses_passports_url && (() => {
+                    let urls: string[] = [];
+                    try { urls = JSON.parse(selected.witnesses_passports_url); } catch { urls = [selected.witnesses_passports_url]; }
+                    return (
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Witnesses Passports ({urls.length} file{urls.length !== 1 ? 's' : ''})</p>
+                        <div className="flex flex-wrap gap-2">
+                          {urls.map((url, i) => (
+                            <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 px-3 py-1.5 bg-white hover:bg-blue-50 text-blue-700 rounded-lg text-sm font-medium transition-colors border border-blue-200">
+                              <ExternalLink className="w-3.5 h-3.5" /> Witness {i + 1}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                  {selected.file_url && (
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Other Document</p>
+                      <a href={selected.file_url} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-white hover:bg-blue-50 text-blue-700 rounded-lg text-sm font-medium transition-colors border border-blue-200">
+                        <ExternalLink className="w-3.5 h-3.5" /> View / Download
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!selected.agent_passport_url && !selected.principal_passport_url && !selected.witnesses_passports_url && selected.file_url && (
                 <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                  <label className="text-xs font-medium text-gray-500 uppercase mb-2 block">
-                    Uploaded Document
-                  </label>
-                  <a
-                    href={selected.file_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-blue-50 text-blue-700 rounded-lg text-sm font-medium transition-colors border border-blue-200"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    View / Download File
+                  <label className="text-xs font-medium text-gray-500 uppercase mb-2 block">Uploaded Document</label>
+                  <a href={selected.file_url} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-blue-50 text-blue-700 rounded-lg text-sm font-medium transition-colors border border-blue-200">
+                    <ExternalLink className="w-4 h-4" /> View / Download File
                   </a>
                 </div>
               )}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Loader2, CheckCircle, AlertCircle, User, X, FileText, Send, Upload, Crown,
+  Loader2, CheckCircle, AlertCircle, User, X, FileText, Send, Upload, Crown, Users,
 } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';
 import { supabase } from '../../lib/supabase';
@@ -21,19 +21,24 @@ const translationsData = {
   en: {
     title: 'Wakala Service',
     subtitle: 'Complete the form to request a Wakala (Power of Attorney)',
-    personalInfo: 'Contact Details',
-    contactDescription: 'Enter your contact information.',
-    fullName: 'Full Name',
+    principalInfo: 'Principal Details (Muwakkil)',
+    principalDescription: 'Enter the details of the person granting the power of attorney.',
+    principalName: 'Principal Name',
     phone: 'Phone Number',
     email: 'Email Address',
+    agentInfo: 'Agent Details (Wakeel)',
+    agentDescription: 'Enter the details of the agent receiving the power of attorney.',
+    agentName: 'Agent Name',
     wakalaDetails: 'Wakala Details',
     wakalaType: 'Wakala Type',
     selectWakalaType: 'Select Wakala type',
     wakalaTypes: {
-      general: 'General Power of Attorney',
-      property: 'Property Power of Attorney',
-      court: 'Court Representation',
-      business: 'Business Power of Attorney',
+      general: 'General',
+      private: 'Private',
+      sale: 'Sale',
+      purchase: 'Purchase',
+      property: 'Property',
+      other: 'Other Procedures',
     } as Record<string, string>,
     wakalaFormat: 'Wakala Format',
     selectWakalaFormat: 'Select format',
@@ -42,10 +47,10 @@ const translationsData = {
       notarized: 'Notarized',
       apostilled: 'Apostilled',
     } as Record<string, string>,
-    beneficiaryName: 'Beneficiary Name',
-    beneficiaryPlaceholder: 'Name of the person receiving the power of attorney',
-    documents: 'Supporting Documents',
-    documentFile: 'Upload supporting documents (ID, proof of address, etc.)',
+    documents: 'Required Documents',
+    agentPassport: 'Agent Passport Photo',
+    principalPassport: 'Principal Passport Photo',
+    witnessesPassports: 'Two Witnesses Passport Photos',
     additionalNotes: 'Additional Notes (Optional)',
     notesPlaceholder: 'Any specific details or requirements for the Wakala...',
     pricingInfo: 'Pricing Information',
@@ -58,7 +63,7 @@ const translationsData = {
     submitFree: 'Submit Request',
     submitting: 'Processing...',
     errorMessage: 'Failed to submit request. Please try again.',
-    fillAllFields: 'Please fill all required fields',
+    fillAllFields: 'Please fill all required fields and upload all required documents',
     loadingData: 'Loading your information...',
     paymentTitle: 'Complete Payment',
     settingUpPayment: 'Setting up payment...',
@@ -74,19 +79,24 @@ const translationsData = {
   ar: {
     title: 'خدمة الوكالة',
     subtitle: 'أكمل النموذج لطلب وكالة (توكيل رسمي)',
-    personalInfo: 'بيانات الاتصال',
-    contactDescription: 'أدخل معلومات الاتصال الخاصة بك.',
-    fullName: 'الاسم الكامل',
+    principalInfo: 'بيانات الموكِّل',
+    principalDescription: 'أدخل بيانات الشخص الذي يمنح التوكيل.',
+    principalName: 'اسم الموكِّل',
     phone: 'رقم الهاتف',
     email: 'البريد الإلكتروني',
+    agentInfo: 'بيانات الوكيل',
+    agentDescription: 'أدخل بيانات الشخص الذي سيتلقى التوكيل.',
+    agentName: 'اسم الوكيل',
     wakalaDetails: 'تفاصيل الوكالة',
     wakalaType: 'نوع الوكالة',
     selectWakalaType: 'اختر نوع الوكالة',
     wakalaTypes: {
-      general: 'توكيل عام',
-      property: 'توكيل عقاري',
-      court: 'توكيل قضائي',
-      business: 'توكيل تجاري',
+      general: 'عامة',
+      private: 'خاصة',
+      sale: 'بيع',
+      purchase: 'شراء',
+      property: 'عقار',
+      other: 'إجراءات أخرى',
     } as Record<string, string>,
     wakalaFormat: 'صيغة الوكالة',
     selectWakalaFormat: 'اختر الصيغة',
@@ -95,10 +105,10 @@ const translationsData = {
       notarized: 'موثقة',
       apostilled: 'مصدقة (أبوستيل)',
     } as Record<string, string>,
-    beneficiaryName: 'اسم الموكَّل إليه',
-    beneficiaryPlaceholder: 'اسم الشخص الذي سيتم منحه التوكيل',
-    documents: 'المستندات الداعمة',
-    documentFile: 'ارفع المستندات الداعمة (هوية، إثبات عنوان، إلخ)',
+    documents: 'المستندات المطلوبة',
+    agentPassport: 'صورة جواز الوكيل',
+    principalPassport: 'صورة جواز الموكِّل',
+    witnessesPassports: 'صور جوازات اثنين شهود',
     additionalNotes: 'ملاحظات إضافية (اختياري)',
     notesPlaceholder: 'أي تفاصيل أو متطلبات خاصة بالوكالة...',
     pricingInfo: 'معلومات التسعير',
@@ -111,7 +121,7 @@ const translationsData = {
     submitFree: 'تقديم الطلب',
     submitting: 'جاري المعالجة...',
     errorMessage: 'فشل تقديم الطلب. يرجى المحاولة مرة أخرى.',
-    fillAllFields: 'يرجى تعبئة جميع الحقول المطلوبة',
+    fillAllFields: 'يرجى تعبئة جميع الحقول المطلوبة ورفع جميع الوثائق المطلوبة',
     loadingData: 'جاري تحميل معلوماتك...',
     paymentTitle: 'إكمال الدفع',
     settingUpPayment: 'جاري تجهيز الدفع...',
@@ -142,12 +152,19 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
   const [formPayload, setFormPayload] = useState<ServiceFormPayload | null>(null);
 
   const [formData, setFormData] = useState({
-    fullName: '', phone: '', email: user?.email || '',
-    wakalaType: '', wakalaFormat: 'standard',
-    beneficiaryName: '', notes: '',
+    principalName: '',
+    phone: '',
+    email: user?.email || '',
+    agentName: '',
+    wakalaType: '',
+    wakalaFormat: 'standard',
+    notes: '',
   });
 
-  const [fileUrls, setFileUrls] = useState<string[]>([]);
+  const [agentPassportUrls, setAgentPassportUrls] = useState<string[]>([]);
+  const [principalPassportUrls, setPrincipalPassportUrls] = useState<string[]>([]);
+  const [witnessesPassportUrls, setWitnessesPassportUrls] = useState<string[]>([]);
+
   const [membershipStatus, setMembershipStatus] = useState<'none' | 'active'>('none');
   const [memberDaysSinceJoin, setMemberDaysSinceJoin] = useState(0);
   const [previousRequestCount, setPreviousRequestCount] = useState(0);
@@ -165,7 +182,7 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
       const { data: memberData } = await supabase.from('members').select('*').eq('email', user.email).maybeSingle();
       if (memberData) {
         const fullName = memberData.full_name || (memberData.first_name && memberData.last_name ? `${memberData.first_name} ${memberData.last_name}` : '');
-        setFormData(prev => ({ ...prev, fullName: fullName || prev.fullName, phone: memberData.phone || prev.phone, email: memberData.email || user.email || prev.email }));
+        setFormData(prev => ({ ...prev, principalName: fullName || prev.principalName, phone: memberData.phone || prev.phone, email: memberData.email || user.email || prev.email }));
         if (memberData.membership_number) setMemberNumber(memberData.membership_number);
         return;
       }
@@ -178,10 +195,10 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
         .maybeSingle();
       if (application) {
         const fullName = `${application.first_name || ''} ${application.last_name || ''}`.trim();
-        setFormData(prev => ({ ...prev, fullName: fullName || prev.fullName, phone: application.phone || prev.phone, email: application.email || user.email || prev.email }));
+        setFormData(prev => ({ ...prev, principalName: fullName || prev.principalName, phone: application.phone || prev.phone, email: application.email || user.email || prev.email }));
       } else {
         const meta = user.user_metadata || {};
-        setFormData(prev => ({ ...prev, fullName: meta.full_name || meta.name || prev.fullName, phone: meta.phone || prev.phone, email: user.email || prev.email }));
+        setFormData(prev => ({ ...prev, principalName: meta.full_name || meta.name || prev.principalName, phone: meta.phone || prev.phone, email: user.email || prev.email }));
       }
     } catch (err) { console.error('Error loading user data:', err); }
     finally { setDataLoading(false); }
@@ -244,14 +261,19 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
     table: 'wakala_applications',
     data: {
       user_id: user?.id || null,
-      full_name: formData.fullName,
+      full_name: formData.principalName,
       phone: formData.phone,
       email: formData.email,
+      principal_name: formData.principalName,
+      principal_phone: formData.phone,
+      principal_email: formData.email,
+      agent_name: formData.agentName,
       wakala_type: formData.wakalaType,
       wakala_format: formData.wakalaFormat,
-      beneficiary_name: formData.beneficiaryName,
+      agent_passport_url: agentPassportUrls[0] || null,
+      principal_passport_url: principalPassportUrls[0] || null,
+      witnesses_passports_url: witnessesPassportUrls.length > 0 ? JSON.stringify(witnessesPassportUrls) : null,
       notes: formData.notes,
-      file_url: fileUrls[0] || null,
       amount_due: calculatePrice(),
       payment_status: 'paid',
       status: 'submitted',
@@ -260,10 +282,15 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
     },
   });
 
+  const isDocumentsComplete = agentPassportUrls.length > 0 && principalPassportUrls.length > 0 && witnessesPassportUrls.length > 0;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!formData.fullName || !formData.phone || !formData.email || !formData.wakalaType || !formData.beneficiaryName) {
+    if (!formData.principalName || !formData.phone || !formData.email || !formData.agentName || !formData.wakalaType) {
+      setError(t.fillAllFields); return;
+    }
+    if (!isDocumentsComplete) {
       setError(t.fillAllFields); return;
     }
     if (!consent) { setError(t.fillAllFields); return; }
@@ -287,7 +314,7 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
           serviceType: 'wakala',
           date: new Date().toISOString().split('T')[0],
           startTime: '', endTime: '',
-          fullName: formData.fullName, email: formData.email, fee: 0,
+          fullName: formData.principalName, email: formData.email, fee: 0,
         });
         return;
       }
@@ -306,13 +333,13 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
       serviceType: 'wakala',
       date: new Date().toISOString().split('T')[0],
       startTime: '', endTime: '',
-      fullName: formData.fullName, email: formData.email, fee: paymentAmount,
+      fullName: formData.principalName, email: formData.email, fee: paymentAmount,
     });
   };
 
   const currentPrice = calculatePrice();
-  const isFormComplete = formData.fullName && formData.phone && formData.email &&
-    formData.wakalaType && formData.beneficiaryName && consent;
+  const isFormComplete = formData.principalName && formData.phone && formData.email &&
+    formData.agentName && formData.wakalaType && isDocumentsComplete && consent;
 
   if (step === 'payment' && clientSecret && formPayload) {
     const elementsOptions = {
@@ -406,18 +433,19 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
           </div>
         )}
 
+        {/* Principal Details */}
         <div className="bg-gray-50 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 border border-gray-200">
           <div className="flex items-start gap-2 sm:gap-3 mb-4 sm:mb-5">
             <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg flex-shrink-0"><User className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" /></div>
             <div>
-              <h3 className="text-base sm:text-lg font-bold text-gray-900">{t.personalInfo}</h3>
-              <p className="text-xs sm:text-sm text-gray-600 mt-0.5">{t.contactDescription}</p>
+              <h3 className="text-base sm:text-lg font-bold text-gray-900">{t.principalInfo}</h3>
+              <p className="text-xs sm:text-sm text-gray-600 mt-0.5">{t.principalDescription}</p>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">{t.fullName} *</label>
-              <input type="text" value={formData.fullName} onChange={e => setFormData(p => ({ ...p, fullName: e.target.value }))}
+            <div className="sm:col-span-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">{t.principalName} *</label>
+              <input type="text" value={formData.principalName} onChange={e => setFormData(p => ({ ...p, principalName: e.target.value }))}
                 className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required disabled={dataLoading} />
             </div>
             <div>
@@ -425,54 +453,90 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
               <input type="tel" value={formData.phone} onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
                 className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required disabled={dataLoading} />
             </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">{t.email} *</label>
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">{t.email}</label>
               <input type="email" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))}
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required disabled={dataLoading} />
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" disabled={dataLoading} />
             </div>
           </div>
         </div>
 
+        {/* Agent Details */}
+        <div className="bg-gray-50 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 border border-gray-200">
+          <div className="flex items-start gap-2 sm:gap-3 mb-4 sm:mb-5">
+            <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg flex-shrink-0"><Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" /></div>
+            <div>
+              <h3 className="text-base sm:text-lg font-bold text-gray-900">{t.agentInfo}</h3>
+              <p className="text-xs sm:text-sm text-gray-600 mt-0.5">{t.agentDescription}</p>
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">{t.agentName} *</label>
+            <input type="text" value={formData.agentName} onChange={e => setFormData(p => ({ ...p, agentName: e.target.value }))}
+              className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required disabled={dataLoading} />
+          </div>
+        </div>
+
+        {/* Wakala Type & Format */}
         <div className="bg-gray-50 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 border border-gray-200">
           <div className="flex items-start gap-2 sm:gap-3 mb-4 sm:mb-5">
             <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg flex-shrink-0"><FileText className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" /></div>
             <h3 className="text-base sm:text-lg font-bold text-gray-900">{t.wakalaDetails}</h3>
           </div>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">{t.wakalaType} *</label>
-                <select value={formData.wakalaType} onChange={e => setFormData(p => ({ ...p, wakalaType: e.target.value }))}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none" required disabled={dataLoading}>
-                  <option value="">{t.selectWakalaType}</option>
-                  {Object.entries(t.wakalaTypes).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">{t.wakalaFormat}</label>
-                <select value={formData.wakalaFormat} onChange={e => setFormData(p => ({ ...p, wakalaFormat: e.target.value }))}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none" disabled={dataLoading}>
-                  {Object.entries(t.wakalaFormats).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
-                </select>
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">{t.wakalaType} *</label>
+              <select value={formData.wakalaType} onChange={e => setFormData(p => ({ ...p, wakalaType: e.target.value }))}
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none" required disabled={dataLoading}>
+                <option value="">{t.selectWakalaType}</option>
+                {Object.entries(t.wakalaTypes).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+              </select>
             </div>
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">{t.beneficiaryName} *</label>
-              <input type="text" value={formData.beneficiaryName} onChange={e => setFormData(p => ({ ...p, beneficiaryName: e.target.value }))}
-                placeholder={t.beneficiaryPlaceholder}
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required disabled={dataLoading} />
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">{t.wakalaFormat} *</label>
+              <select value={formData.wakalaFormat} onChange={e => setFormData(p => ({ ...p, wakalaFormat: e.target.value }))}
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none" disabled={dataLoading}>
+                {Object.entries(t.wakalaFormats).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+              </select>
             </div>
           </div>
         </div>
 
+        {/* Documents */}
         <div className="bg-gray-50 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 border border-gray-200">
           <div className="flex items-start gap-2 sm:gap-3 mb-4 sm:mb-5">
             <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg flex-shrink-0"><Upload className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" /></div>
             <h3 className="text-base sm:text-lg font-bold text-gray-900">{t.documents}</h3>
           </div>
-          <FileUploadField label={t.documentFile} userId={user?.id} onUploadComplete={setFileUrls} existingUrls={fileUrls} />
+          <div className="space-y-5">
+            <FileUploadField
+              label={t.agentPassport}
+              required
+              multiple={false}
+              userId={user?.id}
+              onUploadComplete={setAgentPassportUrls}
+              existingUrls={agentPassportUrls}
+            />
+            <FileUploadField
+              label={t.principalPassport}
+              required
+              multiple={false}
+              userId={user?.id}
+              onUploadComplete={setPrincipalPassportUrls}
+              existingUrls={principalPassportUrls}
+            />
+            <FileUploadField
+              label={t.witnessesPassports}
+              required
+              multiple={true}
+              userId={user?.id}
+              onUploadComplete={setWitnessesPassportUrls}
+              existingUrls={witnessesPassportUrls}
+            />
+          </div>
         </div>
 
+        {/* Pricing */}
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
           <h4 className="text-md font-bold text-gray-900 mb-3">{t.pricingInfo}</h4>
           <div className="space-y-2 text-sm">
@@ -484,6 +548,7 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
           </div>
         </div>
 
+        {/* Additional Notes */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">{t.additionalNotes}</label>
           <textarea value={formData.notes} onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))} rows={3}
@@ -491,6 +556,7 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
             className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none" disabled={dataLoading} />
         </div>
 
+        {/* Consent */}
         <div className="flex items-start gap-2">
           <input type="checkbox" id="wakala-consent" checked={consent} onChange={e => setConsent(e.target.checked)}
             className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" disabled={dataLoading} />

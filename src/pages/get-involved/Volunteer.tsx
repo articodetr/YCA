@@ -5,8 +5,6 @@ import { useState } from 'react';
 import PageHeader from '../../components/PageHeader';
 import { fadeInUp, staggerContainer, staggerItem } from '../../lib/animations';
 import { supabase } from '../../lib/supabase';
-const SERVICE_REQUEST_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-service-request`;
-const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 import { useContent } from '../../contexts/ContentContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import DynamicFormModal from '../../components/modals/DynamicFormModal';
@@ -17,15 +15,17 @@ export default function Volunteer() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
-  const isUuid = (id: string) =>
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+  const c = (key: string, fallback: string) => getContent('volunteer', key, fallback);
 
+  const isUuid = (id: string) =>
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
 
   const handleFormSubmit = async (
     formData: Record<string, any>,
     responses: Array<{ question_id: string; response_text: string; response_files?: any[] }>
   ) => {
     try {
+      // 1) Fallback mapping (when IDs are v1, v2, ...)
       const fieldMap: Record<string, string> = {
         v1: 'full_name', v2: 'email', v3: 'phone', v4: 'date_of_birth',
         v5: 'address', v6: 'interests', v7: 'skills', v8: 'experience',
@@ -39,30 +39,98 @@ export default function Volunteer() {
         mapped[colName] = Array.isArray(value) ? value.join(', ') : value;
       }
 
-      const basicData = {
-        full_name: mapped.full_name || responses.find(r => r.response_text && r.question_id.startsWith('v1'))?.response_text || '',
-        email: mapped.email || '',
-        phone: mapped.phone || '',
-        address: mapped.address || '',
+      let basicData: any = {
+        full_name: (mapped.full_name || '').trim(),
+        email: (mapped.email || '').trim(),
+        phone: (mapped.phone || '').trim(),
+        address: (mapped.address || '').trim(),
         date_of_birth: mapped.date_of_birth || null,
-        interests: mapped.interests || '',
-        skills: mapped.skills || '',
-        availability: mapped.availability || '',
-        experience: mapped.experience || '',
-        why_volunteer: mapped.why_volunteer || '',
-        emergency_contact_name: mapped.emergency_contact_name || '',
-        emergency_contact_phone: mapped.emergency_contact_phone || '',
+        interests: (mapped.interests || '').trim(),
+        skills: (mapped.skills || '').trim(),
+        availability: (mapped.availability || '').trim(),
+        experience: (mapped.experience || '').trim(),
+        why_volunteer: (mapped.why_volunteer || '').trim(),
+        emergency_contact_name: (mapped.emergency_contact_name || '').trim(),
+        emergency_contact_phone: (mapped.emergency_contact_phone || '').trim(),
       };
 
-      const res = await fetch(SERVICE_REQUEST_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ANON_KEY}`, 'Apikey': ANON_KEY },
-        body: JSON.stringify({ table: 'volunteer_applications', data: basicData }),
-      });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || 'Submission failed');
-      const application = { id: result.id };
+      // 2) If questions come from DB (UUID IDs), infer core fields by question_type + order_index
+      const uuidIds = responses.map(r => r.question_id).filter(isUuid);
+      if (uuidIds.length > 0) {
+        const { data: qMeta, error: qMetaError } = await supabase
+          .from('form_questions')
+          .select('id, question_type, order_index')
+          .in('id', uuidIds);
 
+        if (!qMetaError && qMeta && qMeta.length > 0) {
+          const metaMap = new Map(qMeta.map((q: any) => [q.id, q]));
+
+          const enriched = responses
+            .map(r => ({ ...r, meta: metaMap.get(r.question_id) }))
+            .filter((r): r is typeof r & { meta: { id: string; question_type: string; order_index: number } } => !!r.meta)
+            .sort((a, b) => (a.meta.order_index ?? 0) - (b.meta.order_index ?? 0));
+
+          const byType = (type: string) =>
+            enriched
+              .filter(r => r.meta.question_type === type)
+              .map(r => (r.response_text || '').trim())
+              .filter(Boolean);
+
+          const textVals = byType('text');
+          const emailVals = byType('email');
+          const phoneVals = byType('phone');
+          const dateVals = byType('date');
+          const checkboxVals = byType('checkbox');
+          const textareaVals = byType('textarea');
+          const selectVals = byType('select');
+
+          const inferred = {
+            full_name: textVals[0] || '',
+            address: textVals[1] || '',
+            emergency_contact_name: textVals[2] || '',
+            email: emailVals[0] || '',
+            phone: phoneVals[0] || '',
+            emergency_contact_phone: phoneVals[1] || '',
+            date_of_birth: dateVals[0] || null,
+            interests: checkboxVals[0] || '',
+            skills: textareaVals[0] || '',
+            experience: textareaVals[1] || '',
+            why_volunteer: textareaVals[2] || '',
+            availability: selectVals[0] || '',
+          };
+
+          basicData = {
+            ...basicData,
+            full_name: basicData.full_name || inferred.full_name,
+            email: basicData.email || inferred.email,
+            phone: basicData.phone || inferred.phone,
+            address: basicData.address || inferred.address,
+            date_of_birth: basicData.date_of_birth || inferred.date_of_birth,
+            interests: basicData.interests || inferred.interests,
+            skills: basicData.skills || inferred.skills,
+            experience: basicData.experience || inferred.experience,
+            why_volunteer: basicData.why_volunteer || inferred.why_volunteer,
+            availability: basicData.availability || inferred.availability,
+            emergency_contact_name: basicData.emergency_contact_name || inferred.emergency_contact_name,
+            emergency_contact_phone: basicData.emergency_contact_phone || inferred.emergency_contact_phone,
+          };
+        }
+      }
+
+      // Required columns in volunteer_applications
+      if (!basicData.full_name || !basicData.email || !basicData.phone) {
+        throw new Error('Missing required fields (full_name / email / phone).');
+      }
+
+      const { data: application, error: applicationError } = await supabase
+        .from('volunteer_applications')
+        .insert([basicData])
+        .select()
+        .single();
+
+      if (applicationError) throw applicationError;
+
+      // Save detailed dynamic responses (DB questions only)
       try {
         const isFallbackId = (id: string) => /^v\d+$/.test(id);
         const validResponses = responses.filter(r => !isFallbackId(r.question_id));

@@ -84,7 +84,7 @@ const CATEGORY_LABELS_AR: Record<string, string> = {
 };
 
 export default function ProgrammeDetail() {
-  const { slug } = useParams<{ slug: string }>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { language } = useLanguage();
   const isRTL = language === 'ar';

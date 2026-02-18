@@ -83,6 +83,9 @@ const CATEGORY_LABELS_AR: Record<string, string> = {
   men: 'الرجال',
 };
 
+const isUuid = (value: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
 export default function ProgrammeDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -133,55 +136,65 @@ export default function ProgrammeDetail() {
   }, [lightboxOpen, closeLightbox, goNext, goPrev]);
 
   useEffect(() => {
-  if (id) fetchProgramme();
-}, [id]);
-
+    if (id) fetchProgramme();
+  }, [id]);
 
   const fetchProgramme = async () => {
+    const key = (id ?? '').trim();
+
     try {
       setLoading(true);
       setError(null);
 
+      if (!key) {
+        setError(isRTL ? 'البرنامج غير موجود' : 'Programme not found');
+        return;
+      }
+
       let data: Programme | null = null;
 
-      const { data: bySlug, error: slugError } = await supabase
-        .from('programmes_items')
-        .select('*')
-        .eq('slug', slug)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (slugError) throw slugError;
-
-      if (bySlug) {
-        data = bySlug;
-      } else {
+      // 1) Preferred: fetch by ID (matches News behaviour)
+      if (isUuid(key)) {
         const { data: byId, error: idError } = await supabase
           .from('programmes_items')
           .select('*')
-          .eq('id', slug)
+          .eq('id', key)
           .eq('is_active', true)
           .maybeSingle();
 
-        if (!idError && byId) {
-          data = byId;
-        } else {
-          const { data: byCategory, error: catError } = await supabase
-            .from('programmes_items')
-            .select('*')
-            .eq('category', slug)
-            .eq('is_active', true)
-            .order('order_number', { ascending: true })
-            .limit(1);
+        if (idError) throw idError;
+        if (byId) data = byId;
+      }
 
-          if (catError) throw catError;
-          data = byCategory && byCategory.length > 0 ? byCategory[0] : null;
-        }
+      // 2) Backward compatibility: old links that used slug
+      if (!data) {
+        const { data: bySlug, error: slugError } = await supabase
+          .from('programmes_items')
+          .select('*')
+          .eq('slug', key)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (slugError) throw slugError;
+        if (bySlug) data = bySlug;
+      }
+
+      // 3) Backward compatibility: old links that used category
+      if (!data) {
+        const { data: byCategory, error: catError } = await supabase
+          .from('programmes_items')
+          .select('*')
+          .eq('category', key)
+          .eq('is_active', true)
+          .order('order_number', { ascending: true })
+          .limit(1);
+
+        if (catError) throw catError;
+        data = byCategory && byCategory.length > 0 ? byCategory[0] : null;
       }
 
       if (!data) {
         setError(isRTL ? 'البرنامج غير موجود' : 'Programme not found');
-        setLoading(false);
         return;
       }
 
@@ -192,12 +205,17 @@ export default function ProgrammeDetail() {
         .select('*')
         .eq('is_active', true)
         .neq('id', data.id)
+        .order('order_number', { ascending: true })
         .limit(3);
 
       setRelatedProgrammes(related || []);
     } catch (err) {
       console.error('Error fetching programme:', err);
-      setError(isRTL ? 'فشل تحميل البرنامج. يرجى المحاولة مرة أخرى.' : 'Failed to load programme. Please try again.');
+      setError(
+        isRTL
+          ? 'فشل تحميل البرنامج. يرجى المحاولة مرة أخرى.'
+          : 'Failed to load programme. Please try again.'
+      );
     } finally {
       setLoading(false);
     }
@@ -224,23 +242,19 @@ export default function ProgrammeDetail() {
     setShowShareMenu(false);
   };
 
-  const getTitle = (p: Programme) => isRTL && p.title_ar ? p.title_ar : p.title;
-  const getDescription = (p: Programme) => isRTL && p.description_ar ? p.description_ar : p.description;
-  const getContent = (p: Programme) => isRTL && p.content_ar ? p.content_ar : (p.content || '');
+  const getTitle = (p: Programme) => (isRTL && p.title_ar ? p.title_ar : p.title);
+  const getDescription = (p: Programme) => (isRTL && p.description_ar ? p.description_ar : p.description);
+  const getContent = (p: Programme) => (isRTL && p.content_ar ? p.content_ar : (p.content || ''));
   const getImage = (p: Programme) => p.image_url || FALLBACK_IMAGES[p.category] || FALLBACK_IMAGES['youth'];
-  const getCategoryLabel = (cat: string) => isRTL ? (CATEGORY_LABELS_AR[cat] || cat) : (CATEGORY_LABELS_EN[cat] || cat);
+  const getCategoryLabel = (cat: string) =>
+    isRTL ? (CATEGORY_LABELS_AR[cat] || cat) : (CATEGORY_LABELS_EN[cat] || cat);
   const getCategoryColor = (cat: string) => CATEGORY_COLORS[cat] || '#10B981';
   const getIconComponent = (iconName: string) => ICON_MAP[iconName] || Users;
 
   if (loading) {
     return (
       <div className="pt-20 min-h-screen flex items-center justify-center bg-sand" dir={isRTL ? 'rtl' : 'ltr'}>
-        <motion.div
-          className="flex flex-col items-center justify-center"
-          variants={fadeInUp}
-          initial="hidden"
-          animate="visible"
-        >
+        <motion.div className="flex flex-col items-center justify-center" variants={fadeInUp} initial="hidden" animate="visible">
           <Loader2 size={64} className="text-primary animate-spin mb-4" />
           <p className="text-xl text-muted">{isRTL ? '...جار تحميل البرنامج' : 'Loading programme...'}</p>
         </motion.div>
@@ -251,12 +265,7 @@ export default function ProgrammeDetail() {
   if (error || !programme) {
     return (
       <div className="pt-20 min-h-screen flex items-center justify-center bg-sand" dir={isRTL ? 'rtl' : 'ltr'}>
-        <motion.div
-          className="text-center py-32 max-w-2xl mx-auto px-4"
-          variants={fadeInUp}
-          initial="hidden"
-          animate="visible"
-        >
+        <motion.div className="text-center py-32 max-w-2xl mx-auto px-4" variants={fadeInUp} initial="hidden" animate="visible">
           <div className="inline-flex items-center justify-center w-24 h-24 bg-red-50 rounded-full mb-6">
             <AlertCircle size={48} className="text-red-500" />
           </div>
@@ -292,10 +301,7 @@ export default function ProgrammeDetail() {
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'}>
       <section className="relative h-[600px] md:h-[700px] overflow-hidden pt-20">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${heroImage})` }}
-        >
+        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroImage})` }}>
           <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80"></div>
         </div>
 
@@ -310,13 +316,7 @@ export default function ProgrammeDetail() {
             </Link>
           </motion.div>
 
-          <motion.div
-            className="max-w-5xl"
-            variants={fadeInUp}
-            initial="hidden"
-            animate="visible"
-            transition={{ delay: 0.2 }}
-          >
+          <motion.div className="max-w-5xl" variants={fadeInUp} initial="hidden" animate="visible" transition={{ delay: 0.2 }}>
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-white p-3 rounded-xl shadow-lg">
                 <IconComponent size={28} style={{ color: catColor }} />
@@ -333,9 +333,7 @@ export default function ProgrammeDetail() {
               {programmeTitle}
             </h1>
 
-            <p className="text-lg text-white/80 max-w-3xl leading-relaxed">
-              {programmeDescription}
-            </p>
+            <p className="text-lg text-white/80 max-w-3xl leading-relaxed">{programmeDescription}</p>
           </motion.div>
         </div>
       </section>
@@ -397,9 +395,7 @@ export default function ProgrammeDetail() {
               <div className="prose prose-lg max-w-none">
                 <div className="text-muted leading-relaxed space-y-6 text-lg">
                   {programmeContent.split('\n').map((paragraph, index) =>
-                    paragraph.trim() ? (
-                      <p key={index} className="mb-4">{paragraph}</p>
-                    ) : null
+                    paragraph.trim() ? <p key={index} className="mb-4">{paragraph}</p> : null
                   )}
                 </div>
               </div>
@@ -413,9 +409,7 @@ export default function ProgrammeDetail() {
               <div className="mt-12 pt-8 border-t border-gray-100">
                 <div className="flex items-center gap-3 mb-6">
                   <Images size={24} className="text-primary" />
-                  <h3 className="text-2xl font-bold text-primary">
-                    {isRTL ? 'معرض الصور' : 'Photo Gallery'}
-                  </h3>
+                  <h3 className="text-2xl font-bold text-primary">{isRTL ? 'معرض الصور' : 'Photo Gallery'}</h3>
                   <span className="text-sm text-muted bg-sand px-3 py-1 rounded-full">
                     {allImages.length} {isRTL ? 'صور' : 'photos'}
                   </span>
@@ -571,7 +565,7 @@ export default function ProgrammeDetail() {
                         {getDescription(related)}
                       </p>
                       <Link
-                        to={related.slug ? `/programmes/${related.slug}` : `/programmes/${related.id}`}
+                        to={`/programmes/${related.id}`}
                         className="inline-flex items-center gap-2 text-primary font-semibold hover:text-accent transition-colors text-sm"
                       >
                         {isRTL ? 'اعرف المزيد' : 'Learn More'}

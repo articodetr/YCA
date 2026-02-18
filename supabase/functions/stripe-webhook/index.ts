@@ -111,15 +111,35 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
 
   console.info(`Payment succeeded: ${paymentIntentId}, metadata:`, metadata);
 
-  const { error: donationError } = await supabase
-    .from("donations")
-    .update({ payment_status: "succeeded", updated_at: new Date().toISOString() })
-    .eq("payment_intent_id", paymentIntentId);
+  // Donation flow: webhook-only UPSERT (no pending rows ever created before this)
+  if (metadata.type === "donation") {
+    const amountPence = paymentIntent.amount_received ?? paymentIntent.amount ?? 0;
+    const amountGbp = Number((amountPence / 100).toFixed(2));
 
-  if (donationError) {
-    console.info("No donation found for this payment intent (may be another type)");
-  } else {
-    console.info(`Updated donation payment_status to succeeded for PI: ${paymentIntentId}`);
+    const donationRow = {
+      full_name: String(metadata.full_name || "").trim(),
+      email: String(metadata.email || "").trim(),
+      phone: String(metadata.phone || "").trim(),
+      amount: amountGbp,
+      donation_type: String(metadata.donation_type || "one-time").trim(),
+      message: String(metadata.message || ""),
+      payment_status: "succeeded",
+      payment_intent_id: paymentIntentId,
+      stripe_customer_id:
+        typeof paymentIntent.customer === "string"
+          ? paymentIntent.customer
+          : (paymentIntent.customer as any)?.id ?? null,
+    };
+
+    const { error: donationError } = await supabase
+      .from("donations")
+      .upsert(donationRow, { onConflict: "payment_intent_id" });
+
+    if (donationError) {
+      console.error("Error upserting donation:", donationError);
+    } else {
+      console.info(`Donation recorded successfully for PI: ${paymentIntentId}`);
+    }
   }
 
   if (metadata.application_id) {
@@ -198,10 +218,7 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
 
   console.info(`Payment failed: ${paymentIntentId}`);
 
-  await supabase
-    .from("donations")
-    .update({ payment_status: "failed", updated_at: new Date().toISOString() })
-    .eq("payment_intent_id", paymentIntentId);
+  // No donation update here - donations only exist after a successful payment
 
   if (metadata.application_id) {
     await supabase

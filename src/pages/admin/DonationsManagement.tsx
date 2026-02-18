@@ -9,7 +9,7 @@ interface Donation {
   amount: number;
   donation_type: string;
   payment_status: string;
-  stripe_payment_id: string | null;
+  payment_intent_id: string | null;
   created_at: string;
 }
 
@@ -29,16 +29,14 @@ export default function DonationsManagement() {
       const { data, error } = await supabase
         .from('donations')
         .select('*')
+        .in('payment_status', ['succeeded', 'completed'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setDonations(data || []);
 
-      const paidStatuses = new Set(['succeeded', 'completed']);
-const paid = (data || []).filter((d) => paidStatuses.has(d.payment_status));
-const total = paid.reduce((sum, d) => sum + (d.amount || 0), 0);
-setTotalAmount(total);
-
+      const rows = (data || []) as Donation[];
+      setDonations(rows);
+      setTotalAmount(rows.reduce((sum, d) => sum + (d.amount || 0), 0));
     } catch (error) {
       console.error('Error fetching donations:', error);
     } finally {
@@ -46,30 +44,30 @@ setTotalAmount(total);
     }
   };
 
-  const filteredDonations = donations.filter(
-    (don) =>
-      don.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      don.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  const paidStatuses = new Set(['succeeded', 'completed']);
-const paidDonations = donations.filter((d) => paidStatuses.has(d.payment_status));
-const uniqueDonorsCount = new Set(
-  paidDonations.map((d) => (d.email || '').toLowerCase().trim())
-).size;
-const averagePaidDonation = paidDonations.length > 0
-  ? Math.round(totalAmount / paidDonations.length)
-  : 0;
+  const filteredDonations = donations.filter((don) => {
+    const name = (don.full_name || '').toLowerCase();
+    const email = (don.email || '').toLowerCase();
+    const q = searchTerm.toLowerCase();
+    return name.includes(q) || email.includes(q);
+  });
+
+  const uniqueDonorsCount = new Set(
+    donations.map((d) => (d.email || '').toLowerCase().trim())
+  ).size;
+
+  const averagePaidDonation =
+    donations.length > 0 ? Math.round(totalAmount / donations.length) : 0;
 
 
   const exportToCSV = () => {
-    const headers = ['Name', 'Email', 'Amount', 'Type', 'Status', 'Payment ID', 'Date'];
+    const headers = ['Name', 'Email', 'Amount', 'Type', 'Status', 'Payment Intent ID', 'Date'];
     const rows = filteredDonations.map((don) => [
       don.full_name || 'Anonymous',
       don.email,
       don.amount,
       don.donation_type,
       don.payment_status,
-      don.stripe_payment_id || '',
+      don.payment_intent_id || '',
       new Date(don.created_at).toLocaleString(),
     ]);
 
@@ -87,7 +85,7 @@ const averagePaidDonation = paidDonations.length > 0
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Donations Management</h1>
-          <p className="text-gray-600 mt-1">Track and manage donations</p>
+          <p className="text-gray-600 mt-1">Paid donations only</p>
         </div>
         <button
           onClick={exportToCSV}
@@ -145,7 +143,7 @@ const averagePaidDonation = paidDonations.length > 0
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search donations..."
+              placeholder="Search paid donations..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
@@ -159,7 +157,7 @@ const averagePaidDonation = paidDonations.length > 0
           </div>
         ) : filteredDonations.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500">No donations found</p>
+            <p className="text-gray-500">No paid donations found</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -188,16 +186,7 @@ const averagePaidDonation = paidDonations.length > 0
                       {don.donation_type}
                     </td>
                     <td className="px-4 py-4">
-                      <span
-                        className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
-                          don.payment_status === 'succeeded' || don.payment_status === 'completed'
-  ? 'bg-emerald-100 text-emerald-700'
-  : don.payment_status === 'failed'
-  ? 'bg-red-100 text-red-700'
-  : 'bg-amber-100 text-amber-700'
-
-                        }`}
-                      >
+                      <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-emerald-100 text-emerald-700">
                         {don.payment_status}
                       </span>
                     </td>
@@ -212,7 +201,7 @@ const averagePaidDonation = paidDonations.length > 0
         )}
 
         <div className="mt-4 text-sm text-gray-600">
-          Showing {filteredDonations.length} of {donations.length} donations
+          Showing {filteredDonations.length} of {donations.length} paid donations
         </div>
       </div>
     </div>

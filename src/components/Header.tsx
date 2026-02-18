@@ -312,7 +312,7 @@ export default function Header() {
               <img
                 src={logoMain}
                 alt={orgName}
-                className="h-10 sm:h-12 md:h-14 lg:h-16 w-auto transition-transform group-hover:scale-105 duration-300"
+                className="h-13 sm:h-14 md:h-14 lg:h-16 w-auto transition-transform group-hover:scale-105 duration-300"
               />
               <img
                 src={logoText}
@@ -326,7 +326,7 @@ export default function Header() {
             <img
               src={logoText}
               alt={getSetting('org_name_ar', 'الجالية اليمنية')}
-              className="h-7 sm:h-8 md:h-12 w-auto opacity-95"
+              className="h-9 sm:h-10 md:h-12 w-auto opacity-95"
             />
           </div>
 

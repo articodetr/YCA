@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Loader2, AlertCircle, Wallet, ArrowLeft } from 'lucide-react';
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { supabase } from '../../lib/supabase';
 
 export interface ServiceFormPayload {
   table: 'translation_requests' | 'other_legal_requests' | 'wakala_applications';
@@ -46,15 +45,22 @@ export default function ServiceCheckoutForm({
   };
 
   const createRecord = async (): Promise<{ id: string; booking_reference: string }> => {
-    const { data, error: dbError } = await supabase
-      .from(formPayload.table)
-      .insert([formPayload.data])
-      .select('id, booking_reference')
-      .maybeSingle();
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-    if (dbError) throw dbError;
-    if (!data) throw new Error('No data returned');
-    return { id: data.id, booking_reference: data.booking_reference || '' };
+    const response = await fetch(`${supabaseUrl}/functions/v1/create-service-request`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${anonKey}`,
+      },
+      body: JSON.stringify({ table: formPayload.table, data: formPayload.data }),
+    });
+
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Failed to save request');
+    if (!result.id) throw new Error('No record returned');
+    return { id: result.id, booking_reference: result.booking_reference || '' };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -81,7 +87,8 @@ export default function ServiceCheckoutForm({
         onSuccess(record.id, record.booking_reference);
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : (isRTL ? 'فشل الدفع. يرجى المحاولة مرة أخرى.' : 'Payment failed. Please try again.');
+      const stripeErr = err as { message?: string; code?: string };
+      const message = stripeErr?.message || (isRTL ? 'فشل الدفع. يرجى المحاولة مرة أخرى.' : 'Payment failed. Please try again.');
       setError(message);
     } finally {
       setProcessing(false);

@@ -264,21 +264,17 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
       full_name: formData.principalName,
       phone: formData.phone,
       email: formData.email,
-      principal_name: formData.principalName,
-      principal_phone: formData.phone,
-      principal_email: formData.email,
       agent_name: formData.agentName,
       wakala_type: formData.wakalaType,
       wakala_format: formData.wakalaFormat,
-      agent_passport_url: agentPassportUrls[0] || null,
-      principal_passport_url: principalPassportUrls[0] || null,
-      witnesses_passports_url: witnessesPassportUrls.length > 0 ? JSON.stringify(witnessesPassportUrls) : null,
-      notes: formData.notes,
-      amount_due: calculatePrice(),
+      applicant_passport_url: agentPassportUrls[0] || null,
+      attorney_passport_url: principalPassportUrls[0] || null,
+      witness_passports_url: witnessesPassportUrls.length > 0 ? JSON.stringify(witnessesPassportUrls) : null,
+      additional_notes: formData.notes,
+      fee_amount: calculatePrice(),
       payment_status: 'paid',
       status: 'submitted',
       is_first_wakala: previousRequestCount === 0 && membershipStatus === 'active' && memberDaysSinceJoin >= 10,
-      consent_given: consent,
     },
   });
 
@@ -303,12 +299,13 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
       setPaymentAmount(price);
 
       if (price === 0) {
-        const { data, error: dbError } = await supabase
-          .from('wakala_applications')
-          .insert([payload.data])
-          .select('id, booking_reference')
-          .maybeSingle();
-        if (dbError) throw dbError;
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-service-request`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({ table: 'wakala_applications', data: payload.data }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || t.errorMessage);
         onComplete({
           bookingReference: data.booking_reference || '',
           serviceType: 'wakala',

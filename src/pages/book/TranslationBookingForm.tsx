@@ -291,12 +291,13 @@ export default function TranslationBookingForm({ onComplete }: TranslationBookin
       setPaymentAmount(price);
 
       if (price === 0) {
-        const { data, error: dbError } = await supabase
-          .from('translation_requests')
-          .insert([payload.data])
-          .select('id, booking_reference')
-          .maybeSingle();
-        if (dbError) throw dbError;
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-service-request`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({ table: 'translation_requests', data: payload.data }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || t.errorMessage);
         onComplete({
           bookingReference: data.booking_reference || '',
           serviceType: 'translation',

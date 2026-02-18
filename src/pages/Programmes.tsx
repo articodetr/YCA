@@ -105,11 +105,8 @@ export default function Programmes() {
   const getProgrammeDescription = (p: Programme) =>
     isRTL && p.description_ar ? p.description_ar : p.description;
 
-  const getProgrammeLink = (p: Programme) => {
-    if (p.slug) return `/programmes/${p.slug}`;
-    if (p.link) return p.link;
-    return `/programmes/${p.id}`;
-  };
+  const getProgrammeLink = (p: Programme) => `/programmes/${p.id}`;
+
 
   const getProgrammeImage = (p: Programme) =>
     p.image_url || FALLBACK_IMAGES[p.category] || FALLBACK_IMAGES['youth'];

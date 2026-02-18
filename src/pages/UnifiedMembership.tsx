@@ -133,10 +133,7 @@ export default function UnifiedMembership() {
     }));
 
     if (type.id === 'business_support') {
-      setSelectedType(type);
-      setShowBusinessSelector(true);
-      setBusinessSelectorError(false);
-      document.getElementById('business-selector')?.scrollIntoView({ behavior: 'smooth' });
+      navigate('/get-involved/business-support');
       return;
     }
 

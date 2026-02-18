@@ -4,12 +4,7 @@ import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
 import Services from './pages/Services';
 import Programmes from './pages/Programmes';
-import WomenProgramme from './pages/programmes/WomenProgramme';
-import ElderlyProgramme from './pages/programmes/ElderlyProgramme';
-import YouthProgramme from './pages/programmes/YouthProgramme';
-import ChildrenProgramme from './pages/programmes/ChildrenProgramme';
-import MenProgramme from './pages/programmes/MenProgramme';
-import JourneyWithinProgramme from './pages/programmes/JourneyWithinProgramme';
+import ProgrammeDetail from './pages/ProgrammeDetail';
 import Events from './pages/Events';
 import EventGallery from './pages/EventGallery';
 import News from './pages/News';
@@ -170,12 +165,7 @@ function App() {
                 <Route path="/services" element={<Services />} />
 
                 <Route path="/programmes" element={<Programmes />} />
-                <Route path="/programmes/women" element={<WomenProgramme />} />
-                <Route path="/programmes/elderly" element={<ElderlyProgramme />} />
-                <Route path="/programmes/youth" element={<YouthProgramme />} />
-                <Route path="/programmes/children" element={<ChildrenProgramme />} />
-                <Route path="/programmes/men" element={<MenProgramme />} />
-                <Route path="/programmes/journey-within" element={<JourneyWithinProgramme />} />
+                <Route path="/programmes/:slug" element={<ProgrammeDetail />} />
 
                 <Route path="/events" element={<Events />} />
                 <Route path="/event-gallery/:id" element={<EventGallery />} />

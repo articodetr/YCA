@@ -105,18 +105,7 @@ export default function Header() {
       { label: t('nav.communityActivities.news'), path: '/news' },
       { label: t('nav.communityActivities.events'), path: '/events' },
       { label: t('nav.communityActivities.resources'), path: '/resources' },
-      {
-        label: t('nav.communityActivities.programmes'),
-        path: '/programmes',
-        children: [
-          { label: t('nav.programmes.journeyWithin'), path: '/programmes/journey-within' },
-          { label: t('nav.programmes.women'), path: '/programmes/women' },
-          { label: t('nav.programmes.elderly'), path: '/programmes/elderly' },
-          { label: t('nav.programmes.youth'), path: '/programmes/youth' },
-          { label: t('nav.programmes.children'), path: '/programmes/children' },
-          { label: t('nav.programmes.men'), path: '/programmes/men' },
-        ],
-      },
+      { label: t('nav.communityActivities.programmes'), path: '/programmes' },
     ],
   };
 

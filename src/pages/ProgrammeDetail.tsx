@@ -1,0 +1,600 @@
+import { useState, useEffect, useCallback } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Users,
+  Heart,
+  Sparkles,
+  Baby,
+  Briefcase,
+  Compass,
+  ArrowLeft,
+  ArrowRight,
+  Share2,
+  Facebook,
+  Twitter,
+  Linkedin,
+  Loader2,
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Images,
+} from 'lucide-react';
+import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../lib/animations';
+import { supabase } from '../lib/supabase';
+import { useLanguage } from '../contexts/LanguageContext';
+
+interface Programme {
+  id: string;
+  title: string;
+  title_ar?: string;
+  description: string;
+  description_ar?: string;
+  content?: string;
+  content_ar?: string;
+  image_url?: string;
+  gallery_images?: string[];
+  category: string;
+  slug?: string;
+  color: string;
+  icon: string;
+  is_active: boolean;
+  order_number: number;
+}
+
+const ICON_MAP: Record<string, React.ComponentType<any>> = {
+  Users, Heart, Sparkles, Baby, Briefcase, Compass,
+};
+
+const FALLBACK_IMAGES: Record<string, string> = {
+  journey: 'https://images.pexels.com/photos/3810792/pexels-photo-3810792.jpeg?auto=compress&cs=tinysrgb&w=1920',
+  women: 'https://images.pexels.com/photos/3184434/pexels-photo-3184434.jpeg?auto=compress&cs=tinysrgb&w=1920',
+  elderly: 'https://images.pexels.com/photos/7551613/pexels-photo-7551613.jpeg?auto=compress&cs=tinysrgb&w=1920',
+  youth: 'https://images.pexels.com/photos/1516440/pexels-photo-1516440.jpeg?auto=compress&cs=tinysrgb&w=1920',
+  children: 'https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg?auto=compress&cs=tinysrgb&w=1920',
+  men: 'https://images.pexels.com/photos/3184611/pexels-photo-3184611.jpeg?auto=compress&cs=tinysrgb&w=1920',
+};
+
+const CATEGORY_COLORS: Record<string, string> = {
+  journey: '#10B981',
+  women: '#F43F5E',
+  elderly: '#F59E0B',
+  youth: '#3B82F6',
+  children: '#22C55E',
+  men: '#475569',
+};
+
+const CATEGORY_LABELS_EN: Record<string, string> = {
+  journey: 'Journey',
+  women: "Women's",
+  elderly: "Elderly's",
+  youth: 'Youth',
+  children: "Children's",
+  men: "Men's",
+};
+
+const CATEGORY_LABELS_AR: Record<string, string> = {
+  journey: 'الرحلة',
+  women: 'النساء',
+  elderly: 'كبار السن',
+  youth: 'الشباب',
+  children: 'الأطفال',
+  men: 'الرجال',
+};
+
+export default function ProgrammeDetail() {
+  const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
+  const { language } = useLanguage();
+  const isRTL = language === 'ar';
+
+  const [programme, setProgramme] = useState<Programme | null>(null);
+  const [relatedProgrammes, setRelatedProgrammes] = useState<Programme[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  const allImages = programme
+    ? [
+        ...(programme.image_url ? [programme.image_url] : []),
+        ...(Array.isArray(programme.gallery_images) ? programme.gallery_images : []),
+      ]
+    : [];
+
+  const openLightbox = useCallback((index: number) => {
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  }, []);
+
+  const closeLightbox = useCallback(() => {
+    setLightboxOpen(false);
+  }, []);
+
+  const goNext = useCallback(() => {
+    setLightboxIndex((prev) => (prev + 1) % allImages.length);
+  }, [allImages.length]);
+
+  const goPrev = useCallback(() => {
+    setLightboxIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+  }, [allImages.length]);
+
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowRight') goNext();
+      if (e.key === 'ArrowLeft') goPrev();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [lightboxOpen, closeLightbox, goNext, goPrev]);
+
+  useEffect(() => {
+    if (slug) fetchProgramme();
+  }, [slug]);
+
+  const fetchProgramme = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data, error: fetchError } = await supabase
+        .from('programmes_items')
+        .select('*')
+        .eq('slug', slug)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      if (!data) {
+        setError(isRTL ? 'البرنامج غير موجود' : 'Programme not found');
+        setLoading(false);
+        return;
+      }
+
+      setProgramme(data);
+
+      const { data: related } = await supabase
+        .from('programmes_items')
+        .select('*')
+        .eq('is_active', true)
+        .neq('slug', slug)
+        .limit(3);
+
+      setRelatedProgrammes(related || []);
+    } catch (err) {
+      console.error('Error fetching programme:', err);
+      setError(isRTL ? 'فشل تحميل البرنامج. يرجى المحاولة مرة أخرى.' : 'Failed to load programme. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleShare = (platform: string) => {
+    const url = window.location.href;
+    const title = programme?.title || '';
+    let shareUrl = '';
+    switch (platform) {
+      case 'facebook':
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+        break;
+      case 'twitter':
+        shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`;
+        break;
+      case 'linkedin':
+        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
+        break;
+      default:
+        return;
+    }
+    window.open(shareUrl, '_blank', 'width=600,height=400');
+    setShowShareMenu(false);
+  };
+
+  const getTitle = (p: Programme) => isRTL && p.title_ar ? p.title_ar : p.title;
+  const getDescription = (p: Programme) => isRTL && p.description_ar ? p.description_ar : p.description;
+  const getContent = (p: Programme) => isRTL && p.content_ar ? p.content_ar : (p.content || '');
+  const getImage = (p: Programme) => p.image_url || FALLBACK_IMAGES[p.category] || FALLBACK_IMAGES['youth'];
+  const getCategoryLabel = (cat: string) => isRTL ? (CATEGORY_LABELS_AR[cat] || cat) : (CATEGORY_LABELS_EN[cat] || cat);
+  const getCategoryColor = (cat: string) => CATEGORY_COLORS[cat] || '#10B981';
+  const getIconComponent = (iconName: string) => ICON_MAP[iconName] || Users;
+
+  if (loading) {
+    return (
+      <div className="pt-20 min-h-screen flex items-center justify-center bg-sand" dir={isRTL ? 'rtl' : 'ltr'}>
+        <motion.div
+          className="flex flex-col items-center justify-center"
+          variants={fadeInUp}
+          initial="hidden"
+          animate="visible"
+        >
+          <Loader2 size={64} className="text-primary animate-spin mb-4" />
+          <p className="text-xl text-muted">{isRTL ? '...جار تحميل البرنامج' : 'Loading programme...'}</p>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (error || !programme) {
+    return (
+      <div className="pt-20 min-h-screen flex items-center justify-center bg-sand" dir={isRTL ? 'rtl' : 'ltr'}>
+        <motion.div
+          className="text-center py-32 max-w-2xl mx-auto px-4"
+          variants={fadeInUp}
+          initial="hidden"
+          animate="visible"
+        >
+          <div className="inline-flex items-center justify-center w-24 h-24 bg-red-50 rounded-full mb-6">
+            <AlertCircle size={48} className="text-red-500" />
+          </div>
+          <h3 className="text-3xl font-bold text-primary mb-4">
+            {isRTL ? 'البرنامج غير موجود' : 'Programme Not Found'}
+          </h3>
+          <p className="text-lg text-muted mb-8">
+            {error || (isRTL ? 'البرنامج الذي تبحث عنه غير موجود.' : 'The programme you are looking for does not exist.')}
+          </p>
+          <div className="flex gap-4 justify-center">
+            <motion.button
+              onClick={() => navigate('/programmes')}
+              className="bg-primary text-white px-8 py-3 rounded-lg hover:bg-secondary transition-colors font-semibold inline-flex items-center gap-2"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {isRTL ? <ArrowRight size={20} /> : <ArrowLeft size={20} />}
+              {isRTL ? 'العودة إلى البرامج' : 'Back to Programmes'}
+            </motion.button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  const IconComponent = getIconComponent(programme.icon);
+  const heroImage = getImage(programme);
+  const programmeTitle = getTitle(programme);
+  const programmeContent = getContent(programme);
+  const programmeDescription = getDescription(programme);
+  const catColor = getCategoryColor(programme.category);
+
+  return (
+    <div dir={isRTL ? 'rtl' : 'ltr'}>
+      <section className="relative h-[600px] md:h-[700px] overflow-hidden pt-20">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${heroImage})` }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80"></div>
+        </div>
+
+        <div className="relative h-full container mx-auto px-4 flex flex-col justify-between py-12">
+          <motion.div variants={fadeInUp} initial="hidden" animate="visible">
+            <Link
+              to="/programmes"
+              className="inline-flex items-center gap-2 text-white hover:text-accent transition-colors font-semibold bg-black/30 px-4 py-2 rounded-lg backdrop-blur-sm"
+            >
+              {isRTL ? <ArrowRight size={20} /> : <ArrowLeft size={20} />}
+              {isRTL ? 'العودة إلى البرامج' : 'Back to Programmes'}
+            </Link>
+          </motion.div>
+
+          <motion.div
+            className="max-w-5xl"
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+            transition={{ delay: 0.2 }}
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-white p-3 rounded-xl shadow-lg">
+                <IconComponent size={28} style={{ color: catColor }} />
+              </div>
+              <span
+                className="inline-block text-white px-5 py-2 rounded-full text-sm font-bold uppercase tracking-wide"
+                style={{ backgroundColor: catColor }}
+              >
+                {getCategoryLabel(programme.category)}
+              </span>
+            </div>
+
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+              {programmeTitle}
+            </h1>
+
+            <p className="text-lg text-white/80 max-w-3xl leading-relaxed">
+              {programmeDescription}
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
+      <article className="py-16 bg-white">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <motion.div variants={fadeInUp} initial="hidden" animate="visible">
+            <div className="flex flex-wrap items-center gap-4 mb-8 pb-6 border-b border-gray-100">
+              <div className={`relative ${isRTL ? 'mr-auto' : 'ml-auto'}`}>
+                <motion.button
+                  onClick={() => setShowShareMenu(!showShareMenu)}
+                  className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-secondary transition-colors font-semibold inline-flex items-center gap-2"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Share2 size={18} />
+                  {isRTL ? 'مشاركة' : 'Share'}
+                </motion.button>
+
+                {showShareMenu && (
+                  <motion.div
+                    className={`absolute top-full mt-2 ${isRTL ? 'left-0' : 'right-0'} bg-white shadow-xl rounded-lg p-4 z-10 border-2 border-gray-100`}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                  >
+                    <div className="flex gap-3">
+                      <motion.button
+                        onClick={() => handleShare('facebook')}
+                        className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        whileHover={{ scale: 1.1 }}
+                        title="Facebook"
+                      >
+                        <Facebook size={20} />
+                      </motion.button>
+                      <motion.button
+                        onClick={() => handleShare('twitter')}
+                        className="p-3 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors"
+                        whileHover={{ scale: 1.1 }}
+                        title="Twitter"
+                      >
+                        <Twitter size={20} />
+                      </motion.button>
+                      <motion.button
+                        onClick={() => handleShare('linkedin')}
+                        className="p-3 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-colors"
+                        whileHover={{ scale: 1.1 }}
+                        title="LinkedIn"
+                      >
+                        <Linkedin size={20} />
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            </div>
+
+            {programmeContent ? (
+              <div className="prose prose-lg max-w-none">
+                <div className="text-muted leading-relaxed space-y-6 text-lg">
+                  {programmeContent.split('\n').map((paragraph, index) =>
+                    paragraph.trim() ? (
+                      <p key={index} className="mb-4">{paragraph}</p>
+                    ) : null
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="text-muted leading-relaxed text-lg">
+                <p>{programmeDescription}</p>
+              </div>
+            )}
+
+            {allImages.length > 1 && (
+              <div className="mt-12 pt-8 border-t border-gray-100">
+                <div className="flex items-center gap-3 mb-6">
+                  <Images size={24} className="text-primary" />
+                  <h3 className="text-2xl font-bold text-primary">
+                    {isRTL ? 'معرض الصور' : 'Photo Gallery'}
+                  </h3>
+                  <span className="text-sm text-muted bg-sand px-3 py-1 rounded-full">
+                    {allImages.length} {isRTL ? 'صور' : 'photos'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {allImages.map((img, idx) => (
+                    <motion.button
+                      key={idx}
+                      onClick={() => openLightbox(idx)}
+                      className="relative group overflow-hidden rounded-xl aspect-[4/3]"
+                      whileHover={{ scale: 1.02 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <img
+                        src={img}
+                        alt={`${programmeTitle} - ${idx + 1}`}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300" />
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </div>
+      </article>
+
+      <AnimatePresence>
+        {lightboxOpen && allImages.length > 0 && (
+          <motion.div
+            className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closeLightbox}
+          >
+            <button
+              onClick={closeLightbox}
+              className="absolute top-6 right-6 text-white/70 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors z-10"
+            >
+              <X size={28} />
+            </button>
+
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 text-white/60 text-sm font-medium">
+              {lightboxIndex + 1} / {allImages.length}
+            </div>
+
+            {allImages.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); goPrev(); }}
+                  className="absolute left-4 md:left-8 text-white/70 hover:text-white p-3 rounded-full hover:bg-white/10 transition-colors z-10"
+                >
+                  <ChevronLeft size={36} />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); goNext(); }}
+                  className="absolute right-4 md:right-8 text-white/70 hover:text-white p-3 rounded-full hover:bg-white/10 transition-colors z-10"
+                >
+                  <ChevronRight size={36} />
+                </button>
+              </>
+            )}
+
+            <motion.img
+              key={lightboxIndex}
+              src={allImages[lightboxIndex]}
+              alt={`${programmeTitle} - ${lightboxIndex + 1}`}
+              className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
+            />
+
+            {allImages.length > 1 && (
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2" onClick={(e) => e.stopPropagation()}>
+                {allImages.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setLightboxIndex(idx)}
+                    className={`w-12 h-9 rounded overflow-hidden border-2 transition-all ${
+                      idx === lightboxIndex ? 'border-white scale-110' : 'border-transparent opacity-50 hover:opacity-80'
+                    }`}
+                  >
+                    <img src={img} alt="" className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {relatedProgrammes.length > 0 && (
+        <section className="py-16 bg-sand">
+          <div className="container mx-auto px-4">
+            <motion.h2
+              className="text-3xl font-bold text-primary text-center mb-12"
+              variants={fadeInUp}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+            >
+              {isRTL ? 'برامج أخرى' : 'Other Programmes'}
+            </motion.h2>
+
+            <motion.div
+              className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto"
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+            >
+              {relatedProgrammes.map((related) => {
+                const RelatedIcon = getIconComponent(related.icon);
+                const relatedColor = getCategoryColor(related.category);
+                return (
+                  <motion.div
+                    key={related.id}
+                    className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all group"
+                    variants={staggerItem}
+                    whileHover={{ y: -8 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="relative overflow-hidden">
+                      <img
+                        src={getImage(related)}
+                        alt={getTitle(related)}
+                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-700 ease-in-out"
+                      />
+                      <div className={`absolute top-4 ${isRTL ? 'right-4' : 'left-4'}`}>
+                        <span
+                          className="text-white px-3 py-1 rounded-full text-xs font-bold uppercase"
+                          style={{ backgroundColor: relatedColor }}
+                        >
+                          {getCategoryLabel(related.category)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-6">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="bg-sand p-2 rounded-lg">
+                          <RelatedIcon size={20} style={{ color: relatedColor }} />
+                        </div>
+                        <h3 className="text-xl font-bold text-primary group-hover:text-accent transition-colors line-clamp-2">
+                          {getTitle(related)}
+                        </h3>
+                      </div>
+                      <p className="text-muted mb-4 line-clamp-2 leading-relaxed text-sm">
+                        {getDescription(related)}
+                      </p>
+                      <Link
+                        to={related.slug ? `/programmes/${related.slug}` : `/programmes/${related.category}`}
+                        className="inline-flex items-center gap-2 text-primary font-semibold hover:text-accent transition-colors text-sm"
+                      >
+                        {isRTL ? 'اعرف المزيد' : 'Learn More'}
+                        {isRTL ? <ArrowLeft size={16} /> : <ArrowRight size={16} />}
+                      </Link>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          </div>
+        </section>
+      )}
+
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <motion.div
+            className="max-w-4xl mx-auto bg-sand p-10 rounded-lg shadow-lg text-center"
+            variants={scaleIn}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            <h2 className="text-3xl font-bold text-primary mb-4">
+              {isRTL ? 'هل أنت مهتم بهذا البرنامج؟' : 'Interested in This Programme?'}
+            </h2>
+            <p className="text-lg text-muted mb-6">
+              {isRTL
+                ? 'تواصل معنا لمعرفة المزيد عن كيفية المشاركة أو الانضمام إلى مجتمعنا'
+                : 'Get in touch to learn more about how you can participate or join our community.'}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Link
+                  to="/contact"
+                  className="bg-primary text-white px-8 py-3 rounded-lg hover:bg-secondary transition-colors font-semibold inline-block"
+                >
+                  {isRTL ? 'تواصل معنا' : 'Contact Us'}
+                </Link>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Link
+                  to="/programmes"
+                  className="bg-transparent border-2 border-primary text-primary px-8 py-3 rounded-lg hover:bg-primary hover:text-white transition-colors font-semibold inline-block"
+                >
+                  {isRTL ? 'عرض جميع البرامج' : 'View All Programmes'}
+                </Link>
+              </motion.div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+    </div>
+  );
+}

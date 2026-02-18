@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const ALLOWED_TABLES = ["wakala_applications", "translation_requests", "other_legal_requests"];
+const ALLOWED_TABLES = ["wakala_applications", "translation_requests", "other_legal_requests", "partnership_inquiries", "volunteer_applications"];
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {

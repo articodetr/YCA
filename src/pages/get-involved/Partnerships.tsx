@@ -5,6 +5,8 @@ import { useState } from 'react';
 import PageHeader from '../../components/PageHeader';
 import { fadeInUp, fadeInLeft, fadeInRight, staggerContainer, staggerItem, scaleIn } from '../../lib/animations';
 import { supabase } from '../../lib/supabase';
+const SERVICE_REQUEST_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-service-request`;
+const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 import { useLanguage } from '../../contexts/LanguageContext';
 import DynamicFormModal from '../../components/modals/DynamicFormModal';
 
@@ -39,13 +41,14 @@ export default function Partnerships() {
         message: mapped.message || '',
       };
 
-      const { data: inquiry, error: inquiryError } = await supabase
-        .from('partnership_inquiries')
-        .insert([basicData])
-        .select()
-        .single();
-
-      if (inquiryError) throw inquiryError;
+      const res = await fetch(SERVICE_REQUEST_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ANON_KEY}`, 'Apikey': ANON_KEY },
+        body: JSON.stringify({ table: 'partnership_inquiries', data: basicData }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Submission failed');
+      const inquiry = { id: result.id };
 
       try {
         const isFallbackId = (id: string) => /^p\d+$/.test(id);

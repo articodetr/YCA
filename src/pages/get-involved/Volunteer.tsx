@@ -5,6 +5,8 @@ import { useState } from 'react';
 import PageHeader from '../../components/PageHeader';
 import { fadeInUp, staggerContainer, staggerItem } from '../../lib/animations';
 import { supabase } from '../../lib/supabase';
+const SERVICE_REQUEST_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-service-request`;
+const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 import { useContent } from '../../contexts/ContentContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import DynamicFormModal from '../../components/modals/DynamicFormModal';
@@ -50,13 +52,14 @@ export default function Volunteer() {
         emergency_contact_phone: mapped.emergency_contact_phone || '',
       };
 
-      const { data: application, error: applicationError } = await supabase
-        .from('volunteer_applications')
-        .insert([basicData])
-        .select()
-        .single();
-
-      if (applicationError) throw applicationError;
+      const res = await fetch(SERVICE_REQUEST_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ANON_KEY}`, 'Apikey': ANON_KEY },
+        body: JSON.stringify({ table: 'volunteer_applications', data: basicData }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Submission failed');
+      const application = { id: result.id };
 
       try {
         const isFallbackId = (id: string) => /^v\d+$/.test(id);

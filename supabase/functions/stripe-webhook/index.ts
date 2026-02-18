@@ -136,7 +136,13 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
       .upsert(donationRow, { onConflict: "payment_intent_id" });
 
     if (donationError) {
-      console.error("Error upserting donation:", donationError);
+      console.error(`Error upserting donation for PI ${paymentIntentId}:`, donationError);
+      await supabase.from("payment_logs").insert({
+        event_type: "donation.upsert_error",
+        stripe_event_id: paymentIntentId,
+        payload: donationRow,
+        error_message: donationError.message,
+      });
     } else {
       console.info(`Donation recorded successfully for PI: ${paymentIntentId}`);
     }

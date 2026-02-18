@@ -29,7 +29,7 @@ export default function DonationsManagement() {
       const { data, error } = await supabase
         .from('donations')
         .select('*')
-        .in('payment_status', ['succeeded', 'completed'])
+        .eq('payment_status', 'succeeded')
         .order('created_at', { ascending: false });
 
       if (error) throw error;

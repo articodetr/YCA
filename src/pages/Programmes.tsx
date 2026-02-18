@@ -108,7 +108,7 @@ export default function Programmes() {
   const getProgrammeLink = (p: Programme) => {
     if (p.slug) return `/programmes/${p.slug}`;
     if (p.link) return p.link;
-    return `/programmes/${p.category}`;
+    return `/programmes/${p.id}`;
   };
 
   const getProgrammeImage = (p: Programme) =>

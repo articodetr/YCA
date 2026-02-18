@@ -155,15 +155,27 @@ export default function ProgrammeDetail() {
       if (bySlug) {
         data = bySlug;
       } else {
-        const { data: byCategory, error: catError } = await supabase
+        const { data: byId, error: idError } = await supabase
           .from('programmes_items')
           .select('*')
-          .eq('category', slug)
+          .eq('id', slug)
           .eq('is_active', true)
           .maybeSingle();
 
-        if (catError) throw catError;
-        data = byCategory;
+        if (!idError && byId) {
+          data = byId;
+        } else {
+          const { data: byCategory, error: catError } = await supabase
+            .from('programmes_items')
+            .select('*')
+            .eq('category', slug)
+            .eq('is_active', true)
+            .order('order_number', { ascending: true })
+            .limit(1);
+
+          if (catError) throw catError;
+          data = byCategory && byCategory.length > 0 ? byCategory[0] : null;
+        }
       }
 
       if (!data) {
@@ -558,7 +570,7 @@ export default function ProgrammeDetail() {
                         {getDescription(related)}
                       </p>
                       <Link
-                        to={related.slug ? `/programmes/${related.slug}` : `/programmes/${related.category}`}
+                        to={related.slug ? `/programmes/${related.slug}` : `/programmes/${related.id}`}
                         className="inline-flex items-center gap-2 text-primary font-semibold hover:text-accent transition-colors text-sm"
                       >
                         {isRTL ? 'اعرف المزيد' : 'Learn More'}

@@ -35,14 +35,14 @@ export interface BookingResult {
   fee: number;
 }
 
-const VALID_SERVICES: ServiceType[] = ['advisory', 'wakala', 'translation', 'other'];
+const ALL_SERVICES: ServiceType[] = ['advisory', 'wakala', 'translation', 'other'];
 
 const translations = {
   en: {
     title: 'Book a Service',
     subtitle: 'Choose a service to get started',
     selectService: 'Select',
-    advisoryTitle: 'Advisory Bureau',
+    advisoryTitle: 'Advisory office',
     advisoryDesc: 'Book an in-person consultation at our centre for advice on benefits, housing, immigration, employment, and more.',
     advisoryFeatures: ['Face-to-face consultation', 'Immediate assistance', 'Free service'],
     wakalaTitle: 'Wakala Service',
@@ -105,13 +105,22 @@ export default function BookPage() {
     'org_name_' + language,
     language === 'ar' ? 'جمعية المجتمع اليمني' : 'Yemeni Community Association'
   );
+  const translationEnabled = getSetting('translation_enabled', 'false') === 'true';
+  const VALID_SERVICES = ALL_SERVICES.filter(s => s !== 'translation' || translationEnabled);
+  const [translationUnavailable, setTranslationUnavailable] = useState(false);
 
   useEffect(() => {
     const serviceParam = searchParams.get('service') as ServiceType;
+    if (serviceParam === 'translation' && !translationEnabled) {
+      setTranslationUnavailable(true);
+      navigate('/book', { replace: true });
+      return;
+    }
+    setTranslationUnavailable(false);
     if (serviceParam && VALID_SERVICES.includes(serviceParam)) {
       setSelectedService(serviceParam);
     }
-  }, [searchParams]);
+  }, [searchParams, translationEnabled]);
 
   const handleServiceSelect = (serviceId: ServiceType) => {
     if (!user && !authLoading) {
@@ -177,14 +186,14 @@ export default function BookPage() {
       features: t.wakalaFeatures,
       accent: 'blue',
     },
-    {
+    ...(translationEnabled ? [{
       id: 'translation' as ServiceType,
       icon: Languages,
       title: t.translationTitle,
       description: t.translationDesc,
       features: t.translationFeatures,
       accent: 'teal',
-    },
+    }] : []),
     {
       id: 'other' as ServiceType,
       icon: Scale,
@@ -217,6 +226,11 @@ export default function BookPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10 pb-16">
           {!selectedService ? (
             <div className="space-y-6">
+              {translationUnavailable && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 text-sm text-amber-800 font-medium">
+                  {language === 'ar' ? 'خدمة الترجمة غير متاحة حالياً.' : 'The Translation Service is not currently available.'}
+                </div>
+              )}
               <div className="grid md:grid-cols-2 gap-6">
                 {services.map((service, idx) => {
                   const colors = accentMap[service.accent] || accentMap.emerald;

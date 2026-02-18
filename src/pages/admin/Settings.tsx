@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Loader2, Globe, Building, BarChart3, Palette, Lock, Eye, EyeOff } from 'lucide-react';
+import { Save, Loader2, Globe, Building, BarChart3, Palette, Lock, Eye, EyeOff, ToggleLeft, ToggleRight } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useSiteSettings } from '../../contexts/SiteSettingsContext';
 import ImageUploader from '../../components/admin/ImageUploader';
@@ -22,7 +22,7 @@ export default function Settings() {
       const { data, error } = await supabase.from('site_settings').select('*');
       if (error) throw error;
 
-      const settingsObj: Record<string, string> = {};
+      const settingsObj: Record<string, string> = { translation_enabled: 'false' };
       data?.forEach((setting) => {
         const val = setting.value;
         settingsObj[setting.key] = typeof val === 'string' ? val.replace(/^"|"$/g, '') : String(val);
@@ -42,8 +42,7 @@ export default function Settings() {
       for (const [key, value] of Object.entries(settings)) {
         const { error } = await supabase
           .from('site_settings')
-          .update({ value: JSON.stringify(value), updated_at: new Date().toISOString() })
-          .eq('key', key);
+          .upsert({ key, value: JSON.stringify(value), updated_at: new Date().toISOString() }, { onConflict: 'key' });
         if (error) throw error;
       }
       await refreshSettings();
@@ -107,6 +106,7 @@ export default function Settings() {
     { id: 'contact', label: 'Contact Info', icon: Globe },
     { id: 'social', label: 'Social Media', icon: Globe },
     { id: 'stats', label: 'Homepage Stats', icon: BarChart3 },
+    { id: 'features', label: 'Features', icon: ToggleRight },
   ];
 
   if (loading) {
@@ -400,6 +400,34 @@ export default function Settings() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {activeSection === 'features' && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Features</h2>
+              <p className="text-sm text-gray-500 mb-6">Enable or disable services and features across the site.</p>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Enable Translation Service</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Show or hide the Translation Service in the navigation, booking page, and admin panel.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => updateSetting('translation_enabled', settings['translation_enabled'] === 'true' ? 'false' : 'true')}
+                    className="flex-shrink-0 ml-4"
+                    title="Toggle Translation Service"
+                  >
+                    {settings['translation_enabled'] === 'true' ? (
+                      <ToggleRight className="w-10 h-10 text-emerald-600" />
+                    ) : (
+                      <ToggleLeft className="w-10 h-10 text-gray-400" />
+                    )}
+                  </button>
+                </div>
+              </div>
+              <p className="text-xs text-gray-400">Click "Save Changes" at the top to apply.</p>
             </div>
           )}
         </div>

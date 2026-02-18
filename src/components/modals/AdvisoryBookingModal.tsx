@@ -112,7 +112,7 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
     slotNoLongerAvailable: 'هذا الوقت لم يعد متاحاً. تم تحديث الأوقات المتاحة.',
     tryDifferentDate: 'لا توجد أوقات متاحة لهذا التاريخ. يرجى اختيار تاريخ آخر.',
   } : {
-    title: 'Advisory Bureau Appointment',
+    title: 'Advisory office Appointment',
     subtitle: 'Select a date and time for your appointment',
     selectDate: 'Select Date',
     selectDuration: 'Select Duration',
@@ -308,7 +308,7 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
       const { data } = await supabase
         .from('booking_services')
         .select('*')
-        .eq('name_en', 'Advisory Bureau')
+        .in('name_en', ['Advisory office', 'Advisory Office Services', 'Advisory Bureau'])
         .eq('is_active', true)
         .maybeSingle();
 
@@ -734,7 +734,7 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
 
             <div className="space-y-6">
               <BookingSummaryCard
-                serviceName={advisoryService ? (language === 'ar' ? advisoryService.name_ar : advisoryService.name_en) : (language === 'ar' ? 'المكتب الاستشاري' : 'Advisory Bureau')}
+                serviceName={advisoryService ? (language === 'ar' ? advisoryService.name_ar : advisoryService.name_en) : (language === 'ar' ? 'المكتب الاستشاري' : 'Advisory office')}
                 selectedDate={selectedDate}
                 selectedTime={selectedSlot}
                 totalPrice={0}

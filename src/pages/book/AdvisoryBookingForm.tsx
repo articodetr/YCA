@@ -36,7 +36,7 @@ interface AdvisoryBookingFormProps {
 
 const translationsData = {
   en: {
-    title: 'Advisory Bureau Appointment',
+    title: 'Advisory office Appointment',
     subtitle: 'Select a date and time for your appointment',
     selectDate: 'Select Date',
     selectDuration: 'Select Duration',
@@ -266,7 +266,7 @@ export default function AdvisoryBookingForm({ onComplete }: AdvisoryBookingFormP
 
   const loadAdvisoryService = async () => {
     try {
-      const { data } = await supabase.from('booking_services').select('*').eq('name_en', 'Advisory Bureau').eq('is_active', true).maybeSingle();
+      const { data } = await supabase.from('booking_services').select('*').in('name_en', ['Advisory office', 'Advisory Office Services', 'Advisory Bureau']).eq('is_active', true).maybeSingle();
       if (data) { setAdvisoryService(data); } else {
         const { data: fallback } = await supabase.from('booking_services').select('*').eq('is_active', true).limit(1).maybeSingle();
         if (fallback) setAdvisoryService(fallback);
@@ -533,7 +533,7 @@ export default function AdvisoryBookingForm({ onComplete }: AdvisoryBookingFormP
 
           <div className="space-y-6">
             <BookingSummaryCard
-              serviceName={advisoryService ? (language === 'ar' ? advisoryService.name_ar : advisoryService.name_en) : (language === 'ar' ? 'المكتب الاستشاري' : 'Advisory Bureau')}
+              serviceName={advisoryService ? (language === 'ar' ? advisoryService.name_ar : advisoryService.name_en) : (language === 'ar' ? 'المكتب الاستشاري' : 'Advisory office')}
               selectedDate={selectedDate}
               selectedTime={selectedSlot}
               totalPrice={0}

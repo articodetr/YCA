@@ -91,10 +91,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     setExpandedSections((prev) => ({ ...prev, [title]: !prev[title] }));
   };
 
+  const translationEnabled = getSetting('translation_enabled', 'false') === 'true';
+
   const operationsItems = [
     ...(hasPermission('availability.manage') ? [{ icon: Calendar, label: 'Availability', path: '/admin/availability' }] : []),
     { icon: FileText, label: 'Wakala Applications', path: '/admin/wakala-applications' },
-    { icon: FileText, label: 'Translation Requests', path: '/admin/translations' },
+    ...(translationEnabled ? [{ icon: FileText, label: 'Translation Requests', path: '/admin/translations' }] : []),
     { icon: Scale, label: 'Other Legal Requests', path: '/admin/legal-requests' },
     ...(hasPermission('admin.manage') ? [{ icon: Shield, label: 'Admin Management', path: '/admin/admins' }] : []),
     ...(hasPermission('settings.manage') ? [{ icon: Settings, label: 'Settings', path: '/admin/settings' }] : []),

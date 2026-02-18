@@ -25,7 +25,7 @@ const translations = {
     email: 'Email',
     fee: 'Fee',
     free: 'Free',
-    advisory: 'Advisory Bureau',
+    advisory: 'Advisory office',
     wakala: 'Wakala Service',
     translation: 'Translation Service',
     other: 'Legal/Documentation Service',

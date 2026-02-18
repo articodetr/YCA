@@ -15,7 +15,7 @@ import {
 interface LegalRequest {
   id: string;
   user_id: string | null;
-  service_needed: string;
+  service_needed: string | null;
   description: string;
   file_url: string | null;
   urgency: string;
@@ -115,15 +115,16 @@ export default function LegalRequestsManagement() {
     }
   };
 
-  const serviceOptions = Array.from(new Set(requests.map((r) => r.service_needed))).sort();
+  const serviceOptions = Array.from(new Set(requests.map((r) => r.service_needed || ''))).filter(Boolean).sort();
 
   const filtered = requests.filter((r) => {
+    const sn = r.service_needed || '';
     const matchesSearch =
-      r.service_needed.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sn.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (r.user_id && r.user_id.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesStatus = filterStatus === 'all' || r.status === filterStatus;
-    const matchesService = filterService === 'all' || r.service_needed === filterService;
+    const matchesService = filterService === 'all' || sn === filterService;
     return matchesSearch && matchesStatus && matchesService;
   });
 
@@ -144,7 +145,7 @@ export default function LegalRequestsManagement() {
     ];
     const rows = filtered.map((r) => [
       r.id,
-      `"${r.service_needed.replace(/"/g, '""')}"`,
+      `"${(r.service_needed || '').replace(/"/g, '""')}"`,
       `"${r.description.replace(/"/g, '""')}"`,
       r.user_id || '',
       r.amount != null ? r.amount : '',

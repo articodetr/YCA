@@ -81,6 +81,8 @@ export default function Header() {
     return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
+  const translationEnabled = getSetting('translation_enabled', 'false') === 'true';
+
   const servicesDropdown: NavDropdown = {
     key: 'services',
     label: t('nav.services'),
@@ -91,7 +93,7 @@ export default function Header() {
         path: '/services/legal',
         children: [
           { label: t('nav.services.legal.wakala'), path: '/book?service=wakala' },
-          { label: t('nav.services.legal.translation'), path: '/book?service=translation' },
+          ...(translationEnabled ? [{ label: t('nav.services.legal.translation'), path: '/book?service=translation' }] : []),
           { label: t('nav.services.legal.other'), path: '/book?service=other' },
         ],
       },

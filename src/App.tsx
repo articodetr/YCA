@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useSiteSettings } from './contexts/SiteSettingsContext';
 import Layout from './components/Layout';
 import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
@@ -72,6 +73,12 @@ import BusinessSupportersManagement from './pages/admin/BusinessSupportersManage
 import FormQuestionsManagement from './pages/admin/FormQuestionsManagement';
 import JobPostingsManagement from './pages/admin/JobPostingsManagement';
 import WakalaApplicationsManagement from './pages/admin/WakalaApplicationsManagement';
+
+function TranslationRedirect() {
+  const { getSetting } = useSiteSettings();
+  const enabled = getSetting('translation_enabled', 'false') === 'true';
+  return <Navigate to={enabled ? '/book?service=translation' : '/book'} replace />;
+}
 
 function App() {
   return (
@@ -189,7 +196,7 @@ function App() {
                 <Route path="/get-involved/donate" element={<Donate />} />
 
                 <Route path="/services/legal" element={<Navigate to="/book" replace />} />
-                <Route path="/services/legal/translation" element={<Navigate to="/book?service=translation" replace />} />
+                <Route path="/services/legal/translation" element={<TranslationRedirect />} />
                 <Route path="/services/legal/other" element={<Navigate to="/book?service=other" replace />} />
 
                 <Route path="/resources" element={<Resources />} />

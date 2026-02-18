@@ -27,19 +27,6 @@ const translationsData = {
     phone: 'Phone Number',
     email: 'Email Address',
     serviceDetails: 'Service Details',
-    serviceNeeded: 'Service Needed',
-    selectService: 'Select a service',
-    serviceOptions: {
-      legal_consultation: 'Legal Consultation',
-      document_notarization: 'Document Notarization',
-      immigration_assistance: 'Immigration Assistance',
-      housing_support: 'Housing Support',
-      benefits_appeal: 'Benefits Appeal',
-      debt_advice: 'Debt Advice',
-      employment_issue: 'Employment Issue',
-      family_law: 'Family Law Matter',
-      other: 'Other',
-    } as Record<string, string>,
     description: 'Request Description',
     descriptionPlaceholder: 'Please describe your request in detail, including any relevant information...',
     urgency: 'Urgency Level',
@@ -83,19 +70,6 @@ const translationsData = {
     phone: 'رقم الهاتف',
     email: 'البريد الإلكتروني',
     serviceDetails: 'تفاصيل الخدمة',
-    serviceNeeded: 'الخدمة المطلوبة',
-    selectService: 'اختر الخدمة',
-    serviceOptions: {
-      legal_consultation: 'استشارة قانونية',
-      document_notarization: 'توثيق المستندات',
-      immigration_assistance: 'مساعدة في الهجرة',
-      housing_support: 'دعم الإسكان',
-      benefits_appeal: 'استئناف المزايا',
-      debt_advice: 'نصيحة الديون',
-      employment_issue: 'مسألة توظيف',
-      family_law: 'مسألة قانون الأسرة',
-      other: 'أخرى',
-    } as Record<string, string>,
     description: 'وصف الطلب',
     descriptionPlaceholder: 'يرجى وصف طلبك بالتفصيل، بما في ذلك أي معلومات ذات صلة...',
     urgency: 'مستوى الاستعجال',
@@ -149,7 +123,7 @@ export default function OtherLegalBookingForm({ onComplete }: OtherLegalBookingF
 
   const [formData, setFormData] = useState({
     fullName: '', phone: '', email: user?.email || '',
-    serviceNeeded: '', description: '', urgency: 'low',
+    description: '', urgency: 'low',
   });
 
   const [fileUrls, setFileUrls] = useState<string[]>([]);
@@ -252,7 +226,7 @@ export default function OtherLegalBookingForm({ onComplete }: OtherLegalBookingF
       full_name: formData.fullName,
       phone: formData.phone,
       email: formData.email,
-      service_needed: formData.serviceNeeded,
+      service_needed: 'other_legal',
       description: formData.description,
       notes: formData.description,
       urgency: formData.urgency,
@@ -268,7 +242,7 @@ export default function OtherLegalBookingForm({ onComplete }: OtherLegalBookingF
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!formData.fullName || !formData.phone || !formData.email || !formData.serviceNeeded || !formData.description) {
+    if (!formData.fullName || !formData.phone || !formData.email || !formData.description) {
       setError(t.fillAllFields); return;
     }
     if (!consent) { setError(t.fillAllFields); return; }
@@ -317,7 +291,7 @@ export default function OtherLegalBookingForm({ onComplete }: OtherLegalBookingF
 
   const currentPrice = calculatePrice();
   const isFormComplete = formData.fullName && formData.phone && formData.email &&
-    formData.serviceNeeded && formData.description && consent;
+    formData.description && consent;
 
   if (step === 'payment' && clientSecret && formPayload) {
     const elementsOptions = {
@@ -444,14 +418,6 @@ export default function OtherLegalBookingForm({ onComplete }: OtherLegalBookingF
             <h3 className="text-base sm:text-lg font-bold text-gray-900">{t.serviceDetails}</h3>
           </div>
           <div className="space-y-4">
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">{t.serviceNeeded} *</label>
-              <select value={formData.serviceNeeded} onChange={e => setFormData(p => ({ ...p, serviceNeeded: e.target.value }))}
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm bg-white border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent appearance-none" required disabled={dataLoading}>
-                <option value="">{t.selectService}</option>
-                {Object.entries(t.serviceOptions).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
-              </select>
-            </div>
             <div>
               <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">{t.description} *</label>
               <textarea value={formData.description} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} rows={5}

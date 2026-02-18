@@ -29,7 +29,7 @@ const translations = {
     time: 'Time',
     fee: 'Fee',
     free: 'Free',
-    advisory: 'Advisory Bureau',
+    advisory: 'Advisory office',
     wakala: 'Wakala Service',
     statuses: {
       submitted: 'Submitted',

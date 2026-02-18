@@ -37,7 +37,7 @@ export default function Footer() {
           <motion.div variants={staggerItem}>
             <div className="mb-4">
               <img
-                src={logoText}
+                src="/logo_white.png"
                 alt={orgName}
                 className="h-10 w-auto max-w-fit"
               />

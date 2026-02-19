@@ -299,14 +299,30 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
       setPaymentAmount(price);
 
       if (price === 0) {
-        const { data: record, error: insertError } = await supabase
-          .from('wakala_applications')
-          .insert({ ...payload.data, payment_status: 'paid', status: 'submitted' })
-          .select('booking_reference')
-          .single();
-        if (insertError) throw new Error(insertError.message || t.errorMessage);
+        const { data: { session } } = await supabase.auth.getSession();
+        const authHeader = session?.access_token
+          ? `Bearer ${session.access_token}`
+          : `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`;
+
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-service-request`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': authHeader,
+              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            },
+            body: JSON.stringify({
+              table: 'wakala_applications',
+              data: { ...payload.data, payment_status: 'free', status: 'submitted' },
+            }),
+          }
+        );
+        const result = await response.json();
+        if (!response.ok) throw new Error(result?.error || t.errorMessage);
         onComplete({
-          bookingReference: record?.booking_reference || '',
+          bookingReference: result?.booking_reference || '',
           serviceType: 'wakala',
           date: new Date().toISOString().split('T')[0],
           startTime: '', endTime: '',

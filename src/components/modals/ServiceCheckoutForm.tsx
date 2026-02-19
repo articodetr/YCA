@@ -64,39 +64,37 @@ export default function ServiceCheckoutForm({
     return base;
   };
 
-  const createRecordViaFunction = async (paymentIntentId: string): Promise<{ id: string; booking_reference: string }> => {
-    const insertData = buildInsertPayload(paymentIntentId);
-
-    const { data: result, error: fnError } = await supabase.functions.invoke('create-service-request', {
-      body: { table: formPayload.table, data: insertData },
-    });
-
-    if (fnError) throw new Error(fnError.message || 'Failed to save request');
-    if (!result?.id) throw new Error('No record returned from service');
-    return { id: result.id, booking_reference: result.booking_reference || '' };
-  };
-
-  const createRecordDirect = async (paymentIntentId: string): Promise<{ id: string; booking_reference: string }> => {
-    const insertData = buildInsertPayload(paymentIntentId);
-
-    const { data: record, error: dbError } = await supabase
-      .from(formPayload.table)
-      .insert(insertData)
-      .select('id, booking_reference')
-      .single();
-
-    if (dbError) throw new Error(dbError.message || 'Failed to save request');
-    if (!record) throw new Error('No record returned');
-    return { id: record.id, booking_reference: record.booking_reference || '' };
-  };
-
   const createRecord = async (paymentIntentId: string): Promise<{ id: string; booking_reference: string }> => {
-    try {
-      return await createRecordViaFunction(paymentIntentId);
-    } catch (fnErr) {
-      console.warn('Edge function unavailable, falling back to direct insert:', fnErr);
-      return await createRecordDirect(paymentIntentId);
+    const insertData = buildInsertPayload(paymentIntentId);
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const authHeader = session?.access_token
+      ? `Bearer ${session.access_token}`
+      : `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`;
+
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-service-request`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': authHeader,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ table: formPayload.table, data: insertData }),
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result?.error || 'Failed to save request');
     }
+    if (!result?.id) {
+      throw new Error('No record returned from service');
+    }
+
+    return { id: result.id, booking_reference: result.booking_reference || '' };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 
 interface BusinessSupporter {
   id: string;
-  name: string;
+  business_name: string;
   tier: 'bronze' | 'silver' | 'gold';
   logo_url: string;
   website_url: string | null;
@@ -13,7 +13,7 @@ interface BusinessSupporter {
 }
 
 interface FormData {
-  name: string;
+  business_name: string;
   tier: 'bronze' | 'silver' | 'gold';
   logo_url: string;
   website_url: string;
@@ -34,7 +34,7 @@ const TIER_STYLES: Record<string, string> = {
 };
 
 const DEFAULT_FORM_DATA: FormData = {
-  name: '',
+  business_name: '',
   tier: 'bronze',
   logo_url: '',
   website_url: '',
@@ -70,7 +70,6 @@ export default function BusinessSupportersManagement() {
       const { data, error } = await supabase
         .from('business_supporters')
         .select('*')
-        .neq('status', 'deleted_by_admin')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -86,7 +85,7 @@ export default function BusinessSupportersManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name.trim()) {
+    if (!formData.business_name.trim()) {
       setToast({ message: 'Name is required', type: 'error' });
       return;
     }
@@ -94,7 +93,7 @@ export default function BusinessSupportersManagement() {
     try {
       setSaving(true);
       const payload = {
-        name: formData.name.trim(),
+        business_name: formData.business_name.trim(),
         tier: formData.tier,
         logo_url: formData.logo_url.trim(),
         website_url: formData.website_url.trim() || null,
@@ -170,7 +169,7 @@ export default function BusinessSupportersManagement() {
   const openEditModal = (supporter: BusinessSupporter) => {
     setEditingSupporter(supporter);
     setFormData({
-      name: supporter.name,
+      business_name: supporter.business_name,
       tier: supporter.tier,
       logo_url: supporter.logo_url || '',
       website_url: supporter.website_url || '',
@@ -186,7 +185,7 @@ export default function BusinessSupportersManagement() {
   };
 
   const filtered = supporters.filter((s) => {
-    const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = s.business_name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesTier = filterTier === 'all' || s.tier === filterTier;
     return matchesSearch && matchesTier;
   });
@@ -276,7 +275,7 @@ export default function BusinessSupportersManagement() {
                       {supporter.logo_url ? (
                         <img
                           src={supporter.logo_url}
-                          alt={supporter.name}
+                          alt={supporter.business_name}
                           className="w-10 h-10 rounded-lg object-contain bg-gray-50 border border-gray-200"
                         />
                       ) : (
@@ -285,7 +284,7 @@ export default function BusinessSupportersManagement() {
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3.5 font-medium text-sm text-gray-900">{supporter.name}</td>
+                    <td className="px-4 py-3.5 font-medium text-sm text-gray-900">{supporter.business_name}</td>
                     <td className="px-4 py-3.5">{getTierBadge(supporter.tier)}</td>
                     <td className="px-4 py-3.5 text-sm text-gray-600">
                       {supporter.website_url ? (
@@ -371,8 +370,8 @@ export default function BusinessSupportersManagement() {
                 </label>
                 <input
                   type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  value={formData.business_name}
+                  onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
                   placeholder="Company name"
                   required

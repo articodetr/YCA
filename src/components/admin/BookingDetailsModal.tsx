@@ -85,10 +85,12 @@ export default function BookingDetailsModal({ booking, onClose, onUpdate }: Book
         id: booking.assigned_admin_id || null,
         name: booking.assigned_admin_name || null,
       };
+      const derivedReason = booking.advisory_reason
+        || (booking.service_type?.startsWith('advisory_') ? booking.service_type.replace('advisory_', '') : null);
       if (booking.services_provided && booking.services_provided.length > 0) {
         setSelectedServices(booking.services_provided);
-      } else if (booking.advisory_reason && ADVISORY_REASON_LABELS[booking.advisory_reason]) {
-        setSelectedServices([booking.advisory_reason]);
+      } else if (derivedReason && ADVISORY_REASON_LABELS[derivedReason]) {
+        setSelectedServices([derivedReason]);
       } else {
         setSelectedServices([]);
       }
@@ -472,16 +474,17 @@ export default function BookingDetailsModal({ booking, onClose, onUpdate }: Book
                 <p className="text-gray-900 font-medium">
                   {language === 'ar' ? booking.service_name_ar : booking.service_name_en}
                 </p>
-                {isAdvisoryBooking && booking.advisory_reason && ADVISORY_REASON_LABELS[booking.advisory_reason] && (
-                  <p className="text-sm text-gray-500 mt-1">
-                    {t.advisoryReason}:{' '}
-                    <span className="font-medium text-gray-700">
-                      {language === 'ar'
-                        ? ADVISORY_REASON_LABELS[booking.advisory_reason].ar
-                        : ADVISORY_REASON_LABELS[booking.advisory_reason].en}
-                    </span>
-                  </p>
-                )}
+                {isAdvisoryBooking && (() => {
+                  const r = booking.advisory_reason || (booking.service_type?.startsWith('advisory_') ? booking.service_type.replace('advisory_', '') : null);
+                  return r && ADVISORY_REASON_LABELS[r] ? (
+                    <p className="text-sm text-gray-500 mt-1">
+                      {t.advisoryReason}:{' '}
+                      <span className="font-medium text-gray-700">
+                        {language === 'ar' ? ADVISORY_REASON_LABELS[r].ar : ADVISORY_REASON_LABELS[r].en}
+                      </span>
+                    </p>
+                  ) : null;
+                })()}
               </div>
             )}
           </div>

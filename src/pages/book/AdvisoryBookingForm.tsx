@@ -370,6 +370,7 @@ export default function AdvisoryBookingForm({ onComplete }: AdvisoryBookingFormP
         full_name: contactName, phone: contactPhone, email: contactEmail,
         booking_date: dateStr, requested_date: dateStr,
         service_type: `advisory_${formData.reason}`,
+        advisory_reason: formData.reason,
         special_requests: formData.notes,
         slot_id: selectedSlot.id,
         start_time: selectedSlot.startTime, end_time: selectedSlot.endTime,

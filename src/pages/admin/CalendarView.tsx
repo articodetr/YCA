@@ -18,6 +18,9 @@ interface Booking {
   notes?: string;
   service_name_en?: string;
   service_name_ar?: string;
+  service_type?: string;
+  advisory_reason?: string;
+  services_provided?: string[] | null;
   created_at: string;
   assigned_admin_id?: string;
   assigned_admin_name?: string;
@@ -102,7 +105,11 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
           start_time,
           end_time,
           status,
+          special_requests,
           additional_notes,
+          service_type,
+          advisory_reason,
+          services_provided,
           created_at,
           assigned_admin_id,
           admins:assigned_admin_id (full_name),
@@ -136,9 +143,12 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
         start_time: booking.start_time,
         end_time: booking.end_time,
         status: booking.status,
-        notes: booking.additional_notes,
+        notes: booking.special_requests ?? booking.additional_notes,
         service_name_en: service?.name_en,
         service_name_ar: service?.name_ar,
+        service_type: booking.service_type,
+        advisory_reason: booking.advisory_reason,
+        services_provided: booking.services_provided,
         created_at: booking.created_at,
         assigned_admin_id: booking.assigned_admin_id,
         assigned_admin_name: booking.admins?.full_name || null,

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { X, Calendar, Clock, Mail, Phone, User, FileText, CheckCircle, XCircle, UserCheck, Loader2, AlertCircle, ArrowRightLeft } from 'lucide-react';
+import { X, Calendar, Clock, Mail, Phone, User, FileText, CheckCircle, XCircle, UserCheck, Loader2, AlertCircle, ArrowRightLeft, Save } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
 import { supabase } from '../../lib/supabase';
@@ -18,10 +18,30 @@ interface BookingDetails {
   notes?: string;
   service_name_en?: string;
   service_name_ar?: string;
+  service_type?: string;
+  advisory_reason?: string;
+  services_provided?: string[] | null;
   created_at: string;
   assigned_admin_id?: string;
   assigned_admin_name?: string;
 }
+
+const ADVISORY_REASON_LABELS: Record<string, { en: string; ar: string }> = {
+  welfare_benefits: { en: 'Welfare Benefits', ar: 'المزايا الاجتماعية' },
+  housing: { en: 'Housing', ar: 'الإسكان' },
+  immigration: { en: 'Immigration', ar: 'الهجرة' },
+  employment: { en: 'Employment', ar: 'التوظيف' },
+  education: { en: 'Education', ar: 'التعليم' },
+  health: { en: 'Health', ar: 'الصحة' },
+  legal: { en: 'Legal', ar: 'قانوني' },
+  other: { en: 'Other', ar: 'أخرى' },
+};
+
+const SERVICES_PROVIDED_OPTIONS = Object.entries(ADVISORY_REASON_LABELS).map(([key, labels]) => ({
+  key,
+  labelEn: labels.en,
+  labelAr: labels.ar,
+}));
 
 interface BookingDetailsModalProps {
   booking: BookingDetails | null;
@@ -49,7 +69,12 @@ export default function BookingDetailsModal({ booking, onClose, onUpdate }: Book
   const [statusSuccess, setStatusSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [timelineKey, setTimelineKey] = useState(0);
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [savingServices, setSavingServices] = useState(false);
+  const [servicesSuccess, setServicesSuccess] = useState(false);
   const assignedRef = useRef({ id: null as string | null, name: null as string | null });
+
+  const isAdvisoryBooking = !!(booking?.service_type?.startsWith('advisory_'));
 
   useEffect(() => {
     if (booking) {
@@ -60,6 +85,13 @@ export default function BookingDetailsModal({ booking, onClose, onUpdate }: Book
         id: booking.assigned_admin_id || null,
         name: booking.assigned_admin_name || null,
       };
+      if (booking.services_provided && booking.services_provided.length > 0) {
+        setSelectedServices(booking.services_provided);
+      } else if (booking.advisory_reason && ADVISORY_REASON_LABELS[booking.advisory_reason]) {
+        setSelectedServices([booking.advisory_reason]);
+      } else {
+        setSelectedServices([]);
+      }
     }
   }, [booking?.id]);
 
@@ -91,6 +123,11 @@ export default function BookingDetailsModal({ booking, onClose, onUpdate }: Book
       autoAssignHint: 'Will be auto-assigned on first action',
       takeOver: 'Take Over',
       takeOverConfirm: 'Taking over...',
+      advisoryReason: 'Advisory Reason',
+      servicesProvided: 'Services Provided',
+      saveServices: 'Save Services',
+      savingServices: 'Saving...',
+      servicesSaved: 'Saved',
     },
     ar: {
       title: 'تفاصيل الحجز',
@@ -119,6 +156,11 @@ export default function BookingDetailsModal({ booking, onClose, onUpdate }: Book
       autoAssignHint: 'سيتم التعيين تلقائياً عند أول إجراء',
       takeOver: 'استلام',
       takeOverConfirm: 'جاري الاستلام...',
+      advisoryReason: 'سبب الاستشارة',
+      servicesProvided: 'الخدمات المقدمة',
+      saveServices: 'حفظ الخدمات',
+      savingServices: 'جاري الحفظ...',
+      servicesSaved: 'تم الحفظ',
     },
   }[language];
 
@@ -281,6 +323,58 @@ export default function BookingDetailsModal({ booking, onClose, onUpdate }: Book
     }
   };
 
+  const handleSaveServices = async () => {
+    if (!user || !adminData) return;
+    setSavingServices(true);
+    setError(null);
+
+    try {
+      await ensureAssignment();
+
+      const { error: updateError } = await supabase
+        .from('wakala_applications')
+        .update({
+          services_provided: selectedServices,
+          services_provided_updated_at: new Date().toISOString(),
+          services_provided_updated_by: user.id,
+        })
+        .eq('id', booking.id);
+
+      if (updateError) throw updateError;
+
+      const serviceLabels = selectedServices.map((key) =>
+        language === 'ar'
+          ? ADVISORY_REASON_LABELS[key]?.ar || key
+          : ADVISORY_REASON_LABELS[key]?.en || key
+      );
+
+      await addSystemNote(
+        'booking',
+        booking.id,
+        user.id,
+        language === 'ar'
+          ? `تم تحديث الخدمات المقدمة: ${serviceLabels.join('، ') || 'لا شيء'}`
+          : `Services provided updated: ${serviceLabels.join(', ') || 'none'}`,
+        'update'
+      );
+
+      setServicesSuccess(true);
+      setTimelineKey((k) => k + 1);
+      onUpdate?.();
+      setTimeout(() => setServicesSuccess(false), 2000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to save services');
+    } finally {
+      setSavingServices(false);
+    }
+  };
+
+  const toggleService = (key: string) => {
+    setSelectedServices((prev) =>
+      prev.includes(key) ? prev.filter((s) => s !== key) : [...prev, key]
+    );
+  };
+
   const isAssignedToMe = assignedAdminId === user?.id;
   const isAssignedToOther = !!assignedAdminId && !isAssignedToMe;
 
@@ -378,6 +472,16 @@ export default function BookingDetailsModal({ booking, onClose, onUpdate }: Book
                 <p className="text-gray-900 font-medium">
                   {language === 'ar' ? booking.service_name_ar : booking.service_name_en}
                 </p>
+                {isAdvisoryBooking && booking.advisory_reason && ADVISORY_REASON_LABELS[booking.advisory_reason] && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    {t.advisoryReason}:{' '}
+                    <span className="font-medium text-gray-700">
+                      {language === 'ar'
+                        ? ADVISORY_REASON_LABELS[booking.advisory_reason].ar
+                        : ADVISORY_REASON_LABELS[booking.advisory_reason].en}
+                    </span>
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -425,6 +529,56 @@ export default function BookingDetailsModal({ booking, onClose, onUpdate }: Book
               ))}
             </select>
           </div>
+
+          {isAdvisoryBooking && (
+            <div className="bg-teal-50 rounded-lg p-4 border border-teal-200">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-teal-600" />
+                  <span className="text-sm font-semibold text-teal-900">{t.servicesProvided}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {servicesSuccess && (
+                    <span className="text-xs text-green-600 font-medium">{t.servicesSaved}</span>
+                  )}
+                  <button
+                    onClick={handleSaveServices}
+                    disabled={savingServices}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50"
+                  >
+                    {savingServices ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Save className="w-3.5 h-3.5" />
+                    )}
+                    {savingServices ? t.savingServices : t.saveServices}
+                  </button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {SERVICES_PROVIDED_OPTIONS.map((opt) => (
+                  <label
+                    key={opt.key}
+                    className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${
+                      selectedServices.includes(opt.key)
+                        ? 'bg-teal-100 border-teal-400'
+                        : 'bg-white border-gray-200 hover:border-teal-300'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedServices.includes(opt.key)}
+                      onChange={() => toggleService(opt.key)}
+                      className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500"
+                    />
+                    <span className={`text-xs font-medium ${selectedServices.includes(opt.key) ? 'text-teal-800' : 'text-gray-700'}`}>
+                      {language === 'ar' ? opt.labelAr : opt.labelEn}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
 
           {booking.notes && (
             <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">

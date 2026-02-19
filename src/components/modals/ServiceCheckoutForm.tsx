@@ -67,20 +67,34 @@ export default function ServiceCheckoutForm({
   const createRecord = async (paymentIntentId: string): Promise<{ id: string; booking_reference: string }> => {
     const insertData = buildInsertPayload(paymentIntentId);
 
-    const { data: record, error } = await supabase
-      .from(formPayload.table)
-      .insert([insertData])
-      .select('id, booking_reference')
-      .maybeSingle();
+    const { data: { session } } = await supabase.auth.getSession();
+    const authHeader = session?.access_token
+      ? `Bearer ${session.access_token}`
+      : `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`;
 
-    if (error) {
-      throw new Error(error.message || 'Failed to save request');
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-service-request`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': authHeader,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ table: formPayload.table, data: insertData }),
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result?.error || 'Failed to save request');
     }
-    if (!record?.id) {
+    if (!result?.id) {
       throw new Error('No record returned from service');
     }
 
-    return { id: record.id, booking_reference: record.booking_reference || '' };
+    return { id: result.id, booking_reference: result.booking_reference || '' };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

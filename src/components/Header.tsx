@@ -312,7 +312,7 @@ export default function Header() {
               <img
                 src={logoMain}
                 alt={orgName}
-                className="h-13 sm:h-14 md:h-14 lg:h-16 w-auto transition-transform group-hover:scale-105 duration-300"
+                className="h-10 sm:h-11 md:h-12 lg:h-14 w-auto transition-transform group-hover:scale-105 duration-300"
               />
               <img
                 src={logoText}

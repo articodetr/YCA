@@ -169,6 +169,10 @@ Deno.serve(async (req: Request) => {
       },
     });
 
+    if (!paymentIntent.client_secret) {
+      return errorResponse("Payment intent created but no client secret returned", 500);
+    }
+
     return jsonResponse({ clientSecret: paymentIntent.client_secret });
   } catch (error) {
     console.error("Error:", error);

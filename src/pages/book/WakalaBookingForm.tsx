@@ -244,8 +244,8 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
       clearTimeout(timeoutId);
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || t.paymentError);
-      if (!data.clientSecret || typeof data.clientSecret !== 'string' || !data.clientSecret.startsWith('pi_')) {
-        throw new Error('Invalid payment intent format');
+      if (!data.clientSecret || typeof data.clientSecret !== 'string') {
+        throw new Error(data.error || 'Invalid payment intent format');
       }
       setClientSecret(data.clientSecret);
     } catch (err: unknown) {

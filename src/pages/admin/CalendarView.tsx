@@ -108,7 +108,6 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
           special_requests,
           additional_notes,
           service_type,
-          advisory_reason,
           services_provided,
           created_at,
           assigned_admin_id,
@@ -117,7 +116,7 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
             service_id
           )
         `)
-        .eq('availability_slots.service_id', selectedServiceId)
+        .filter('availability_slots.service_id', 'eq', selectedServiceId)
         .neq('status', 'deleted_by_admin')
         .gte('booking_date', startDate)
         .lte('booking_date', endDate)
@@ -147,7 +146,7 @@ export default function CalendarView({ selectedServiceId }: CalendarViewProps) {
         service_name_en: service?.name_en,
         service_name_ar: service?.name_ar,
         service_type: booking.service_type,
-        advisory_reason: booking.advisory_reason,
+        advisory_reason: booking.service_type?.startsWith('advisory_') ? booking.service_type.replace('advisory_', '') : null,
         services_provided: booking.services_provided,
         created_at: booking.created_at,
         assigned_admin_id: booking.assigned_admin_id,

@@ -120,7 +120,7 @@ export default function BookingsOverview({
         .gte('booking_date', startDate)
         .lte('booking_date', endDate)
         .not('booking_date', 'is', null)
-        .eq('availability_slots.service_id', serviceId)
+        .filter('availability_slots.service_id', 'eq', serviceId)
         .order('booking_date')
         .order('start_time');
 

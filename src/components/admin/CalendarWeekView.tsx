@@ -15,9 +15,6 @@ interface Booking {
   notes?: string;
   service_name_en?: string;
   service_name_ar?: string;
-  service_type?: string;
-  advisory_reason?: string;
-  services_provided?: string[] | null;
   created_at: string;
   assigned_admin_id?: string;
   assigned_admin_name?: string;

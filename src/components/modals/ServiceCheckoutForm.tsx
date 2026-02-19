@@ -67,21 +67,9 @@ export default function ServiceCheckoutForm({
   const createRecord = async (paymentIntentId: string): Promise<{ id: string; booking_reference: string }> => {
     const insertData = buildInsertPayload(paymentIntentId);
 
-    let sessionToken: string | null = null;
-    try {
-      const { data: refreshData } = await supabase.auth.refreshSession();
-      sessionToken = refreshData?.session?.access_token || null;
-    } catch {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        sessionToken = session?.access_token || null;
-      } catch {
-        sessionToken = null;
-      }
-    }
-
-    const authHeader = sessionToken
-      ? `Bearer ${sessionToken}`
+    const { data: { session } } = await supabase.auth.getSession();
+    const authHeader = session?.access_token
+      ? `Bearer ${session.access_token}`
       : `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`;
 
     const response = await fetch(
@@ -97,22 +85,16 @@ export default function ServiceCheckoutForm({
       }
     );
 
-    let result: Record<string, unknown>;
-    try {
-      result = await response.json();
-    } catch {
-      throw new Error(isRTL ? 'حدث خطأ في الاتصال. تم خصم المبلغ - يرجى التواصل معنا.' : 'Connection error. Payment was charged - please contact us.');
-    }
+    const result = await response.json();
 
     if (!response.ok) {
-      const errorMsg = (result?.error as string) || (isRTL ? 'فشل في حفظ الطلب' : 'Failed to save request');
-      throw new Error(errorMsg);
+      throw new Error(result?.error || 'Failed to save request');
     }
     if (!result?.id) {
-      throw new Error(isRTL ? 'لم يتم إنشاء السجل. يرجى التواصل معنا.' : 'Record not created. Please contact us.');
+      throw new Error('No record returned from service');
     }
 
-    return { id: result.id as string, booking_reference: (result.booking_reference as string) || '' };
+    return { id: result.id, booking_reference: result.booking_reference || '' };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

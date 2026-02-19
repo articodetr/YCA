@@ -34,9 +34,6 @@ interface BookingClickData {
   notes?: string;
   service_name_en?: string;
   service_name_ar?: string;
-  service_type?: string;
-  advisory_reason?: string;
-  services_provided?: string[] | null;
   created_at: string;
   assigned_admin_id?: string;
   assigned_admin_name?: string;
@@ -120,7 +117,7 @@ export default function BookingsOverview({
         .gte('booking_date', startDate)
         .lte('booking_date', endDate)
         .not('booking_date', 'is', null)
-        .filter('availability_slots.service_id', 'eq', serviceId)
+        .eq('availability_slots.service_id', serviceId)
         .order('booking_date')
         .order('start_time');
 
@@ -257,12 +254,9 @@ export default function BookingsOverview({
                     start_time: booking.start_time,
                     end_time: booking.end_time,
                     status: booking.status,
-                    notes: booking.special_requests ?? booking.additional_notes,
+                    notes: booking.additional_notes,
                     service_name_en: serviceName?.en,
                     service_name_ar: serviceName?.ar,
-                    service_type: booking.service_type,
-                    advisory_reason: booking.advisory_reason,
-                    services_provided: booking.services_provided,
                     created_at: booking.created_at,
                     assigned_admin_id: booking.assigned_admin_id,
                     assigned_admin_name: booking.assigned_admin_name,

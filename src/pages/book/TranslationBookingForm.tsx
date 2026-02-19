@@ -291,30 +291,15 @@ export default function TranslationBookingForm({ onComplete }: TranslationBookin
       setPaymentAmount(price);
 
       if (price === 0) {
-        const { data: { session } } = await supabase.auth.getSession();
-        const authHeader = session?.access_token
-          ? `Bearer ${session.access_token}`
-          : `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`;
+        const { data: record, error: dbError } = await supabase
+          .from('translation_requests')
+          .insert([{ ...payload.data, payment_status: 'free', status: 'submitted' }])
+          .select('id, booking_reference')
+          .maybeSingle();
 
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-service-request`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': authHeader,
-              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            },
-            body: JSON.stringify({
-              table: 'translation_requests',
-              data: { ...payload.data, payment_status: 'free', status: 'submitted' },
-            }),
-          }
-        );
-        const result = await response.json();
-        if (!response.ok) throw new Error(result?.error || t.errorMessage);
+        if (dbError) throw new Error(dbError.message || t.errorMessage);
         onComplete({
-          bookingReference: result?.booking_reference || '',
+          bookingReference: record?.booking_reference || '',
           serviceType: 'translation',
           date: new Date().toISOString().split('T')[0],
           startTime: '', endTime: '',

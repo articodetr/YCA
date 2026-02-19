@@ -143,30 +143,20 @@ export default function WakalaApplicationsManagement() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this wakala application?')) return;
 
-    const previous = applications;
-    setApplications((prev) => prev.filter((a) => a.id !== id));
     if (selected?.id === id) setSelected(null);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-operations`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session?.access_token}`,
-            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-          },
-          body: JSON.stringify({ action: 'delete', table: 'wakala_applications', id }),
-        }
-      );
-      const result = await res.json();
-      if (!result.success) throw new Error(result.error);
+      const { data, error } = await supabase.functions.invoke('admin-operations', {
+        body: { action: 'delete', table: 'wakala_applications', id },
+      });
+
+      if (error) throw error;
+      if (data && !data.success) throw new Error(data.error || 'Delete failed');
+
+      await fetchApplications();
     } catch (error: any) {
       console.error('Error deleting wakala:', error);
-      setApplications(previous);
-      alert(`Failed to delete: ${error.message}`);
+      alert(`Failed to delete: ${error.message || 'An unexpected error occurred'}`);
     }
   };
 

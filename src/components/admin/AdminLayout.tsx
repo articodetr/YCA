@@ -111,7 +111,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         { icon: Image, label: 'Hero Section', path: '/admin/hero' },
         { icon: Image, label: 'Page Images', path: '/admin/page-images' },
         { icon: Users, label: 'Team Members', path: '/admin/team' },
-        { icon: Layers, label: 'Services', path: '/admin/services' },
         { icon: BookOpen, label: 'Programmes', path: '/admin/programmes' },
         { icon: FolderOpen, label: 'Resources', path: '/admin/resources' },
       ],

@@ -8,6 +8,7 @@ const SOFT_DELETE_TABLES = [
   'feedback',
   'legal_requests',
   'donations',
+  'business_supporters',
   'contact_submissions',
   'newsletter_subscribers',
 ];

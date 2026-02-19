@@ -7,12 +7,13 @@ import {
 import { staggerContainer, staggerItem } from '../../../lib/animations';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import MembershipCard from '../../../components/member/MembershipCard';
+import type { PaymentItem } from '../../../lib/payment-history';
 
 interface Props {
   memberRecord: any;
   membershipApp: any;
   bookings: any[];
-  paymentHistory: any[];
+  paymentHistory: PaymentItem[];
   notifications: any[];
   t: Record<string, string>;
 }
@@ -56,16 +57,17 @@ export default function OverviewTab({ memberRecord, membershipApp, bookings, pay
     ...bookings.slice(0, 3).map(app => ({
       type: 'advisory' as const,
       title: language === 'ar' ? 'موعد استشاري' : 'Advisory Appointment',
-      date: app.created_at,
+      date: app.created_at || '',
       status: app.status,
     })),
     ...paymentHistory.slice(0, 3).map(p => ({
       type: 'payment' as const,
-      title: `\u00A3${p.amount}`,
-      date: p.created_at,
+      title: p.amount > 0 ? `${p.title} — \u00A3${p.amount.toFixed(2)}` : p.title,
+      date: p.created_at || '',
       status: p.status,
     })),
   ]
+    .filter(item => !!item.date)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
 
@@ -156,7 +158,7 @@ export default function OverviewTab({ memberRecord, membershipApp, bookings, pay
             </div>
             <span className="text-sm text-muted">{t.totalPaid}</span>
           </div>
-          <p className="text-2xl font-bold text-primary">{`\u00A3${totalPaid}`}</p>
+          <p className="text-2xl font-bold text-primary">{`\u00A3${totalPaid.toFixed(2)}`}</p>
         </div>
       </motion.div>
 

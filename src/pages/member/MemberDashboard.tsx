@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { stripePromise } from '../../lib/stripe';
+import { fetchPaymentHistory, PaymentItem } from '../../lib/payment-history';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import Layout from '../../components/Layout';
@@ -167,7 +168,7 @@ export default function MemberDashboard() {
   const [loading, setLoading] = useState(true);
   const [membershipApp, setMembershipApp] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
-  const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
+  const [paymentHistory, setPaymentHistory] = useState<PaymentItem[]>([]);
   const [memberRecord, setMemberRecord] = useState<any>(null);
   const [memberProfile, setMemberProfile] = useState<any>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -266,7 +267,7 @@ export default function MemberDashboard() {
     if (!user) return;
     setLoading(true);
     try {
-      const [membershipRes, memberByIdRes, memberByEmailRes, profileRes, bookingsRes, paymentsRes, notifRes] = await Promise.all([
+      const [membershipRes, memberByIdRes, memberByEmailRes, profileRes, bookingsRes, notifRes, payments] = await Promise.all([
         supabase
           .from('membership_applications')
           .select('*')
@@ -299,16 +300,12 @@ export default function MemberDashboard() {
           .neq('status', 'deleted_by_admin')
           .order('created_at', { ascending: false }),
         supabase
-          .from('donations')
-          .select('*')
-          .eq('email', user.email)
-          .order('created_at', { ascending: false }),
-        supabase
           .from('notifications')
           .select('*')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(50),
+        fetchPaymentHistory(user.email ?? '', user.id, language as 'en' | 'ar'),
       ]);
 
       const resolvedMember = memberByIdRes.data || memberByEmailRes.data;
@@ -316,7 +313,7 @@ export default function MemberDashboard() {
       setMemberRecord(resolvedMember);
       setMemberProfile(profileRes.data);
       setBookings(bookingsRes.data || []);
-      setPaymentHistory(paymentsRes.data || []);
+      setPaymentHistory(payments);
       setNotifications(notifRes.data || []);
       setUnreadCount((notifRes.data || []).filter((n: any) => !n.is_read).length);
 

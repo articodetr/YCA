@@ -35,35 +35,68 @@ export default function ServiceCheckoutForm({
     amount: 'المبلغ',
     paymentType: 'نوع الدفع',
     processing: 'جاري معالجة الدفع...',
+    saving: 'جاري حفظ الطلب...',
     payNow: 'ادفع الآن',
     backToForm: 'العودة للنموذج',
+    paymentSuccess: 'تم الدفع بنجاح',
+    savingRecord: 'جاري تسجيل طلبك...',
   } : {
     amount: 'Amount',
     paymentType: 'Payment Type',
     processing: 'Processing payment...',
+    saving: 'Saving your request...',
     payNow: 'Pay Now',
     backToForm: 'Back to Form',
+    paymentSuccess: 'Payment successful',
+    savingRecord: 'Saving your request...',
   };
 
-  const createRecord = async (paymentIntentId: string): Promise<{ id: string; booking_reference: string }> => {
-    const finalData = { ...formPayload.data, payment_status: 'paid', status: 'submitted' };
+  const buildInsertPayload = (paymentIntentId: string) => {
+    const base = { ...formPayload.data, payment_status: 'paid', status: 'submitted' };
 
     if (formPayload.table === 'wakala_applications') {
-      finalData.payment_intent_id = paymentIntentId;
-      delete finalData.payment_id;
+      delete base.payment_id;
+      delete base.payment_intent_id;
     } else {
-      finalData.payment_intent_id = paymentIntentId;
+      base.payment_intent_id = paymentIntentId;
     }
 
-    const { data: record, error } = await supabase
+    return base;
+  };
+
+  const createRecordViaFunction = async (paymentIntentId: string): Promise<{ id: string; booking_reference: string }> => {
+    const insertData = buildInsertPayload(paymentIntentId);
+
+    const { data: result, error: fnError } = await supabase.functions.invoke('create-service-request', {
+      body: { table: formPayload.table, data: insertData },
+    });
+
+    if (fnError) throw new Error(fnError.message || 'Failed to save request');
+    if (!result?.id) throw new Error('No record returned from service');
+    return { id: result.id, booking_reference: result.booking_reference || '' };
+  };
+
+  const createRecordDirect = async (paymentIntentId: string): Promise<{ id: string; booking_reference: string }> => {
+    const insertData = buildInsertPayload(paymentIntentId);
+
+    const { data: record, error: dbError } = await supabase
       .from(formPayload.table)
-      .insert(finalData)
+      .insert(insertData)
       .select('id, booking_reference')
       .single();
 
-    if (error) throw new Error(error.message || 'Failed to save request');
+    if (dbError) throw new Error(dbError.message || 'Failed to save request');
     if (!record) throw new Error('No record returned');
     return { id: record.id, booking_reference: record.booking_reference || '' };
+  };
+
+  const createRecord = async (paymentIntentId: string): Promise<{ id: string; booking_reference: string }> => {
+    try {
+      return await createRecordViaFunction(paymentIntentId);
+    } catch (fnErr) {
+      console.warn('Edge function unavailable, falling back to direct insert:', fnErr);
+      return await createRecordDirect(paymentIntentId);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -90,6 +123,7 @@ export default function ServiceCheckoutForm({
         onSuccess(record.id, record.booking_reference);
       }
     } catch (err: unknown) {
+      console.error('Payment/booking error:', err);
       const stripeErr = err as { message?: string; code?: string };
       const message = stripeErr?.message || (isRTL ? 'فشل الدفع. يرجى المحاولة مرة أخرى.' : 'Payment failed. Please try again.');
       setError(message);

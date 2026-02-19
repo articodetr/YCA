@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Loader2, AlertCircle, Wallet, ArrowLeft } from 'lucide-react';
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { supabase } from '../../lib/supabase';
 
 export interface ServiceFormPayload {
   table: 'translation_requests' | 'other_legal_requests' | 'wakala_applications';
@@ -44,23 +45,25 @@ export default function ServiceCheckoutForm({
     backToForm: 'Back to Form',
   };
 
-  const createRecord = async (): Promise<{ id: string; booking_reference: string }> => {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const createRecord = async (paymentIntentId: string): Promise<{ id: string; booking_reference: string }> => {
+    const finalData = { ...formPayload.data, payment_status: 'paid', status: 'submitted' };
 
-    const response = await fetch(`${supabaseUrl}/functions/v1/create-service-request`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${anonKey}`,
-      },
-      body: JSON.stringify({ table: formPayload.table, data: formPayload.data }),
-    });
+    if (formPayload.table === 'wakala_applications') {
+      finalData.payment_intent_id = paymentIntentId;
+      delete finalData.payment_id;
+    } else {
+      finalData.payment_intent_id = paymentIntentId;
+    }
 
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.error || 'Failed to save request');
-    if (!result.id) throw new Error('No record returned');
-    return { id: result.id, booking_reference: result.booking_reference || '' };
+    const { data: record, error } = await supabase
+      .from(formPayload.table)
+      .insert(finalData)
+      .select('id, booking_reference')
+      .single();
+
+    if (error) throw new Error(error.message || 'Failed to save request');
+    if (!record) throw new Error('No record returned');
+    return { id: record.id, booking_reference: record.booking_reference || '' };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -83,7 +86,7 @@ export default function ServiceCheckoutForm({
       if (confirmError) throw confirmError;
 
       if (paymentIntent?.status === 'succeeded') {
-        const record = await createRecord();
+        const record = await createRecord(paymentIntent.id);
         onSuccess(record.id, record.booking_reference);
       }
     } catch (err: unknown) {

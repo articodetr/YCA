@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { CreditCard, CheckCircle, Clock, XCircle, Gift, Users, Briefcase, Calendar } from 'lucide-react';
+import { CreditCard, CheckCircle, Clock, XCircle, Gift, Users, Briefcase, Calendar, Languages, Scale } from 'lucide-react';
 import { staggerContainer, staggerItem } from '../../../lib/animations';
 import type { PaymentItem, PaymentType, PaymentStatus } from '../../../lib/payment-history';
 
@@ -14,6 +14,8 @@ function typeIcon(type: PaymentType) {
     case 'membership': return <Users className="w-5 h-5 text-primary" />;
     case 'wakala': return <Briefcase className="w-5 h-5 text-primary" />;
     case 'event': return <Calendar className="w-5 h-5 text-primary" />;
+    case 'translation': return <Languages className="w-5 h-5 text-primary" />;
+    case 'legal': return <Scale className="w-5 h-5 text-primary" />;
     default: return <CreditCard className="w-5 h-5 text-primary" />;
   }
 }

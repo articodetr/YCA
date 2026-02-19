@@ -198,7 +198,7 @@ export default function OtherLegalBookingForm({ onComplete }: OtherLegalBookingF
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`, 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
           body: JSON.stringify({ amount: Math.round(amount * 100), currency: 'gbp', metadata: { user_id: user?.id, type: 'legal_request' } }),
           signal: controller.signal,
         }
@@ -255,15 +255,14 @@ export default function OtherLegalBookingForm({ onComplete }: OtherLegalBookingF
       setPaymentAmount(price);
 
       if (price === 0) {
-        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-service-request`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
-          body: JSON.stringify({ table: 'other_legal_requests', data: payload.data }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || t.errorMessage);
+        const { data: record, error: insertError } = await supabase
+          .from('other_legal_requests')
+          .insert({ ...payload.data, payment_status: 'paid', status: 'submitted' })
+          .select('booking_reference')
+          .single();
+        if (insertError) throw new Error(insertError.message || t.errorMessage);
         onComplete({
-          bookingReference: data.booking_reference || '',
+          bookingReference: record?.booking_reference || '',
           serviceType: 'other',
           date: new Date().toISOString().split('T')[0],
           startTime: '', endTime: '',

@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 
 export type PaymentStatus = 'paid' | 'pending' | 'failed' | 'refunded';
-export type PaymentType = 'donation' | 'membership' | 'wakala' | 'event';
+export type PaymentType = 'donation' | 'membership' | 'wakala' | 'event' | 'translation' | 'legal';
 
 export interface PaymentItem {
   id: string;
@@ -58,12 +58,22 @@ function membershipTypeLabel(type: string | null | undefined, language: string):
   return language === 'ar' ? entry.ar : entry.en;
 }
 
+const MEMBERSHIP_FEES: Record<string, number> = {
+  individual: 20,
+  family: 40,
+  youth: 10,
+  associate: 15,
+  student: 10,
+  organization: 100,
+  business_support: 0,
+};
+
 export async function fetchPaymentHistory(
   email: string,
   userId: string,
   language: 'en' | 'ar' = 'en'
 ): Promise<PaymentItem[]> {
-  const [donationsRes, membershipRes, wakalaRes, eventRes] = await Promise.all([
+  const [donationsRes, membershipRes, wakalaRes, eventRes, translationRes, legalRes] = await Promise.all([
     supabase
       .from('donations')
       .select('id, amount, payment_status, payment_intent_id, donation_type, created_at')
@@ -72,20 +82,32 @@ export async function fetchPaymentHistory(
 
     supabase
       .from('membership_applications')
-      .select('id, membership_type, payment_status, payment_intent_id, created_at')
-      .or(`email.eq.${email},user_id.eq.${userId}`)
+      .select('id, membership_type, payment_status, custom_amount, created_at')
+      .eq('user_id', userId)
       .neq('status', 'deleted_by_admin')
       .order('created_at', { ascending: false }),
 
     supabase
       .from('wakala_applications')
-      .select('id, fee_amount, payment_status, service_type, created_at')
+      .select('id, fee_amount, payment_status, service_type, booking_reference, created_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false }),
 
     supabase
       .from('event_registrations')
       .select('id, total_amount, amount_paid, payment_status, booking_reference, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false }),
+
+    supabase
+      .from('translation_requests')
+      .select('id, amount_due, payment_status, booking_reference, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false }),
+
+    supabase
+      .from('other_legal_requests')
+      .select('id, amount_due, payment_status, booking_reference, created_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false }),
   ]);
@@ -108,19 +130,22 @@ export async function fetchPaymentHistory(
   }
 
   for (const row of membershipRes.data || []) {
+    const membershipType = row.membership_type as string | null;
+    const amount = membershipType === 'business_support'
+      ? (Number(row.custom_amount) || 0)
+      : (MEMBERSHIP_FEES[membershipType || ''] ?? 0);
     items.push({
       id: `membership_${row.id}`,
       type: 'membership',
-      amount: 0,
+      amount,
       status: normalizeMembershipStatus(row.payment_status),
       created_at: row.created_at,
-      title: membershipTypeLabel(row.membership_type, language),
-      ref: row.payment_intent_id || undefined,
+      title: membershipTypeLabel(membershipType, language),
     });
   }
 
   for (const row of wakalaRes.data || []) {
-    const wakalaLabel = language === 'ar' ? 'خدمة وكالة' : 'Wakala Service';
+    const wakalaLabel = language === 'ar' ? 'خدمة الوكالة' : 'Wakala Service';
     items.push({
       id: `wakala_${row.id}`,
       type: 'wakala',
@@ -128,6 +153,7 @@ export async function fetchPaymentHistory(
       status: normalizeGenericStatus(row.payment_status),
       created_at: row.created_at,
       title: wakalaLabel,
+      ref: row.booking_reference || undefined,
     });
   }
 
@@ -141,6 +167,32 @@ export async function fetchPaymentHistory(
       status: normalizeGenericStatus(row.payment_status),
       created_at: row.created_at,
       title: eventLabel,
+      ref: row.booking_reference || undefined,
+    });
+  }
+
+  for (const row of translationRes.data || []) {
+    const translationLabel = language === 'ar' ? 'طلب ترجمة' : 'Translation Request';
+    items.push({
+      id: `translation_${row.id}`,
+      type: 'translation',
+      amount: Number(row.amount_due) || 0,
+      status: normalizeGenericStatus(row.payment_status),
+      created_at: row.created_at,
+      title: translationLabel,
+      ref: row.booking_reference || undefined,
+    });
+  }
+
+  for (const row of legalRes.data || []) {
+    const legalLabel = language === 'ar' ? 'خدمة قانونية' : 'Legal Service';
+    items.push({
+      id: `legal_${row.id}`,
+      type: 'legal',
+      amount: Number(row.amount_due) || 0,
+      status: normalizeGenericStatus(row.payment_status),
+      created_at: row.created_at,
+      title: legalLabel,
       ref: row.booking_reference || undefined,
     });
   }

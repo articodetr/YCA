@@ -15,17 +15,29 @@ export default function Volunteer() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
-  const c = (key: string, fallback: string) => getContent('volunteer', key, fallback);
-
   const isUuid = (id: string) =>
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+
+  const newUuid = () => {
+    if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+      return crypto.randomUUID();
+    }
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const toHex = (n: number) => n.toString(16).padStart(2, '0');
+    const hex = Array.from(bytes, toHex).join('');
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  };
+
+  const c = (key: string, fallback: string) => getContent('volunteer', key, fallback);
 
   const handleFormSubmit = async (
     formData: Record<string, any>,
     responses: Array<{ question_id: string; response_text: string; response_files?: any[] }>
   ) => {
     try {
-      // 1) Fallback mapping (when IDs are v1, v2, ...)
       const fieldMap: Record<string, string> = {
         v1: 'full_name', v2: 'email', v3: 'phone', v4: 'date_of_birth',
         v5: 'address', v6: 'interests', v7: 'skills', v8: 'experience',
@@ -39,98 +51,76 @@ export default function Volunteer() {
         mapped[colName] = Array.isArray(value) ? value.join(', ') : value;
       }
 
-      let basicData: any = {
-        full_name: (mapped.full_name || '').trim(),
-        email: (mapped.email || '').trim(),
-        phone: (mapped.phone || '').trim(),
-        address: (mapped.address || '').trim(),
-        date_of_birth: mapped.date_of_birth || null,
-        interests: (mapped.interests || '').trim(),
-        skills: (mapped.skills || '').trim(),
-        availability: (mapped.availability || '').trim(),
-        experience: (mapped.experience || '').trim(),
-        why_volunteer: (mapped.why_volunteer || '').trim(),
-        emergency_contact_name: (mapped.emergency_contact_name || '').trim(),
-        emergency_contact_phone: (mapped.emergency_contact_phone || '').trim(),
-      };
-
-      // 2) If questions come from DB (UUID IDs), infer core fields by question_type + order_index
-      const uuidIds = responses.map(r => r.question_id).filter(isUuid);
-      if (uuidIds.length > 0) {
-        const { data: qMeta, error: qMetaError } = await supabase
+      // لو الأسئلة جاية من DB (UUID)، نملأ الأعمدة الأساسية من meta (section + order_index)
+      const uuidQuestionIds = responses.map(r => r.question_id).filter(isUuid);
+      if (uuidQuestionIds.length > 0) {
+        const { data: qMeta, error: qErr } = await supabase
           .from('form_questions')
-          .select('id, question_type, order_index')
-          .in('id', uuidIds);
+          .select('id, question_type, order_index, section')
+          .in('id', uuidQuestionIds);
 
-        if (!qMetaError && qMeta && qMeta.length > 0) {
-          const metaMap = new Map(qMeta.map((q: any) => [q.id, q]));
-
+        if (!qErr && qMeta && qMeta.length > 0) {
+          const metaMap = new Map<string, any>(qMeta.map(q => [q.id, q]));
           const enriched = responses
             .map(r => ({ ...r, meta: metaMap.get(r.question_id) }))
-            .filter((r): r is typeof r & { meta: { id: string; question_type: string; order_index: number } } => !!r.meta)
-            .sort((a, b) => (a.meta.order_index ?? 0) - (b.meta.order_index ?? 0));
+            .filter(r => r.meta)
+            .map(r => ({
+              response_text: r.response_text || '',
+              section: (r.meta.section || '').toString(),
+              order_index: Number(r.meta.order_index || 0),
+            }))
+            .sort((a, b) => a.order_index - b.order_index);
 
-          const byType = (type: string) =>
-            enriched
-              .filter(r => r.meta.question_type === type)
-              .map(r => (r.response_text || '').trim())
-              .filter(Boolean);
+          const bySectionAndOrder = (section: string, order: number) =>
+            enriched.find(x => x.section === section && x.order_index === order)?.response_text || '';
 
-          const textVals = byType('text');
-          const emailVals = byType('email');
-          const phoneVals = byType('phone');
-          const dateVals = byType('date');
-          const checkboxVals = byType('checkbox');
-          const textareaVals = byType('textarea');
-          const selectVals = byType('select');
+          const byOrder = (order: number) =>
+            enriched.find(x => x.order_index === order)?.response_text || '';
 
-          const inferred = {
-            full_name: textVals[0] || '',
-            address: textVals[1] || '',
-            emergency_contact_name: textVals[2] || '',
-            email: emailVals[0] || '',
-            phone: phoneVals[0] || '',
-            emergency_contact_phone: phoneVals[1] || '',
-            date_of_birth: dateVals[0] || null,
-            interests: checkboxVals[0] || '',
-            skills: textareaVals[0] || '',
-            experience: textareaVals[1] || '',
-            why_volunteer: textareaVals[2] || '',
-            availability: selectVals[0] || '',
+          const pick = (section: string, order: number) => {
+            const v = bySectionAndOrder(section, order);
+            return v || byOrder(order);
           };
 
-          basicData = {
-            ...basicData,
-            full_name: basicData.full_name || inferred.full_name,
-            email: basicData.email || inferred.email,
-            phone: basicData.phone || inferred.phone,
-            address: basicData.address || inferred.address,
-            date_of_birth: basicData.date_of_birth || inferred.date_of_birth,
-            interests: basicData.interests || inferred.interests,
-            skills: basicData.skills || inferred.skills,
-            experience: basicData.experience || inferred.experience,
-            why_volunteer: basicData.why_volunteer || inferred.why_volunteer,
-            availability: basicData.availability || inferred.availability,
-            emergency_contact_name: basicData.emergency_contact_name || inferred.emergency_contact_name,
-            emergency_contact_phone: basicData.emergency_contact_phone || inferred.emergency_contact_phone,
-          };
+          mapped.full_name = mapped.full_name || pick('personal', 1);
+          mapped.email = mapped.email || pick('personal', 2);
+          mapped.phone = mapped.phone || pick('personal', 3);
+          mapped.date_of_birth = mapped.date_of_birth || pick('personal', 4);
+          mapped.address = mapped.address || pick('personal', 5);
+          mapped.interests = mapped.interests || pick('interests', 6);
+          mapped.skills = mapped.skills || pick('skills', 7);
+          mapped.experience = mapped.experience || pick('experience', 8);
+          mapped.why_volunteer = mapped.why_volunteer || pick('motivation', 9);
+          mapped.availability = mapped.availability || pick('availability', 10);
+          mapped.emergency_contact_name = mapped.emergency_contact_name || pick('emergency', 11);
+          mapped.emergency_contact_phone = mapped.emergency_contact_phone || pick('emergency', 12);
         }
       }
 
-      // Required columns in volunteer_applications
-      if (!basicData.full_name || !basicData.email || !basicData.phone) {
-        throw new Error('Missing required fields (full_name / email / phone).');
-      }
+      const basicData = {
+        full_name: (mapped.full_name || '').toString().trim(),
+        email: (mapped.email || '').toString().trim(),
+        phone: (mapped.phone || '').toString().trim(),
+        address: mapped.address || '',
+        date_of_birth: mapped.date_of_birth || null,
+        interests: mapped.interests || '',
+        skills: mapped.skills || '',
+        availability: mapped.availability || '',
+        experience: mapped.experience || '',
+        why_volunteer: mapped.why_volunteer || '',
+        emergency_contact_name: mapped.emergency_contact_name || '',
+        emergency_contact_phone: mapped.emergency_contact_phone || '',
+      };
 
-      const { data: application, error: applicationError } = await supabase
+      // مهم: بدون select() لأن SELECT للـ anon ممنوع
+      const applicationId = newUuid();
+      const { error: applicationError } = await supabase
         .from('volunteer_applications')
-        .insert([basicData])
-        .select()
-        .single();
+        .insert([{ id: applicationId, ...basicData }]);
 
       if (applicationError) throw applicationError;
 
-      // Save detailed dynamic responses (DB questions only)
+      // نحفظ form_responses فقط لو IDs من DB (وليس fallback v1..)
       try {
         const isFallbackId = (id: string) => /^v\d+$/.test(id);
         const validResponses = responses.filter(r => !isFallbackId(r.question_id));
@@ -138,7 +128,7 @@ export default function Volunteer() {
         if (validResponses.length > 0) {
           const responsesToInsert = validResponses.map(r => ({
             form_type: 'volunteer',
-            application_id: application.id,
+            application_id: applicationId,
             question_id: r.question_id,
             response_text: r.response_text,
             response_files: r.response_files || []
@@ -161,7 +151,7 @@ export default function Volunteer() {
   const opportunities = [
     { title: c('opp_1_title', 'Event Support'), description: c('opp_1_desc', 'Help organize and run community events and celebrations') },
     { title: c('opp_2_title', 'Admin Support'), description: c('opp_2_desc', 'Assist with office tasks, data entry, and correspondence') },
-    { title: c('opp_3_title', 'Programme Assistants'), description: c('opp_3_desc', 'Support our youth, women\'s, or elderly programmes') },
+    { title: c('opp_3_title', 'Programme Assistants'), description: c('opp_3_desc', "Support our youth, women's, or elderly programmes") },
     { title: c('opp_4_title', 'Translation Services'), description: c('opp_4_desc', 'Help translate documents and interpret for community members') },
     { title: c('opp_5_title', 'Mentoring'), description: c('opp_5_desc', 'Guide and support young people in the community') },
     { title: c('opp_6_title', 'Fundraising'), description: c('opp_6_desc', 'Help with fundraising initiatives and grant applications') },
@@ -187,7 +177,7 @@ export default function Volunteer() {
               variants={fadeInUp}
             >
               <p className="text-lg text-muted leading-relaxed">
-                {c('intro', 'YCA Birmingham relies on the dedication and passion of volunteers to deliver our services. Whether you have a few hours a week or can commit to regular volunteering, there\'s a role for you.')}
+                {c('intro', "YCA Birmingham relies on the dedication and passion of volunteers to deliver our services. Whether you have a few hours a week or can commit to regular volunteering, there's a role for you.")}
               </p>
             </motion.div>
 
@@ -254,9 +244,10 @@ export default function Volunteer() {
                 </motion.div>
                 <h3 className="text-xl font-bold text-primary mb-3">{c('benefit_1_title', 'Give Back')}</h3>
                 <p className="text-secondary">
-                  {c('benefit_1_desc', 'Make a real difference in people\'s lives')}
+                  {c('benefit_1_desc', "Make a real difference in people's lives")}
                 </p>
               </motion.div>
+
               <motion.div
                 className="bg-accent p-6 rounded-lg text-center"
                 variants={staggerItem}
@@ -273,6 +264,7 @@ export default function Volunteer() {
                   {c('benefit_2_desc', 'Develop new skills and experience')}
                 </p>
               </motion.div>
+
               <motion.div
                 className="bg-accent p-6 rounded-lg text-center"
                 variants={staggerItem}
@@ -309,7 +301,7 @@ export default function Volunteer() {
                 {c('apply_title', 'Apply to Volunteer')}
               </h2>
               <p className="text-xl mb-8 max-w-2xl mx-auto opacity-90">
-                {c('apply_desc', 'Complete our simple application form and start making a difference in your community. We\'ll review your application and get back to you within 2-3 business days.')}
+                {c('apply_desc', "Complete our simple application form and start making a difference in your community. We'll review your application and get back to you within 2-3 business days.")}
               </p>
 
               {submitSuccess && (

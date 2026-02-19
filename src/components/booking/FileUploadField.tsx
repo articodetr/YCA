@@ -73,11 +73,19 @@ export default function FileUploadField({
 
     setUploading(true);
     try {
+      if (userId) {
+        try {
+          await supabase.auth.refreshSession();
+        } catch {
+          // ignore refresh errors
+        }
+      }
+
       const newFiles: { name: string; url: string }[] = [];
 
       for (const file of filesToProcess) {
         const ext = file.name.split('.').pop();
-        const folder = userId || 'anonymous';
+        const folder = userId ? `user_${userId}` : 'public';
         const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
 
         const { error: uploadErr } = await supabase.storage
@@ -96,8 +104,13 @@ export default function FileUploadField({
       const updated = multiple ? [...uploadedFiles, ...newFiles] : newFiles;
       setUploadedFiles(updated);
       onUploadComplete(updated.map(f => f.url));
-    } catch {
-      setError(t.uploadError);
+    } catch (uploadError: unknown) {
+      const errMsg = uploadError instanceof Error ? uploadError.message : '';
+      if (errMsg.includes('row-level security') || errMsg.includes('policy') || errMsg.includes('403') || errMsg.includes('Unauthorized')) {
+        setError(language === 'ar' ? 'فشل رفع الملف: خطأ في الصلاحيات. يرجى المحاولة مرة أخرى.' : 'Upload failed: Permission error. Please try again.');
+      } else {
+        setError(t.uploadError);
+      }
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = '';

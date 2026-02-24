@@ -61,9 +61,7 @@ export default function ServiceCheckoutForm({
     }
 
     return base;
-  };
-
-  const createRecord = async (paymentIntentId: string): Promise<{ id: string; booking_reference: string }> => {
+  };  const createRecord = async (paymentIntentId: string): Promise<{ id: string; booking_reference: string }> => {
     const insertData = buildInsertPayload(paymentIntentId);
 
     const response = await fetch(
@@ -72,10 +70,9 @@ export default function ServiceCheckoutForm({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // IMPORTANT:
-          // Always call this function using the anon key.
-          // The function itself uses a service role key internally, so user JWTs are not needed
-          // and may cause "Invalid JWT" errors for logged-in users.
+          // IMPORTANT: Always call this function using the anon key.
+          // The function uses a service role key internally, so user JWTs are not required
+          // and can cause Invalid JWT errors for logged-in users.
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
         },
@@ -83,27 +80,19 @@ export default function ServiceCheckoutForm({
       }
     );
 
-    // Read raw text first to handle non-standard error shapes (e.g. { message })
     const raw = await response.text();
-    let result: Record<string, unknown> = {};
-    try {
-      result = JSON.parse(raw);
-    } catch {
-      // keep as {}
-    }
+    let result: any = {};
+    try { result = JSON.parse(raw); } catch { /* ignore */ }
 
     if (!response.ok) {
-      const backendMsg = (result?.error as string) || (result?.message as string) || raw;
-      const errorMsg = backendMsg || (isRTL ? 'فشل في حفظ الطلب' : 'Failed to save request');
-      throw new Error(errorMsg);
+      throw new Error(result?.error || result?.message || raw || 'Failed to save request');
     }
     if (!result?.id) {
-      throw new Error(isRTL ? 'لم يتم إنشاء السجل. يرجى التواصل معنا.' : 'Record not created. Please contact us.');
+      throw new Error('No record returned from service');
     }
 
-    return { id: result.id as string, booking_reference: (result.booking_reference as string) || '' };
+    return { id: result.id, booking_reference: result.booking_reference || '' };
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!stripe || !elements) return;

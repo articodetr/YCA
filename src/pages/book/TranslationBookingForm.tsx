@@ -56,7 +56,7 @@ const translationsData = {
     additionalNotes: 'Additional Notes (Optional)',
     notesPlaceholder: 'Any specific details or requirements for the translation...',
     pricingInfo: 'Pricing Information',
-    priceMember: '\u00A320 - First request FREE for eligible members (10+ days membership)',
+    priceMember: '£20 - Member rate for eligible members (10+ days membership)',
     priceStandard: '\u00A340 - Standard rate',
     yourPrice: 'Your Price',
     free: 'FREE',
@@ -71,7 +71,7 @@ const translationsData = {
     settingUpPayment: 'Setting up payment...',
     paymentError: 'Failed to initialize payment. Please try again.',
     memberBadge: 'Active Member',
-    memberPromo: 'Become a member to get your first request free!',
+    memberPromo: 'Become a member to get member pricing!',
     joinNow: 'Join Now',
     signIn: 'Sign In',
     signInPromo: 'Already a member? Sign in to auto-fill your details and get member pricing.',
@@ -116,7 +116,7 @@ const translationsData = {
     additionalNotes: 'ملاحظات إضافية (اختياري)',
     notesPlaceholder: 'أي تفاصيل أو متطلبات خاصة بالترجمة...',
     pricingInfo: 'معلومات التسعير',
-    priceMember: '20 جنيه - الطلب الأول مجاني للأعضاء المؤهلين (عضوية 10 أيام فأكثر)',
+    priceMember: '20 جنيه - سعر الأعضاء المؤهلين (عضوية 10 أيام فأكثر)',
     priceStandard: '40 جنيه - السعر الأساسي',
     yourPrice: 'السعر الخاص بك',
     free: 'مجاناً',
@@ -131,7 +131,7 @@ const translationsData = {
     settingUpPayment: 'جاري تجهيز الدفع...',
     paymentError: 'فشل في تهيئة الدفع. يرجى المحاولة مرة أخرى.',
     memberBadge: 'عضو نشط',
-    memberPromo: 'انضم كعضو واحصل على أول طلب مجاناً!',
+    memberPromo: 'انضم كعضو واحصل على سعر الأعضاء!',
     joinNow: 'انضم الآن',
     signIn: 'تسجيل الدخول',
     signInPromo: 'عضو بالفعل؟ سجل دخولك لتعبئة بياناتك تلقائياً والحصول على سعر الأعضاء.',
@@ -219,8 +219,10 @@ export default function TranslationBookingForm({ onComplete }: TranslationBookin
   };
 
   const calculatePrice = () => {
+    // Translation does NOT use the one-time free credit.
+    // Eligible members (10+ days) get the member rate (£20), otherwise standard (£40).
     if (membershipStatus === 'active' && memberDaysSinceJoin >= 10) {
-      return previousRequestCount === 0 ? 0 : 20;
+      return 20;
     }
     return 40;
   };
@@ -291,13 +293,13 @@ export default function TranslationBookingForm({ onComplete }: TranslationBookin
       setPaymentAmount(price);
 
       if (price === 0) {
+
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-service-request`,
           {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              // Always use anon key (function uses service role internally)
               'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
               'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
             },
@@ -512,7 +514,7 @@ export default function TranslationBookingForm({ onComplete }: TranslationBookin
             <p className={currentPrice === 0 || currentPrice === 20 ? 'font-bold text-emerald-700' : 'text-gray-600'}>{t.priceMember}</p>
             <p className={currentPrice === 40 ? 'font-bold text-emerald-700' : 'text-gray-600'}>{t.priceStandard}</p>
             <div className="border-t border-teal-300 pt-2 mt-2">
-              <span className="font-bold text-lg text-emerald-700">{t.yourPrice}: {currentPrice === 0 ? t.free : `\u00A3${currentPrice}`}</span>
+              <span className="font-bold text-lg text-emerald-700">{t.yourPrice}: {`£${currentPrice}`}</span>
             </div>
           </div>
         </div>

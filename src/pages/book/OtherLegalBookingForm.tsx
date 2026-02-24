@@ -255,18 +255,14 @@ export default function OtherLegalBookingForm({ onComplete }: OtherLegalBookingF
       setPaymentAmount(price);
 
       if (price === 0) {
-        const { data: { session } } = await supabase.auth.getSession();
-        const authHeader = session?.access_token
-          ? `Bearer ${session.access_token}`
-          : `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`;
-
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-service-request`,
           {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': authHeader,
+              // Always use anon key (function uses service role internally)
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
               'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
             },
             body: JSON.stringify({

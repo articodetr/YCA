@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Loader2, AlertCircle, Wallet, ArrowLeft } from 'lucide-react';
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { supabase } from '../../lib/supabase';
 
 export interface ServiceFormPayload {
   table: 'translation_requests' | 'other_legal_requests' | 'wakala_applications';
@@ -67,34 +66,42 @@ export default function ServiceCheckoutForm({
   const createRecord = async (paymentIntentId: string): Promise<{ id: string; booking_reference: string }> => {
     const insertData = buildInsertPayload(paymentIntentId);
 
-    const { data: { session } } = await supabase.auth.getSession();
-    const authHeader = session?.access_token
-      ? `Bearer ${session.access_token}`
-      : `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`;
-
     const response = await fetch(
       `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-service-request`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': authHeader,
+          // IMPORTANT:
+          // Always call this function using the anon key.
+          // The function itself uses a service role key internally, so user JWTs are not needed
+          // and may cause "Invalid JWT" errors for logged-in users.
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({ table: formPayload.table, data: insertData }),
       }
     );
 
-    const result = await response.json();
+    // Read raw text first to handle non-standard error shapes (e.g. { message })
+    const raw = await response.text();
+    let result: Record<string, unknown> = {};
+    try {
+      result = JSON.parse(raw);
+    } catch {
+      // keep as {}
+    }
 
     if (!response.ok) {
-      throw new Error(result?.error || 'Failed to save request');
+      const backendMsg = (result?.error as string) || (result?.message as string) || raw;
+      const errorMsg = backendMsg || (isRTL ? 'فشل في حفظ الطلب' : 'Failed to save request');
+      throw new Error(errorMsg);
     }
     if (!result?.id) {
-      throw new Error('No record returned from service');
+      throw new Error(isRTL ? 'لم يتم إنشاء السجل. يرجى التواصل معنا.' : 'Record not created. Please contact us.');
     }
 
-    return { id: result.id, booking_reference: result.booking_reference || '' };
+    return { id: result.id as string, booking_reference: (result.booking_reference as string) || '' };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

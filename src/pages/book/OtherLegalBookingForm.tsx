@@ -39,7 +39,7 @@ const translationsData = {
     documents: 'Supporting Documents',
     documentFile: 'Upload a supporting document (Optional)',
     pricingInfo: 'Pricing Information',
-    priceMember: '\u00A320 - First request FREE for eligible members (10+ days membership)',
+    priceMember: '£20 - First Wakala/Legal request FREE for eligible members (10+ days membership)',
     priceStandard: '\u00A340 - Standard rate',
     yourPrice: 'Your Price',
     free: 'FREE',
@@ -82,7 +82,7 @@ const translationsData = {
     documents: 'المستندات الداعمة',
     documentFile: 'ارفق مستنداً داعماً (اختياري)',
     pricingInfo: 'معلومات التسعير',
-    priceMember: '20 جنيه - الطلب الأول مجاني للأعضاء المؤهلين (عضوية 10 أيام فأكثر)',
+    priceMember: '20 جنيه - أول طلب (وكالة/خدمة قانونية) مجاني للأعضاء المؤهلين (عضوية 10 أيام فأكثر)',
     priceStandard: '40 جنيه - السعر الأساسي',
     yourPrice: 'السعر الخاص بك',
     free: 'مجاناً',
@@ -177,9 +177,10 @@ export default function OtherLegalBookingForm({ onComplete }: OtherLegalBookingF
       } else { setMembershipStatus('none'); setMemberDaysSinceJoin(0); }
 
       const { count: wCount } = await supabase.from('wakala_applications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).in('status', ['submitted', 'in_progress', 'completed', 'approved']);
-      const { count: tCount } = await supabase.from('translation_requests').select('id', { count: 'exact', head: true }).eq('user_id', user.id);
       const { count: oCount } = await supabase.from('other_legal_requests').select('id', { count: 'exact', head: true }).eq('user_id', user.id);
-      setPreviousRequestCount((wCount || 0) + (tCount || 0) + (oCount || 0));
+      // NOTE: We intentionally do NOT count translation requests here.
+      // A member gets ONLY ONE free credit across Wakala + Other Legal/Documentation.
+      setPreviousRequestCount((wCount || 0) + (oCount || 0));
     } catch (err) { console.error('Error checking eligibility:', err); }
   };
 
@@ -255,13 +256,13 @@ export default function OtherLegalBookingForm({ onComplete }: OtherLegalBookingF
       setPaymentAmount(price);
 
       if (price === 0) {
+
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-service-request`,
           {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              // Always use anon key (function uses service role internally)
               'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
               'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
             },

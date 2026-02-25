@@ -64,8 +64,18 @@ const PERMISSION_GROUPS: PermissionGroup[] = [
     items: [
       {
         key: 'availability.manage',
-        label: 'Availability',
-        description: 'Manage booking availability and slots',
+        label: 'Advisory Office',
+        description: 'Manage advisory office booking availability, slots, and calendar',
+      },
+      {
+        key: 'wakala.manage',
+        label: 'Wakala',
+        description: 'Manage Wakala applications',
+      },
+      {
+        key: 'legal.manage',
+        label: 'Legal Services',
+        description: 'Manage translation requests and other legal requests',
       },
       {
         key: 'admin.manage',
@@ -87,16 +97,26 @@ const ALL_PERMISSION_KEYS = PERMISSION_GROUPS.flatMap((g) =>
 
 async function callManageAdmin(body: Record<string, unknown>) {
   const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new Error('Admin session missing/expired. Please sign in again.');
+  }
   const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-admin`;
   const response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${session?.access_token}`,
+      Authorization: `Bearer ${session.access_token}`,
       'Content-Type': 'application/json',
       apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
     },
     body: JSON.stringify(body),
   });
+
+  // Helpful message if the Edge Function isn't deployed in the user's Supabase project
+  if (response.status === 404) {
+    throw new Error(
+      "Edge Function 'manage-admin' is not deployed. Deploy it in Supabase (CLI): supabase functions deploy manage-admin"
+    );
+  }
 
   const result = await response.json().catch(() => ({}));
   if (!response.ok) {

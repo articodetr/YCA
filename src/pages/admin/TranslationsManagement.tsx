@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FileText, Search, Filter, Eye, X, Download, RefreshCw, Loader2, ExternalLink } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useAdminAuth } from '../../contexts/AdminAuthContext';
 
 interface TranslationRequest {
   id: string;
@@ -28,6 +29,9 @@ const STATUS_OPTIONS = ['pending', 'in_progress', 'completed', 'cancelled'] as c
 const URGENCY_OPTIONS = ['standard', 'urgent', 'express'] as const;
 
 export default function TranslationsManagement() {
+  const { hasPermission } = useAdminAuth();
+  const canManage = hasPermission('legal.manage');
+
   const [items, setItems] = useState<TranslationRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -40,8 +44,11 @@ export default function TranslationsManagement() {
   const [toast, setToast] = useState<Toast | null>(null);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (canManage) {
+      fetchData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canManage]);
 
   useEffect(() => {
     if (toast) {
@@ -50,7 +57,18 @@ export default function TranslationsManagement() {
     }
   }, [toast]);
 
-  const fetchData = async () => {
+  if (!canManage) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h1 className="text-xl font-bold text-gray-900 mb-2">Access denied</h1>
+        <p className="text-sm text-gray-600">
+          You don't have permission to manage Legal Services requests.
+        </p>
+      </div>
+    );
+  }
+
+  async function fetchData() {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -64,7 +82,7 @@ export default function TranslationsManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const updateRequest = async () => {
     if (!selected) return;

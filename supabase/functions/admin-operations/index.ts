@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   "Access-Control-Allow-Headers":
-    "Content-Type, Authorization, X-Client-Info, Apikey",
+    "Content-Type, Authorization, X-Client-Info, apikey, Apikey",
 };
 
 const jsonHeaders = { ...corsHeaders, "Content-Type": "application/json" };
@@ -37,7 +37,8 @@ const ALLOWED_TABLES = [
   "form_responses",
   "complaints",
   "service_feedback",
-  "legal_requests",
+  "translation_requests",
+  "other_legal_requests",
 ];
 
 Deno.serve(async (req: Request) => {

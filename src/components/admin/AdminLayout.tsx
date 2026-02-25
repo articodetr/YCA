@@ -94,10 +94,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const translationEnabled = getSetting('translation_enabled', 'false') === 'true';
 
   const operationsItems = [
-    ...(hasPermission('availability.manage') ? [{ icon: Calendar, label: 'Availability', path: '/admin/availability' }] : []),
-    { icon: FileText, label: 'Wakala Applications', path: '/admin/wakala-applications' },
-    ...(translationEnabled ? [{ icon: FileText, label: 'Translation Requests', path: '/admin/translations' }] : []),
-    { icon: Scale, label: 'Other Legal Requests', path: '/admin/legal-requests' },
+    ...(hasPermission('availability.manage') ? [{ icon: Calendar, label: 'Advisory Office', path: '/admin/availability' }] : []),
+    ...(hasPermission('wakala.manage') ? [{ icon: FileText, label: 'Wakala Applications', path: '/admin/wakala-applications' }] : []),
+    ...(translationEnabled && hasPermission('legal.manage') ? [{ icon: FileText, label: 'Translation Requests', path: '/admin/translations' }] : []),
+    ...(hasPermission('legal.manage') ? [{ icon: Scale, label: 'Other Legal Requests', path: '/admin/legal-requests' }] : []),
     ...(hasPermission('admin.manage') ? [{ icon: Shield, label: 'Admin Management', path: '/admin/admins' }] : []),
     ...(hasPermission('settings.manage') ? [{ icon: Settings, label: 'Settings', path: '/admin/settings' }] : []),
   ];

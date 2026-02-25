@@ -146,12 +146,36 @@ export default function WakalaApplicationsManagement() {
     if (selected?.id === id) setSelected(null);
 
     try {
-      const { data, error } = await supabase.functions.invoke('admin-operations', {
-        body: { action: 'delete', table: 'wakala_applications', id },
-      });
+      // IMPORTANT:
+      // This admin action MUST be called with the admin user's access token.
+      // In some setups, supabase.functions.invoke() may fall back to using the anon key,
+      // which makes the function return 401/403 and the record won't be deleted.
+      const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (sessionErr || !token) {
+        throw new Error('Admin session missing/expired. Please sign in again.');
+      }
 
-      if (error) throw error;
-      if (data && !data.success) throw new Error(data.error || 'Delete failed');
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-operations`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({ action: 'delete', table: 'wakala_applications', id }),
+        }
+      );
+
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(result?.error || 'Delete failed');
+      }
+      if (result && result.success !== true) {
+        throw new Error(result?.error || 'Delete failed');
+      }
 
       await fetchApplications();
     } catch (error: any) {

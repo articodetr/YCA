@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
+import { useAdminAuth } from '../../contexts/AdminAuthContext';
 import {
   FileText,
   Search,
@@ -68,6 +69,9 @@ const FORMAT_LABELS: Record<string, string> = {
 };
 
 export default function WakalaApplicationsManagement() {
+  const { hasPermission } = useAdminAuth();
+  const canManage = hasPermission('wakala.manage');
+
   const [applications, setApplications] = useState<WakalaApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -77,10 +81,6 @@ export default function WakalaApplicationsManagement() {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [adminNotes, setAdminNotes] = useState('');
   const [savingNotes, setSavingNotes] = useState(false);
-
-  useEffect(() => {
-    fetchApplications();
-  }, []);
 
   const fetchApplications = async () => {
     try {
@@ -98,6 +98,24 @@ export default function WakalaApplicationsManagement() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (canManage) {
+      fetchApplications();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canManage]);
+
+  if (!canManage) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h1 className="text-xl font-bold text-gray-900 mb-2">Access denied</h1>
+        <p className="text-sm text-gray-600">
+          You don't have permission to manage Wakala applications.
+        </p>
+      </div>
+    );
+  }
 
   const updateStatus = async (id: string, status: string) => {
     try {
@@ -146,10 +164,6 @@ export default function WakalaApplicationsManagement() {
     if (selected?.id === id) setSelected(null);
 
     try {
-      // IMPORTANT:
-      // This admin action MUST be called with the admin user's access token.
-      // In some setups, supabase.functions.invoke() may fall back to using the anon key,
-      // which makes the function return 401/403 and the record won't be deleted.
       const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
       if (sessionErr || !token) {
@@ -157,7 +171,7 @@ export default function WakalaApplicationsManagement() {
       }
 
       const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-operations`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-admin`,
         {
           method: 'POST',
           headers: {
@@ -165,7 +179,7 @@ export default function WakalaApplicationsManagement() {
             Authorization: `Bearer ${token}`,
             apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
           },
-          body: JSON.stringify({ action: 'delete', table: 'wakala_applications', id }),
+          body: JSON.stringify({ action: 'delete_record', table: 'wakala_applications', record_id: id }),
         }
       );
 

@@ -13,6 +13,7 @@ interface Booking {
   email: string;
   phone: string;
   service_type: string;
+  provided_services?: string[] | null;
   status: string;
   assigned_admin_name?: string;
   members?: {
@@ -37,6 +38,8 @@ interface BookingClickData {
   created_at: string;
   assigned_admin_id?: string;
   assigned_admin_name?: string;
+  service_type?: string;
+  provided_services?: string[] | null;
 }
 
 interface BookingsOverviewProps {
@@ -260,6 +263,8 @@ export default function BookingsOverview({
                     created_at: booking.created_at,
                     assigned_admin_id: booking.assigned_admin_id,
                     assigned_admin_name: booking.assigned_admin_name,
+                    service_type: booking.service_type,
+                    provided_services: (booking as any).provided_services || [],
                   });
                 }}
               >

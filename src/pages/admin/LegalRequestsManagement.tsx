@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
+import { useAdminAuth } from '../../contexts/AdminAuthContext';
 import {
   Scale,
   Search,
@@ -43,6 +44,9 @@ const URGENCY_COLORS: Record<string, string> = {
 };
 
 export default function LegalRequestsManagement() {
+  const { hasPermission } = useAdminAuth();
+  const canManage = hasPermission('legal.manage');
+
   const [requests, setRequests] = useState<LegalRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -52,10 +56,6 @@ export default function LegalRequestsManagement() {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [adminNotes, setAdminNotes] = useState('');
   const [savingNotes, setSavingNotes] = useState(false);
-
-  useEffect(() => {
-    fetchRequests();
-  }, []);
 
   const fetchRequests = async () => {
     try {
@@ -73,6 +73,24 @@ export default function LegalRequestsManagement() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (canManage) {
+      fetchRequests();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canManage]);
+
+  if (!canManage) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h1 className="text-xl font-bold text-gray-900 mb-2">Access denied</h1>
+        <p className="text-sm text-gray-600">
+          You don't have permission to manage Legal Services requests.
+        </p>
+      </div>
+    );
+  }
 
   const updateStatus = async (id: string, status: string) => {
     try {

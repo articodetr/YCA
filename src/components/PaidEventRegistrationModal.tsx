@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, User, Mail, Phone, CreditCard, Loader2, CheckCircle,
   AlertCircle, Ticket, Utensils, Minus, Plus, Copy, ChevronLeft, Lock,
+  Users,
 } from 'lucide-react';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { stripePromise } from '../lib/stripe';
@@ -34,6 +35,15 @@ interface TicketCounts {
   adult: number;
   child: number;
   member: number;
+}
+
+type TicketType = 'adult' | 'child' | 'member';
+
+interface AttendeeDetails {
+  ticketType: TicketType;
+  firstName: string;
+  lastName: string;
+  age: string;
 }
 
 interface PaymentFormProps {
@@ -187,7 +197,13 @@ const translations = {
     eventLocation: 'المكان',
     required: 'مطلوب',
     invalidEmail: 'بريد إلكتروني غير صالح',
+    invalidAge: 'يرجى إدخال عمر صحيح',
     selectTickets: 'يرجى اختيار تذكرة واحدة على الأقل',
+    attendeeDetails: 'بيانات الحضور',
+    attendee: 'حاضر',
+    attendeeAge: 'العمر *',
+    attendeeAgePlaceholder: 'مثال: 12',
+    completeAttendees: 'يرجى تعبئة بيانات جميع الحضور (الاسم والعمر).',
     paymentFailed: 'فشل الدفع. يرجى المحاولة مرة أخرى.',
   },
   en: {
@@ -236,7 +252,13 @@ const translations = {
     eventLocation: 'Location',
     required: 'Required',
     invalidEmail: 'Invalid email address',
+    invalidAge: 'Please enter a valid age',
     selectTickets: 'Please select at least one ticket',
+    attendeeDetails: 'Attendee Details',
+    attendee: 'Attendee',
+    attendeeAge: 'Age *',
+    attendeeAgePlaceholder: 'e.g. 12',
+    completeAttendees: 'Please complete the details for all attendees (name and age).',
     paymentFailed: 'Payment failed. Please try again.',
   },
 };
@@ -263,6 +285,7 @@ export default function PaidEventRegistrationModal({ isOpen, onClose, event }: P
     isMember: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [attendees, setAttendees] = useState<AttendeeDetails[]>([]);
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [registrationId, setRegistrationId] = useState<string | null>(null);
@@ -286,11 +309,69 @@ export default function PaidEventRegistrationModal({ isOpen, onClose, event }: P
       setTickets({ adult: 1, child: 0, member: 0 });
       setFormData({ firstName: '', lastName: '', email: '', phone: '', dietaryRequirements: '', notes: '', isMember: '' });
       setErrors({});
+      setAttendees([]);
     }
   }, [isOpen]);
 
   const totalTickets = tickets.adult + tickets.child + tickets.member;
   const spotsRemaining = event.max_capacity ? event.max_capacity - event.current_registrations : null;
+
+  const ticketTypeList = useMemo<TicketType[]>(() => {
+    const list: TicketType[] = [];
+    for (let i = 0; i < (tickets.adult || 0); i++) list.push('adult');
+    for (let i = 0; i < (tickets.child || 0); i++) list.push('child');
+    for (let i = 0; i < (tickets.member || 0); i++) list.push('member');
+    return list;
+  }, [tickets]);
+
+  useEffect(() => {
+    // Keep attendee forms in sync with ticket counts (preserving data where possible)
+    setAttendees(prev => {
+      const prevCopy = Array.isArray(prev) ? [...prev] : [];
+      const used = new Set<number>();
+      const next: AttendeeDetails[] = ticketTypeList.map((type, idx) => {
+        const sameIdx = prevCopy[idx];
+        if (sameIdx && sameIdx.ticketType === type) {
+          used.add(idx);
+          return { ...sameIdx };
+        }
+        const foundIdx = prevCopy.findIndex((a, i) => !used.has(i) && a.ticketType === type);
+        if (foundIdx !== -1) {
+          used.add(foundIdx);
+          return { ...prevCopy[foundIdx], ticketType: type };
+        }
+        return { ticketType: type, firstName: '', lastName: '', age: '' };
+      });
+
+      return next;
+    });
+
+    // Clear attendee-related errors when ticket list changes
+    setErrors(prev => {
+      const next = { ...prev };
+      Object.keys(next).forEach(k => {
+        if (k.startsWith('attendee_') || k === 'attendees') delete next[k];
+      });
+      return next;
+    });
+  }, [ticketTypeList]);
+
+  useEffect(() => {
+    // Helpful default: copy contact name into attendee #1 when the first ticket is not a child ticket
+    if (!isOpen) return;
+    if (!attendees.length) return;
+    if (ticketTypeList[0] === 'child') return;
+
+    setAttendees(prev => {
+      if (!prev.length) return prev;
+      const a0 = prev[0];
+      const shouldPrefill = (!a0.firstName.trim() && !a0.lastName.trim()) && (formData.firstName.trim() || formData.lastName.trim());
+      if (!shouldPrefill) return prev;
+      const next = [...prev];
+      next[0] = { ...a0, firstName: formData.firstName, lastName: formData.lastName };
+      return next;
+    });
+  }, [isOpen, formData.firstName, formData.lastName, ticketTypeList, attendees.length]);
 
   const totalPrice = useMemo(() => {
     let total = tickets.adult * (event.ticket_price_adult || 0);
@@ -318,8 +399,41 @@ export default function PaidEventRegistrationModal({ isOpen, onClose, event }: P
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = t.invalidEmail;
     if (!formData.phone.trim()) newErrors.phone = t.required;
     if (totalTickets === 0) newErrors.tickets = t.selectTickets;
+
+    if (totalTickets > 0) {
+      if (!attendees.length || attendees.length !== totalTickets) {
+        newErrors.attendees = t.completeAttendees;
+      } else {
+        attendees.forEach((a, idx) => {
+          if (!a.firstName.trim()) newErrors[`attendee_${idx}_firstName`] = t.required;
+          if (!a.lastName.trim()) newErrors[`attendee_${idx}_lastName`] = t.required;
+          if (!a.age.trim()) newErrors[`attendee_${idx}_age`] = t.required;
+          else {
+            const n = Number.parseInt(a.age, 10);
+            if (!Number.isFinite(n) || n <= 0) newErrors[`attendee_${idx}_age`] = t.invalidAge;
+          }
+        });
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const updateAttendee = (idx: number, patch: Partial<AttendeeDetails>) => {
+    setAttendees(prev => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], ...patch };
+      return next;
+    });
+    setErrors(prev => {
+      const next = { ...prev };
+      if (patch.firstName !== undefined) delete next[`attendee_${idx}_firstName`];
+      if (patch.lastName !== undefined) delete next[`attendee_${idx}_lastName`];
+      if (patch.age !== undefined) delete next[`attendee_${idx}_age`];
+      delete next.attendees;
+      return next;
+    });
   };
 
   const handleContinueToPayment = async () => {
@@ -339,6 +453,13 @@ export default function PaidEventRegistrationModal({ isOpen, onClose, event }: P
           email: formData.email.trim(),
           phone: formData.phone.trim(),
           number_of_attendees: totalTickets,
+          attendees_details: attendees.map(a => ({
+            ticket_type: a.ticketType,
+            first_name: a.firstName.trim(),
+            last_name: a.lastName.trim(),
+            full_name: `${a.firstName.trim()} ${a.lastName.trim()}`.trim(),
+            age: Number.parseInt(a.age, 10),
+          })),
           notes: formData.notes.trim() || null,
           dietary_requirements: formData.dietaryRequirements.trim() || null,
           is_member: formData.isMember === 'yes' ? true : formData.isMember === 'no' ? false : null,
@@ -417,6 +538,12 @@ export default function PaidEventRegistrationModal({ isOpen, onClose, event }: P
     { key: 'child' as const, label: t.child, price: event.ticket_price_child, show: event.ticket_price_child !== null },
     { key: 'member' as const, label: t.memberTicket, price: event.ticket_price_member, show: event.ticket_price_member !== null },
   ].filter(tt => tt.show);
+
+  const ticketLabel = (type: TicketType) => {
+    if (type === 'adult') return t.adult;
+    if (type === 'child') return t.child;
+    return t.memberTicket;
+  };
 
   if (!isOpen) return null;
 
@@ -679,6 +806,64 @@ export default function PaidEventRegistrationModal({ isOpen, onClose, event }: P
                           className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm resize-none"
                           placeholder={t.notesPlaceholder}
                         />
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-emerald-600" />
+                        <h3 className="font-semibold text-gray-900 text-sm">{t.attendeeDetails}</h3>
+                      </div>
+
+                      {errors.attendees && <p className="text-red-600 text-xs -mt-1">{errors.attendees}</p>}
+
+                      <div className="space-y-3">
+                        {attendees.map((a, idx) => (
+                          <div key={`${a.ticketType}-${idx}`} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                            <div className="flex items-center justify-between mb-3">
+                              <p className="text-sm font-semibold text-gray-900">
+                                {t.attendee} {idx + 1} <span className="text-gray-500 font-medium">• {ticketLabel(a.ticketType)}</span>
+                              </p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">{t.firstName}</label>
+                                <input
+                                  type="text"
+                                  value={a.firstName}
+                                  onChange={e => updateAttendee(idx, { firstName: e.target.value })}
+                                  className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm ${errors[`attendee_${idx}_firstName`] ? 'border-red-400' : 'border-gray-300'}`}
+                                />
+                                {errors[`attendee_${idx}_firstName`] && <p className="text-red-500 text-xs mt-1">{errors[`attendee_${idx}_firstName`]}</p>}
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">{t.lastName}</label>
+                                <input
+                                  type="text"
+                                  value={a.lastName}
+                                  onChange={e => updateAttendee(idx, { lastName: e.target.value })}
+                                  className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm ${errors[`attendee_${idx}_lastName`] ? 'border-red-400' : 'border-gray-300'}`}
+                                />
+                                {errors[`attendee_${idx}_lastName`] && <p className="text-red-500 text-xs mt-1">{errors[`attendee_${idx}_lastName`]}</p>}
+                              </div>
+                            </div>
+
+                            <div className="mt-3">
+                              <label className="block text-sm font-medium text-gray-700 mb-1">{t.attendeeAge}</label>
+                              <input
+                                type="number"
+                                min={1}
+                                step={1}
+                                value={a.age}
+                                onChange={e => updateAttendee(idx, { age: e.target.value })}
+                                className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm ${errors[`attendee_${idx}_age`] ? 'border-red-400' : 'border-gray-300'}`}
+                                placeholder={t.attendeeAgePlaceholder}
+                              />
+                              {errors[`attendee_${idx}_age`] && <p className="text-red-500 text-xs mt-1">{errors[`attendee_${idx}_age`]}</p>}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
 

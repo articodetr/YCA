@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Building2, Plus, Edit, Trash2, Search, Filter, X, Loader2, ExternalLink, ToggleLeft, ToggleRight } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Building2, Plus, Edit, Trash2, Search, Filter, X, Loader2, ExternalLink, ToggleLeft, ToggleRight, Upload } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface BusinessSupporter {
@@ -44,6 +44,7 @@ const DEFAULT_FORM_DATA: FormData = {
 export default function BusinessSupportersManagement() {
   const [supporters, setSupporters] = useState<BusinessSupporter[]>([]);
   const [loading, setLoading] = useState(true);
+  const [adminId, setAdminId] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTier, setFilterTier] = useState<string>('all');
   const [showModal, setShowModal] = useState(false);
@@ -52,10 +53,57 @@ export default function BusinessSupportersManagement() {
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchSupporters();
+    supabase.auth.getUser().then(({ data }) => {
+      setAdminId(data.user?.id || '');
+    }).catch(() => {
+      setAdminId('');
+    });
   }, []);
+
+  const uploadLogo = async (file: File) => {
+    if (!adminId) {
+      setToast({ message: 'Unable to upload: admin session not found', type: 'error' });
+      return;
+    }
+
+    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowed.includes(file.type)) {
+      setToast({ message: 'Unsupported file type (JPG/PNG/WebP only)', type: 'error' });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setToast({ message: 'File is too large (max 5MB)', type: 'error' });
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const ext = file.name.split('.').pop() || 'png';
+      const path = `${adminId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('business-supporters-logos')
+        .upload(path, file, { cacheControl: '3600', upsert: false });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('business-supporters-logos')
+        .getPublicUrl(path);
+
+      setFormData(prev => ({ ...prev, logo_url: `${urlData.publicUrl}?t=${Date.now()}` }));
+      setToast({ message: 'Logo uploaded successfully', type: 'success' });
+    } catch (err: any) {
+      console.error('Logo upload error:', err);
+      setToast({ message: err?.message || 'Failed to upload logo', type: 'error' });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   useEffect(() => {
     if (toast) {
@@ -392,7 +440,30 @@ export default function BusinessSupportersManagement() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Logo URL</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-sm font-medium text-gray-700">Logo</label>
+                  <button
+                    type="button"
+                    onClick={() => logoInputRef.current?.click()}
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 hover:text-emerald-800"
+                  >
+                    <Upload className="w-4 h-4" />
+                    Upload
+                  </button>
+                </div>
+
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) uploadLogo(f);
+                    if (logoInputRef.current) logoInputRef.current.value = '';
+                  }}
+                />
+
                 <input
                   type="text"
                   value={formData.logo_url}

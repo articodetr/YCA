@@ -52,8 +52,8 @@ export default function TranslationRequest() {
       ? 'غير الأعضاء: 40 جنيه إسترليني لكل طلب. انضم كعضو للحصول على أسعار مخفضة!'
       : 'Non-members: \u00a340 per request. Join as a member for discounted rates!',
     pricingNewMember: isAr
-      ? 'عضويتك مفعلة منذ أقل من 10 أيام. ستكون مؤهلاً للأسعار المخفضة بعد 10 أيام من التفعيل.'
-      : 'Your membership was activated less than 10 days ago. You will be eligible for discounted rates after 10 days from activation.',
+      ? 'عضويتك مفعلة منذ أقل من 30 يومًا. ستكون مؤهلاً للأسعار المخفضة بعد 30 يومًا من التفعيل.'
+      : 'Your membership was activated less than 30 days ago. You will be eligible for discounted rates after 30 days from activation.',
     pricingFirstFree: isAr
       ? 'بصفتك عضواً مؤهلاً، طلبك الأول عبر جميع الخدمات القانونية مجاني!'
       : 'As an eligible member, your first request across all legal services is FREE!',
@@ -151,7 +151,7 @@ export default function TranslationRequest() {
 
     setDaysSinceActivation(daysSince);
 
-    if (daysSince < 10) return 40;
+    if (daysSince < 30) return 40;
 
     const { count: wakalaCount } = await supabase
       .from('wakala_applications')
@@ -267,7 +267,7 @@ export default function TranslationRequest() {
       );
     }
 
-    if (daysSinceActivation !== null && daysSinceActivation < 10) {
+    if (daysSinceActivation !== null && daysSinceActivation < 30) {
       return (
         <div className="space-y-3">
           <div className="flex items-start gap-3">
@@ -275,7 +275,7 @@ export default function TranslationRequest() {
             <div>
               <p className="text-muted">{txt.pricingNewMember}</p>
               <p className="text-sm text-amber-600 font-semibold mt-1">
-                {txt.daysRemaining}: {10 - daysSinceActivation}
+                {txt.daysRemaining}: {30 - daysSinceActivation}
               </p>
             </div>
           </div>

@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import {
   X, Loader2, CreditCard, AlertCircle, CheckCircle, ArrowRight,
   User as UserIcon, Phone, MapPin, Calendar, ChevronLeft, UserPlus, Trash2,
   Lock, Mail,
+  Upload,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -94,6 +95,12 @@ const translations = {
     passwordMinLength: 'Password must be at least 6 characters',
     authError: 'Authentication failed. Please try again.',
     userExists: 'An account with this email already exists. Please sign in instead.',
+    businessOfficialName: 'Official Business Name',
+    businessWebsite: 'Website (optional)',
+    businessLogo: 'Business Logo (optional)',
+    uploadLogo: 'Upload Logo',
+    removeLogo: 'Remove',
+    logoHelp: 'JPG/PNG/WebP up to 5MB',
   },
   ar: {
     stepAuth: 'تسجيل الدخول أو إنشاء حساب',
@@ -155,6 +162,12 @@ const translations = {
     passwordMinLength: 'يجب أن تكون كلمة المرور 6 أحرف على الأقل',
     authError: 'فشل التحقق. يرجى المحاولة مرة أخرى.',
     userExists: 'يوجد حساب بهذا البريد الإلكتروني. يرجى تسجيل الدخول بدلاً من ذلك.',
+    businessOfficialName: 'الاسم الرسمي للداعم',
+    businessWebsite: 'رابط الصفحة (اختياري)',
+    businessLogo: 'شعار الداعم (اختياري)',
+    uploadLogo: 'رفع الشعار',
+    removeLogo: 'إزالة',
+    logoHelp: 'JPG/PNG/WebP حتى 5MB',
   },
 };
 
@@ -341,6 +354,12 @@ export default function MembershipPaymentModal({
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [postcode, setPostcode] = useState('');
+  const [businessName, setBusinessName] = useState('');
+  const [businessWebsite, setBusinessWebsite] = useState('');
+  const [businessLogoUrl, setBusinessLogoUrl] = useState<string>('');
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoError, setLogoError] = useState('');
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [businessSupport, setBusinessSupport] = useState<{ tier: string; amount: number; frequency: string } | null>(
     preSelectedBusinessSupport || null
@@ -399,8 +418,58 @@ export default function MembershipPaymentModal({
       setAuthMode('login');
       setFirstName('');
       setLastName('');
+      setBusinessName('');
+      setBusinessWebsite('');
+      setBusinessLogoUrl('');
+      setLogoError('');
+      setLogoUploading(false);
     }
   }, [isOpen]);
+
+  const handleBusinessLogoUpload = async (file: File) => {
+    if (!user) return;
+    setLogoError('');
+
+    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowed.includes(file.type)) {
+      setLogoError(language === 'ar' ? 'نوع الملف غير مدعوم' : 'Unsupported file type');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setLogoError(language === 'ar' ? 'حجم الملف كبير (الحد 5MB)' : 'File is too large (max 5MB)');
+      return;
+    }
+
+    setLogoUploading(true);
+    try {
+      const ext = file.name.split('.').pop() || 'png';
+      const path = `${user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('business-supporters-logos')
+        .upload(path, file, { cacheControl: '3600', upsert: false });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('business-supporters-logos')
+        .getPublicUrl(path);
+
+      setBusinessLogoUrl(`${urlData.publicUrl}?t=${Date.now()}`);
+    } catch (err: any) {
+      console.error('Logo upload error:', err);
+      setLogoError(err?.message || (language === 'ar' ? 'فشل رفع الشعار' : 'Failed to upload logo'));
+    } finally {
+      setLogoUploading(false);
+      if (logoInputRef.current) logoInputRef.current.value = '';
+    }
+  };
+
+  const removeBusinessLogo = () => {
+    setBusinessLogoUrl('');
+    setLogoError('');
+    if (logoInputRef.current) logoInputRef.current.value = '';
+  };
 
   useEffect(() => {
     if (onStepChange) {
@@ -475,6 +544,7 @@ export default function MembershipPaymentModal({
     if (!city.trim()) errs.city = true;
     if (!postcode.trim()) errs.postcode = true;
     if (membershipType.id === 'business_support' && !businessSupport) errs.businessSupport = true;
+    if (membershipType.id === 'business_support' && !businessName.trim()) errs.businessName = true;
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -501,6 +571,36 @@ export default function MembershipPaymentModal({
           setSubmittingDetails(false);
           return;
         }
+
+        // Update the existing pending application with the latest details
+        // (Requires the UPDATE RLS policy introduced in the migration)
+        const updatePayload: any = {
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          full_name: `${firstName.trim()} ${lastName.trim()}`,
+          phone: phone.trim(),
+          date_of_birth: dateOfBirth,
+          address: address.trim(),
+          city: city.trim(),
+          postcode: postcode.trim(),
+        };
+
+        if (membershipType.id === 'business_support') {
+          updatePayload.business_name = businessName.trim();
+          updatePayload.business_logo_url = businessLogoUrl || null;
+          updatePayload.business_website_url = businessWebsite.trim() || null;
+          if (businessSupport) {
+            updatePayload.business_support_tier = businessSupport.tier;
+            updatePayload.custom_amount = businessSupport.amount;
+            updatePayload.payment_frequency = businessSupport.frequency;
+          }
+        }
+
+        await supabase
+          .from('membership_applications')
+          .update(updatePayload)
+          .eq('id', existing.id);
+
         setApplicationId(existing.id);
         setLoadingPayment(true);
         setStep('payment');
@@ -548,6 +648,9 @@ export default function MembershipPaymentModal({
         applicationData.business_support_tier = businessSupport.tier;
         applicationData.custom_amount = businessSupport.amount;
         applicationData.payment_frequency = businessSupport.frequency;
+        applicationData.business_name = businessName.trim();
+        applicationData.business_logo_url = businessLogoUrl || null;
+        applicationData.business_website_url = businessWebsite.trim() || null;
       }
 
       const { data: appData, error: appError } = await supabase
@@ -1050,6 +1153,109 @@ export default function MembershipPaymentModal({
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {membershipType.id === 'business_support' && (
+                  <div className={`border rounded-xl p-4 space-y-4 ${errors.businessName ? 'border-red-400 bg-red-50' : 'border-gray-200'}`}>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        {t.businessOfficialName} *
+                      </label>
+                      <input
+                        type="text"
+                        value={businessName}
+                        onChange={e => { setBusinessName(e.target.value); setErrors(p => ({ ...p, businessName: false })); }}
+                        className={`w-full px-3 py-2.5 border ${errors.businessName ? 'border-red-400 bg-red-50' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm`}
+                        placeholder={language === 'ar' ? 'مثال: شركة ...' : 'e.g., Company Name'}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        {t.businessWebsite}
+                      </label>
+                      <input
+                        type="url"
+                        value={businessWebsite}
+                        onChange={e => setBusinessWebsite(e.target.value)}
+                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
+                        placeholder="https://"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        {t.businessLogo}
+                      </label>
+
+                      {businessLogoUrl ? (
+                        <div className="relative border border-gray-200 rounded-lg p-3 bg-white">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={businessLogoUrl}
+                              alt="logo"
+                              className="w-16 h-16 object-contain rounded-md bg-white border border-gray-100 p-2"
+                            />
+                            <div className="flex-1">
+                              <p className="text-xs text-gray-500">{t.logoHelp}</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={removeBusinessLogo}
+                              className="px-3 py-2 text-xs font-semibold bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100"
+                            >
+                              {t.removeLogo}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-white">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2 text-gray-600">
+                              {logoUploading ? (
+                                <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
+                              ) : (
+                                <Upload className="w-5 h-5" />
+                              )}
+                              <div>
+                                <p className="text-sm font-medium text-gray-700">
+                                  {logoUploading ? (language === 'ar' ? 'جاري رفع الشعار...' : 'Uploading...') : t.uploadLogo}
+                                </p>
+                                <p className="text-xs text-gray-500">{t.logoHelp}</p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              disabled={logoUploading}
+                              onClick={() => logoInputRef.current?.click()}
+                              className="px-4 py-2 text-sm font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-60"
+                            >
+                              {t.uploadLogo}
+                            </button>
+                          </div>
+
+                          <input
+                            ref={logoInputRef}
+                            type="file"
+                            accept="image/jpeg,image/jpg,image/png,image/webp"
+                            className="hidden"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) handleBusinessLogoUpload(f);
+                            }}
+                            disabled={logoUploading}
+                          />
+                        </div>
+                      )}
+
+                      {logoError && (
+                        <div className="mt-2 flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg p-3">
+                          <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                          <p className="text-sm text-red-700">{logoError}</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 

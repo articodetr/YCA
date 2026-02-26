@@ -118,7 +118,6 @@ export default function Header() {
       { label: t('nav.getInvolved.membership'), path: '/membership' },
       { label: t('nav.getInvolved.volunteer'), path: '/get-involved/volunteer' },
       { label: t('nav.getInvolved.jobs'), path: '/get-involved/jobs' },
-      { label: t('nav.getInvolved.partnerships'), path: '/get-involved/partnerships' },
       { label: t('nav.getInvolved.businessSupport'), path: '/get-involved/business-support' },
     ],
   };

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Trophy, Users, Building, GraduationCap, Heart, Calendar, FileText, HandHeart, ArrowRight, Newspaper, User, Tag, Crown, Star, Award, ExternalLink, Building2 } from 'lucide-react';
+import { Trophy, Users, Building, GraduationCap, Heart, Calendar, FileText, HandHeart, ArrowRight, Newspaper, User, Tag, Crown, Star, Award, ExternalLink, Building2, Handshake } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { fadeInUp, fadeInLeft, fadeInRight, staggerContainer, staggerItem, scaleIn } from '../lib/animations';
@@ -45,6 +45,14 @@ interface BusinessSupporter {
   website_url: string | null;
 }
 
+interface PartnershipCollaboration {
+  id: string;
+  name: string;
+  logo_url: string | null;
+  website_url: string | null;
+  sort_order: number;
+}
+
 export default function Home() {
   const { getContent } = useContent();
   const { getSetting, getPageImage } = useSiteSettings();
@@ -75,6 +83,8 @@ export default function Home() {
   const [latestNews, setLatestNews] = useState<NewsArticle[]>([]);
   const [supporters, setSupporters] = useState<BusinessSupporter[]>([]);
   const [loadingSupporters, setLoadingSupporters] = useState(true);
+  const [partners, setPartners] = useState<PartnershipCollaboration[]>([]);
+  const [loadingPartners, setLoadingPartners] = useState(true);
   const [showMembershipModal, setShowMembershipModal] = useState(false);
   const [showVolunteerModal, setShowVolunteerModal] = useState(false);
   const [showDonationModal, setShowDonationModal] = useState(false);
@@ -86,6 +96,7 @@ export default function Home() {
     fetchUpcomingEvents();
     fetchLatestNews();
     fetchSupporters();
+    fetchPartnerships();
   }, [language]);
 
   useEffect(() => {
@@ -189,6 +200,26 @@ export default function Home() {
     }
   };
 
+  const fetchPartnerships = async () => {
+    try {
+      setLoadingPartners(true);
+      const { data, error } = await supabase
+        .from('partnerships_collaborations')
+        .select('id, name, logo_url, website_url, sort_order, created_at')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+        .order('created_at', { ascending: false })
+        .limit(24);
+
+      if (error) throw error;
+      setPartners((data as any) || []);
+    } catch (error) {
+      console.error('Error fetching partnerships & collaborations:', error);
+    } finally {
+      setLoadingPartners(false);
+    }
+  };
+
   const goToSlide = (index: number) => {
     setCurrentSlide(index);
     setIsAutoPlaying(false);
@@ -213,6 +244,20 @@ export default function Home() {
     viewAll: 'View Business Support',
     none: 'No supporters to display yet',
     visit: 'Visit',
+  };
+
+  const partnersText = language === 'ar' ? {
+    title: 'الشراكات والتعاون',
+    desc: 'نعتز بشركائنا والمتعاونين معنا في خدمة المجتمع. شكراً لدعمكم وثقتكم.',
+    none: 'لا توجد شراكات ظاهرة حالياً',
+    visit: 'زيارة',
+    viewAll: 'عرض صفحة الشركاء',
+  } : {
+    title: 'Partnerships & Collaborations',
+    desc: 'We value the organisations we collaborate with to better serve the community. Thank you for your trust and support.',
+    none: 'No partnerships to display yet',
+    visit: 'Visit',
+    viewAll: 'View Partners & Funders',
   };
 
   const goldSupporters = supporters.filter(s => s.tier === 'gold');
@@ -925,6 +970,88 @@ export default function Home() {
               </motion.div>
             </div>
           )}
+
+          {/* Partnerships & Collaborations (under Business Support) */}
+          <motion.div
+            className="pt-12 mt-12 border-t border-black/5"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={staggerContainer}
+          >
+            <motion.div className="text-center mb-10" variants={fadeInUp}>
+              <h3 className="text-3xl sm:text-4xl font-bold text-primary mb-3">
+                {partnersText.title}
+              </h3>
+              <p className="text-base text-muted max-w-2xl mx-auto leading-relaxed">
+                {partnersText.desc}
+              </p>
+            </motion.div>
+
+            {loadingPartners ? (
+              <div className="flex items-center justify-center py-10 gap-3 text-gray-400">
+                <div className="w-5 h-5 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+                {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}
+              </div>
+            ) : partners.length === 0 ? (
+              <div className="text-center py-10 text-gray-400">{partnersText.none}</div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                {partners.map((p) => (
+                  <motion.div
+                    key={p.id}
+                    variants={staggerItem}
+                    className="group bg-white rounded-xl border border-gray-200 hover:border-accent/50 overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 flex flex-col"
+                  >
+                    <div className="p-4 flex flex-col items-center text-center flex-1">
+                      {p.logo_url ? (
+                        <div className="w-16 h-16 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center mb-3 p-2 overflow-hidden">
+                          <img
+                            src={p.logo_url}
+                            alt={p.name}
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-16 h-16 rounded-xl bg-primary/8 border border-primary/10 flex items-center justify-center mb-3">
+                          <Handshake className="w-7 h-7 text-primary/50" />
+                        </div>
+                      )}
+
+                      <p className="font-semibold text-gray-900 text-sm leading-snug line-clamp-2 mb-2">
+                        {p.name}
+                      </p>
+
+                      {p.website_url ? (
+                        <a
+                          href={p.website_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-auto inline-flex items-center gap-1.5 text-xs font-medium text-primary bg-white border border-gray-200 rounded-full px-3 py-1 hover:bg-gray-50 transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          {partnersText.visit}
+                        </a>
+                      ) : (
+                        <div className="mt-auto h-6" />
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            <motion.div className="text-center pt-8" variants={fadeInUp}>
+              <Link
+                to="/about/partners"
+                className="inline-flex items-center gap-2.5 bg-white text-primary border border-gray-200 px-8 py-3.5 rounded-full hover:bg-gray-50 transition-all font-semibold text-sm tracking-wide shadow-sm hover:shadow-md hover:-translate-y-0.5"
+              >
+                {partnersText.viewAll}
+                <ArrowRight size={16} className={isRTL ? 'rotate-180' : ''} />
+              </Link>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 

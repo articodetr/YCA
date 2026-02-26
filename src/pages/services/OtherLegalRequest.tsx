@@ -52,8 +52,8 @@ export default function OtherLegalRequest() {
       ? 'غير الأعضاء: 40 جنيه إسترليني لكل طلب'
       : 'Non-members: \u00a340 per request',
     pricingNewMember: isAr
-      ? 'عضو جديد (أقل من 10 أيام): 40 جنيه إسترليني لكل طلب'
-      : 'New member (less than 10 days): \u00a340 per request',
+      ? 'عضو جديد (أقل من 30 يومًا): 40 جنيه إسترليني لكل طلب'
+      : 'New member (less than 30 days): \u00a340 per request',
     pricingFirstFree: isAr
       ? 'الطلب الأول مجاني للأعضاء المؤهلين (عبر جميع الخدمات القانونية)'
       : 'First request FREE for eligible members (across all legal services)',
@@ -165,7 +165,7 @@ export default function OtherLegalRequest() {
     setMembershipDays(daysSince);
     setIsMember(true);
 
-    if (daysSince < 10) {
+    if (daysSince < 30) {
       setIsFirstRequest(false);
       return 40;
     }
@@ -412,9 +412,9 @@ export default function OtherLegalRequest() {
                           <span className={`text-xl font-bold ${price === 0 ? 'text-green-600' : 'text-primary'}`}>
                             {price === 0 ? txt.free : `\u00a3${price}`}
                           </span>
-                          {isMember && membershipDays !== null && membershipDays < 10 && (
+                          {isMember && membershipDays !== null && membershipDays < 30 && (
                             <span className="text-sm text-amber-600 ms-2">
-                              ({isAr ? `${10 - membershipDays} أيام متبقية للأهلية` : `${10 - membershipDays} days until eligible`})
+                              ({isAr ? `${30 - membershipDays} أيام متبقية للأهلية` : `${30 - membershipDays} days until eligible`})
                             </span>
                           )}
                         </div>

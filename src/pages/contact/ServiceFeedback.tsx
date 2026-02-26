@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import { useEffect, useMemo, useState, FormEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Loader2, CheckCircle, Star, ChevronDown, ChevronRight, ShieldCheck } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
@@ -24,6 +24,7 @@ interface EqualityData {
 
 interface FormData {
   service_type: string;
+  custom_service_type: string;
   service_date: string;
   ratings: RatingsData;
   what_went_well: string;
@@ -39,6 +40,7 @@ interface FormData {
 
 const initialFormData: FormData = {
   service_type: '',
+  custom_service_type: '',
   service_date: '',
   ratings: {
     access: '',
@@ -78,6 +80,15 @@ const starsToRating: Record<number, RatingValue> = {
   5: 'very_satisfied',
 };
 
+type SubjectOption = {
+  value: string;
+  label: string;
+};
+
+type ProgrammeItem = { id: string; title: string; title_ar?: string | null; is_active?: boolean | null; order_number?: number | null };
+type ServiceItem = { id: string; title: string; title_ar?: string | null; is_active?: boolean | null; category?: string | null; order_number?: number | null };
+type EventItem = { id: string; title: string; title_ar?: string | null; date?: string | null };
+
 export default function ServiceFeedback() {
   const { language, isRTL } = useLanguage();
   const isAr = language === 'ar';
@@ -88,6 +99,12 @@ export default function ServiceFeedback() {
   const [hoveredRating, setHoveredRating] = useState<Record<string, number>>({});
   const [showEquality, setShowEquality] = useState(false);
 
+  const [subjectLoading, setSubjectLoading] = useState(true);
+  const [programmeOptions, setProgrammeOptions] = useState<SubjectOption[]>([]);
+  const [serviceOptions, setServiceOptions] = useState<SubjectOption[]>([]);
+  const [eventOptions, setEventOptions] = useState<SubjectOption[]>([]);
+  const [subjectLabelMap, setSubjectLabelMap] = useState<Record<string, string>>({});
+
   const txt = {
     title: isAr ? 'التقييم والملاحظات' : 'Service Feedback',
     breadcrumbContact: isAr ? 'اتصل بنا' : 'Contact',
@@ -97,11 +114,13 @@ export default function ServiceFeedback() {
       : 'Your feedback helps us improve. This form can be completed anonymously.',
     serviceLabel: isAr ? 'الخدمة / النشاط' : 'Service / Activity',
     selectService: isAr ? 'اختر الخدمة' : 'Select a service',
-    serviceAdvisory: isAr ? 'المكتب الاستشاري' : 'Advisory Office',
-    serviceLegal: isAr ? 'الخدمات القانونية' : 'Legal Services',
-    serviceEvents: isAr ? 'الأنشطة والفعاليات' : 'Events & Activities',
-    serviceVolunteering: isAr ? 'التطوع' : 'Volunteering',
-    serviceOther: isAr ? 'أخرى' : 'Other',
+    programmesLabel: isAr ? 'البرامج' : 'Programmes',
+    servicesLabel: isAr ? 'الخدمات' : 'Services',
+    eventsLabel: isAr ? 'الفعاليات والأنشطة' : 'Events & Activities',
+    notListed: isAr ? 'غير موجود؟ اكتب الاسم يدويًا' : 'Not listed? Type it manually',
+    manualNameLabel: isAr ? 'اسم الخدمة/البرنامج/الفعالية' : 'Name of the service/programme/event',
+    manualNamePlaceholder: isAr ? 'اكتب الاسم هنا' : 'Type the name here',
+    loadingList: isAr ? 'جاري تحميل القائمة...' : 'Loading list...',
     serviceDateLabel: isAr ? 'تاريخ الخدمة' : 'Date of service',
     optional: isAr ? 'اختياري' : 'Optional',
     rateExperience: isAr ? 'قيّم تجربتك' : 'Rate Your Experience',
@@ -162,13 +181,101 @@ export default function ServiceFeedback() {
     { key: 'overall', label: txt.ratingOverall },
   ];
 
-  const serviceOptions = [
-    { value: 'advisory', label: txt.serviceAdvisory },
-    { value: 'legal', label: txt.serviceLegal },
-    { value: 'events', label: txt.serviceEvents },
-    { value: 'volunteering', label: txt.serviceVolunteering },
-    { value: 'other', label: txt.serviceOther },
-  ];
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchSubjects = async () => {
+      try {
+        setSubjectLoading(true);
+
+        const [programmesRes, servicesRes, eventsRes] = await Promise.all([
+          supabase
+            .from('programmes_items')
+            .select('id,title,title_ar,is_active,order_number')
+            .eq('is_active', true)
+            .order('order_number', { ascending: true }),
+          supabase
+            .from('services_content')
+            .select('id,title,title_ar,is_active,category,order_number')
+            .eq('is_active', true)
+            .order('category', { ascending: true })
+            .order('order_number', { ascending: true }),
+          supabase
+            .from('events')
+            .select('id,title,title_ar,date')
+            .order('date', { ascending: false })
+            .limit(60),
+        ]);
+
+        if (programmesRes.error) throw programmesRes.error;
+        if (servicesRes.error) throw servicesRes.error;
+        if (eventsRes.error) throw eventsRes.error;
+
+        const pData = (programmesRes.data || []) as ProgrammeItem[];
+        const sData = (servicesRes.data || []) as ServiceItem[];
+        const eData = (eventsRes.data || []) as EventItem[];
+
+        const map: Record<string, string> = {};
+
+        const pOpts: SubjectOption[] = pData
+          .filter((p) => p?.id && p?.title)
+          .map((p) => {
+            const value = `programme:${p.id}`;
+            const label = isAr && p.title_ar ? p.title_ar : p.title;
+            map[value] = label;
+            return { value, label };
+          });
+
+        const sOpts: SubjectOption[] = sData
+          .filter((s) => s?.id && s?.title)
+          .map((s) => {
+            const value = `service:${s.id}`;
+            const label = isAr && s.title_ar ? s.title_ar : s.title;
+            map[value] = label;
+            return { value, label };
+          });
+
+        const eOpts: SubjectOption[] = eData
+          .filter((e) => e?.id && e?.title)
+          .map((e) => {
+            const value = `event:${e.id}`;
+            const title = isAr && e.title_ar ? e.title_ar : e.title;
+            const dateSuffix = e.date ? ` (${e.date})` : '';
+            const label = `${title}${dateSuffix}`;
+            map[value] = label;
+            return { value, label };
+          });
+
+        if (!mounted) return;
+        setProgrammeOptions(pOpts);
+        setServiceOptions(sOpts);
+        setEventOptions(eOpts);
+        setSubjectLabelMap(map);
+      } catch (error) {
+        console.error('Error loading feedback subjects:', error);
+        if (!mounted) return;
+        setProgrammeOptions([]);
+        setServiceOptions([]);
+        setEventOptions([]);
+        setSubjectLabelMap({});
+      } finally {
+        if (mounted) setSubjectLoading(false);
+      }
+    };
+
+    fetchSubjects();
+    return () => {
+      mounted = false;
+    };
+  }, [isAr]);
+
+  const requiresCustomName = formData.service_type === 'custom';
+
+  const resolvedServiceType = useMemo(() => {
+    if (!formData.service_type) return '';
+    if (formData.service_type === 'custom') return (formData.custom_service_type || '').trim();
+    return subjectLabelMap[formData.service_type] || formData.service_type;
+  }, [formData.service_type, formData.custom_service_type, subjectLabelMap]);
 
   const ageRanges = ['Under 18', '18-24', '25-34', '35-44', '45-54', '55-64', '65+', txt.preferNotToSay];
 
@@ -186,10 +293,15 @@ export default function ServiceFeedback() {
     setSubmitStatus('idle');
 
     try {
+      if (!resolvedServiceType) {
+        setSubmitStatus('error');
+        return;
+      }
+
       const { error } = await supabase
         .from('service_feedback')
         .insert([{
-          service_type: formData.service_type,
+          service_type: resolvedServiceType,
           service_date: formData.service_date || null,
           ratings: formData.ratings,
           what_went_well: formData.what_went_well || null,
@@ -327,15 +439,75 @@ export default function ServiceFeedback() {
                   <select
                     id="service"
                     value={formData.service_type}
-                    onChange={(e) => setFormData(prev => ({ ...prev, service_type: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        service_type: e.target.value,
+                        ...(e.target.value !== 'custom' ? { custom_service_type: '' } : {}),
+                      }))
+                    }
                     required
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none appearance-none"
                   >
                     <option value="">{txt.selectService}</option>
-                    {serviceOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
+                    {subjectLoading && (
+                      <option value="" disabled>
+                        {txt.loadingList}
+                      </option>
+                    )}
+
+                    {programmeOptions.length > 0 && (
+                      <optgroup label={txt.programmesLabel}>
+                        {programmeOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </optgroup>
+                    )}
+
+                    {serviceOptions.length > 0 && (
+                      <optgroup label={txt.servicesLabel}>
+                        {serviceOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </optgroup>
+                    )}
+
+                    {eventOptions.length > 0 && (
+                      <optgroup label={txt.eventsLabel}>
+                        {eventOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </optgroup>
+                    )}
+
+                    <option value="custom">{txt.notListed}</option>
                   </select>
+
+                  <AnimatePresence>
+                    {requiresCustomName && (
+                      <motion.div
+                        className="mt-3"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <label htmlFor="custom_service_type" className="block text-sm font-medium text-muted mb-2">
+                          {txt.manualNameLabel} <span className="text-red-400">*</span>
+                        </label>
+                        <input
+                          id="custom_service_type"
+                          type="text"
+                          value={formData.custom_service_type}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, custom_service_type: e.target.value }))}
+                          placeholder={txt.manualNamePlaceholder}
+                          required={requiresCustomName}
+                          maxLength={200}
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:bg-white focus:border-primary/30 transition-all outline-none"
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
                 <div>
                   <label htmlFor="service_date" className="block text-base font-semibold text-primary mb-2">

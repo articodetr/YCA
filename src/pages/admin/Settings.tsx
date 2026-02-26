@@ -356,6 +356,7 @@ export default function Settings() {
                   { key: 'social_facebook', label: 'Facebook', placeholder: 'https://facebook.com/...' },
                   { key: 'social_instagram', label: 'Instagram', placeholder: 'https://instagram.com/...' },
                   { key: 'social_tiktok', label: 'TikTok', placeholder: 'https://tiktok.com/@...' },
+                  { key: 'social_youtube', label: 'YouTube', placeholder: 'https://youtube.com/@...' },
                   { key: 'social_twitter', label: 'Twitter / X', placeholder: 'https://twitter.com/...' },
                   { key: 'social_linkedin', label: 'LinkedIn', placeholder: 'https://linkedin.com/company/...' },
                 ].map((social) => (

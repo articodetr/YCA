@@ -70,7 +70,7 @@ import FeedbackManagement from './pages/admin/FeedbackManagement';
 import TranslationsManagement from './pages/admin/TranslationsManagement';
 import LegalRequestsManagement from './pages/admin/LegalRequestsManagement';
 import BusinessSupportersManagement from './pages/admin/BusinessSupportersManagement';
-import PartnershipsCollaborationsManagement from './pages/admin/PartnershipsCollaborationsManagement';
+import PartnershipsCollaborationsManagement from './pages/admin/PartnershipsManagement';
 import FormQuestionsManagement from './pages/admin/FormQuestionsManagement';
 import JobPostingsManagement from './pages/admin/JobPostingsManagement';
 import WakalaApplicationsManagement from './pages/admin/WakalaApplicationsManagement';

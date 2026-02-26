@@ -56,8 +56,8 @@ const translationsData = {
     additionalNotes: 'Additional Notes (Optional)',
     notesPlaceholder: 'Any specific details or requirements for the translation...',
     pricingInfo: 'Pricing Information',
-    priceMember: '£20 - First Legal request FREE for eligible members (30+ days membership)',
-    priceStandard: '\u00A340 - Standard rate',
+    priceMember: 'Eligible members (active 30+ days): 1 free legal service (one-time), then \u00A320',
+    priceStandard: 'Standard price: \u00A340',
     yourPrice: 'Your Price',
     free: 'FREE',
     consentLabel: 'I confirm that I agree to the use of my information in line with YCA Birmingham policies',
@@ -116,8 +116,8 @@ const translationsData = {
     additionalNotes: 'ملاحظات إضافية (اختياري)',
     notesPlaceholder: 'أي تفاصيل أو متطلبات خاصة بالترجمة...',
     pricingInfo: 'معلومات التسعير',
-    priceMember: '20 جنيه - أول طلب (خدمة قانونية) مجاني للأعضاء المؤهلين (عضوية 30 يومًا فأكثر)',
-    priceStandard: '40 جنيه - السعر الأساسي',
+    priceMember: 'للأعضاء المؤهلين (عضوية مفعّلة منذ 30 يومًا فأكثر): خدمة قانونية مجانية لمرة واحدة، ثم \u00A320',
+    priceStandard: 'السعر الأساسي: \u00A340',
     yourPrice: 'السعر الخاص بك',
     free: 'مجاناً',
     consentLabel: 'أؤكد موافقتي على استخدام معلوماتي وفقاً لسياسات جمعية الجالية اليمنية في برمنغهام',
@@ -142,7 +142,7 @@ const translationsData = {
 
 export default function TranslationBookingForm({ onComplete }: TranslationBookingFormProps) {
   const { language } = useLanguage();
-  const { user } = useMemberAuth();
+  const { user, pendingApplication, isPaidMember } = useMemberAuth();
   const isRTL = language === 'ar';
   const t = translationsData[language];
 
@@ -166,6 +166,11 @@ export default function TranslationBookingForm({ onComplete }: TranslationBookin
   const [memberDaysSinceJoin, setMemberDaysSinceJoin] = useState(0);
   const [previousRequestCount, setPreviousRequestCount] = useState(0);
   const [memberNumber, setMemberNumber] = useState('');
+
+  const membershipPaymentPending = !!user
+    && !isPaidMember
+    && !!pendingApplication
+    && !['paid', 'completed'].includes((pendingApplication.payment_status || '').toLowerCase());
 
   useEffect(() => {
     loadUserData();
@@ -226,6 +231,10 @@ export default function TranslationBookingForm({ onComplete }: TranslationBookin
     }
     return 40;
   };
+
+  const benefitsRemainingDays = membershipStatus === 'active' && memberDaysSinceJoin < 30
+    ? Math.max(0, 30 - memberDaysSinceJoin)
+    : 0;
 
   const createPaymentIntent = async (amount: number) => {
     const controller = new AbortController();
@@ -415,6 +424,13 @@ export default function TranslationBookingForm({ onComplete }: TranslationBookin
             <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
             <span className="text-sm font-medium text-emerald-800">{t.memberBadge}</span>
             {memberNumber && <span className="text-sm text-emerald-600">#{memberNumber}</span>}
+            {benefitsRemainingDays > 0 && (
+              <span className="ml-auto text-xs font-semibold text-amber-700 bg-amber-100 border border-amber-200 rounded-full px-2.5 py-1">
+                {language === 'ar'
+                  ? `المزايا بعد ${benefitsRemainingDays} يوم`
+                  : `Benefits in ${benefitsRemainingDays} days`}
+              </span>
+            )}
           </div>
         )}
 
@@ -429,9 +445,33 @@ export default function TranslationBookingForm({ onComplete }: TranslationBookin
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2">
               <Crown className="w-5 h-5 text-amber-600" />
-              <p className="text-sm text-amber-800 font-medium">{t.memberPromo}</p>
+              <p className="text-sm text-amber-800 font-medium">
+                {membershipPaymentPending
+                  ? (language === 'ar'
+                      ? 'حسابك مسجّل، لكن العضوية غير مفعّلة بعد. لتفعيل العضوية والاستفادة من مزايا الأعضاء، يرجى إكمال الدفع.'
+                      : 'Your account is registered, but your membership is not active yet. Please complete payment to activate and access member benefits.')
+                  : (language === 'ar'
+                      ? 'فعّل عضويتك للاستفادة من مزايا الأعضاء: خصومات بعد 30 يومًا + خدمة قانونية مجانية لمرة واحدة.'
+                      : 'Activate your membership to unlock member benefits: discounts after 30 days + one free legal service (one-time).')}
+              </p>
             </div>
-            <Link to="/membership" className="text-sm font-semibold text-amber-700 hover:text-amber-900 underline">{t.joinNow}</Link>
+            <Link
+              to="/membership"
+              className="text-sm font-semibold text-amber-700 hover:text-amber-900 underline"
+              onClick={() => {
+                if (membershipPaymentPending && pendingApplication?.membership_type) {
+                  sessionStorage.setItem('pendingMembershipSelection', JSON.stringify({
+                    planId: pendingApplication.membership_type,
+                    businessSupport: null,
+                    timestamp: Date.now(),
+                  }));
+                }
+              }}
+            >
+              {membershipPaymentPending
+                ? (language === 'ar' ? 'إكمال الدفع' : 'Complete Payment')
+                : t.joinNow}
+            </Link>
           </div>
         )}
 
@@ -514,8 +554,32 @@ export default function TranslationBookingForm({ onComplete }: TranslationBookin
             <p className={currentPrice === 0 || currentPrice === 20 ? 'font-bold text-emerald-700' : 'text-gray-600'}>{t.priceMember}</p>
             <p className={currentPrice === 40 ? 'font-bold text-emerald-700' : 'text-gray-600'}>{t.priceStandard}</p>
             <div className="border-t border-teal-300 pt-2 mt-2">
-              <span className="font-bold text-lg text-emerald-700">{t.yourPrice}: {`£${currentPrice}`}</span>
+              <span className="font-bold text-lg text-emerald-700">{t.yourPrice}: {currentPrice === 0 ? t.free : `£${currentPrice}`}</span>
             </div>
+
+            {membershipStatus === 'active' && benefitsRemainingDays > 0 && (
+              <p className="text-xs text-amber-700 mt-2">
+                {language === 'ar'
+                  ? `مزايا الأعضاء للخدمات والخصومات تبدأ بعد 30 يومًا من تاريخ تفعيل العضوية. المتبقي: ${benefitsRemainingDays} يوم.`
+                  : `Member discounts and the one-time free legal service start 30 days after membership activation. Days remaining: ${benefitsRemainingDays}.`}
+              </p>
+            )}
+
+            {membershipStatus === 'active' && memberDaysSinceJoin >= 30 && previousRequestCount === 0 && (
+              <p className="text-xs text-emerald-700 mt-2">
+                {language === 'ar'
+                  ? 'أنت مؤهل للخدمة القانونية المجانية لمرة واحدة (أي خدمة: وكالة/ترجمة/طلبات قانونية أخرى). هذا الطلب مجاني.'
+                  : 'You are eligible for one free legal service (one-time across Wakala/Translation/Other). This request is FREE.'}
+              </p>
+            )}
+
+            {membershipStatus === 'active' && memberDaysSinceJoin >= 30 && previousRequestCount > 0 && (
+              <p className="text-xs text-blue-700 mt-2">
+                {language === 'ar'
+                  ? 'تم استخدام الخدمة المجانية لمرة واحدة مسبقًا. سيتم تطبيق سعر الأعضاء (£20).'
+                  : 'Your one-time free legal service has already been used. Member price applies (£20).'}
+              </p>
+            )}
           </div>
         </div>
 

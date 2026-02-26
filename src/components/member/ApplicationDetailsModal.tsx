@@ -2,7 +2,17 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Edit2, Save, Calendar, Clock, FileText, MessageSquare, CreditCard, User, Phone, Mail, AlertCircle, CheckCircle, XCircle, Upload, Image as ImageIcon, Trash2, ExternalLink } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { formatTimeRange } from '../../lib/booking-utils';
+import BookingCalendar from '../booking/Calendar';
+import TimeSlotGrid from '../booking/TimeSlotGrid';
+import {
+  cancelBooking,
+  checkSlotStillAvailable,
+  getAvailableSlotsForDuration,
+  getEffectiveWorkingHours,
+  releaseSlots,
+  reserveSlots,
+  formatTimeRange,
+} from '../../lib/booking-utils';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface Props {
@@ -77,9 +87,19 @@ export default function ApplicationDetailsModal({ isOpen, onClose, application, 
   const { language, t } = useLanguage();
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSaving, setSaving] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  const [isRescheduling, setIsRescheduling] = useState(false);
+  const [showReschedule, setShowReschedule] = useState(false);
+  const [rescheduleDate, setRescheduleDate] = useState<Date | null>(null);
+  const [rescheduleDuration, setRescheduleDuration] = useState<30 | 60 | null>(null);
+  const [rescheduleSlot, setRescheduleSlot] = useState<any | null>(null);
+  const [rescheduleSlots, setRescheduleSlots] = useState<any[]>([]);
+  const [rescheduleWorkingHours, setRescheduleWorkingHours] = useState<{ startTime: string; endTime: string; breakTimes: { start: string; end: string }[] } | null>(null);
+  const [rescheduleError, setRescheduleError] = useState('');
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -110,11 +130,62 @@ export default function ApplicationDetailsModal({ isOpen, onClose, application, 
         passport_copies: application.passport_copies || [],
       });
       setIsEditMode(false);
+      setShowReschedule(false);
+      setRescheduleDate(application.booking_date ? new Date(application.booking_date + 'T00:00:00') : null);
+      const dur = application.duration_minutes === 60 ? 60 : 30;
+      setRescheduleDuration(dur);
+      setRescheduleSlot(null);
+      setRescheduleSlots([]);
+      setRescheduleWorkingHours(null);
+      setRescheduleError('');
       setHasUnsavedChanges(false);
       setSaveError('');
       setSaveSuccess(false);
     }
   }, [application]);
+
+  useEffect(() => {
+    const load = async () => {
+      if (!showReschedule) return;
+      if (!application?.availability_slots?.service_id) return;
+      if (!rescheduleDate || !rescheduleDuration) return;
+
+      setRescheduleError('');
+      try {
+        const toLocalDateString = (d: Date) => {
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          return `${y}-${m}-${day}`;
+        };
+
+        const dateStr = toLocalDateString(rescheduleDate);
+        const serviceId = application.availability_slots.service_id as string;
+
+        const hours = await getEffectiveWorkingHours(dateStr);
+        if (hours && hours.is_active) {
+          setRescheduleWorkingHours({ startTime: hours.start_time, endTime: hours.end_time, breakTimes: hours.break_times });
+        } else {
+          setRescheduleWorkingHours(null);
+        }
+
+        const slots = await getAvailableSlotsForDuration(serviceId, dateStr, rescheduleDuration);
+        setRescheduleSlots(
+          slots.map(s => ({
+            id: s.id,
+            startTime: s.start_time,
+            endTime: s.end_time,
+            isAvailable: s.is_available,
+          }))
+        );
+      } catch (e: any) {
+        console.error('Reschedule load error:', e);
+        setRescheduleSlots([]);
+        setRescheduleError(e?.message || (language === 'ar' ? 'فشل في تحميل الأوقات' : 'Failed to load slots'));
+      }
+    };
+    load();
+  }, [showReschedule, application?.availability_slots?.service_id, rescheduleDate, rescheduleDuration, language]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -222,6 +293,146 @@ export default function ApplicationDetailsModal({ isOpen, onClose, application, 
     }
   };
 
+  const handleCancelRequest = async () => {
+    if (!application) return;
+    const confirmMsg = language === 'ar'
+      ? 'هل أنت متأكد أنك تريد الإلغاء؟'
+      : 'Are you sure you want to cancel?';
+    if (!confirm(confirmMsg)) return;
+
+    setIsCancelling(true);
+    setSaveError('');
+    setSaveSuccess(false);
+
+    try {
+      if (isAdvisoryApp && application.slot_id && application.booking_date && application.start_time && application.duration_minutes && application.availability_slots?.service_id) {
+        const result = await cancelBooking(
+          application.id,
+          application.slot_id,
+          application.availability_slots.service_id,
+          application.duration_minutes,
+          application.booking_date,
+          application.start_time
+        );
+        if (!result.success) throw new Error(result.error || 'Failed to cancel booking');
+      } else {
+        const { error } = await supabase
+          .from('wakala_applications')
+          .update({
+            status: 'cancelled',
+            cancelled_at: new Date().toISOString(),
+            cancelled_by_user: true,
+          })
+          .eq('id', application.id);
+        if (error) throw error;
+      }
+
+      setSaveSuccess(true);
+      setTimeout(() => {
+        if (onUpdate) onUpdate();
+        onClose();
+      }, 900);
+    } catch (e: any) {
+      console.error('Cancel error:', e);
+      setSaveError(e?.message || (language === 'ar' ? 'فشل في الإلغاء' : 'Failed to cancel'));
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  const handleConfirmReschedule = async () => {
+    if (!application?.availability_slots?.service_id) {
+      setRescheduleError(language === 'ar' ? 'لم يتم العثور على الخدمة' : 'Service not found');
+      return;
+    }
+    if (!rescheduleDate || !rescheduleDuration || !rescheduleSlot) {
+      setRescheduleError(language === 'ar' ? 'يرجى اختيار التاريخ والوقت' : 'Please select a date and time');
+      return;
+    }
+    if (!application.slot_id || !application.booking_date || !application.start_time || !application.duration_minutes) {
+      setRescheduleError(language === 'ar' ? 'بيانات الموعد الحالي غير مكتملة' : 'Current booking data is incomplete');
+      return;
+    }
+
+    setIsRescheduling(true);
+    setRescheduleError('');
+    setSaveError('');
+    setSaveSuccess(false);
+
+    const toLocalDateString = (d: Date) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+
+    const newDateStr = toLocalDateString(rescheduleDate);
+    const serviceId = application.availability_slots.service_id as string;
+
+    try {
+      const stillAvailable = await checkSlotStillAvailable(rescheduleSlot.id);
+      if (!stillAvailable) {
+        throw new Error(language === 'ar' ? 'هذا الوقت لم يعد متاحاً. جرّب وقتاً آخر.' : 'This time is no longer available. Please choose another slot.');
+      }
+
+      const reserveResult = await reserveSlots({
+        slot_id: rescheduleSlot.id,
+        service_id: serviceId,
+        booking_date: newDateStr,
+        start_time: rescheduleSlot.startTime,
+        end_time: rescheduleSlot.endTime,
+        duration_minutes: rescheduleDuration,
+      });
+
+      if (!reserveResult.success) {
+        throw new Error(reserveResult.error || (language === 'ar' ? 'فشل في حجز الوقت الجديد' : 'Failed to reserve new slot'));
+      }
+
+      const releaseOld = await releaseSlots(
+        application.slot_id,
+        serviceId,
+        application.duration_minutes,
+        application.booking_date,
+        application.start_time
+      );
+
+      if (!releaseOld.success) {
+        // Try to release the new slot to avoid locking it forever
+        await releaseSlots(rescheduleSlot.id, serviceId, rescheduleDuration, newDateStr, rescheduleSlot.startTime);
+        throw new Error(releaseOld.error || (language === 'ar' ? 'فشل في تحرير الوقت القديم' : 'Failed to release old slot'));
+      }
+
+      const { error: updErr } = await supabase
+        .from('wakala_applications')
+        .update({
+          booking_date: newDateStr,
+          requested_date: newDateStr,
+          slot_id: rescheduleSlot.id,
+          start_time: rescheduleSlot.startTime,
+          end_time: rescheduleSlot.endTime,
+          duration_minutes: rescheduleDuration,
+        })
+        .eq('id', application.id);
+
+      if (updErr) {
+        // rollback new reservation best-effort
+        await releaseSlots(rescheduleSlot.id, serviceId, rescheduleDuration, newDateStr, rescheduleSlot.startTime);
+        throw updErr;
+      }
+
+      setSaveSuccess(true);
+      setShowReschedule(false);
+      setTimeout(() => {
+        if (onUpdate) onUpdate();
+      }, 500);
+    } catch (e: any) {
+      console.error('Reschedule error:', e);
+      setRescheduleError(e?.message || (language === 'ar' ? 'فشل في إعادة الجدولة' : 'Failed to reschedule'));
+    } finally {
+      setIsRescheduling(false);
+    }
+  };
+
   const handleClose = () => {
     if (hasUnsavedChanges) {
       const confirmMsg = language === 'ar'
@@ -250,6 +461,8 @@ export default function ApplicationDetailsModal({ isOpen, onClose, application, 
     return appointmentDate < new Date();
   })();
   const canEdit = !isCancelled && application.status !== 'completed' && !isAppointmentPast;
+  const canCancel = canEdit && application.status !== 'in_progress' && application.status !== 'approved';
+  const canReschedule = canCancel && isAdvisoryApp;
 
   return (
     <>
@@ -366,6 +579,99 @@ export default function ApplicationDetailsModal({ isOpen, onClose, application, 
                     </div>
                   )}
                 </div>
+
+                {showReschedule && isAdvisoryApp && (
+                  <div className="bg-white rounded-xl border border-blue-200 overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-3 bg-blue-50 border-b border-blue-200">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-blue-700" />
+                        <span className="text-sm font-bold text-blue-900">
+                          {language === 'ar' ? 'إعادة جدولة الموعد' : 'Reschedule Appointment'}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => { setShowReschedule(false); setRescheduleError(''); }}
+                        className="text-blue-700 hover:text-blue-900 text-sm font-semibold"
+                      >
+                        {language === 'ar' ? 'إغلاق' : 'Close'}
+                      </button>
+                    </div>
+
+                    <div className="p-4 space-y-4">
+                      {rescheduleError && (
+                        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                          <p className="text-sm text-red-700">{rescheduleError}</p>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm font-medium text-gray-700 mb-2">{language === 'ar' ? 'اختر التاريخ' : 'Select Date'}</p>
+                          <div className="max-w-md">
+                            <BookingCalendar
+                              selectedDate={rescheduleDate}
+                              onDateSelect={(d) => { setRescheduleDate(d); setRescheduleSlot(null); }}
+                              maxDaysAhead={30}
+                              unavailableDates={[]}
+                              fullyBookedDates={[]}
+                              slotCounts={{}}
+                              autoSelectNearest={false}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-sm font-medium text-gray-700 mb-2">{language === 'ar' ? 'المدة' : 'Duration'}</p>
+                            <div className="grid grid-cols-2 gap-2">
+                              <button
+                                type="button"
+                                onClick={() => { setRescheduleDuration(30); setRescheduleSlot(null); }}
+                                className={`px-3 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                                  rescheduleDuration === 30 ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-blue-50'
+                                }`}
+                              >
+                                30 {language === 'ar' ? 'دقيقة' : 'min'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => { setRescheduleDuration(60); setRescheduleSlot(null); }}
+                                className={`px-3 py-2 rounded-lg border text-sm font-semibold transition-colors ${
+                                  rescheduleDuration === 60 ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-blue-50'
+                                }`}
+                              >
+                                60 {language === 'ar' ? 'دقيقة' : 'min'}
+                              </button>
+                            </div>
+                          </div>
+
+                          <div>
+                            <p className="text-sm font-medium text-gray-700 mb-2">{language === 'ar' ? 'اختر الوقت' : 'Select Time'}</p>
+                            <TimeSlotGrid
+                              selectedDate={rescheduleDate}
+                              slots={rescheduleSlots}
+                              selectedSlot={rescheduleSlot}
+                              onSlotSelect={(s) => { setRescheduleSlot(s); setRescheduleError(''); }}
+                              workingHours={rescheduleWorkingHours}
+                            />
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={handleConfirmReschedule}
+                            disabled={isRescheduling || !rescheduleDate || !rescheduleDuration || !rescheduleSlot}
+                            className="w-full mt-2 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold disabled:opacity-60"
+                          >
+                            {isRescheduling
+                              ? (language === 'ar' ? 'جاري إعادة الجدولة...' : 'Rescheduling...')
+                              : (language === 'ar' ? 'تأكيد إعادة الجدولة' : 'Confirm Reschedule')}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {application.booking_date && (
                   <div className="bg-gradient-to-br from-blue-50 to-sky-50 rounded-xl p-4 border border-blue-100">

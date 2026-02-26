@@ -280,14 +280,12 @@ export async function releaseSlots(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     if (durationMinutes === 30) {
-      const { error } = await supabase
-        .from('availability_slots')
-        .update({ is_available: true })
-        .eq('id', slotId);
+      const { data, error } = await supabase.rpc('release_availability_slot', {
+        p_slot_id: slotId,
+      });
 
-      if (error) {
-        return { success: false, error: error.message };
-      }
+      if (error) return { success: false, error: error.message };
+      if (!data?.success) return { success: false, error: data?.error || 'Failed to release slot' };
     } else {
       const allSlots = await getAvailableSlotsForDate(serviceId, bookingDate);
       const currentSlotIndex = allSlots.findIndex(s => s.id === slotId);
@@ -298,14 +296,13 @@ export async function releaseSlots(
 
       const nextSlot = allSlots[currentSlotIndex + 1];
 
-      const { error } = await supabase
-        .from('availability_slots')
-        .update({ is_available: true })
-        .in('id', [slotId, nextSlot.id]);
+      const rel1 = await supabase.rpc('release_availability_slot', { p_slot_id: slotId });
+      if (rel1.error) return { success: false, error: rel1.error.message };
+      if (!rel1.data?.success) return { success: false, error: rel1.data?.error || 'Failed to release first slot' };
 
-      if (error) {
-        return { success: false, error: error.message };
-      }
+      const rel2 = await supabase.rpc('release_availability_slot', { p_slot_id: nextSlot.id });
+      if (rel2.error) return { success: false, error: rel2.error.message };
+      if (!rel2.data?.success) return { success: false, error: rel2.data?.error || 'Failed to release second slot' };
     }
 
     return { success: true };

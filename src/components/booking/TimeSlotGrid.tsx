@@ -25,11 +25,8 @@ interface TimeSlotGridProps {
 
 export default function TimeSlotGrid(props: TimeSlotGridProps) {
   const { selectedDate, slots, selectedSlot, onSlotSelect, workingHours } = props;
-
   const { language } = useLanguage();
   const isRTL = language === 'ar';
-
-  // Tick every 30s so “past” times disappear while user is on the page
   const [nowTick, setNowTick] = useState(0);
 
   const t = {
@@ -47,6 +44,7 @@ export default function TimeSlotGrid(props: TimeSlotGridProps) {
     }
   }[language];
 
+  // Re-evaluate "past" slots live (so times disappear as the day progresses)
   useEffect(() => {
     const id = setInterval(() => setNowTick(t => t + 1), 30_000);
     return () => clearInterval(id);
@@ -74,7 +72,7 @@ export default function TimeSlotGrid(props: TimeSlotGridProps) {
     if (!selectedDate) return false;
     const now = new Date();
 
-    // Only filter by time when the selected date is TODAY (local)
+    // Only filter by time when the selected date is today (local)
     const selectedKey = toLocalDateString(selectedDate);
     const todayKey = toLocalDateString(now);
     if (selectedKey !== todayKey) return false;
@@ -103,10 +101,13 @@ export default function TimeSlotGrid(props: TimeSlotGridProps) {
     return date.toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-GB', { weekday: 'long' });
   };
 
-  if (!selectedDate) return null;
+  if (!selectedDate) {
+    return null;
+  }
 
   const visibleSlots = useMemo(() => {
-    // ✅ Show ONLY available AND not-in-the-past slots
+    // Show ONLY available and NOT-in-the-past slots.
+    // (Hide booked/unavailable slots entirely — no "just booked" animation.)
     return slots
       .filter(s => s.isAvailable)
       .filter(s => !isSlotInPastLocal(s.startTime))
@@ -130,7 +131,6 @@ export default function TimeSlotGrid(props: TimeSlotGridProps) {
               }
             </p>
           </div>
-
           {workingHours.breakTimes.length > 0 && (
             <div className="mt-1.5 flex items-center gap-2 text-xs text-gray-500">
               <span className="inline-block w-3 h-3 bg-orange-200 rounded-full"></span>

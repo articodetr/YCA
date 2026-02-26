@@ -283,14 +283,15 @@ export default function Contact() {
       <section id="map" className="py-0 bg-white">
         <div className="w-full h-96">
           <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2433.8!2d-1.8785!3d52.4630!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4870bc3551e4c3a7%3A0x4b87b4b8e52bfb0c!2sYemeni%20Community%20Association!5e0!3m2!1sen!2suk!4v1700000000000"
+            // Correct location (from https://maps.app.goo.gl/5ZnBmkGFpCcS34uW6)
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2433.8!2d-1.87285!3d52.4601434!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4870bb8a22d96de1%3A0xc9efa6887beafd35!2sYemeni%20community%20Association%20%28Birmingham%29!5e0!3m2!1sen!2suk!4v1700000000000"
             width="100%"
             height="100%"
             style={{ border: 0 }}
             allowFullScreen
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
-            title="Yemeni Community Association - Birmingham"
+            title="Yemeni Community Association (Birmingham)"
           ></iframe>
         </div>
       </section>

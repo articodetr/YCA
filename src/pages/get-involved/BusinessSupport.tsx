@@ -10,7 +10,7 @@ import { membershipPlans } from '../../data/membershipPlans';
 
 interface BusinessSupporter {
   id: string;
-  name: string;
+  business_name: string;
   tier: 'bronze' | 'silver' | 'gold';
   logo_url: string | null;
   website_url: string | null;
@@ -262,7 +262,7 @@ export default function BusinessSupport() {
                 {supporter.logo_url ? (
                   <img
                     src={supporter.logo_url}
-                    alt={supporter.name}
+                    alt={supporter.business_name}
                     className="w-16 h-16 object-contain rounded-lg bg-white p-2"
                   />
                 ) : (
@@ -271,7 +271,7 @@ export default function BusinessSupport() {
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-primary truncate">{supporter.name}</h4>
+                  <h4 className="font-bold text-primary truncate">{supporter.business_name}</h4>
                   {supporter.website_url && (
                     <a
                       href={supporter.website_url}

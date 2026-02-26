@@ -42,14 +42,27 @@ const STATUS_OPTIONS = [
 
 
 const ADVISORY_REASONS: Record<string, { en: string; ar: string }> = {
-  welfare_benefits: { en: 'Welfare Benefits', ar: 'المزايا الاجتماعية' },
-  housing: { en: 'Housing', ar: 'الإسكان' },
-  immigration: { en: 'Immigration', ar: 'الهجرة' },
-  employment: { en: 'Employment', ar: 'التوظيف' },
-  education: { en: 'Education', ar: 'التعليم' },
-  health: { en: 'Health', ar: 'الصحة' },
-  legal: { en: 'Legal', ar: 'قانوني' },
-  other: { en: 'Other', ar: 'أخرى' },
+  benefits_financial_support: { en: 'Benefits & Financial Support', ar: 'الإعانات والدعم المالي' },
+  housing_council_services: { en: 'Housing & Council Services', ar: 'السكن وخدمات الكانسل' },
+  education_schools: { en: 'Education & Schools', ar: 'التعليم والمدارس' },
+  health_services: { en: 'Health Services', ar: 'الخدمات الصحية' },
+  immigration_home_office: { en: 'Immigration & Home Office', ar: 'الهجرة ووزارة الداخلية' },
+  identification_licences: { en: 'Identification & Licences', ar: 'الهويات والرخص' },
+  utilities_household_bills: { en: 'Utilities & Household Bills', ar: 'الخدمات والفواتير المنزلية' },
+  transport_travel: { en: 'Transport & Travel', ar: 'النقل والسفر' },
+  family_children_support: { en: 'Family & Children Support', ar: 'دعم الأسرة والأطفال' },
+  forms_applications: { en: 'Forms & Applications', ar: 'الاستمارات والطلبات' },
+  advice_general_support: { en: 'Advice & General Support', ar: 'الاستشارات والدعم العام' },
+  other: { en: 'Other (Please specify)', ar: 'أخرى (يرجى التوضيح)' },
+
+  // Legacy keys (backward compatibility)
+  welfare_benefits: { en: 'Benefits & Financial Support', ar: 'الإعانات والدعم المالي' },
+  housing: { en: 'Housing & Council Services', ar: 'السكن وخدمات الكانسل' },
+  immigration: { en: 'Immigration & Home Office', ar: 'الهجرة ووزارة الداخلية' },
+  employment: { en: 'Advice & General Support', ar: 'الاستشارات والدعم العام' },
+  education: { en: 'Education & Schools', ar: 'التعليم والمدارس' },
+  health: { en: 'Health Services', ar: 'الخدمات الصحية' },
+  legal: { en: 'Forms & Applications', ar: 'الاستمارات والطلبات' },
 };
 
 const getAdvisoryReasonKey = (serviceType?: string) => {

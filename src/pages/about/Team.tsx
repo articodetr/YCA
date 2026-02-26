@@ -181,6 +181,8 @@ export default function Team() {
             src={member.image}
             alt={member.name}
             className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+            // Slightly bias the crop toward the top so headshots don't get cut off
+            style={{ objectPosition: 'center 20%' }}
             loading="lazy"
             onError={handleImageError}
             onLoad={handleImageLoad}

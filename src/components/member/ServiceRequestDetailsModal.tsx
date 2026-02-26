@@ -189,7 +189,7 @@ export default function ServiceRequestDetailsModal({ isOpen, onClose, request, o
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={handleClose}
-          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+          className="fixed inset-0 z-[10000] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}

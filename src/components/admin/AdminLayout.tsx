@@ -34,7 +34,6 @@ import {
   Star,
   Scale,
   Building2,
-  Handshake,
 } from 'lucide-react';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
 import { useSiteSettings } from '../../contexts/SiteSettingsContext';
@@ -139,7 +138,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         { icon: AlertTriangle, label: 'Complaints', path: '/admin/complaints' },
         { icon: Star, label: 'Service Feedback', path: '/admin/feedback' },
         { icon: Building2, label: 'Business Supporters', path: '/admin/business-supporters' },
-        { icon: Handshake, label: 'Partners & Collaborations', path: '/admin/partners-collaborations' },
       ],
     }] : []),
     ...(operationsItems.length > 0 ? [{

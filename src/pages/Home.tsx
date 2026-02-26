@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Trophy, Users, Building, GraduationCap, Heart, Calendar, FileText, HandHeart, ArrowRight, Newspaper, User, Tag, Building2, Handshake } from 'lucide-react';
+import { Trophy, Users, Building, GraduationCap, Heart, Calendar, FileText, HandHeart, ArrowRight, Newspaper, User, Tag, Crown, Star, Award, ExternalLink, Building2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { fadeInUp, fadeInLeft, fadeInRight, staggerContainer, staggerItem, scaleIn } from '../lib/animations';
@@ -40,17 +40,9 @@ interface NewsArticle {
 interface BusinessSupporter {
   id: string;
   business_name: string;
+  tier: 'bronze' | 'silver' | 'gold' | string;
   logo_url: string | null;
   website_url: string | null;
-  tier: string;
-}
-
-interface PartnershipCollaboration {
-  id: string;
-  name: string;
-  logo_url: string | null;
-  website_url: string | null;
-  sort_order: number;
 }
 
 export default function Home() {
@@ -81,8 +73,8 @@ export default function Home() {
 
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
   const [latestNews, setLatestNews] = useState<NewsArticle[]>([]);
-  const [businessSupporters, setBusinessSupporters] = useState<BusinessSupporter[]>([]);
-  const [partnersCollaborations, setPartnersCollaborations] = useState<PartnershipCollaboration[]>([]);
+  const [supporters, setSupporters] = useState<BusinessSupporter[]>([]);
+  const [loadingSupporters, setLoadingSupporters] = useState(true);
   const [showMembershipModal, setShowMembershipModal] = useState(false);
   const [showVolunteerModal, setShowVolunteerModal] = useState(false);
   const [showDonationModal, setShowDonationModal] = useState(false);
@@ -93,8 +85,7 @@ export default function Home() {
     fetchHeroSlides();
     fetchUpcomingEvents();
     fetchLatestNews();
-    fetchBusinessSupporters();
-    fetchPartnersCollaborations();
+    fetchSupporters();
   }, [language]);
 
   useEffect(() => {
@@ -179,38 +170,22 @@ export default function Home() {
     }
   };
 
-  const fetchBusinessSupporters = async () => {
+  const fetchSupporters = async () => {
     try {
+      setLoadingSupporters(true);
       const { data, error } = await supabase
         .from('business_supporters')
-        .select('id, business_name, logo_url, website_url, tier')
+        .select('id, business_name, tier, logo_url, website_url')
         .eq('is_active', true)
         .order('created_at', { ascending: false })
         .limit(18);
 
       if (error) throw error;
-      setBusinessSupporters((data as BusinessSupporter[]) || []);
+      setSupporters((data as any) || []);
     } catch (error) {
       console.error('Error fetching business supporters:', error);
-      setBusinessSupporters([]);
-    }
-  };
-
-  const fetchPartnersCollaborations = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('partnerships_collaborations')
-        .select('id, name, logo_url, website_url, sort_order')
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true })
-        .order('created_at', { ascending: false })
-        .limit(18);
-
-      if (error) throw error;
-      setPartnersCollaborations((data as PartnershipCollaboration[]) || []);
-    } catch (error) {
-      console.error('Error fetching partnerships & collaborations:', error);
-      setPartnersCollaborations([]);
+    } finally {
+      setLoadingSupporters(false);
     }
   };
 
@@ -218,6 +193,140 @@ export default function Home() {
     setCurrentSlide(index);
     setIsAutoPlaying(false);
     setTimeout(() => setIsAutoPlaying(true), 10000);
+  };
+
+  const supportersText = language === 'ar' ? {
+    title: 'الداعمون الحاليون',
+    desc: 'نفخر بالشركات والمؤسسات التي تدعم عملنا المجتمعي. شكراً لكم على مساهمتكم القيّمة.',
+    gold: 'الداعمون الذهبيون',
+    silver: 'الداعمون الفضيون',
+    bronze: 'الداعمون البرونزيون',
+    viewAll: 'عرض صفحة دعم الأعمال',
+    none: 'لا يوجد داعمون ظاهرون حالياً',
+    visit: 'زيارة',
+  } : {
+    title: 'Our Current Supporters',
+    desc: 'We are proud of the businesses and organisations supporting our community work. Thank you for your valuable contribution.',
+    gold: 'Gold Supporters',
+    silver: 'Silver Supporters',
+    bronze: 'Bronze Supporters',
+    viewAll: 'View Business Support',
+    none: 'No supporters to display yet',
+    visit: 'Visit',
+  };
+
+  const goldSupporters = supporters.filter(s => s.tier === 'gold');
+  const silverSupporters = supporters.filter(s => s.tier === 'silver');
+  const bronzeSupporters = supporters.filter(s => s.tier === 'bronze');
+
+  const tierConfig = {
+    gold: {
+      gradient: 'from-yellow-400/20 via-amber-300/10 to-yellow-400/5',
+      border: 'border-yellow-300/60',
+      headerGradient: 'from-yellow-500 to-amber-400',
+      cardBorder: 'border-yellow-200 hover:border-yellow-400',
+      cardTop: 'bg-gradient-to-r from-yellow-400 to-amber-400',
+      badgeBg: 'bg-gradient-to-br from-yellow-400 to-amber-500',
+      textAccent: 'text-yellow-700',
+      shimmer: 'hover:shadow-yellow-100',
+      cols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-3',
+    },
+    silver: {
+      gradient: 'from-slate-200/30 via-gray-100/20 to-slate-200/5',
+      border: 'border-slate-300/50',
+      headerGradient: 'from-slate-500 to-gray-400',
+      cardBorder: 'border-slate-200 hover:border-slate-400',
+      cardTop: 'bg-gradient-to-r from-slate-400 to-gray-400',
+      badgeBg: 'bg-gradient-to-br from-slate-400 to-gray-500',
+      textAccent: 'text-slate-600',
+      shimmer: 'hover:shadow-slate-100',
+      cols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+    },
+    bronze: {
+      gradient: 'from-orange-200/20 via-amber-100/15 to-orange-200/5',
+      border: 'border-orange-200/50',
+      headerGradient: 'from-orange-500 to-amber-600',
+      cardBorder: 'border-orange-200 hover:border-orange-400',
+      cardTop: 'bg-gradient-to-r from-orange-400 to-amber-500',
+      badgeBg: 'bg-gradient-to-br from-orange-400 to-amber-600',
+      textAccent: 'text-orange-700',
+      shimmer: 'hover:shadow-orange-100',
+      cols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5',
+    },
+  };
+
+  const renderSupporterTier = (
+    title: string,
+    items: BusinessSupporter[],
+    Icon: any,
+    _badgeClass: string,
+    tierKey: 'gold' | 'silver' | 'bronze'
+  ) => {
+    if (items.length === 0) return null;
+    const cfg = tierConfig[tierKey];
+    return (
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={fadeInUp}
+      >
+        <div className={`rounded-2xl border bg-gradient-to-br ${cfg.gradient} ${cfg.border} p-6 sm:p-8`}>
+          <div className={`flex items-center gap-3 mb-6 pb-4 border-b border-black/5`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${cfg.badgeBg}`}>
+              <Icon className="w-5 h-5 text-white" />
+            </div>
+            <h3 className="text-lg font-bold text-primary tracking-wide uppercase">{title}</h3>
+            <span className={`ml-auto text-xs font-semibold px-3 py-1 rounded-full bg-white/70 ${cfg.textAccent}`}>
+              {items.length}
+            </span>
+          </div>
+          <div className={`grid ${cfg.cols} gap-4`}>
+            {items.map((s) => (
+              <motion.div
+                key={s.id}
+                variants={fadeInUp}
+                className={`group bg-white rounded-xl border ${cfg.cardBorder} overflow-hidden hover:shadow-lg ${cfg.shimmer} transition-all duration-300 hover:-translate-y-1 flex flex-col`}
+              >
+                <div className={`h-1 w-full ${cfg.cardTop}`} />
+                <div className="p-4 flex flex-col items-center text-center flex-1">
+                  {s.logo_url ? (
+                    <div className="w-16 h-16 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center mb-3 p-2 overflow-hidden">
+                      <img
+                        src={s.logo_url}
+                        alt={s.business_name}
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-16 h-16 rounded-xl bg-primary/8 border border-primary/10 flex items-center justify-center mb-3">
+                      <Building2 className="w-7 h-7 text-primary/50" />
+                    </div>
+                  )}
+                  <p className="font-semibold text-gray-900 text-sm leading-snug line-clamp-2 mb-2">
+                    {s.business_name}
+                  </p>
+                  {s.website_url ? (
+                    <a
+                      href={s.website_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`mt-auto inline-flex items-center gap-1.5 text-xs font-medium ${cfg.textAccent} bg-white border ${cfg.cardBorder} rounded-full px-3 py-1 hover:bg-gray-50 transition-colors`}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      {supportersText.visit}
+                    </a>
+                  ) : (
+                    <div className="mt-auto h-6" />
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+    );
   };
 
   return (
@@ -756,181 +865,66 @@ export default function Home() {
 
       <BeltDivider />
 
-      {/* Business Support Section */}
-      <section className="py-16 bg-sand">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Current Supporters Section */}
+      <section className="py-24 bg-gradient-to-b from-[#f8f6f0] to-white relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none opacity-[0.025]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, #1a2e1a 1px, transparent 0)', backgroundSize: '32px 32px' }} />
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
           <motion.div
-            className="text-center mb-10"
+            className="text-center mb-14"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
             variants={staggerContainer}
           >
-            <motion.div className="flex items-center justify-center gap-3 mb-4" variants={fadeInUp}>
-              <Building2 className="w-7 h-7 text-primary" />
-              <h2 className="text-3xl sm:text-4xl font-bold text-primary">
-                {getContent('home', 'business_support_title', language === 'ar' ? 'دعم الأعمال' : 'Business Support')}
-              </h2>
+            <motion.span
+              variants={fadeInUp}
+              className="inline-block text-xs font-bold tracking-[0.2em] uppercase text-accent mb-3 bg-accent/10 px-4 py-1.5 rounded-full"
+            >
+              {language === 'ar' ? 'شركاء النجاح' : 'Proud Partners'}
+            </motion.span>
+            <motion.h2 className="text-4xl sm:text-5xl font-bold text-primary mb-4 mt-2" variants={fadeInUp}>
+              {supportersText.title}
+            </motion.h2>
+            <motion.div className="flex items-center justify-center gap-3 mb-6" variants={scaleIn}>
+              <div className="h-px w-16 bg-gradient-to-r from-transparent to-accent/60" />
+              <div className="w-2 h-2 rounded-full bg-accent" />
+              <div className="h-px w-16 bg-gradient-to-l from-transparent to-accent/60" />
             </motion.div>
-            <motion.p className="text-lg text-muted max-w-3xl mx-auto" variants={fadeInUp}>
-              {getContent(
-                'home',
-                'business_support_desc',
-                language === 'ar'
-                  ? 'نفخر بالشركات التي تدعم عملنا المجتمعي. شكراً لكم على مساهمتكم.'
-                  : 'We are proud of the businesses that support our community work. Thank you for your contribution.'
-              )}
+            <motion.p className="text-base text-muted max-w-2xl mx-auto leading-relaxed" variants={fadeInUp}>
+              {supportersText.desc}
             </motion.p>
           </motion.div>
 
-          {businessSupporters.length === 0 ? (
-            <div className="text-center py-10 bg-white rounded-xl border border-gray-200">
-              <p className="text-gray-500">
-                {language === 'ar' ? 'لا يوجد داعمون حاليًا.' : 'No supporters yet.'}
-              </p>
+          {loadingSupporters ? (
+            <div className="flex items-center justify-center py-16 gap-3 text-gray-400">
+              <div className="w-5 h-5 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+              {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}
             </div>
+          ) : supporters.length === 0 ? (
+            <div className="text-center py-16 text-gray-400">{supportersText.none}</div>
           ) : (
-            <motion.div
-              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5"
-              variants={staggerContainer}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-            >
-              {businessSupporters.map((s) => (
-                <motion.a
-                  key={s.id}
-                  href={s.website_url || undefined}
-                  target={s.website_url ? '_blank' : undefined}
-                  rel={s.website_url ? 'noopener noreferrer' : undefined}
-                  className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col items-center justify-center hover:shadow-md transition-all"
-                  variants={staggerItem}
-                  whileHover={{ y: -4 }}
-                  onClick={(e) => {
-                    if (!s.website_url) e.preventDefault();
-                  }}
-                  title={s.website_url ? (language === 'ar' ? 'زيارة الموقع' : 'Visit website') : s.business_name}
+            <div className="space-y-8">
+              {renderSupporterTier(supportersText.gold, goldSupporters, Crown, 'bg-yellow-100 text-yellow-700', 'gold')}
+              {renderSupporterTier(supportersText.silver, silverSupporters, Star, 'bg-slate-100 text-slate-700', 'silver')}
+              {renderSupporterTier(supportersText.bronze, bronzeSupporters, Award, 'bg-amber-100 text-amber-700', 'bronze')}
+
+              <motion.div
+                className="text-center pt-4"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={fadeInUp}
+              >
+                <Link
+                  to="/get-involved/business-support"
+                  className="inline-flex items-center gap-2.5 bg-primary text-white px-8 py-3.5 rounded-full hover:bg-primary/90 transition-all font-semibold text-sm tracking-wide shadow-sm hover:shadow-md hover:-translate-y-0.5"
                 >
-                  {s.logo_url ? (
-                    <img
-                      src={s.logo_url}
-                      alt={s.business_name}
-                      className="w-full h-14 object-contain"
-                    />
-                  ) : (
-                    <div className="w-full h-14 flex items-center justify-center text-gray-400">
-                      <Building2 className="w-8 h-8" />
-                    </div>
-                  )}
-                  <div className="mt-3 text-center">
-                    <p className="text-sm font-semibold text-gray-900 line-clamp-2">{s.business_name}</p>
-                  </div>
-                </motion.a>
-              ))}
-            </motion.div>
-          )}
-
-          <div className="mt-10 text-center">
-            <Link
-              to="/get-involved/business-support"
-              className="inline-flex items-center gap-2 bg-primary text-white px-7 py-3 rounded-xl hover:bg-primary/90 transition-colors font-semibold"
-            >
-              {language === 'ar' ? 'تعرف على باقات دعم الأعمال' : 'Explore Business Support'}
-              <ArrowRight size={18} />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <BeltDivider />
-
-      {/* Partnerships & Collaborations Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            className="text-center mb-10"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-          >
-            <motion.div className="flex items-center justify-center gap-3 mb-4" variants={fadeInUp}>
-              <Handshake className="w-7 h-7 text-primary" />
-              <h2 className="text-3xl sm:text-4xl font-bold text-primary">
-                {getContent(
-                  'home',
-                  'partnerships_collaborations_title',
-                  language === 'ar' ? 'الشراكات والتعاون' : 'Partnerships & Collaborations'
-                )}
-              </h2>
-            </motion.div>
-            <motion.p className="text-lg text-muted max-w-3xl mx-auto" variants={fadeInUp}>
-              {getContent(
-                'home',
-                'partnerships_collaborations_desc',
-                language === 'ar'
-                  ? 'نعتز بالشراكات التي تساعدنا على توسيع أثرنا وخدماتنا للمجتمع.'
-                  : 'We value partnerships that help us expand our impact and services.'
-              )}
-            </motion.p>
-          </motion.div>
-
-          {partnersCollaborations.length === 0 ? (
-            <div className="text-center py-10 bg-sand rounded-xl border border-gray-200">
-              <p className="text-gray-500">
-                {language === 'ar' ? 'لا يوجد شركاء حاليًا.' : 'No partners yet.'}
-              </p>
+                  {supportersText.viewAll}
+                  <ArrowRight size={16} className={isRTL ? 'rotate-180' : ''} />
+                </Link>
+              </motion.div>
             </div>
-          ) : (
-            <motion.div
-              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5"
-              variants={staggerContainer}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-            >
-              {partnersCollaborations.map((p) => (
-                <motion.a
-                  key={p.id}
-                  href={p.website_url || undefined}
-                  target={p.website_url ? '_blank' : undefined}
-                  rel={p.website_url ? 'noopener noreferrer' : undefined}
-                  className="bg-sand rounded-xl border border-gray-200 p-4 flex flex-col items-center justify-center hover:shadow-md transition-all"
-                  variants={staggerItem}
-                  whileHover={{ y: -4 }}
-                  onClick={(e) => {
-                    if (!p.website_url) e.preventDefault();
-                  }}
-                  title={p.website_url ? (language === 'ar' ? 'زيارة الموقع' : 'Visit website') : p.name}
-                >
-                  {p.logo_url ? (
-                    <img
-                      src={p.logo_url}
-                      alt={p.name}
-                      className="w-full h-14 object-contain"
-                    />
-                  ) : (
-                    <div className="w-full h-14 flex items-center justify-center text-gray-400">
-                      <Handshake className="w-8 h-8" />
-                    </div>
-                  )}
-                  <div className="mt-3 text-center">
-                    <p className="text-sm font-semibold text-gray-900 line-clamp-2">{p.name}</p>
-                  </div>
-                </motion.a>
-              ))}
-            </motion.div>
           )}
-
-          <div className="mt-10 text-center">
-            <Link
-              to="/get-involved/partnerships"
-              className="inline-flex items-center gap-2 bg-primary text-white px-7 py-3 rounded-xl hover:bg-primary/90 transition-colors font-semibold"
-            >
-              {language === 'ar' ? 'تواصل معنا للشراكة' : 'Partner With Us'}
-              <ArrowRight size={18} />
-            </Link>
-          </div>
         </div>
       </section>
 

@@ -1,335 +1,272 @@
-import { useEffect, useMemo, useState } from 'react';
-import {
-  Handshake,
-  Plus,
-  Edit,
-  Trash2,
-  Search,
-  X,
-  Loader2,
-  ExternalLink,
-  ToggleLeft,
-  ToggleRight,
-  ArrowUpDown,
-} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Loader2, Download, Eye, X, CheckCircle, XCircle, Trash2, Pencil, Save, MessageSquare } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import ImageUploader from '../../components/admin/ImageUploader';
 
-interface PartnerItem {
+interface Partnership {
   id: string;
-  name: string;
-  logo_url: string | null;
-  website_url: string | null;
-  is_active: boolean;
-  sort_order: number;
+  organization_name: string;
+  contact_person: string;
+  email: string;
+  phone: string | null;
+  organization_type: string | null;
+  partnership_interest: string | null;
+  message: string | null;
+  status: string;
   created_at: string;
 }
 
-interface FormData {
-  name: string;
-  logo_url: string;
-  website_url: string;
-  is_active: boolean;
-  sort_order: number;
+interface FormResponse {
+  id: string;
+  question_id: string;
+  response_text: string;
+  question_text_en: string;
+  question_text_ar: string;
+  question_type: string;
+  order_index: number;
 }
 
-interface Toast {
-  message: string;
-  type: 'success' | 'error';
-}
+interface Toast { message: string; type: 'success' | 'error'; }
 
-const DEFAULT_FORM: FormData = {
-  name: '',
-  logo_url: '',
-  website_url: '',
-  is_active: true,
-  sort_order: 0,
-};
+const STATUS_OPTIONS = ['new', 'contacted', 'in_progress', 'completed', 'declined'];
 
-export default function PartnershipsCollaborationsManagement() {
-  const [items, setItems] = useState<PartnerItem[]>([]);
+export default function PartnershipsManagement() {
+  const [items, setItems] = useState<Partnership[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [editing, setEditing] = useState<PartnerItem | null>(null);
-  const [formData, setFormData] = useState<FormData>({ ...DEFAULT_FORM });
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Partnership | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
-  const [sortMode, setSortMode] = useState<'order' | 'date'>('order');
+  const [formResponses, setFormResponses] = useState<FormResponse[]>([]);
+  const [loadingResponses, setLoadingResponses] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editData, setEditData] = useState<Record<string, any>>({});
+  const [editResponses, setEditResponses] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
 
+  useEffect(() => { fetchData(); }, []);
   useEffect(() => {
-    fetchItems();
-  }, []);
-
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 3000);
-    return () => clearTimeout(t);
+    if (toast) { const t = setTimeout(() => setToast(null), 3000); return () => clearTimeout(t); }
   }, [toast]);
 
-  const fetchItems = async (mode: 'order' | 'date' = sortMode) => {
+  const fetchData = async () => {
     try {
       setLoading(true);
-      const query = supabase
-        .from('partnerships_collaborations')
-        .select('*');
+      const { data, error } = await supabase.from('partnership_inquiries').select('*').neq('status', 'deleted_by_admin').order('created_at', { ascending: false });
+      if (error) throw error;
+      setItems(data || []);
+    } catch (error) { console.error('Error:', error); } finally { setLoading(false); }
+  };
 
-      const { data, error } = await (mode === 'order'
-        ? query.order('sort_order', { ascending: true }).order('created_at', { ascending: false })
-        : query.order('created_at', { ascending: false }));
+  const fetchFormResponses = async (applicationId: string) => {
+    setLoadingResponses(true);
+    try {
+      const { data, error } = await supabase
+        .from('form_responses')
+        .select('id, question_id, response_text, form_questions(question_text_en, question_text_ar, question_type, order_index)')
+        .eq('form_type', 'partnership')
+        .eq('application_id', applicationId)
+        .order('created_at');
 
       if (error) throw error;
-      setItems((data as PartnerItem[]) || []);
-    } catch (err) {
-      console.error('Error fetching partnerships & collaborations:', err);
-      setToast({ message: 'Failed to load partnerships & collaborations', type: 'error' });
+
+      const mapped = (data || []).map((r: any) => ({
+        id: r.id,
+        question_id: r.question_id,
+        response_text: r.response_text || '',
+        question_text_en: r.form_questions?.question_text_en || '',
+        question_text_ar: r.form_questions?.question_text_ar || '',
+        question_type: r.form_questions?.question_type || 'text',
+        order_index: r.form_questions?.order_index || 0,
+      }));
+
+      mapped.sort((a: FormResponse, b: FormResponse) => a.order_index - b.order_index);
+      setFormResponses(mapped);
+    } catch (error) {
+      console.error('Error fetching form responses:', error);
+      setFormResponses([]);
     } finally {
-      setLoading(false);
+      setLoadingResponses(false);
     }
   };
 
-  const openAddModal = () => {
-    setEditing(null);
-    setFormData({ ...DEFAULT_FORM });
-    setShowModal(true);
+  const openDetail = async (p: Partnership) => {
+    setSelected(p);
+    setEditing(false);
+    await fetchFormResponses(p.id);
   };
 
-  const openEditModal = (item: PartnerItem) => {
-    setEditing(item);
-    setFormData({
-      name: item.name || '',
-      logo_url: item.logo_url || '',
-      website_url: item.website_url || '',
-      is_active: item.is_active,
-      sort_order: Number(item.sort_order || 0),
+  const startEditing = () => {
+    if (!selected) return;
+    setEditData({
+      organization_name: selected.organization_name || '',
+      contact_person: selected.contact_person || '',
+      email: selected.email || '',
+      phone: selected.phone || '',
+      organization_type: selected.organization_type || '',
+      partnership_interest: selected.partnership_interest || '',
+      message: selected.message || '',
     });
-    setShowModal(true);
+    const respMap: Record<string, string> = {};
+    formResponses.forEach(r => { respMap[r.id] = r.response_text; });
+    setEditResponses(respMap);
+    setEditing(true);
   };
 
-  const closeModal = () => {
-    setShowModal(false);
-    setEditing(null);
-    setFormData({ ...DEFAULT_FORM });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.name.trim()) {
-      setToast({ message: 'Name is required', type: 'error' });
-      return;
-    }
-
+  const saveEdits = async () => {
+    if (!selected) return;
+    setSaving(true);
     try {
-      setSaving(true);
-      const payload = {
-        name: formData.name.trim(),
-        logo_url: formData.logo_url.trim() || null,
-        website_url: formData.website_url.trim() || null,
-        is_active: !!formData.is_active,
-        sort_order: Number.isFinite(formData.sort_order) ? Number(formData.sort_order) : 0,
-        updated_at: new Date().toISOString(),
-      };
+      const { error } = await supabase
+        .from('partnership_inquiries')
+        .update({ ...editData, updated_at: new Date().toISOString() })
+        .eq('id', selected.id);
+      if (error) throw error;
 
-      if (editing) {
-        const { error } = await supabase
-          .from('partnerships_collaborations')
-          .update(payload)
-          .eq('id', editing.id);
-        if (error) throw error;
-        setToast({ message: 'Partner updated successfully', type: 'success' });
-      } else {
-        const { error } = await supabase
-          .from('partnerships_collaborations')
-          .insert([{ ...payload }]);
-        if (error) throw error;
-        setToast({ message: 'Partner added successfully', type: 'success' });
+      for (const [responseId, text] of Object.entries(editResponses)) {
+        const original = formResponses.find(r => r.id === responseId);
+        if (original && original.response_text !== text) {
+          await supabase.from('form_responses').update({ response_text: text }).eq('id', responseId);
+        }
       }
 
-      closeModal();
-      await fetchItems();
-    } catch (err) {
-      console.error('Error saving partner:', err);
-      setToast({ message: 'Failed to save partner', type: 'error' });
+      setToast({ message: 'Changes saved successfully', type: 'success' });
+      setEditing(false);
+      await fetchData();
+      await fetchFormResponses(selected.id);
+      setSelected(prev => prev ? { ...prev, ...editData } : null);
+    } catch (error) {
+      console.error('Error saving:', error);
+      setToast({ message: 'Failed to save changes', type: 'error' });
     } finally {
       setSaving(false);
     }
   };
 
-  const toggleActive = async (item: PartnerItem) => {
+  const updateStatus = async (id: string, status: string) => {
     try {
-      const { error } = await supabase
-        .from('partnerships_collaborations')
-        .update({ is_active: !item.is_active, updated_at: new Date().toISOString() })
-        .eq('id', item.id);
+      const { error } = await supabase.from('partnership_inquiries').update({ status, updated_at: new Date().toISOString() }).eq('id', id);
       if (error) throw error;
-      setToast({ message: `Partner ${item.is_active ? 'deactivated' : 'activated'} successfully`, type: 'success' });
-      await fetchItems();
-    } catch (err) {
-      console.error('Error toggling partner:', err);
-      setToast({ message: 'Failed to update partner status', type: 'error' });
+      setToast({ message: `Status updated to ${status}`, type: 'success' });
+      await fetchData();
+      if (selected?.id === id) setSelected(prev => prev ? { ...prev, status } : null);
+    } catch (error) {
+      console.error('Error:', error);
+      setToast({ message: 'Failed to update status', type: 'error' });
     }
   };
 
   const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this partnership inquiry?')) return;
     try {
       const { adminDeleteRecord } = await import('../../lib/admin-api');
-      const result = await adminDeleteRecord('partnerships_collaborations', id);
+      const result = await adminDeleteRecord('partnership_inquiries', id);
       if (!result.success) throw new Error(result.error);
-      setToast({ message: 'Partner deleted successfully', type: 'success' });
-      setDeleteConfirm(null);
-      await fetchItems();
-    } catch (err) {
-      console.error('Error deleting partner:', err);
-      setToast({ message: 'Failed to delete partner', type: 'error' });
+      setToast({ message: 'Partnership deleted successfully', type: 'success' });
+      await fetchData();
+      if (selected?.id === id) setSelected(null);
+    } catch (error) {
+      console.error('Error:', error);
+      setToast({ message: 'Failed to delete partnership', type: 'error' });
     }
   };
 
-  const filtered = useMemo(() => {
-    const q = searchTerm.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter(i =>
-      (i.name || '').toLowerCase().includes(q) ||
-      (i.website_url || '').toLowerCase().includes(q)
+  const filtered = items.filter(i =>
+    i.organization_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    i.contact_person.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    i.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const exportToCSV = () => {
+    const headers = ['Organization', 'Contact', 'Email', 'Phone', 'Type', 'Status', 'Date'];
+    const rows = filtered.map(i => [i.organization_name, i.contact_person, i.email, i.phone || '', i.organization_type || '', i.status, new Date(i.created_at).toLocaleDateString()]);
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `partnerships-${new Date().toISOString().split('T')[0]}.csv`; a.click();
+  };
+
+  const getStatusBadge = (status: string) => {
+    const styles: Record<string, string> = { new: 'bg-blue-100 text-blue-700', contacted: 'bg-amber-100 text-amber-700', in_progress: 'bg-cyan-100 text-cyan-700', completed: 'bg-emerald-100 text-emerald-700', declined: 'bg-red-100 text-red-700' };
+    return <span className={`inline-block px-2.5 py-1 text-xs font-semibold rounded-full capitalize ${styles[status] || styles.new}`}>{status.replace('_', ' ')}</span>;
+  };
+
+  const editableField = (label: string, key: string, type: 'text' | 'textarea' = 'text') => {
+    const value = editing ? editData[key] : selected?.[key as keyof Partnership];
+    return (
+      <div>
+        <label className="text-xs font-medium text-gray-500 uppercase">{label}</label>
+        {editing ? (
+          type === 'textarea' ? (
+            <textarea
+              value={editData[key] || ''}
+              onChange={(e) => setEditData(prev => ({ ...prev, [key]: e.target.value }))}
+              rows={3}
+              className="w-full mt-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            />
+          ) : (
+            <input
+              type="text"
+              value={editData[key] || ''}
+              onChange={(e) => setEditData(prev => ({ ...prev, [key]: e.target.value }))}
+              className="w-full mt-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            />
+          )
+        ) : (
+          <p className="text-sm text-gray-900 mt-0.5 whitespace-pre-wrap">{(value as string) || '-'}</p>
+        )}
+      </div>
     );
-  }, [items, searchTerm]);
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <div className="flex items-center gap-3">
-            <Handshake className="w-7 h-7 text-slate-700" />
-            <h1 className="text-2xl font-bold text-gray-900">Partnerships &amp; Collaborations</h1>
-          </div>
-          <p className="text-gray-600 text-sm mt-1">Manage partner logos displayed on the website</p>
+          <h1 className="text-2xl font-bold text-gray-900">Partnership Requests</h1>
+          <p className="text-gray-600 text-sm mt-1">Manage partnership and collaboration inquiries</p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
-              const next = sortMode === 'order' ? 'date' : 'order';
-              setSortMode(next);
-              fetchItems(next);
-            }}
-            className="flex items-center gap-2 bg-white border border-gray-300 hover:border-gray-400 text-gray-700 px-3 py-2.5 rounded-lg font-medium transition-colors text-sm"
-            title="Toggle sorting"
-          >
-            <ArrowUpDown className="w-4 h-4" />
-            {sortMode === 'order' ? 'Sort: Order' : 'Sort: Date'}
-          </button>
-          <button
-            onClick={openAddModal}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors text-sm"
-          >
-            <Plus className="w-4 h-4" />
-            Add Partner
-          </button>
-        </div>
+        <button onClick={exportToCSV} className="flex items-center gap-2 bg-slate-700 hover:bg-slate-800 text-white px-4 py-2.5 rounded-lg font-medium transition-colors text-sm">
+          <Download className="w-4 h-4" /> Export
+        </button>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="mb-6 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search partners..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
-          />
+          <input type="text" placeholder="Search partnerships..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm" />
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
-          </div>
+          <div className="flex items-center justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-emerald-600" /></div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-12">
-            <Handshake className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">No partners found</p>
-          </div>
+          <div className="text-center py-12"><p className="text-gray-500">No partnerships found</p></div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Logo</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Website</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Order</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Organization</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Contact</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filtered.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3.5">
-                      {item.logo_url ? (
-                        <img
-                          src={item.logo_url}
-                          alt={item.name}
-                          className="w-10 h-10 rounded-lg object-contain bg-gray-50 border border-gray-200"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                          <Handshake className="w-5 h-5 text-gray-400" />
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5 font-medium text-sm text-gray-900">{item.name}</td>
-                    <td className="px-4 py-3.5 text-sm text-gray-600">
-                      {item.website_url ? (
-                        <a
-                          href={item.website_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-700 hover:underline"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                          Visit
-                        </a>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5 text-sm text-gray-600">{item.sort_order ?? 0}</td>
-                    <td className="px-4 py-3.5">
-                      <button
-                        onClick={() => toggleActive(item)}
-                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${
-                          item.is_active
-                            ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-                            : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                        }`}
-                      >
-                        {item.is_active ? (
-                          <ToggleRight className="w-4 h-4" />
-                        ) : (
-                          <ToggleLeft className="w-4 h-4" />
-                        )}
-                        {item.is_active ? 'Active' : 'Inactive'}
-                      </button>
-                    </td>
-                    <td className="px-4 py-3.5 text-sm text-gray-600">
-                      {new Date(item.created_at).toLocaleDateString()}
-                    </td>
+                {filtered.map(i => (
+                  <tr key={i.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3.5 font-medium text-sm text-gray-900">{i.organization_name}</td>
+                    <td className="px-4 py-3.5 text-sm text-gray-600">{i.contact_person}</td>
+                    <td className="px-4 py-3.5 text-sm text-gray-600">{i.email}</td>
+                    <td className="px-4 py-3.5">{getStatusBadge(i.status)}</td>
+                    <td className="px-4 py-3.5 text-sm text-gray-600">{new Date(i.created_at).toLocaleDateString()}</td>
                     <td className="px-4 py-3.5 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => openEditModal(item)}
-                          className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
-                          title="Edit"
-                        >
-                          <Edit className="w-4 h-4" />
+                        <button onClick={() => openDetail(i)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors" title="View">
+                          <Eye className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={() => setDeleteConfirm(item.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete"
-                        >
+                        <button onClick={() => handleDelete(i.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -340,144 +277,113 @@ export default function PartnershipsCollaborationsManagement() {
             </table>
           </div>
         )}
+        <div className="mt-4 text-sm text-gray-500">Showing {filtered.length} of {items.length} partnerships</div>
       </div>
 
-      {/* Add/Edit Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900">{editing ? 'Edit Partner' : 'Add Partner'}</h2>
-              <button onClick={closeModal} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="p-6 space-y-5">
+      {selected && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8">
+            <div className="flex justify-between items-start mb-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-0 transition-colors"
-                  required
-                />
+                <h2 className="text-xl font-bold text-gray-900">{selected.organization_name}</h2>
+                <p className="text-sm text-gray-500 mt-1">{selected.contact_person} - {selected.email}</p>
               </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Website URL</label>
-                  <input
-                    type="url"
-                    value={formData.website_url}
-                    onChange={(e) => setFormData((p) => ({ ...p, website_url: e.target.value }))}
-                    placeholder="https://..."
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-0 transition-colors"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Display Order</label>
-                  <input
-                    type="number"
-                    value={formData.sort_order}
-                    onChange={(e) => setFormData((p) => ({ ...p, sort_order: Number(e.target.value) }))}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-0 transition-colors"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Lower numbers appear first.</p>
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
-                  <button
-                    type="button"
-                    onClick={() => setFormData((p) => ({ ...p, is_active: !p.is_active }))}
-                    className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold border-2 transition-colors ${
-                      formData.is_active
-                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
-                        : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
-                    }`}
-                  >
-                    {formData.is_active ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
-                    {formData.is_active ? 'Active (Visible)' : 'Inactive (Hidden)'}
+              <div className="flex items-center gap-2">
+                {!editing ? (
+                  <button onClick={startEditing} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                    <Pencil className="w-3.5 h-3.5" /> Edit
                   </button>
-                </div>
-
+                ) : (
+                  <>
+                    <button onClick={saveEdits} disabled={saving} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors disabled:opacity-50">
+                      {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Save
+                    </button>
+                    <button onClick={() => setEditing(false)} className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                      Cancel
+                    </button>
+                  </>
+                )}
+                <button onClick={() => { setSelected(null); setEditing(false); }} className="text-gray-400 hover:text-gray-600">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            <div className="space-y-6">
+              <div>{getStatusBadge(selected.status)}</div>
+              <div className="grid grid-cols-2 gap-4">
+                {editableField('Organization Name', 'organization_name')}
+                {editableField('Contact Person', 'contact_person')}
+                {editableField('Email', 'email')}
+                {editableField('Phone', 'phone')}
+                {editableField('Organization Type', 'organization_type')}
+                {editableField('Partnership Interest', 'partnership_interest')}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Logo URL (optional)</label>
-                  <input
-                    type="url"
-                    value={formData.logo_url}
-                    onChange={(e) => setFormData((p) => ({ ...p, logo_url: e.target.value }))}
-                    placeholder="Upload below or paste a URL"
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-0 transition-colors"
-                  />
+                  <label className="text-xs font-medium text-gray-500 uppercase">Date</label>
+                  <p className="text-sm text-gray-900 mt-0.5">{new Date(selected.created_at).toLocaleString()}</p>
                 </div>
               </div>
+              {editableField('Message', 'message', 'textarea')}
 
-              <ImageUploader
-                bucket="partnerships-logos"
-                label="Upload Logo"
-                currentImage={formData.logo_url || null}
-                maxSizeMB={2}
-                onUploadSuccess={(url) => setFormData((p) => ({ ...p, logo_url: url }))}
-                onRemove={() => setFormData((p) => ({ ...p, logo_url: '' }))}
-              />
+              {(formResponses.length > 0 || loadingResponses) && (
+                <div className="border-t border-gray-200 pt-4">
+                  <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2 mb-4">
+                    <MessageSquare className="w-4 h-4" /> Form Responses
+                  </h3>
+                  {loadingResponses ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {formResponses.map((r) => (
+                        <div key={r.id}>
+                          <label className="text-xs font-medium text-gray-500">{r.question_text_en}</label>
+                          {editing ? (
+                            r.question_type === 'textarea' ? (
+                              <textarea
+                                value={editResponses[r.id] || ''}
+                                onChange={(e) => setEditResponses(prev => ({ ...prev, [r.id]: e.target.value }))}
+                                rows={2}
+                                className="w-full mt-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                              />
+                            ) : (
+                              <input
+                                type="text"
+                                value={editResponses[r.id] || ''}
+                                onChange={(e) => setEditResponses(prev => ({ ...prev, [r.id]: e.target.value }))}
+                                className="w-full mt-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                              />
+                            )
+                          ) : (
+                            <p className="text-sm text-gray-900 mt-0.5 whitespace-pre-wrap">{r.response_text || '-'}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-6 py-2.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 font-semibold disabled:opacity-60"
-                >
-                  {saving ? 'Saving…' : (editing ? 'Save Changes' : 'Add Partner')}
-                </button>
+              <div className="border-t border-gray-200 pt-4">
+                <label className="text-xs font-medium text-gray-500 uppercase mb-2 block">Update Status</label>
+                <div className="flex gap-2 flex-wrap">
+                  {STATUS_OPTIONS.map(s => (
+                    <button key={s} onClick={() => updateStatus(selected.id, s)}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors capitalize ${selected.status === s ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'}`}>
+                      {s.replace('_', ' ')}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Delete confirm */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Delete partner?</h3>
-            <p className="text-sm text-gray-600 mb-6">This will remove the partner from the list.</p>
-            <div className="flex items-center justify-end gap-3">
-              <button
-                onClick={() => setDeleteConfirm(null)}
-                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleDelete(deleteConfirm)}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 font-semibold"
-              >
-                Delete
-              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Toast */}
       {toast && (
-        <div className={`fixed bottom-6 right-6 z-[10000] px-4 py-3 rounded-lg shadow-lg text-white ${toast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'}`}>
-          <p className="text-sm font-semibold">{toast.message}</p>
+        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-lg shadow-xl flex items-center gap-2.5 ${toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'}`}>
+          {toast.type === 'success' ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+          <span className="text-sm font-medium">{toast.message}</span>
         </div>
       )}
     </div>

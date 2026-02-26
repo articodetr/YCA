@@ -5,7 +5,6 @@ import { supabase } from '../../lib/supabase';
 interface ImageUploaderProps {
   bucket: string;
   onUploadSuccess: (url: string) => void;
-  onRemove?: () => void;
   currentImage?: string | null;
   maxSizeMB?: number;
   acceptedTypes?: string[];
@@ -15,7 +14,6 @@ interface ImageUploaderProps {
 export default function ImageUploader({
   bucket,
   onUploadSuccess,
-  onRemove,
   currentImage,
   maxSizeMB = 5,
   acceptedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
@@ -120,9 +118,6 @@ export default function ImageUploader({
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-
-    // Let parent clear any stored URL (optional)
-    onRemove?.();
   };
 
   return (

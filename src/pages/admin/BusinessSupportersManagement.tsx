@@ -9,7 +9,6 @@ interface BusinessSupporter {
   logo_url: string;
   website_url: string | null;
   is_active: boolean;
-  category: 'supporter' | 'partner' | string;
   created_at: string;
 }
 
@@ -19,7 +18,6 @@ interface FormData {
   logo_url: string;
   website_url: string;
   is_active: boolean;
-  category: 'supporter' | 'partner' | string;
 }
 
 interface Toast {
@@ -28,11 +26,6 @@ interface Toast {
 }
 
 const TIERS = ['bronze', 'silver', 'gold'] as const;
-
-const CATEGORY_TABS = [
-  { key: 'supporter', label: 'Supporters' },
-  { key: 'partner', label: 'Partners' },
-] as const;
 
 const TIER_STYLES: Record<string, string> = {
   bronze: 'bg-amber-100 text-amber-700',
@@ -46,7 +39,6 @@ const DEFAULT_FORM_DATA: FormData = {
   logo_url: '',
   website_url: '',
   is_active: true,
-  category: 'supporter',
 };
 
 export default function BusinessSupportersManagement() {
@@ -55,7 +47,6 @@ export default function BusinessSupportersManagement() {
   const [adminId, setAdminId] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTier, setFilterTier] = useState<string>('all');
-  const [activeCategory, setActiveCategory] = useState<'supporter' | 'partner'>('supporter');
   const [showModal, setShowModal] = useState(false);
   const [editingSupporter, setEditingSupporter] = useState<BusinessSupporter | null>(null);
   const [formData, setFormData] = useState<FormData>({ ...DEFAULT_FORM_DATA });
@@ -63,10 +54,6 @@ export default function BusinessSupportersManagement() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
-
-  const isPartners = activeCategory === 'partner';
-  const entitySingular = isPartners ? 'Partner' : 'Supporter';
-  const entityPlural = isPartners ? 'partners' : 'supporters';
 
   useEffect(() => {
     fetchSupporters();
@@ -159,7 +146,6 @@ export default function BusinessSupportersManagement() {
         logo_url: formData.logo_url.trim(),
         website_url: formData.website_url.trim() || null,
         is_active: formData.is_active,
-        category: formData.category || activeCategory,
       };
 
       if (editingSupporter) {
@@ -224,7 +210,7 @@ export default function BusinessSupportersManagement() {
 
   const openAddModal = () => {
     setEditingSupporter(null);
-    setFormData({ ...DEFAULT_FORM_DATA, category: activeCategory });
+    setFormData({ ...DEFAULT_FORM_DATA });
     setShowModal(true);
   };
 
@@ -236,7 +222,6 @@ export default function BusinessSupportersManagement() {
       logo_url: supporter.logo_url || '',
       website_url: supporter.website_url || '',
       is_active: supporter.is_active,
-      category: (supporter as any).category || 'supporter',
     });
     setShowModal(true);
   };
@@ -244,14 +229,13 @@ export default function BusinessSupportersManagement() {
   const closeModal = () => {
     setShowModal(false);
     setEditingSupporter(null);
-    setFormData({ ...DEFAULT_FORM_DATA, category: activeCategory });
+    setFormData({ ...DEFAULT_FORM_DATA });
   };
 
   const filtered = supporters.filter((s) => {
     const matchesSearch = s.business_name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesTier = filterTier === 'all' || s.tier === filterTier;
-    const matchesCategory = (s as any).category === activeCategory;
-    return matchesSearch && matchesTier && matchesCategory;
+    return matchesSearch && matchesTier;
   });
 
   const getTierBadge = (tier: string) => (
@@ -266,32 +250,17 @@ export default function BusinessSupportersManagement() {
         <div>
           <div className="flex items-center gap-3">
             <Building2 className="w-7 h-7 text-slate-700" />
-            <h1 className="text-2xl font-bold text-gray-900">Business {isPartners ? 'Partners' : 'Supporters'}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Business Supporters</h1>
           </div>
-          <p className="text-gray-600 text-sm mt-1">Manage supporter and partner organisations</p>
+          <p className="text-gray-600 text-sm mt-1">Manage companies and organizations supporting YCA</p>
         </div>
-        <div className="flex items-center gap-3">
-        <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1">
-          {CATEGORY_TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveCategory(tab.key)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${activeCategory === tab.key ? 'bg-slate-700 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
         <button
           onClick={openAddModal}
           className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-lg font-medium transition-colors text-sm"
         >
           <Plus className="w-4 h-4" />
-          Add {entitySingular}
+          Add Supporter
         </button>
-      </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -300,7 +269,7 @@ export default function BusinessSupportersManagement() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder={`Search ${entityPlural}...`}
+              placeholder="Search supporters..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
@@ -331,7 +300,7 @@ export default function BusinessSupportersManagement() {
         ) : filtered.length === 0 ? (
           <div className="text-center py-12">
             <Building2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">No records found</p>
+            <p className="text-gray-500">No business supporters found</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -426,16 +395,16 @@ export default function BusinessSupportersManagement() {
         )}
 
         <div className="mt-4 text-sm text-gray-500">
-          Showing {filtered.length} of {supporters.filter(s => (s as any).category === activeCategory).length} {entityPlural}
+          Showing {filtered.length} of {supporters.length} supporters
         </div>
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9999]">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-8">
             <div className="flex justify-between items-start mb-6">
               <h2 className="text-xl font-bold text-gray-900">
-                {editingSupporter ? `Edit ${entitySingular}` : `Add New ${entitySingular}`} 
+                {editingSupporter ? 'Edit Supporter' : 'Add New Supporter'}
               </h2>
               <button onClick={closeModal} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
@@ -551,7 +520,7 @@ export default function BusinessSupportersManagement() {
                   className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white px-4 py-2.5 rounded-lg font-medium transition-colors text-sm"
                 >
                   {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {editingSupporter ? `Update ${entitySingular}` : `Add ${entitySingular}`} 
+                  {editingSupporter ? 'Update Supporter' : 'Add Supporter'}
                 </button>
                 <button
                   type="button"
@@ -567,7 +536,7 @@ export default function BusinessSupportersManagement() {
       )}
 
       {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9999]">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-sm w-full p-8 text-center">
             <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
               <Trash2 className="w-6 h-6 text-red-600" />

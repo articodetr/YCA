@@ -43,7 +43,6 @@ async function upsertBusinessSupporterFromApplication(applicationId: string, app
     tier: normalizeBusinessTier(application?.business_support_tier),
     logo_url: String(application?.business_logo_url || "") || "",
     website_url: String(application?.business_website_url || "") || "",
-    category: 'supporter',
     // New supporters should not be visible on the website until an admin activates them.
     is_active: false,
   };

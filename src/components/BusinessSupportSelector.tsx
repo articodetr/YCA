@@ -173,12 +173,19 @@ export default function BusinessSupportSelector({ onSelect }: BusinessSupportSel
                 <input
                   type="number"
                   min="10"
+                  step="1"
                   value={customAmount}
                   onChange={(e) => {
-                    setCustomAmount(e.target.value);
-                    const amount = parseFloat(e.target.value);
-                    if (amount >= 10) {
-                      handleSelection('monthly', amount, 'monthly');
+                    const raw = e.target.value;
+                    const num = parseFloat(raw);
+                    if (!raw) {
+                      setCustomAmount('');
+                      return;
+                    }
+                    const pounds = Number.isFinite(num) ? Math.round(num) : 0;
+                    setCustomAmount(String(pounds));
+                    if (pounds >= 10) {
+                      handleSelection('monthly', pounds, 'monthly');
                     }
                   }}
                   placeholder="10"
@@ -187,7 +194,8 @@ export default function BusinessSupportSelector({ onSelect }: BusinessSupportSel
               </div>
               <button
                 onClick={() => {
-                  const amount = parseFloat(customAmount);
+                  const num = parseFloat(customAmount);
+                  const amount = Number.isFinite(num) ? Math.round(num) : 0;
                   if (amount >= 10) {
                     handleSelection('monthly', amount, 'monthly');
                   }
@@ -242,12 +250,19 @@ export default function BusinessSupportSelector({ onSelect }: BusinessSupportSel
                 <input
                   type="number"
                   min="10"
+                  step="1"
                   value={customAmount}
                   onChange={(e) => {
-                    setCustomAmount(e.target.value);
-                    const amount = parseFloat(e.target.value);
-                    if (amount >= 10) {
-                      handleSelection('one_time', amount, 'one_time');
+                    const raw = e.target.value;
+                    const num = parseFloat(raw);
+                    if (!raw) {
+                      setCustomAmount('');
+                      return;
+                    }
+                    const pounds = Number.isFinite(num) ? Math.round(num) : 0;
+                    setCustomAmount(String(pounds));
+                    if (pounds >= 10) {
+                      handleSelection('one_time', pounds, 'one_time');
                     }
                   }}
                   placeholder="10"
@@ -256,7 +271,8 @@ export default function BusinessSupportSelector({ onSelect }: BusinessSupportSel
               </div>
               <button
                 onClick={() => {
-                  const amount = parseFloat(customAmount);
+                  const num = parseFloat(customAmount);
+                  const amount = Number.isFinite(num) ? Math.round(num) : 0;
                   if (amount >= 10) {
                     handleSelection('one_time', amount, 'one_time');
                   }

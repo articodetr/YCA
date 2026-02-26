@@ -9,6 +9,7 @@ interface Registration {
   email: string;
   phone: string | null;
   number_of_attendees: number;
+  attendees_details?: any[] | null;
   notes: string | null;
   status: string;
   skills: string | null;
@@ -34,6 +35,27 @@ interface EventOption {
 interface Toast { message: string; type: 'success' | 'error'; }
 
 const STATUS_OPTIONS = ['confirmed', 'cancelled', 'attended'];
+
+const csvEscape = (value: unknown): string => {
+  const s = String(value ?? '');
+  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+};
+
+const formatAttendees = (details: any[] | null | undefined): string => {
+  if (!Array.isArray(details) || details.length === 0) return '';
+  return details
+    .map((a, idx) => {
+      const name = a?.full_name || `${a?.first_name || ''} ${a?.last_name || ''}`.trim();
+      const age = a?.age != null ? String(a.age) : '';
+      const type = a?.ticket_type ? String(a.ticket_type) : '';
+      const parts = [name, type ? `(${type})` : '', age ? `Age: ${age}` : ''].filter(Boolean);
+      return `${idx + 1}. ${parts.join(' ')}`.trim();
+    })
+    .join(' | ');
+};
 
 export default function RegistrationsManagement() {
   const [items, setItems] = useState<Registration[]>([]);
@@ -146,13 +168,21 @@ export default function RegistrationsManagement() {
   }, [eventScoped]);
 
   const exportToCSV = () => {
-    const headers = ['Name', 'Email', 'Phone', 'Event', 'Attendees', 'Status', 'Payment', 'Amount', 'Date'];
+    const headers = ['Name', 'Email', 'Phone', 'Event', 'Attendees', 'Attendee Details', 'Status', 'Payment', 'Amount', 'Booking Ref', 'Date'];
     const rows = filtered.map(i => [
-      i.full_name, i.email, i.phone || '', i.events?.title || '',
-      String(i.number_of_attendees), i.status, i.payment_status || '',
-      i.amount_paid != null ? `£${i.amount_paid}` : '', new Date(i.created_at).toLocaleDateString(),
+      csvEscape(i.full_name),
+      csvEscape(i.email),
+      csvEscape(i.phone || ''),
+      csvEscape(i.events?.title || ''),
+      csvEscape(String(i.number_of_attendees)),
+      csvEscape(formatAttendees(i.attendees_details)),
+      csvEscape(i.status),
+      csvEscape(i.payment_status || ''),
+      csvEscape(i.amount_paid != null ? `£${i.amount_paid}` : ''),
+      csvEscape(i.booking_reference || ''),
+      csvEscape(new Date(i.created_at).toLocaleDateString()),
     ]);
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const csv = [headers.map(csvEscape), ...rows].map(r => r.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const safeEvent = (selectedEvent?.title || '').replace(/[^a-z0-9\-_ ]/gi, '').trim().replace(/\s+/g, '-').slice(0, 40);
@@ -334,6 +364,27 @@ export default function RegistrationsManagement() {
               {selected.skills && (
                 <div><label className="text-xs font-medium text-gray-500 uppercase">Skills</label><p className="text-sm text-gray-900 mt-1">{selected.skills}</p></div>
               )}
+
+              {Array.isArray(selected.attendees_details) && selected.attendees_details.length > 0 && (
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <label className="text-xs font-medium text-gray-500 uppercase mb-2 block">Attendee Details</label>
+                  <div className="space-y-2">
+                    {selected.attendees_details.map((a: any, idx: number) => (
+                      <div key={idx} className="flex items-start justify-between gap-3 text-sm">
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900 truncate">
+                            {a?.full_name || `${a?.first_name || ''} ${a?.last_name || ''}`.trim() || `Attendee ${idx + 1}`}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            {a?.ticket_type ? `Type: ${a.ticket_type}` : ''}{a?.age != null ? `${a?.ticket_type ? ' • ' : ''}Age: ${a.age}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {selected.notes && (
                 <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                   <label className="text-xs font-medium text-gray-500 uppercase mb-2 block">Notes</label>

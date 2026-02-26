@@ -454,8 +454,8 @@ export default function EventsManagement() {
                             onChange={(e) => setFormData({ ...formData, ticket_price_adult: e.target.value })}
                             className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                             min="0"
-                            step="0.01"
-                            placeholder="10.00"
+                            step="1"
+                            placeholder="10"
                             required
                           />
                         </div>
@@ -470,8 +470,8 @@ export default function EventsManagement() {
                             onChange={(e) => setFormData({ ...formData, ticket_price_child: e.target.value })}
                             className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                             min="0"
-                            step="0.01"
-                            placeholder="5.00"
+                            step="1"
+                            placeholder="5"
                           />
                         </div>
                         <p className="text-xs text-gray-400 mt-1">Leave empty if not applicable</p>
@@ -486,8 +486,8 @@ export default function EventsManagement() {
                             onChange={(e) => setFormData({ ...formData, ticket_price_member: e.target.value })}
                             className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                             min="0"
-                            step="0.01"
-                            placeholder="8.00"
+                            step="1"
+                            placeholder="8"
                           />
                         </div>
                         <p className="text-xs text-gray-400 mt-1">Discounted price for members</p>

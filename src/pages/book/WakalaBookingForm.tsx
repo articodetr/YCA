@@ -54,7 +54,7 @@ const translationsData = {
     additionalNotes: 'Additional Notes (Optional)',
     notesPlaceholder: 'Any specific details or requirements for the Wakala...',
     pricingInfo: 'Pricing Information',
-    priceMember: '£20 - First Wakala/Legal request FREE for eligible members (10+ days membership)',
+    priceMember: '£20 - First Legal request FREE for eligible members (30+ days membership)',
     priceStandard: '\u00A340 - Standard rate',
     yourPrice: 'Your Price',
     free: 'FREE',
@@ -112,7 +112,7 @@ const translationsData = {
     additionalNotes: 'ملاحظات إضافية (اختياري)',
     notesPlaceholder: 'أي تفاصيل أو متطلبات خاصة بالوكالة...',
     pricingInfo: 'معلومات التسعير',
-    priceMember: '20 جنيه - أول طلب (وكالة/خدمة قانونية) مجاني للأعضاء المؤهلين (عضوية 10 أيام فأكثر)',
+    priceMember: '20 جنيه - أول طلب (خدمة قانونية) مجاني للأعضاء المؤهلين (عضوية 30 يومًا فأكثر)',
     priceStandard: '40 جنيه - السعر الأساسي',
     yourPrice: 'السعر الخاص بك',
     free: 'مجاناً',
@@ -215,15 +215,15 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
       } else { setMembershipStatus('none'); setMemberDaysSinceJoin(0); }
 
       const { count: wCount } = await supabase.from('wakala_applications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).in('status', ['submitted', 'in_progress', 'completed', 'approved']);
+      const { count: tCount } = await supabase.from('translation_requests').select('id', { count: 'exact', head: true }).eq('user_id', user.id);
       const { count: oCount } = await supabase.from('other_legal_requests').select('id', { count: 'exact', head: true }).eq('user_id', user.id);
-      // NOTE: We intentionally do NOT count translation requests here.
-      // A member gets ONLY ONE free credit across Wakala + Other Legal/Documentation.
-      setPreviousRequestCount((wCount || 0) + (oCount || 0));
+      // One member gets ONLY ONE free legal request across Wakala + Translation + Other Legal.
+      setPreviousRequestCount((wCount || 0) + (tCount || 0) + (oCount || 0));
     } catch (err) { console.error('Error checking eligibility:', err); }
   };
 
   const calculatePrice = () => {
-    if (membershipStatus === 'active' && memberDaysSinceJoin >= 10) {
+    if (membershipStatus === 'active' && memberDaysSinceJoin >= 30) {
       return previousRequestCount === 0 ? 0 : 20;
     }
     return 40;
@@ -275,7 +275,7 @@ export default function WakalaBookingForm({ onComplete }: WakalaBookingFormProps
       fee_amount: calculatePrice(),
       payment_status: 'paid',
       status: 'submitted',
-      is_first_wakala: previousRequestCount === 0 && membershipStatus === 'active' && memberDaysSinceJoin >= 10,
+      is_first_wakala: previousRequestCount === 0 && membershipStatus === 'active' && memberDaysSinceJoin >= 30,
     },
   });
 

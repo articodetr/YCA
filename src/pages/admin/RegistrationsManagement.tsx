@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Search, Loader2, Download, Eye, X, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface Registration {
   id: string;
+  event_id: string;
   full_name: string;
   email: string;
   phone: string | null;
@@ -23,19 +24,29 @@ interface Registration {
   events: { title: string } | null;
 }
 
+interface EventOption {
+  id: string;
+  title: string;
+  date: string;
+  is_paid_event?: boolean | null;
+}
+
 interface Toast { message: string; type: 'success' | 'error'; }
 
 const STATUS_OPTIONS = ['confirmed', 'cancelled', 'attended'];
 
 export default function RegistrationsManagement() {
   const [items, setItems] = useState<Registration[]>([]);
+  const [events, setEvents] = useState<EventOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterEventId, setFilterEventId] = useState('all');
   const [selected, setSelected] = useState<Registration | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
 
   useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchEvents(); }, []);
   useEffect(() => {
     if (toast) { const t = setTimeout(() => setToast(null), 3000); return () => clearTimeout(t); }
   }, [toast]);
@@ -56,6 +67,19 @@ export default function RegistrationsManagement() {
     }
   };
 
+  const fetchEvents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select('id,title,date,is_paid_event')
+        .order('date', { ascending: false });
+      if (error) throw error;
+      setEvents((data as EventOption[]) || []);
+    } catch (error) {
+      console.error('Error fetching events:', error);
+    }
+  };
+
   const updateStatus = async (id: string, status: string) => {
     try {
       const { error } = await supabase.from('event_registrations').update({ status }).eq('id', id);
@@ -69,13 +93,57 @@ export default function RegistrationsManagement() {
     }
   };
 
-  const filtered = items.filter(i => {
-    const matchesSearch = i.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      i.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (i.events?.title || '').toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || i.status === filterStatus;
-    return matchesSearch && matchesFilter;
-  });
+  const filtered = useMemo(() => {
+    return items.filter(i => {
+      const matchesSearch = i.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        i.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (i.events?.title || '').toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = filterStatus === 'all' || i.status === filterStatus;
+      const matchesEvent = filterEventId === 'all' || i.event_id === filterEventId;
+      return matchesSearch && matchesStatus && matchesEvent;
+    });
+  }, [items, searchTerm, filterStatus, filterEventId]);
+
+  const selectedEvent = useMemo(() => {
+    if (filterEventId === 'all') return null;
+    return events.find(e => e.id === filterEventId) || null;
+  }, [events, filterEventId]);
+
+  const eventScoped = useMemo(() => {
+    if (filterEventId === 'all') return items;
+    return items.filter(i => i.event_id === filterEventId);
+  }, [items, filterEventId]);
+
+  const stats = useMemo(() => {
+    const registrationsCount = eventScoped.length;
+    const attendeesCount = eventScoped.reduce((sum, r) => sum + (r.number_of_attendees || 0), 0);
+    const normalize = (s?: string | null) => (s || '').toLowerCase();
+    const paidStatuses = new Set(['paid', 'completed', 'succeeded']);
+    const pendingStatuses = new Set(['pending', 'requires_payment_method', 'processing']);
+    const failedStatuses = new Set(['failed', 'canceled', 'cancelled']);
+
+    const paidRegs = eventScoped.filter(r => paidStatuses.has(normalize(r.payment_status)));
+    const pendingRegs = eventScoped.filter(r => pendingStatuses.has(normalize(r.payment_status)));
+    const failedRegs = eventScoped.filter(r => failedStatuses.has(normalize(r.payment_status)));
+
+    const totalPaid = paidRegs.reduce((sum, r) => sum + (typeof r.amount_paid === 'number' ? r.amount_paid : 0), 0);
+
+    const confirmedCount = eventScoped.filter(r => r.status === 'confirmed').length;
+    const attendedCount = eventScoped.filter(r => r.status === 'attended').length;
+    const cancelledCount = eventScoped.filter(r => r.status === 'cancelled').length;
+
+    return {
+      registrationsCount,
+      attendeesCount,
+      totalPaid,
+      paidCount: paidRegs.length,
+      pendingCount: pendingRegs.length,
+      failedCount: failedRegs.length,
+      confirmedCount,
+      attendedCount,
+      cancelledCount,
+    };
+  }, [eventScoped]);
 
   const exportToCSV = () => {
     const headers = ['Name', 'Email', 'Phone', 'Event', 'Attendees', 'Status', 'Payment', 'Amount', 'Date'];
@@ -87,7 +155,12 @@ export default function RegistrationsManagement() {
     const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `registrations-${new Date().toISOString().split('T')[0]}.csv`; a.click();
+    const safeEvent = (selectedEvent?.title || '').replace(/[^a-z0-9\-_ ]/gi, '').trim().replace(/\s+/g, '-').slice(0, 40);
+    const base = selectedEvent ? `registrations-${safeEvent || selectedEvent.id}` : 'registrations';
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${base}-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
   };
 
   const getStatusBadge = (status: string) => {
@@ -102,7 +175,9 @@ export default function RegistrationsManagement() {
   const getPaymentBadge = (status: string | null) => {
     if (!status) return null;
     const styles: Record<string, string> = {
+      paid: 'bg-emerald-100 text-emerald-700',
       completed: 'bg-emerald-100 text-emerald-700',
+      succeeded: 'bg-emerald-100 text-emerald-700',
       pending: 'bg-amber-100 text-amber-700',
       failed: 'bg-red-100 text-red-700',
     };
@@ -122,12 +197,24 @@ export default function RegistrationsManagement() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="mb-6 flex gap-4">
+        <div className="mb-6 flex flex-wrap gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input type="text" placeholder="Search registrations..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm" />
           </div>
+          <select
+            value={filterEventId}
+            onChange={(e) => setFilterEventId(e.target.value)}
+            className="min-w-[240px] px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
+          >
+            <option value="all">All Events</option>
+            {events.map(ev => (
+              <option key={ev.id} value={ev.id}>
+                {ev.title} {ev.date ? `(${new Date(ev.date).toLocaleDateString()})` : ''}
+              </option>
+            ))}
+          </select>
           <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm">
             <option value="all">All Status</option>
@@ -136,6 +223,31 @@ export default function RegistrationsManagement() {
             <option value="cancelled">Cancelled</option>
           </select>
         </div>
+
+        {selectedEvent && (
+          <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+              <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Event</p>
+              <p className="text-sm font-semibold text-slate-900 mt-1 leading-snug">{selectedEvent.title}</p>
+              <p className="text-xs text-slate-500 mt-1">{selectedEvent.date ? new Date(selectedEvent.date).toLocaleDateString() : ''}</p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-xl p-4">
+              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Registrations</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{stats.registrationsCount}</p>
+              <p className="text-xs text-gray-500 mt-1">Confirmed: {stats.confirmedCount} • Attended: {stats.attendedCount} • Cancelled: {stats.cancelledCount}</p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-xl p-4">
+              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Attendees</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{stats.attendeesCount}</p>
+              <p className="text-xs text-gray-500 mt-1">Sum of “Attendees” field</p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-xl p-4">
+              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Total Paid</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">£{stats.totalPaid.toFixed(2)}</p>
+              <p className="text-xs text-gray-500 mt-1">Paid: {stats.paidCount} • Pending: {stats.pendingCount} • Failed: {stats.failedCount}</p>
+            </div>
+          </div>
+        )}
 
         {loading ? (
           <div className="flex items-center justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-emerald-600" /></div>

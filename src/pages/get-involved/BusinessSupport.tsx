@@ -200,10 +200,18 @@ export default function BusinessSupport() {
   };
 
   const handleCustomInput = (val: string) => {
-    setCustomInput(val);
+    if (!val) {
+      setCustomInput('');
+      setFlexAmount(null);
+      return;
+    }
+
     const n = parseFloat(val);
-    if (!isNaN(n) && n >= 10) {
-      setFlexAmount(n);
+    const pounds = Number.isFinite(n) ? Math.round(n) : 0;
+    setCustomInput(String(pounds));
+
+    if (pounds >= 10) {
+      setFlexAmount(pounds);
       setSelectionError(false);
     } else {
       setFlexAmount(null);
@@ -490,6 +498,7 @@ export default function BusinessSupport() {
                       <input
                         type="number"
                         min="10"
+                        step="1"
                         value={customInput}
                         onChange={(e) => handleCustomInput(e.target.value)}
                         placeholder="10"

@@ -1,28 +1,22 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Clock, MessageSquare } from 'lucide-react';
+import { Calendar, Clock, FileText, Languages, MessageSquare, Scale } from 'lucide-react';
 import { staggerContainer, staggerItem } from '../../../lib/animations';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import ApplicationDetailsModal from '../../../components/member/ApplicationDetailsModal';
+import ServiceRequestDetailsModal from '../../../components/member/ServiceRequestDetailsModal';
 
 interface Props {
-  bookings: any[];
+  advisoryBookings: any[];
+  wakalaApplications: any[];
+  translationRequests: any[];
+  otherLegalRequests: any[];
   onRefresh?: () => void;
   t: Record<string, string>;
 }
 
-const statusConfig: Record<string, { bg: string; text: string; icon: any }> = {
-  submitted: { bg: 'bg-blue-50 border-blue-200', text: 'text-blue-700', icon: Clock },
-  in_progress: { bg: 'bg-sky-50 border-sky-200', text: 'text-sky-700', icon: Clock },
-  completed: { bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700', icon: Clock },
-  approved: { bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700', icon: Clock },
-  rejected: { bg: 'bg-red-50 border-red-200', text: 'text-red-700', icon: Clock },
-  cancelled: { bg: 'bg-red-50 border-red-200', text: 'text-red-700', icon: Clock },
-  pending: { bg: 'bg-amber-50 border-amber-200', text: 'text-amber-700', icon: Clock },
-};
-
 function getAdvisoryReasonLabel(serviceType: string, language: string) {
-  const reason = serviceType.replace('advisory_', '');
+  const reason = (serviceType || '').replace('advisory_', '');
   const labels: Record<string, Record<string, string>> = {
     en: {
       welfare_benefits: 'Welfare Benefits',
@@ -45,13 +39,106 @@ function getAdvisoryReasonLabel(serviceType: string, language: string) {
       other: 'أخرى',
     },
   };
-  return labels[language]?.[reason] || reason;
+  return labels[language]?.[reason] || reason || (language === 'ar' ? 'استشارة' : 'Consultation');
 }
 
-function CompactApplicationCard({ app, onClick, language }: { app: any; onClick: () => void; language: string }) {
-  const isCancelled = app.status === 'cancelled' || app.cancelled_at;
-  const statusConf = statusConfig[app.status] || { bg: 'bg-gray-50 border-gray-200', text: 'text-gray-600', icon: Clock };
-  const StatusIcon = statusConf.icon;
+function getWakalaTypeLabel(wakalaType: string, language: string) {
+  const labels: Record<string, Record<string, string>> = {
+    en: {
+      general: 'General Power of Attorney',
+      specific: 'Specific Power of Attorney',
+      property: 'Property Power of Attorney',
+      legal: 'Legal Representation',
+      financial: 'Financial Power of Attorney',
+    },
+    ar: {
+      general: 'توكيل عام',
+      specific: 'توكيل خاص',
+      property: 'توكيل عقاري',
+      legal: 'توكيل قضائي',
+      financial: 'توكيل مالي',
+    },
+  };
+  return labels[language]?.[wakalaType] || wakalaType || (language === 'ar' ? 'طلب وكالة' : 'Wakala Request');
+}
+
+function formatDate(dateStr: string, language: string) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-GB', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+function formatTime(time: string) {
+  if (!time) return '';
+  return time.substring(0, 5);
+}
+
+function CardHeader({
+  icon: Icon,
+  title,
+  count,
+  language,
+}: {
+  icon: any;
+  title: string;
+  count: number;
+  language: string;
+}) {
+  return (
+    <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+      <Icon className="w-4 h-4" />
+      {title}
+      <span className="ml-auto text-xs bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full font-semibold">
+        {count}
+      </span>
+    </h3>
+  );
+}
+
+function CompactCard({
+  title,
+  subtitle,
+  status,
+  bookingDate,
+  startTime,
+  onClick,
+  iconBg,
+  Icon,
+}: {
+  title: string;
+  subtitle: string;
+  status: string;
+  bookingDate?: string | null;
+  startTime?: string | null;
+  onClick: () => void;
+  iconBg: string;
+  Icon: any;
+}) {
+  const isCancelled = status === 'cancelled';
+
+  const statusPill = (() => {
+    const base = 'inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold border';
+    switch (status) {
+      case 'completed':
+      case 'approved':
+        return `${base} bg-emerald-50 border-emerald-200 text-emerald-700`;
+      case 'in_progress':
+        return `${base} bg-sky-50 border-sky-200 text-sky-700`;
+      case 'submitted':
+        return `${base} bg-blue-50 border-blue-200 text-blue-700`;
+      case 'pending_payment':
+      case 'pending':
+        return `${base} bg-amber-50 border-amber-200 text-amber-700`;
+      case 'cancelled':
+      case 'rejected':
+        return `${base} bg-red-50 border-red-200 text-red-700`;
+      default:
+        return `${base} bg-gray-50 border-gray-200 text-gray-600`;
+    }
+  })();
 
   return (
     <motion.div
@@ -62,39 +149,27 @@ function CompactApplicationCard({ app, onClick, language }: { app: any; onClick:
       }`}
     >
       <div className="absolute top-3 right-3">
-        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border ${statusConf.bg} ${statusConf.text}`}>
-          <StatusIcon className="w-3 h-3" />
-        </span>
+        <span className={statusPill}>{status.replace(/_/g, ' ')}</span>
       </div>
 
       <div className="flex items-start gap-3 mb-3">
-        <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-200 transition-colors">
-          <MessageSquare className="w-6 h-6 text-blue-600" />
+        <div className={`w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center flex-shrink-0 group-hover:opacity-90 transition-opacity`}>
+          <Icon className="w-6 h-6 text-white" />
         </div>
         <div className="flex-1 min-w-0 pt-1">
-          <h3 className="font-bold text-gray-900 text-sm mb-1 truncate">
-            {getAdvisoryReasonLabel(app.service_type, language)}
-          </h3>
-          <p className="text-xs text-gray-500">
-            {app.booking_reference || app.full_name || (language === 'ar' ? 'حجز' : 'Booking')}
-          </p>
+          <h3 className="font-bold text-gray-900 text-sm mb-1 truncate">{title}</h3>
+          <p className="text-xs text-gray-500 truncate">{subtitle}</p>
         </div>
       </div>
 
-      {app.booking_date && (
+      {bookingDate && (
         <div className="flex items-center gap-2 text-xs text-gray-600 mt-3 pt-3 border-t border-gray-200">
           <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
-          <span className="truncate">
-            {new Date(app.booking_date).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-GB', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-            })}
-          </span>
-          {app.start_time && (
+          <span className="truncate">{bookingDate}</span>
+          {startTime && (
             <>
               <Clock className="w-3.5 h-3.5 flex-shrink-0 ml-1" />
-              <span>{app.start_time.substring(0, 5)}</span>
+              <span>{startTime}</span>
             </>
           )}
         </div>
@@ -111,66 +186,153 @@ function CompactApplicationCard({ app, onClick, language }: { app: any; onClick:
   );
 }
 
-export default function ApplicationsTab({ bookings, onRefresh, t }: Props) {
+export default function ApplicationsTab({
+  advisoryBookings,
+  wakalaApplications,
+  translationRequests,
+  otherLegalRequests,
+  onRefresh,
+}: Props) {
   const { language } = useLanguage();
-  const [selectedApp, setSelectedApp] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleCardClick = (app: any) => {
-    setSelectedApp(app);
-    setIsModalOpen(true);
+  const labels = useMemo(() => ({
+    advisory: language === 'ar' ? 'المكتب الاستشاري' : 'Advisory office',
+    wakala: language === 'ar' ? 'خدمة الوكالة' : 'Wakala Service',
+    translation: language === 'ar' ? 'الترجمة / التوثيق' : 'Translation / Documentation',
+    other: language === 'ar' ? 'خدمات قانونية أخرى' : 'Other Legal Services',
+    empty: language === 'ar' ? 'لا توجد طلبات بعد' : 'No requests yet',
+  }), [language]);
+
+  const [selectedWakala, setSelectedWakala] = useState<any | null>(null);
+  const [wakalaOpen, setWakalaOpen] = useState(false);
+
+  const [selectedServiceReq, setSelectedServiceReq] = useState<{ kind: 'translation' | 'other'; data: any } | null>(null);
+  const [serviceOpen, setServiceOpen] = useState(false);
+
+  const closeWakala = () => {
+    setWakalaOpen(false);
+    setTimeout(() => setSelectedWakala(null), 200);
   };
 
-  const handleModalClose = () => {
-    setIsModalOpen(false);
-    setTimeout(() => setSelectedApp(null), 300);
+  const closeService = () => {
+    setServiceOpen(false);
+    setTimeout(() => setSelectedServiceReq(null), 200);
   };
 
   const handleUpdate = () => {
     if (onRefresh) onRefresh();
   };
 
-  if (bookings.length === 0) {
+  const isAllEmpty = advisoryBookings.length === 0 && wakalaApplications.length === 0 && translationRequests.length === 0 && otherLegalRequests.length === 0;
+
+  if (isAllEmpty) {
     return (
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-xl border border-divider p-12 text-center">
         <div className="w-16 h-16 rounded-full bg-sand flex items-center justify-center mx-auto mb-4">
-          <MessageSquare className="w-8 h-8 text-muted" />
+          <FileText className="w-8 h-8 text-muted" />
         </div>
-        <p className="text-muted font-medium">
-          {language === 'ar' ? 'لا توجد حجوزات بعد' : 'No bookings yet'}
-        </p>
+        <p className="text-muted font-medium">{labels.empty}</p>
       </motion.div>
     );
   }
 
   return (
     <>
-      <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
-        <div className="space-y-4">
-          <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-            <MessageSquare className="w-4 h-4" />
-            {language === 'ar' ? 'المواعيد الاستشارية' : 'Advisory Appointments'}
-            <span className="ml-auto text-xs bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full font-semibold">
-              {bookings.length}
-            </span>
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {bookings.map(app => (
-              <CompactApplicationCard
-                key={app.id}
-                app={app}
-                onClick={() => handleCardClick(app)}
-                language={language}
-              />
-            ))}
+      <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-8">
+        {advisoryBookings.length > 0 && (
+          <div className="space-y-4">
+            <CardHeader icon={MessageSquare} title={labels.advisory} count={advisoryBookings.length} language={language} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {advisoryBookings.map((app: any) => (
+                <CompactCard
+                  key={app.id}
+                  title={getAdvisoryReasonLabel(app.service_type, language)}
+                  subtitle={app.booking_reference || app.full_name || ''}
+                  status={app.status}
+                  bookingDate={app.booking_date ? formatDate(app.booking_date, language) : null}
+                  startTime={app.start_time ? formatTime(app.start_time) : null}
+                  onClick={() => { setSelectedWakala(app); setWakalaOpen(true); }}
+                  iconBg="bg-emerald-600"
+                  Icon={MessageSquare}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
+
+        {wakalaApplications.length > 0 && (
+          <div className="space-y-4">
+            <CardHeader icon={FileText} title={labels.wakala} count={wakalaApplications.length} language={language} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {wakalaApplications.map((app: any) => (
+                <CompactCard
+                  key={app.id}
+                  title={getWakalaTypeLabel(app.wakala_type, language)}
+                  subtitle={app.booking_reference || app.full_name || ''}
+                  status={app.status}
+                  bookingDate={app.booking_date ? formatDate(app.booking_date, language) : null}
+                  startTime={app.start_time ? formatTime(app.start_time) : null}
+                  onClick={() => { setSelectedWakala(app); setWakalaOpen(true); }}
+                  iconBg="bg-blue-600"
+                  Icon={FileText}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {translationRequests.length > 0 && (
+          <div className="space-y-4">
+            <CardHeader icon={Languages} title={labels.translation} count={translationRequests.length} language={language} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {translationRequests.map((r: any) => (
+                <CompactCard
+                  key={r.id}
+                  title={language === 'ar' ? 'طلب ترجمة' : 'Translation Request'}
+                  subtitle={r.booking_reference || r.full_name || ''}
+                  status={r.status}
+                  bookingDate={r.created_at ? new Date(r.created_at).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-GB') : null}
+                  onClick={() => { setSelectedServiceReq({ kind: 'translation', data: r }); setServiceOpen(true); }}
+                  iconBg="bg-teal-600"
+                  Icon={Languages}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {otherLegalRequests.length > 0 && (
+          <div className="space-y-4">
+            <CardHeader icon={Scale} title={labels.other} count={otherLegalRequests.length} language={language} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {otherLegalRequests.map((r: any) => (
+                <CompactCard
+                  key={r.id}
+                  title={language === 'ar' ? 'طلب قانوني / توثيق' : 'Legal / Documentation Request'}
+                  subtitle={r.booking_reference || r.full_name || ''}
+                  status={r.status}
+                  bookingDate={r.created_at ? new Date(r.created_at).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-GB') : null}
+                  onClick={() => { setSelectedServiceReq({ kind: 'other', data: r }); setServiceOpen(true); }}
+                  iconBg="bg-amber-600"
+                  Icon={Scale}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </motion.div>
 
       <ApplicationDetailsModal
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
-        application={selectedApp}
+        isOpen={wakalaOpen}
+        onClose={closeWakala}
+        application={selectedWakala}
+        onUpdate={handleUpdate}
+      />
+
+      <ServiceRequestDetailsModal
+        isOpen={serviceOpen}
+        onClose={closeService}
+        request={selectedServiceReq}
         onUpdate={handleUpdate}
       />
     </>

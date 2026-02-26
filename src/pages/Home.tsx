@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Trophy, Users, Building, GraduationCap, Heart, Calendar, FileText, HandHeart, ArrowRight, Newspaper, User, Tag } from 'lucide-react';
+import { Trophy, Users, Building, GraduationCap, Heart, Calendar, FileText, HandHeart, ArrowRight, Newspaper, User, Tag, Crown, Star, Award, ExternalLink, Building2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { fadeInUp, fadeInLeft, fadeInRight, staggerContainer, staggerItem, scaleIn } from '../lib/animations';
@@ -37,6 +37,14 @@ interface NewsArticle {
   image_url: string | null;
 }
 
+interface BusinessSupporter {
+  id: string;
+  business_name: string;
+  tier: 'bronze' | 'silver' | 'gold' | string;
+  logo_url: string | null;
+  website_url: string | null;
+}
+
 export default function Home() {
   const { getContent } = useContent();
   const { getSetting, getPageImage } = useSiteSettings();
@@ -65,6 +73,8 @@ export default function Home() {
 
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
   const [latestNews, setLatestNews] = useState<NewsArticle[]>([]);
+  const [supporters, setSupporters] = useState<BusinessSupporter[]>([]);
+  const [loadingSupporters, setLoadingSupporters] = useState(true);
   const [showMembershipModal, setShowMembershipModal] = useState(false);
   const [showVolunteerModal, setShowVolunteerModal] = useState(false);
   const [showDonationModal, setShowDonationModal] = useState(false);
@@ -75,6 +85,7 @@ export default function Home() {
     fetchHeroSlides();
     fetchUpcomingEvents();
     fetchLatestNews();
+    fetchSupporters();
   }, [language]);
 
   useEffect(() => {
@@ -159,11 +170,114 @@ export default function Home() {
     }
   };
 
+  const fetchSupporters = async () => {
+    try {
+      setLoadingSupporters(true);
+      const { data, error } = await supabase
+        .from('business_supporters')
+        .select('id, business_name, tier, logo_url, website_url')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(18);
+
+      if (error) throw error;
+      setSupporters((data as any) || []);
+    } catch (error) {
+      console.error('Error fetching business supporters:', error);
+    } finally {
+      setLoadingSupporters(false);
+    }
+  };
+
   const goToSlide = (index: number) => {
     setCurrentSlide(index);
     setIsAutoPlaying(false);
     setTimeout(() => setIsAutoPlaying(true), 10000);
   };
+
+  const supportersText = language === 'ar' ? {
+    title: 'الداعمون الحاليون',
+    desc: 'نفخر بالشركات والمؤسسات التي تدعم عملنا المجتمعي. شكراً لكم على مساهمتكم القيّمة.',
+    gold: 'الداعمون الذهبيون',
+    silver: 'الداعمون الفضيون',
+    bronze: 'الداعمون البرونزيون',
+    viewAll: 'عرض صفحة دعم الأعمال',
+    none: 'لا يوجد داعمون ظاهرون حالياً',
+    visit: 'زيارة',
+  } : {
+    title: 'Our Current Supporters',
+    desc: 'We are proud of the businesses and organisations supporting our community work. Thank you for your valuable contribution.',
+    gold: 'Gold Supporters',
+    silver: 'Silver Supporters',
+    bronze: 'Bronze Supporters',
+    viewAll: 'View Business Support',
+    none: 'No supporters to display yet',
+    visit: 'Visit',
+  };
+
+  const goldSupporters = supporters.filter(s => s.tier === 'gold');
+  const silverSupporters = supporters.filter(s => s.tier === 'silver');
+  const bronzeSupporters = supporters.filter(s => s.tier === 'bronze');
+
+  const renderSupporterTier = (
+    title: string,
+    items: BusinessSupporter[],
+    Icon: any,
+    badgeClass: string
+  ) => (
+    <motion.div
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true }}
+      variants={fadeInUp}
+      className="space-y-4"
+    >
+      <div className="flex items-center gap-3">
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${badgeClass}`}>
+          <Icon className="w-5 h-5" />
+        </div>
+        <h3 className="text-xl font-bold text-primary">{title}</h3>
+      </div>
+
+      {items.length === 0 ? (
+        <p className="text-sm text-gray-500">{language === 'ar' ? '—' : '—'}</p>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {items.map((s) => (
+            <div key={s.id} className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all">
+              <div className="flex items-center gap-3">
+                {s.logo_url ? (
+                  <img
+                    src={s.logo_url}
+                    alt={s.business_name}
+                    className="w-14 h-14 object-contain rounded-lg bg-white p-2 border border-gray-100"
+                  />
+                ) : (
+                  <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Building2 className="w-6 h-6 text-primary" />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-gray-900 truncate">{s.business_name}</p>
+                  {s.website_url ? (
+                    <a
+                      href={s.website_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-accent hover:text-hover mt-1"
+                    >
+                      {supportersText.visit}
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </motion.div>
+  );
 
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'}>
@@ -696,6 +810,53 @@ export default function Home() {
               );
             })}
           </motion.div>
+        </div>
+      </section>
+
+      <BeltDivider />
+
+      {/* Current Supporters Section */}
+      <section className="py-20 bg-gradient-to-b from-sand/10 to-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            className="text-center mb-12"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={staggerContainer}
+          >
+            <motion.h2 className="text-4xl sm:text-5xl font-bold text-primary mb-4" variants={fadeInUp}>
+              {supportersText.title}
+            </motion.h2>
+            <motion.div className="w-32 h-1 bg-gradient-to-r from-transparent via-accent to-transparent mx-auto mb-6" variants={scaleIn}></motion.div>
+            <motion.p className="text-lg text-muted max-w-3xl mx-auto" variants={fadeInUp}>
+              {supportersText.desc}
+            </motion.p>
+          </motion.div>
+
+          {loadingSupporters ? (
+            <div className="text-center py-10 text-gray-500">
+              {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}
+            </div>
+          ) : supporters.length === 0 ? (
+            <div className="text-center py-10 text-gray-500">{supportersText.none}</div>
+          ) : (
+            <div className="space-y-10">
+              {renderSupporterTier(supportersText.gold, goldSupporters, Crown, 'bg-yellow-100 text-yellow-700')}
+              {renderSupporterTier(supportersText.silver, silverSupporters, Star, 'bg-slate-100 text-slate-700')}
+              {renderSupporterTier(supportersText.bronze, bronzeSupporters, Award, 'bg-amber-100 text-amber-700')}
+
+              <div className="text-center pt-2">
+                <Link
+                  to="/get-involved/business-support"
+                  className="inline-flex items-center gap-2 bg-accent text-primary px-6 py-3 hover:bg-hover transition-all font-semibold text-sm uppercase tracking-wider"
+                >
+                  {supportersText.viewAll}
+                  <ArrowRight size={16} className={isRTL ? 'rotate-180' : ''} />
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 

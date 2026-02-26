@@ -15,6 +15,7 @@ interface BusinessSupporter {
   logo_url: string | null;
   website_url: string | null;
   is_active: boolean;
+  category?: 'supporter' | 'partner' | string;
   created_at: string;
 }
 
@@ -77,9 +78,13 @@ export default function BusinessSupport() {
     fetchSupporters();
   }, []);
 
-  const goldSupporters = supporters.filter(s => s.tier === 'gold');
-  const silverSupporters = supporters.filter(s => s.tier === 'silver');
-  const bronzeSupporters = supporters.filter(s => s.tier === 'bronze');
+  const partners = supporters.filter(s => (s as any).category === 'partner');
+  const activeSupporters = supporters.filter(s => (s as any).category !== 'partner');
+
+
+  const goldSupporters = activeSupporters.filter(s => s.tier === 'gold');
+  const silverSupporters = activeSupporters.filter(s => s.tier === 'silver');
+  const bronzeSupporters = activeSupporters.filter(s => s.tier === 'bronze');
 
   const txt = {
     title: isAr ? 'دعم الأعمال' : 'Business Support',
@@ -111,17 +116,20 @@ export default function BusinessSupport() {
       : activeTab === 'annual' ? 'Please select a package first' : 'Please select an amount first',
     securePayment: isAr ? 'دفع آمن عبر Stripe' : 'Secure payment via Stripe',
     yourSelection: isAr ? 'اختيارك' : 'Your Selection',
-    currentSupporters: isAr ? 'داعمونا الحاليون' : 'Our Current Supporters',
+    currentSupporters: isAr ? 'شركاؤنا وداعمونا' : 'Our Partners & Supporters',
     currentSupportersDesc: isAr
-      ? 'نفخر بالشركات التي تدعم عملنا المجتمعي. شكراً لكم على مساهمتكم القيمة.'
-      : 'We are proud of the businesses that support our community work. Thank you for your valuable contribution.',
+      ? 'نفخر بالشركاء والداعمين الذين يساندون عملنا المجتمعي. شكراً لكم على مساهمتكم القيمة.'
+      : 'We are proud of the partners and supporters who strengthen our community work. Thank you for your valuable contribution.',
     goldSupporters: isAr ? 'الداعمون الذهبيون' : 'Gold Supporters',
     silverSupporters: isAr ? 'الداعمون الفضيون' : 'Silver Supporters',
     bronzeSupporters: isAr ? 'الداعمون البرونزيون' : 'Bronze Supporters',
     noSupportersYet: isAr ? 'كن أول داعم في هذه الفئة!' : 'Be the first supporter in this tier!',
+    partnersHeading: isAr ? 'شركاؤنا' : 'Our Partners',
+    partnersDesc: isAr ? 'شركاؤنا يساهمون في تعزيز أثر الجمعية وتوسيع خدماتها.' : 'Our partners help amplify YCA impact and expand our services.',
+    noPartnersYet: isAr ? 'لا يوجد شركاء ظاهرون حالياً' : 'No partners to display yet',
     visitWebsite: isAr ? 'زيارة الموقع' : 'Visit Website',
-    viewSupporters: isAr ? 'عرض الداعمين الحاليين' : 'View Current Supporters',
-    hideSupporters: isAr ? 'إخفاء الداعمين' : 'Hide Supporters',
+    viewSupporters: isAr ? 'عرض الشركاء والداعمين' : 'View Partners & Supporters',
+    hideSupporters: isAr ? 'إخفاء الشركاء والداعمين' : 'Hide Partners & Supporters',
     loading: isAr ? 'جاري التحميل...' : 'Loading...',
     bronzeBenefits: [
       isAr ? 'شعار الشركة على الموقع الإلكتروني' : 'Logo on website',
@@ -290,6 +298,71 @@ export default function BusinessSupport() {
         </motion.div>
       ) : (
         <p className="text-muted italic">{txt.noSupportersYet}</p>
+      )}
+    </motion.div>
+  );
+
+  const renderPartnersGrid = () => (
+    <motion.div
+      className="mb-14"
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true }}
+      variants={fadeInUp}
+    >
+      <div className="flex items-center gap-3 mb-4">
+        <Check size={28} className="text-emerald-600" />
+        <h3 className="text-2xl font-bold text-primary">{txt.partnersHeading}</h3>
+      </div>
+      <p className="text-sm text-muted mb-6">{txt.partnersDesc}</p>
+
+      {partners.length === 0 ? (
+        <p className="text-sm text-gray-500">{txt.noPartnersYet}</p>
+      ) : (
+        <motion.div
+          className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
+          {partners.map((partner) => (
+            <motion.div
+              key={partner.id}
+              className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-all"
+              variants={staggerItem}
+              whileHover={{ y: -4 }}
+            >
+              <div className="flex items-center gap-4">
+                {partner.logo_url ? (
+                  <img
+                    src={partner.logo_url}
+                    alt={partner.business_name}
+                    className="w-16 h-16 object-contain rounded-lg bg-white p-2 border border-gray-100"
+                  />
+                ) : (
+                  <div className="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Building2 size={28} className="text-primary" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-bold text-primary truncate">{partner.business_name}</h4>
+                  {partner.website_url && (
+                    <a
+                      href={partner.website_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-accent hover:text-hover transition-colors mt-1"
+                    >
+                      <ExternalLink size={14} />
+                      {txt.visitWebsite}
+                    </a>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
       )}
     </motion.div>
   );
@@ -612,6 +685,8 @@ export default function BusinessSupport() {
                   </div>
                 ) : (
                   <div className="max-w-6xl mx-auto">
+                    {renderPartnersGrid()}
+
                     {renderSupporterGroup(
                       txt.goldSupporters,
                       goldSupporters,

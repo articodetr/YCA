@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { CalendarDays } from 'lucide-react';
 
@@ -21,56 +21,67 @@ interface TimeSlotGridProps {
   selectedSlot: TimeSlot | null;
   onSlotSelect: (slot: TimeSlot) => void;
   workingHours?: WorkingHoursInfo | null;
-  recentlyBookedSlotIds?: Set<string>;
 }
 
-export default function TimeSlotGrid({ selectedDate, slots, selectedSlot, onSlotSelect, workingHours, recentlyBookedSlotIds }: TimeSlotGridProps) {
+export default function TimeSlotGrid(props: TimeSlotGridProps) {
+  const { selectedDate, slots, selectedSlot, onSlotSelect, workingHours } = props;
+
   const { language } = useLanguage();
   const isRTL = language === 'ar';
-  const [fadingOutIds, setFadingOutIds] = useState<Set<string>>(new Set());
-  const prevSlotsRef = useRef<Map<string, boolean>>(new Map());
+
+  // Tick every 30s so “past” times disappear while user is on the page
+  const [nowTick, setNowTick] = useState(0);
 
   const t = {
     en: {
       noSlots: 'No available slots for this date',
       hoursLabel: 'Working hours',
       breakLabel: 'Break',
-      justBooked: 'Just booked',
       tryDifferentDate: 'Try selecting a different date to find available times.',
     },
     ar: {
       noSlots: 'لا توجد أوقات متاحة لهذا التاريخ',
       hoursLabel: 'ساعات العمل',
       breakLabel: 'استراحة',
-      justBooked: 'تم الحجز',
       tryDifferentDate: 'حاول اختيار تاريخ آخر للعثور على أوقات متاحة.',
     }
   }[language];
 
   useEffect(() => {
-    const newFading = new Set<string>();
-    slots.forEach(slot => {
-      const wasAvailable = prevSlotsRef.current.get(slot.id);
-      if (wasAvailable === true && !slot.isAvailable) {
-        newFading.add(slot.id);
-      }
-    });
+    const id = setInterval(() => setNowTick(t => t + 1), 30_000);
+    return () => clearInterval(id);
+  }, []);
 
-    if (newFading.size > 0) {
-      setFadingOutIds(prev => new Set([...prev, ...newFading]));
-      setTimeout(() => {
-        setFadingOutIds(prev => {
-          const next = new Set(prev);
-          newFading.forEach(id => next.delete(id));
-          return next;
-        });
-      }, 3000);
-    }
+  const toLocalDateString = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
 
-    const newMap = new Map<string, boolean>();
-    slots.forEach(s => newMap.set(s.id, s.isAvailable));
-    prevSlotsRef.current = newMap;
-  }, [slots]);
+  const parseSlotDateTime = (date: Date, time: string) => {
+    const parts = time.split(':');
+    const h = Number(parts[0] || 0);
+    const m = Number(parts[1] || 0);
+    const s = Number(parts[2] || 0);
+
+    const dt = new Date(date);
+    dt.setHours(h, m, s, 0);
+    return dt;
+  };
+
+  const isSlotInPastLocal = (slotStartTime: string) => {
+    if (!selectedDate) return false;
+    const now = new Date();
+
+    // Only filter by time when the selected date is TODAY (local)
+    const selectedKey = toLocalDateString(selectedDate);
+    const todayKey = toLocalDateString(now);
+    if (selectedKey !== todayKey) return false;
+
+    const slotDateTime = parseSlotDateTime(selectedDate, slotStartTime);
+    return slotDateTime.getTime() <= now.getTime();
+  };
 
   const formatTime = (time: string) => {
     const [hours, minutes] = time.split(':');
@@ -92,17 +103,16 @@ export default function TimeSlotGrid({ selectedDate, slots, selectedSlot, onSlot
     return date.toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-GB', { weekday: 'long' });
   };
 
-  if (!selectedDate) {
-    return null;
-  }
+  if (!selectedDate) return null;
 
-  const availableSlots = slots.filter(s => s.isAvailable);
-  const justBookedSlots = slots.filter(s =>
-    !s.isAvailable && (fadingOutIds.has(s.id) || recentlyBookedSlotIds?.has(s.id))
-  );
-  const visibleSlots = [...availableSlots, ...justBookedSlots].sort((a, b) =>
-    a.startTime.localeCompare(b.startTime)
-  );
+  const visibleSlots = useMemo(() => {
+    // ✅ Show ONLY available AND not-in-the-past slots
+    return slots
+      .filter(s => s.isAvailable)
+      .filter(s => !isSlotInPastLocal(s.startTime))
+      .sort((a, b) => a.startTime.localeCompare(b.startTime));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slots, selectedDate, nowTick]);
 
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'}>
@@ -120,6 +130,7 @@ export default function TimeSlotGrid({ selectedDate, slots, selectedSlot, onSlot
               }
             </p>
           </div>
+
           {workingHours.breakTimes.length > 0 && (
             <div className="mt-1.5 flex items-center gap-2 text-xs text-gray-500">
               <span className="inline-block w-3 h-3 bg-orange-200 rounded-full"></span>
@@ -146,36 +157,25 @@ export default function TimeSlotGrid({ selectedDate, slots, selectedSlot, onSlot
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1.5 sm:gap-2 md:gap-3">
           {visibleSlots.map((slot) => {
-            const isJustBooked = !slot.isAvailable && (fadingOutIds.has(slot.id) || recentlyBookedSlotIds?.has(slot.id));
             const isSelected = selectedSlot?.id === slot.id;
 
             return (
               <button
                 key={slot.id}
                 type="button"
-                onClick={() => slot.isAvailable && onSlotSelect(slot)}
-                disabled={!slot.isAvailable}
+                onClick={() => onSlotSelect(slot)}
                 className={`
                   relative py-2 sm:py-2.5 md:py-3 px-1 sm:px-2 md:px-3 rounded-lg text-center font-medium text-xs sm:text-sm border-2
                   transition-all duration-300 ease-in-out
-                  ${isJustBooked
-                    ? 'bg-red-50 text-red-400 border-red-200 opacity-60 cursor-not-allowed scale-95'
-                    : isSelected
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-md scale-[1.02]'
-                      : slot.isAvailable
-                        ? 'bg-white text-gray-700 border-gray-200 hover:border-blue-400 hover:bg-blue-50 hover:scale-[1.02]'
-                        : 'opacity-40 cursor-not-allowed bg-gray-100 border-gray-200'
+                  ${isSelected
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-md scale-[1.02]'
+                    : 'bg-white text-gray-700 border-gray-200 hover:border-blue-400 hover:bg-blue-50 hover:scale-[1.02]'
                   }
                 `}
               >
-                <div className={`text-xs sm:text-sm font-semibold ${isJustBooked ? 'line-through' : ''}`}>
+                <div className="text-xs sm:text-sm font-semibold">
                   {formatTime(slot.startTime)}
                 </div>
-                {isJustBooked && (
-                  <div className="text-[9px] sm:text-[10px] font-bold text-red-500 mt-0.5 animate-pulse">
-                    {t.justBooked}
-                  </div>
-                )}
               </button>
             );
           })}

@@ -219,65 +219,115 @@ export default function Home() {
   const silverSupporters = supporters.filter(s => s.tier === 'silver');
   const bronzeSupporters = supporters.filter(s => s.tier === 'bronze');
 
+  const tierConfig = {
+    gold: {
+      gradient: 'from-yellow-400/20 via-amber-300/10 to-yellow-400/5',
+      border: 'border-yellow-300/60',
+      headerGradient: 'from-yellow-500 to-amber-400',
+      cardBorder: 'border-yellow-200 hover:border-yellow-400',
+      cardTop: 'bg-gradient-to-r from-yellow-400 to-amber-400',
+      badgeBg: 'bg-gradient-to-br from-yellow-400 to-amber-500',
+      textAccent: 'text-yellow-700',
+      shimmer: 'hover:shadow-yellow-100',
+      cols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-3',
+    },
+    silver: {
+      gradient: 'from-slate-200/30 via-gray-100/20 to-slate-200/5',
+      border: 'border-slate-300/50',
+      headerGradient: 'from-slate-500 to-gray-400',
+      cardBorder: 'border-slate-200 hover:border-slate-400',
+      cardTop: 'bg-gradient-to-r from-slate-400 to-gray-400',
+      badgeBg: 'bg-gradient-to-br from-slate-400 to-gray-500',
+      textAccent: 'text-slate-600',
+      shimmer: 'hover:shadow-slate-100',
+      cols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+    },
+    bronze: {
+      gradient: 'from-orange-200/20 via-amber-100/15 to-orange-200/5',
+      border: 'border-orange-200/50',
+      headerGradient: 'from-orange-500 to-amber-600',
+      cardBorder: 'border-orange-200 hover:border-orange-400',
+      cardTop: 'bg-gradient-to-r from-orange-400 to-amber-500',
+      badgeBg: 'bg-gradient-to-br from-orange-400 to-amber-600',
+      textAccent: 'text-orange-700',
+      shimmer: 'hover:shadow-orange-100',
+      cols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5',
+    },
+  };
+
   const renderSupporterTier = (
     title: string,
     items: BusinessSupporter[],
     Icon: any,
-    badgeClass: string
-  ) => (
-    <motion.div
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true }}
-      variants={fadeInUp}
-      className="space-y-4"
-    >
-      <div className="flex items-center gap-3">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${badgeClass}`}>
-          <Icon className="w-5 h-5" />
-        </div>
-        <h3 className="text-xl font-bold text-primary">{title}</h3>
-      </div>
-
-      {items.length === 0 ? (
-        <p className="text-sm text-gray-500">{language === 'ar' ? '—' : '—'}</p>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {items.map((s) => (
-            <div key={s.id} className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all">
-              <div className="flex items-center gap-3">
-                {s.logo_url ? (
-                  <img
-                    src={s.logo_url}
-                    alt={s.business_name}
-                    className="w-14 h-14 object-contain rounded-lg bg-white p-2 border border-gray-100"
-                  />
-                ) : (
-                  <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Building2 className="w-6 h-6 text-primary" />
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-gray-900 truncate">{s.business_name}</p>
+    _badgeClass: string,
+    tierKey: 'gold' | 'silver' | 'bronze'
+  ) => {
+    if (items.length === 0) return null;
+    const cfg = tierConfig[tierKey];
+    return (
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        variants={fadeInUp}
+      >
+        <div className={`rounded-2xl border bg-gradient-to-br ${cfg.gradient} ${cfg.border} p-6 sm:p-8`}>
+          <div className={`flex items-center gap-3 mb-6 pb-4 border-b border-black/5`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${cfg.badgeBg}`}>
+              <Icon className="w-5 h-5 text-white" />
+            </div>
+            <h3 className="text-lg font-bold text-primary tracking-wide uppercase">{title}</h3>
+            <span className={`ml-auto text-xs font-semibold px-3 py-1 rounded-full bg-white/70 ${cfg.textAccent}`}>
+              {items.length}
+            </span>
+          </div>
+          <div className={`grid ${cfg.cols} gap-4`}>
+            {items.map((s) => (
+              <motion.div
+                key={s.id}
+                variants={fadeInUp}
+                className={`group bg-white rounded-xl border ${cfg.cardBorder} overflow-hidden hover:shadow-lg ${cfg.shimmer} transition-all duration-300 hover:-translate-y-1 flex flex-col`}
+              >
+                <div className={`h-1 w-full ${cfg.cardTop}`} />
+                <div className="p-4 flex flex-col items-center text-center flex-1">
+                  {s.logo_url ? (
+                    <div className="w-16 h-16 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center mb-3 p-2 overflow-hidden">
+                      <img
+                        src={s.logo_url}
+                        alt={s.business_name}
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-16 h-16 rounded-xl bg-primary/8 border border-primary/10 flex items-center justify-center mb-3">
+                      <Building2 className="w-7 h-7 text-primary/50" />
+                    </div>
+                  )}
+                  <p className="font-semibold text-gray-900 text-sm leading-snug line-clamp-2 mb-2">
+                    {s.business_name}
+                  </p>
                   {s.website_url ? (
                     <a
                       href={s.website_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-accent hover:text-hover mt-1"
+                      className={`mt-auto inline-flex items-center gap-1.5 text-xs font-medium ${cfg.textAccent} bg-white border ${cfg.cardBorder} rounded-full px-3 py-1 hover:bg-gray-50 transition-colors`}
+                      onClick={(e) => e.stopPropagation()}
                     >
+                      <ExternalLink className="w-3 h-3" />
                       {supportersText.visit}
-                      <ExternalLink className="w-3.5 h-3.5" />
                     </a>
-                  ) : null}
+                  ) : (
+                    <div className="mt-auto h-6" />
+                  )}
                 </div>
-              </div>
-            </div>
-          ))}
+              </motion.div>
+            ))}
+          </div>
         </div>
-      )}
-    </motion.div>
-  );
+      </motion.div>
+    );
+  };
 
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'}>
@@ -816,45 +866,63 @@ export default function Home() {
       <BeltDivider />
 
       {/* Current Supporters Section */}
-      <section className="py-20 bg-gradient-to-b from-sand/10 to-white">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-24 bg-gradient-to-b from-[#f8f6f0] to-white relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none opacity-[0.025]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, #1a2e1a 1px, transparent 0)', backgroundSize: '32px 32px' }} />
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
           <motion.div
-            className="text-center mb-12"
+            className="text-center mb-14"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
             variants={staggerContainer}
           >
-            <motion.h2 className="text-4xl sm:text-5xl font-bold text-primary mb-4" variants={fadeInUp}>
+            <motion.span
+              variants={fadeInUp}
+              className="inline-block text-xs font-bold tracking-[0.2em] uppercase text-accent mb-3 bg-accent/10 px-4 py-1.5 rounded-full"
+            >
+              {language === 'ar' ? 'شركاء النجاح' : 'Proud Partners'}
+            </motion.span>
+            <motion.h2 className="text-4xl sm:text-5xl font-bold text-primary mb-4 mt-2" variants={fadeInUp}>
               {supportersText.title}
             </motion.h2>
-            <motion.div className="w-32 h-1 bg-gradient-to-r from-transparent via-accent to-transparent mx-auto mb-6" variants={scaleIn}></motion.div>
-            <motion.p className="text-lg text-muted max-w-3xl mx-auto" variants={fadeInUp}>
+            <motion.div className="flex items-center justify-center gap-3 mb-6" variants={scaleIn}>
+              <div className="h-px w-16 bg-gradient-to-r from-transparent to-accent/60" />
+              <div className="w-2 h-2 rounded-full bg-accent" />
+              <div className="h-px w-16 bg-gradient-to-l from-transparent to-accent/60" />
+            </motion.div>
+            <motion.p className="text-base text-muted max-w-2xl mx-auto leading-relaxed" variants={fadeInUp}>
               {supportersText.desc}
             </motion.p>
           </motion.div>
 
           {loadingSupporters ? (
-            <div className="text-center py-10 text-gray-500">
+            <div className="flex items-center justify-center py-16 gap-3 text-gray-400">
+              <div className="w-5 h-5 rounded-full border-2 border-accent border-t-transparent animate-spin" />
               {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}
             </div>
           ) : supporters.length === 0 ? (
-            <div className="text-center py-10 text-gray-500">{supportersText.none}</div>
+            <div className="text-center py-16 text-gray-400">{supportersText.none}</div>
           ) : (
-            <div className="space-y-10">
-              {renderSupporterTier(supportersText.gold, goldSupporters, Crown, 'bg-yellow-100 text-yellow-700')}
-              {renderSupporterTier(supportersText.silver, silverSupporters, Star, 'bg-slate-100 text-slate-700')}
-              {renderSupporterTier(supportersText.bronze, bronzeSupporters, Award, 'bg-amber-100 text-amber-700')}
+            <div className="space-y-8">
+              {renderSupporterTier(supportersText.gold, goldSupporters, Crown, 'bg-yellow-100 text-yellow-700', 'gold')}
+              {renderSupporterTier(supportersText.silver, silverSupporters, Star, 'bg-slate-100 text-slate-700', 'silver')}
+              {renderSupporterTier(supportersText.bronze, bronzeSupporters, Award, 'bg-amber-100 text-amber-700', 'bronze')}
 
-              <div className="text-center pt-2">
+              <motion.div
+                className="text-center pt-4"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={fadeInUp}
+              >
                 <Link
                   to="/get-involved/business-support"
-                  className="inline-flex items-center gap-2 bg-accent text-primary px-6 py-3 hover:bg-hover transition-all font-semibold text-sm uppercase tracking-wider"
+                  className="inline-flex items-center gap-2.5 bg-primary text-white px-8 py-3.5 rounded-full hover:bg-primary/90 transition-all font-semibold text-sm tracking-wide shadow-sm hover:shadow-md hover:-translate-y-0.5"
                 >
                   {supportersText.viewAll}
                   <ArrowRight size={16} className={isRTL ? 'rotate-180' : ''} />
                 </Link>
-              </div>
+              </motion.div>
             </div>
           )}
         </div>

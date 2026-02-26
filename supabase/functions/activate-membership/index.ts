@@ -24,6 +24,38 @@ interface ActivationRequest {
   payment_intent_id?: string;
 }
 
+function normalizeBusinessTier(input: any): "bronze" | "silver" | "gold" {
+  const t = String(input || "").toLowerCase();
+  if (t === "gold") return "gold";
+  if (t === "silver") return "silver";
+  return "bronze";
+}
+
+async function upsertBusinessSupporterFromApplication(applicationId: string, application: any) {
+  if (application?.membership_type !== "business_support") return;
+
+  const businessName = String(application?.business_name || "").trim();
+  if (!businessName) return;
+
+  const payload = {
+    membership_application_id: applicationId,
+    business_name: businessName,
+    tier: normalizeBusinessTier(application?.business_support_tier),
+    logo_url: String(application?.business_logo_url || "") || "",
+    website_url: String(application?.business_website_url || "") || "",
+    // New supporters should not be visible on the website until an admin activates them.
+    is_active: false,
+  };
+
+  const { error } = await supabase
+    .from("business_supporters")
+    .upsert(payload, { onConflict: "membership_application_id" });
+
+  if (error) {
+    console.error("Failed to upsert business supporter:", error);
+  }
+}
+
 Deno.serve(async (req: Request) => {
   try {
     if (req.method === "OPTIONS") {
@@ -116,6 +148,9 @@ Deno.serve(async (req: Request) => {
         })
         .eq("id", application_id);
 
+      // Ensure Business Support signups are reflected in the supporters list (inactive by default)
+      await upsertBusinessSupporterFromApplication(application_id, application);
+
       return Response.json(
         {
           success: true,
@@ -178,6 +213,9 @@ Deno.serve(async (req: Request) => {
         },
       })
       .eq("id", application_id);
+
+    // Ensure Business Support signups are reflected in the supporters list (inactive by default)
+    await upsertBusinessSupporterFromApplication(application_id, application);
 
     return Response.json(
       {

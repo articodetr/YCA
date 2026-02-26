@@ -283,38 +283,6 @@ export default function Resources() {
       </section>
       )}
 
-      <section className="py-16 bg-sand">
-        <motion.div
-          className="container mx-auto px-4 text-center"
-          variants={fadeInUp}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-        >
-          <h2 className="text-3xl font-bold text-primary mb-4">{c('help_title', isRTL ? 'تحتاج مساعدة؟' : 'Need Help?')}</h2>
-          <p className="text-lg text-muted max-w-3xl mx-auto mb-8">
-            {c('help_desc', isRTL ? 'إذا لم تجد ما تبحث عنه أو تحتاج إلى مساعدة في أي نماذج أو مستندات، فريقنا هنا للمساعدة.' : "If you can't find what you're looking for or need assistance with any forms or documents, our team is here to help.")}
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <motion.a
-              href="tel:01214395280"
-              className="bg-primary text-white px-8 py-4 rounded-lg hover:bg-secondary transition-colors font-semibold"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {isRTL ? 'اتصل: 0121 439 5280' : 'Call: 0121 439 5280'}
-            </motion.a>
-            <motion.a
-              href="mailto:info@yca-birmingham.org.uk"
-              className="bg-white border-2 border-primary text-primary px-8 py-4 rounded-lg hover:bg-primary hover:text-white transition-colors font-semibold"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {isRTL ? 'راسلنا' : 'Email Us'}
-            </motion.a>
-          </div>
-        </motion.div>
-      </section>
       </div>
     </div>
   );

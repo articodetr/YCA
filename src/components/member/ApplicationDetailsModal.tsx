@@ -473,7 +473,7 @@ export default function ApplicationDetailsModal({ isOpen, onClose, application, 
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleClose}
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-[10000] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -992,9 +992,9 @@ export default function ApplicationDetailsModal({ isOpen, onClose, application, 
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 p-5 border-t bg-gray-50">
+              <div className="flex items-center justify-between gap-3 p-5 border-t bg-gray-50">
                 {isEditMode ? (
-                  <>
+                  <div className="flex items-center gap-3 ml-auto">
                     <button
                       onClick={() => {
                         setIsEditMode(false);
@@ -1026,14 +1026,47 @@ export default function ApplicationDetailsModal({ isOpen, onClose, application, 
                         ? (language === 'ar' ? 'جاري الحفظ...' : 'Saving...')
                         : (language === 'ar' ? 'حفظ التغييرات' : 'Save Changes')}
                     </button>
-                  </>
+                  </div>
                 ) : (
-                  <button
-                    onClick={handleClose}
-                    className="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-                  >
-                    {language === 'ar' ? 'إغلاق' : 'Close'}
-                  </button>
+                  <>
+                    <button
+                      onClick={handleClose}
+                      className="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                    >
+                      {language === 'ar' ? 'إغلاق' : 'Close'}
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                      {canReschedule && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowReschedule(true);
+                            setIsEditMode(false);
+                            setRescheduleError('');
+                          }}
+                          className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                        >
+                          {language === 'ar' ? 'تعديل الموعد' : 'Reschedule'}
+                        </button>
+                      )}
+
+                      {canCancel && (
+                        <button
+                          type="button"
+                          onClick={handleCancelRequest}
+                          disabled={isCancelling}
+                          className="px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold disabled:opacity-60"
+                        >
+                          {isCancelling
+                            ? (language === 'ar' ? 'جاري الإلغاء...' : 'Cancelling...')
+                            : (isAdvisoryApp
+                              ? (language === 'ar' ? 'إلغاء الموعد' : 'Cancel Appointment')
+                              : (language === 'ar' ? 'إلغاء الطلب' : 'Cancel Request'))}
+                        </button>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
             </div>
@@ -1049,7 +1082,7 @@ export default function ApplicationDetailsModal({ isOpen, onClose, application, 
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setImageToView(null)}
-            className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-[10010] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}

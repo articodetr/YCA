@@ -96,32 +96,75 @@ const ALL_PERMISSION_KEYS = PERMISSION_GROUPS.flatMap((g) =>
 );
 
 async function callManageAdmin(body: Record<string, unknown>) {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) {
-    throw new Error('Admin session missing/expired. Please sign in again.');
-  }
   const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-admin`;
-  const response = await fetch(apiUrl, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${session.access_token}`,
-      'Content-Type': 'application/json',
-      apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-    },
-    body: JSON.stringify(body),
-  });
 
-  // Helpful message if the Edge Function isn't deployed in the user's Supabase project
-  if (response.status === 404) {
+  const getToken = async () => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    let token = sessionData.session?.access_token;
+
+    // Try refresh if token missing
+    if (!token) {
+      const { data: refreshed } = await supabase.auth.refreshSession();
+      token = refreshed.session?.access_token;
+    }
+
+    if (!token) {
+      throw new Error('Admin session missing/expired. Please sign in again.');
+    }
+    return token;
+  };
+
+  const doRequest = async (token: string) => {
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify(body),
+    });
+
+    // Helpful message if the Edge Function isn't deployed in the user's Supabase project
+    if (response.status === 404) {
+      throw new Error(
+        "Edge Function 'manage-admin' is not deployed. Deploy it in Supabase (Dashboard or CLI)."
+      );
+    }
+
+    const text = await response.text();
+    let result: any = {};
+    try {
+      result = JSON.parse(text);
+    } catch {
+      // leave as empty
+    }
+
+    return { response, result, raw: text };
+  };
+
+  // 1) First attempt
+  let token = await getToken();
+  let { response, result, raw } = await doRequest(token);
+
+  // 2) If Invalid JWT (401), refresh and retry once
+  if (!response.ok && response.status === 401) {
+    // refresh token then retry
+    await supabase.auth.refreshSession().catch(() => null);
+    token = await getToken();
+    ({ response, result, raw } = await doRequest(token));
+  }
+
+  if (!response.ok) {
+    // Show the best available error message
     throw new Error(
-      "Edge Function 'manage-admin' is not deployed. Deploy it in Supabase (CLI): supabase functions deploy manage-admin"
+      result?.error ||
+        result?.msg ||
+        result?.message ||
+        `Request failed (${response.status})${raw ? `: ${raw}` : ''}`
     );
   }
 
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(result.error || result.msg || 'Request failed');
-  }
   return result;
 }
 

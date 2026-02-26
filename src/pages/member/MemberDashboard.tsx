@@ -168,6 +168,9 @@ export default function MemberDashboard() {
   const [loading, setLoading] = useState(true);
   const [membershipApp, setMembershipApp] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
+  const [wakalaApplications, setWakalaApplications] = useState<any[]>([]);
+  const [translationRequests, setTranslationRequests] = useState<any[]>([]);
+  const [otherLegalRequests, setOtherLegalRequests] = useState<any[]>([]);
   const [paymentHistory, setPaymentHistory] = useState<PaymentItem[]>([]);
   const [memberRecord, setMemberRecord] = useState<any>(null);
   const [memberProfile, setMemberProfile] = useState<any>(null);
@@ -267,7 +270,7 @@ export default function MemberDashboard() {
     if (!user) return;
     setLoading(true);
     try {
-      const [membershipRes, memberByIdRes, memberByEmailRes, profileRes, bookingsRes, notifRes, payments] = await Promise.all([
+      const [membershipRes, memberByIdRes, memberByEmailRes, profileRes, wakalaRes, translationRes, otherLegalRes, notifRes, payments] = await Promise.all([
         supabase
           .from('membership_applications')
           .select('*')
@@ -295,9 +298,17 @@ export default function MemberDashboard() {
           .from('wakala_applications')
           .select('*, availability_slots(service_id)')
           .eq('user_id', user.id)
-          .like('service_type', 'advisory_%')
-          .neq('status', 'pending_payment')
           .neq('status', 'deleted_by_admin')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('translation_requests')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('other_legal_requests')
+          .select('*')
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false }),
         supabase
           .from('notifications')
@@ -312,7 +323,16 @@ export default function MemberDashboard() {
       setMembershipApp(membershipRes.data);
       setMemberRecord(resolvedMember);
       setMemberProfile(profileRes.data);
-      setBookings(bookingsRes.data || []);
+
+      const allWakala = wakalaRes.data || [];
+      const advisoryApps = allWakala.filter((r: any) => (r.service_type || '').startsWith('advisory_'));
+      const wakalaApps = allWakala.filter((r: any) => !(r.service_type || '').startsWith('advisory_'));
+
+      // Keep `bookings` as advisory appointments for the Overview tab
+      setBookings(advisoryApps);
+      setWakalaApplications(wakalaApps);
+      setTranslationRequests(translationRes.data || []);
+      setOtherLegalRequests(otherLegalRes.data || []);
       setPaymentHistory(payments);
       setNotifications(notifRes.data || []);
       setUnreadCount((notifRes.data || []).filter((n: any) => !n.is_read).length);
@@ -519,7 +539,10 @@ export default function MemberDashboard() {
             )}
             {activeTab === 'applications' && (
               <ApplicationsTab
-                bookings={bookings}
+                advisoryBookings={bookings}
+                wakalaApplications={wakalaApplications}
+                translationRequests={translationRequests}
+                otherLegalRequests={otherLegalRequests}
                 onRefresh={fetchData}
                 t={t}
               />

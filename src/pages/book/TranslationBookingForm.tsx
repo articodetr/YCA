@@ -56,7 +56,7 @@ const translationsData = {
     additionalNotes: 'Additional Notes (Optional)',
     notesPlaceholder: 'Any specific details or requirements for the translation...',
     pricingInfo: 'Pricing Information',
-    priceMember: '£20 - Member rate for eligible members (10+ days membership)',
+    priceMember: '£20 - First Legal request FREE for eligible members (30+ days membership)',
     priceStandard: '\u00A340 - Standard rate',
     yourPrice: 'Your Price',
     free: 'FREE',
@@ -116,7 +116,7 @@ const translationsData = {
     additionalNotes: 'ملاحظات إضافية (اختياري)',
     notesPlaceholder: 'أي تفاصيل أو متطلبات خاصة بالترجمة...',
     pricingInfo: 'معلومات التسعير',
-    priceMember: '20 جنيه - سعر الأعضاء المؤهلين (عضوية 10 أيام فأكثر)',
+    priceMember: '20 جنيه - أول طلب (خدمة قانونية) مجاني للأعضاء المؤهلين (عضوية 30 يومًا فأكثر)',
     priceStandard: '40 جنيه - السعر الأساسي',
     yourPrice: 'السعر الخاص بك',
     free: 'مجاناً',
@@ -219,10 +219,10 @@ export default function TranslationBookingForm({ onComplete }: TranslationBookin
   };
 
   const calculatePrice = () => {
-    // Translation does NOT use the one-time free credit.
-    // Eligible members (10+ days) get the member rate (£20), otherwise standard (£40).
-    if (membershipStatus === 'active' && memberDaysSinceJoin >= 10) {
-      return 20;
+    // One member gets ONLY ONE free legal request across Wakala + Translation + Other Legal.
+    // Eligible members (30+ days) get their first legal request FREE, then the member rate (£20).
+    if (membershipStatus === 'active' && memberDaysSinceJoin >= 30) {
+      return previousRequestCount === 0 ? 0 : 20;
     }
     return 40;
   };
@@ -272,7 +272,7 @@ export default function TranslationBookingForm({ onComplete }: TranslationBookin
       amount_due: calculatePrice(),
       payment_status: 'paid',
       status: 'submitted',
-      is_first_request: previousRequestCount === 0 && membershipStatus === 'active' && memberDaysSinceJoin >= 10,
+      is_first_request: previousRequestCount === 0 && membershipStatus === 'active' && memberDaysSinceJoin >= 30,
       consent_given: consent,
     },
   });

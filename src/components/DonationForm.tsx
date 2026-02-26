@@ -187,8 +187,20 @@ export default function DonationForm({ onSuccess }: Props = {}) {
   };
 
   const handleCustomAmountChange = (value: string) => {
-    const numValue = parseFloat(value) || 0;
-    setFormData({ ...formData, customAmount: value, amount: numValue });
+    // We accept whole pounds only (no pence)
+    if (value === '') {
+      setFormData({ ...formData, customAmount: '', amount: 0 });
+      return;
+    }
+
+    const numValue = parseFloat(value);
+    if (!Number.isFinite(numValue)) {
+      setFormData({ ...formData, customAmount: '', amount: 0 });
+      return;
+    }
+
+    const pounds = Math.max(0, Math.round(numValue));
+    setFormData({ ...formData, customAmount: String(pounds), amount: pounds });
   };
 
   const validateForm = (): boolean => {
@@ -470,7 +482,7 @@ export default function DonationForm({ onSuccess }: Props = {}) {
               onChange={(e) => handleCustomAmountChange(e.target.value)}
               className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:border-emerald-500 focus:outline-none text-lg shadow-md hover:shadow-lg transition-all bg-white"
               min="1"
-              step="0.01"
+              step="1"
             />
           </div>
 

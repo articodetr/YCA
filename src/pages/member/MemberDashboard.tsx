@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, FileText, CreditCard, LogOut, Loader2,
   LayoutDashboard, CheckCircle, XCircle, Bell, ShieldCheck,
+  AlertTriangle,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { stripePromise } from '../../lib/stripe';
@@ -84,6 +85,11 @@ const translations = {
     noNotifications: 'No notifications yet',
     markAllRead: 'Mark all read',
     security: 'Security',
+    membershipNotActiveTitle: 'Membership not active yet',
+    membershipNotActiveDesc: 'To activate your membership and access member benefits, please complete the membership payment.',
+    completePayment: 'Complete payment',
+    paymentFailedTitle: 'Membership payment not completed',
+    paymentFailedDesc: 'Your membership payment was not completed. Please try again to activate your membership.',
   },
   ar: {
     title: 'لوحة تحكم الأعضاء',
@@ -145,6 +151,11 @@ const translations = {
     noNotifications: 'لا توجد إشعارات بعد',
     markAllRead: 'تحديد الكل كمقروء',
     security: 'الأمان',
+    membershipNotActiveTitle: 'العضوية غير مفعّلة بعد',
+    membershipNotActiveDesc: 'لتفعيل عضويتك والاستفادة من مزايا الأعضاء، يرجى إكمال دفع رسوم العضوية.',
+    completePayment: 'إكمال الدفع',
+    paymentFailedTitle: 'لم يكتمل دفع العضوية',
+    paymentFailedDesc: 'لم يكتمل دفع رسوم العضوية. يرجى المحاولة مرة أخرى لتفعيل عضويتك.',
   },
 };
 
@@ -186,6 +197,35 @@ export default function MemberDashboard() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [showWelcome, setShowWelcome] = useState(false);
   const paymentChecked = useRef(false);
+
+  const paymentStatus = (membershipApp?.payment_status || '').toString().toLowerCase();
+  const showMembershipPaymentBanner = !!user
+    && !!membershipApp
+    && !memberRecord
+    && !['paid', 'completed'].includes(paymentStatus);
+
+  const handleContinueMembershipPayment = () => {
+    if (!membershipApp?.membership_type) {
+      navigate('/membership');
+      return;
+    }
+
+    const businessSupport = membershipApp.membership_type === 'business_support'
+      ? {
+          tier: membershipApp.business_support_tier || 'Bronze',
+          amount: Number(membershipApp.custom_amount || 0),
+          frequency: membershipApp.payment_frequency || 'monthly',
+        }
+      : null;
+
+    sessionStorage.setItem('pendingMembershipSelection', JSON.stringify({
+      planId: membershipApp.membership_type,
+      businessSupport,
+      timestamp: Date.now(),
+    }));
+
+    navigate('/membership');
+  };
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
@@ -492,6 +532,37 @@ export default function MemberDashboard() {
             </button>
           </div>
         </div>
+
+        {showMembershipPaymentBanner && (
+          <div className={`rounded-xl border p-4 sm:p-5 mb-6 flex items-start gap-3 ${
+            paymentStatus === 'failed'
+              ? 'bg-red-50 border-red-200'
+              : 'bg-amber-50 border-amber-200'
+          }`}>
+            <AlertTriangle className={`w-5 h-5 mt-0.5 flex-shrink-0 ${
+              paymentStatus === 'failed' ? 'text-red-600' : 'text-amber-600'
+            }`} />
+            <div className="flex-1 min-w-0">
+              <p className={`font-bold ${paymentStatus === 'failed' ? 'text-red-800' : 'text-amber-800'}`}>
+                {paymentStatus === 'failed' ? t.paymentFailedTitle : t.membershipNotActiveTitle}
+              </p>
+              <p className={`text-sm mt-1 ${paymentStatus === 'failed' ? 'text-red-700' : 'text-amber-700'}`}>
+                {paymentStatus === 'failed' ? t.paymentFailedDesc : t.membershipNotActiveDesc}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleContinueMembershipPayment}
+              className={`shrink-0 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-colors ${
+                paymentStatus === 'failed'
+                  ? 'bg-red-600 hover:bg-red-700'
+                  : 'bg-amber-600 hover:bg-amber-700'
+              }`}
+            >
+              {t.completePayment}
+            </button>
+          </div>
+        )}
 
         <div className="flex gap-0.5 sm:gap-1 mb-6 sm:mb-8 border-b border-divider overflow-x-auto scrollbar-hide">
           {tabs.map(tab => {

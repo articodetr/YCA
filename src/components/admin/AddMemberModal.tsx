@@ -345,9 +345,12 @@ export default function AddMemberModal({ open, onClose, onSuccess }: AddMemberMo
                     type="number"
                     required
                     min="0"
-                    step="0.01"
+                    step="1"
                     value={form.payment_amount}
-                    onChange={e => setForm(p => ({ ...p, payment_amount: parseFloat(e.target.value) || 0 }))}
+                    onChange={e => {
+                      const v = parseFloat(e.target.value);
+                      setForm(p => ({ ...p, payment_amount: Number.isFinite(v) ? Math.round(v) : 0 }));
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   />
                 </div>

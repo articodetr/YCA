@@ -72,11 +72,7 @@ export default function TimeSlotGrid(props: TimeSlotGridProps) {
     if (!selectedDate) return false;
     const now = new Date();
 
-    // Only filter by time when the selected date is today (local)
-    const selectedKey = toLocalDateString(selectedDate);
-    const todayKey = toLocalDateString(now);
-    if (selectedKey !== todayKey) return false;
-
+    // Robust: compare full datetime (works for today and any past/future date)
     const slotDateTime = parseSlotDateTime(selectedDate, slotStartTime);
     return slotDateTime.getTime() <= now.getTime();
   };

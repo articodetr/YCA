@@ -17,8 +17,8 @@ export default function AdminLogin() {
     setLoading(true);
 
     try {
-      await signIn(email, password);
-      navigate('/admin/dashboard');
+      const { redirectTo } = await signIn(email, password);
+      navigate(redirectTo);
     } catch (err: any) {
       console.error('Login error:', err);
       setError(err.message || 'Invalid email or password. Please try again.');

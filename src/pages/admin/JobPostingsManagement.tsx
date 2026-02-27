@@ -19,6 +19,7 @@ interface JobPosting {
   responsibilities_en: string;
   responsibilities_ar: string;
   application_deadline: string;
+  application_url: string;
   is_active: boolean;
   applications_count: number;
 }
@@ -42,6 +43,7 @@ export default function JobPostingsManagement() {
     responsibilities_en: '',
     responsibilities_ar: '',
     application_deadline: '',
+    application_url: '',
     is_active: true
   });
 
@@ -148,6 +150,7 @@ export default function JobPostingsManagement() {
       responsibilities_en: '',
       responsibilities_ar: '',
       application_deadline: '',
+      application_url: '',
       is_active: true
     });
     setEditingId(null);
@@ -267,6 +270,21 @@ export default function JobPostingsManagement() {
                 </div>
               </div>
 
+<div>
+  <label className="block text-sm font-semibold text-primary mb-2">Application Link (URL)</label>
+  <input
+    type="url"
+    value={formData.application_url || ''}
+    onChange={(e) => setFormData(prev => ({ ...prev, application_url: e.target.value }))}
+    placeholder="https://..."
+    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+  />
+  <p className="text-xs text-muted mt-1">
+    Optional: If provided, the public page will show an &quot;Apply&quot; button that opens this link.
+  </p>
+</div>
+
+
               <div>
                 <label className="block text-sm font-semibold text-primary mb-2">Description (English)</label>
                 <textarea
@@ -331,6 +349,21 @@ export default function JobPostingsManagement() {
                   />
                 </div>
               </div>
+
+<div>
+  <label className="block text-sm font-semibold text-primary mb-2">Application Link (URL)</label>
+  <input
+    type="url"
+    value={formData.application_url || ''}
+    onChange={(e) => setFormData(prev => ({ ...prev, application_url: e.target.value }))}
+    placeholder="https://..."
+    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+  />
+  <p className="text-xs text-muted mt-1">
+    Optional: If provided, the public page will show an &quot;Apply&quot; button that opens this link.
+  </p>
+</div>
+
 
               <div>
                 <label className="flex items-center gap-2 cursor-pointer">

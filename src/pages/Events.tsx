@@ -6,6 +6,7 @@ import PageHeader from '../components/PageHeader';
 import EventRegistrationModal from '../components/EventRegistrationModal';
 import PaidEventRegistrationModal from '../components/PaidEventRegistrationModal';
 import AddToCalendar from '../components/AddToCalendar';
+import RichText from '../components/RichText';
 import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../lib/animations';
 import { supabase } from '../lib/supabase';
 import { useContent } from '../contexts/ContentContext';
@@ -283,7 +284,12 @@ export default function Events() {
                               )}
                             </div>
                             <h3 className="text-xl font-bold text-primary mb-2">{event.title}</h3>
-                            <p className="text-muted text-sm mb-3 leading-relaxed">{event.description}</p>
+                            <RichText
+                              text={event.description}
+                              mode="inline"
+                              as="p"
+                              className="text-muted text-sm mb-3 leading-relaxed"
+                            />
                             <div className="space-y-1">
                               <div className="flex items-center gap-2 text-sm text-muted">
                                 <Clock size={16} className={color.bg.replace('bg-', 'text-')} />

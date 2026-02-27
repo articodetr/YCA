@@ -20,6 +20,7 @@ import {
 import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../lib/animations';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
+import RichText from '../components/RichText';
 
 interface Article {
   id: string;
@@ -365,15 +366,12 @@ export default function NewsDetail() {
             </div>
 
             <div className="prose prose-lg max-w-none">
-              <div className="text-muted leading-relaxed space-y-6 text-lg">
-                {articleContent.split('\n').map((paragraph, index) => (
-                  paragraph.trim() && (
-                    <p key={index} className="mb-4">
-                      {paragraph}
-                    </p>
-                  )
-                ))}
-              </div>
+              <RichText
+                text={articleContent}
+                mode="paragraphs"
+                className="text-muted leading-relaxed space-y-6 text-lg"
+                paragraphClassName="mb-4"
+              />
             </div>
 
             {allImages.length > 1 && (

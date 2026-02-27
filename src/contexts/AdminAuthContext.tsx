@@ -15,13 +15,35 @@ interface AdminAuthContextType {
   adminData: AdminData | null;
   permissions: string[];
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<{ redirectTo: string }>;
   signOut: () => Promise<void>;
   updateLastLogin: () => Promise<void>;
   hasPermission: (key: string) => boolean;
+  getDefaultRoute: () => string;
 }
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
+
+const computeDefaultRoute = (admin: AdminData | null, perms: string[]): string => {
+  if (!admin) return '/admin/login';
+
+  // Super admins can always access the dashboard.
+  if (admin.role === 'super_admin') return '/admin/dashboard';
+
+  // Priority-based landing page for limited admins.
+  if (perms.includes('availability.manage')) return '/admin/availability';
+  if (perms.includes('wakala.manage')) return '/admin/wakala-applications';
+  if (perms.includes('legal.manage')) return '/admin/legal-requests';
+  if (perms.includes('news_events.manage')) return '/admin/events';
+  if (perms.includes('content.manage')) return '/admin/content';
+  if (perms.includes('submissions.view')) return '/admin/registrations';
+  if (perms.includes('admin.manage')) return '/admin/admins';
+  if (perms.includes('settings.manage')) return '/admin/settings';
+
+  // If no permissions were granted, show an access denied page.
+  return '/admin/access-denied';
+};
+
 
 export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -131,16 +153,21 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         .from('admin_permissions')
         .select('permission_key')
         .eq('admin_id', data.user.id);
-      setPermissions(perms?.map((p) => p.permission_key) || []);
+
+      const permKeys = perms?.map((p) => p.permission_key) || [];
+      setPermissions(permKeys);
 
       await supabase
         .from('admins')
         .update({ last_login_at: new Date().toISOString() })
         .eq('id', data.user.id);
-    }
-  };
 
-  const signOut = async () => {
+      return { redirectTo: computeDefaultRoute(adminResult.data, permKeys) };
+    }
+
+    return { redirectTo: '/admin/login' };
+  };
+const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
     setUser(null);
@@ -161,6 +188,8 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const getDefaultRoute = () => computeDefaultRoute(adminData, permissions);
+
   const value = {
     user,
     adminData,
@@ -170,6 +199,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     signOut,
     updateLastLogin,
     hasPermission,
+    getDefaultRoute,
   };
 
   return (

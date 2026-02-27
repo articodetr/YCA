@@ -454,8 +454,8 @@ export default function EventsManagement() {
                             onChange={(e) => setFormData({ ...formData, ticket_price_adult: e.target.value })}
                             className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                             min="0"
-                            step="1"
-                            placeholder="10"
+                            step="0.01"
+                            placeholder="10.00"
                             required
                           />
                         </div>
@@ -470,8 +470,8 @@ export default function EventsManagement() {
                             onChange={(e) => setFormData({ ...formData, ticket_price_child: e.target.value })}
                             className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                             min="0"
-                            step="1"
-                            placeholder="5"
+                            step="0.01"
+                            placeholder="5.00"
                           />
                         </div>
                         <p className="text-xs text-gray-400 mt-1">Leave empty if not applicable</p>
@@ -486,8 +486,8 @@ export default function EventsManagement() {
                             onChange={(e) => setFormData({ ...formData, ticket_price_member: e.target.value })}
                             className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                             min="0"
-                            step="1"
-                            placeholder="8"
+                            step="0.01"
+                            placeholder="8.00"
                           />
                         </div>
                         <p className="text-xs text-gray-400 mt-1">Discounted price for members</p>
@@ -519,6 +519,11 @@ export default function EventsManagement() {
                   className={inputCls}
                   required
                 />
+                <p className="text-xs text-gray-500 mt-2">
+                  Links are supported. Use{' '}
+                  <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">[link text](https://example.com)</span>
+                  {' '}or paste a full URL (https://...) and it will be clickable.
+                </p>
               </div>
 
               <div>
@@ -531,6 +536,12 @@ export default function EventsManagement() {
                   dir="rtl"
                   placeholder="أدخل الوصف بالعربية"
                 />
+                <p className="text-xs text-gray-500 mt-2" dir="rtl">
+                  يمكنك إضافة روابط داخل النص. استخدم الصيغة:
+                  {' '}
+                  <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded" dir="ltr">[نص الرابط](https://example.com)</span>
+                  {' '}أو ضع رابطًا مباشرًا (https://...) وسيظهر قابلًا للضغط.
+                </p>
               </div>
 
               <div className="flex items-center gap-2">

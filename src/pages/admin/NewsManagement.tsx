@@ -389,6 +389,11 @@ export default function NewsManagement() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   required
                 />
+                <p className="text-xs text-gray-500 mt-2">
+                  Links are supported. Use{' '}
+                  <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">[link text](https://example.com)</span>
+                  {' '}or paste a full URL (https://...) and it will be clickable.
+                </p>
               </div>
 
               <div>
@@ -401,6 +406,12 @@ export default function NewsManagement() {
                   dir="rtl"
                   placeholder="أدخل المحتوى بالعربية"
                 />
+                <p className="text-xs text-gray-500 mt-2" dir="rtl">
+                  يمكنك إضافة روابط داخل النص. استخدم الصيغة:
+                  {' '}
+                  <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded" dir="ltr">[نص الرابط](https://example.com)</span>
+                  {' '}أو ضع رابطًا مباشرًا (https://...) وسيظهر قابلًا للضغط.
+                </p>
               </div>
 
               <div className="flex items-center gap-4 pt-4">

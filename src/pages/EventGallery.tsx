@@ -6,6 +6,7 @@ import PageHeader from '../components/PageHeader';
 import { fadeInUp, staggerContainer, staggerItem } from '../lib/animations';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
+import RichText from '../components/RichText';
 
 interface Event {
   id: string;
@@ -146,9 +147,12 @@ export default function EventGallery() {
                 viewport={{ once: true }}
               >
                 <h1 className="text-4xl font-bold text-primary mb-4">{eventTitle}</h1>
-                <p className="text-lg text-muted mb-6 leading-relaxed">
-                  {eventDescription}
-                </p>
+                <RichText
+                  text={eventDescription}
+                  mode="paragraphs"
+                  className="text-lg text-muted mb-6 leading-relaxed"
+                  paragraphClassName="mb-3"
+                />
               </motion.div>
 
               <motion.div

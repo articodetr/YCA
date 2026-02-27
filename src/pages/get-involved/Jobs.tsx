@@ -24,7 +24,7 @@ interface JobPosting {
   responsibilities_en: string;
   responsibilities_ar: string;
   application_deadline: string;
-  application_url?: string;
+  application_url?: string | null;
   applications_count: number;
 }
 
@@ -281,29 +281,29 @@ export default function Jobs() {
                           </div>
                         </div>
                         {job.application_url ? (
-                        <motion.a
-                          href={job.application_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-secondary transition-colors font-semibold whitespace-nowrap inline-flex items-center justify-center"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          {language === 'ar' ? 'قدم الآن' : 'Apply Now'}
-                        </motion.a>
-                      ) : (
-                        <motion.button
-                          onClick={() => {
-                            setSelectedJob(job);
-                            setIsModalOpen(true);
-                          }}
-                          className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-secondary transition-colors font-semibold whitespace-nowrap"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          {language === 'ar' ? 'قدم الآن' : 'Apply Now'}
-                        </motion.button>
-                      )}
+                          <motion.a
+                            href={job.application_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-secondary transition-colors font-semibold whitespace-nowrap inline-block"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            {language === 'ar' ? 'قدم الآن' : 'Apply Now'}
+                          </motion.a>
+                        ) : (
+                          <motion.button
+                            onClick={() => {
+                              setSelectedJob(job);
+                              setIsModalOpen(true);
+                            }}
+                            className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-secondary transition-colors font-semibold whitespace-nowrap"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            {language === 'ar' ? 'قدم الآن' : 'Apply Now'}
+                          </motion.button>
+                        )}
                       </div>
 
                       <p className="text-muted mb-4 line-clamp-3">

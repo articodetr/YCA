@@ -147,7 +147,8 @@ export async function getAvailableSlotsForDate(
     return [];
   }
 
-  return data || [];
+  const rows = (data || []).filter(slot => !isSlotInPast(date, slot.start_time));
+  return rows;
 }
 
 export async function getAvailableSlotsForDuration(
@@ -333,8 +334,18 @@ export function addMinutesToTime(time: string, minutes: number): string {
 }
 
 export function isSlotInPast(date: string, startTime: string): boolean {
-  const slotDateTime = new Date(`${date}T${startTime}`);
-  return slotDateTime < new Date();
+  // Treat `date` + `startTime` as local time. `startTime` comes from Postgres `time`.
+  const parts = String(startTime).split(':');
+  const h = Number(parts[0] || 0);
+  const m = Number(parts[1] || 0);
+  const s = Number(parts[2] || 0);
+
+  // IMPORTANT: new Date('YYYY-MM-DD') is parsed as UTC in browsers.
+  // Build a local datetime explicitly to avoid off-by-one issues.
+  const [yy, mm, dd] = date.split('-').map(n => Number(n));
+  const slotDateTime = new Date(yy, (mm || 1) - 1, dd || 1, h, m, s, 0);
+
+  return slotDateTime.getTime() <= Date.now();
 }
 
 export function getDayOfWeek(date: string): number {

@@ -34,7 +34,6 @@ import {
   Star,
   Scale,
   Building2,
-  Handshake,
 } from 'lucide-react';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
 import { useSiteSettings } from '../../contexts/SiteSettingsContext';
@@ -94,6 +93,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   const translationEnabled = getSetting('translation_enabled', 'false') === 'true';
 
+  const canViewDashboard = hasPermission('dashboard.view');
+
   const operationsItems = [
     ...(hasPermission('availability.manage') ? [{ icon: Calendar, label: 'Advisory Office', path: '/admin/availability' }] : []),
     ...(hasPermission('wakala.manage') ? [{ icon: FileText, label: 'Wakala Applications', path: '/admin/wakala-applications' }] : []),
@@ -139,7 +140,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         { icon: AlertTriangle, label: 'Complaints', path: '/admin/complaints' },
         { icon: Star, label: 'Service Feedback', path: '/admin/feedback' },
         { icon: Building2, label: 'Business Supporters', path: '/admin/business-supporters' },
-        { icon: Handshake, label: 'Partnerships & Collaborations', path: '/admin/partnerships-collaborations' },
       ],
     }] : []),
     ...(operationsItems.length > 0 ? [{
@@ -192,20 +192,22 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const renderSidebarContent = (isMobile = false) => (
     <nav className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
-        <Link
-          to="/admin/dashboard"
-          onClick={() => isMobile && setMobileMenuOpen(false)}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
-            location.pathname === '/admin/dashboard'
-              ? 'bg-emerald-600 text-white shadow-sm'
-              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-          }`}
-        >
-          <LayoutDashboard className="w-5 h-5 flex-shrink-0" />
-          {(!sidebarCollapsed || isMobile) && (
-            <span className="text-sm font-medium">Dashboard</span>
-          )}
-        </Link>
+        {canViewDashboard && (
+          <Link
+            to="/admin/dashboard"
+            onClick={() => isMobile && setMobileMenuOpen(false)}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group ${
+              location.pathname === '/admin/dashboard'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+            }`}
+          >
+            <LayoutDashboard className="w-5 h-5 flex-shrink-0" />
+            {(!sidebarCollapsed || isMobile) && (
+              <span className="text-sm font-medium">Dashboard</span>
+            )}
+          </Link>
+        )}
 
         <div className="pt-2">
           {menuSections.map((section) => {
@@ -407,14 +409,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     <p className="text-xs text-slate-400 capitalize">{adminData?.role || 'Administrator'}</p>
                   </div>
                   <div className="py-1">
-                    <Link
-                      to="/admin/settings"
-                      onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-2.5 px-3.5 py-2 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
-                    >
-                      <Settings className="w-4 h-4 text-slate-400" />
-                      Settings
-                    </Link>
+                    {hasPermission('settings.manage') && (
+                      <Link
+                        to="/admin/settings"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-3.5 py-2 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
+                      >
+                        <Settings className="w-4 h-4 text-slate-400" />
+                        Settings
+                      </Link>
+                    )}
                     <a
                       href="/"
                       target="_blank"

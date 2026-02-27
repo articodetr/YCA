@@ -29,13 +29,15 @@ import BookingTracker from './pages/book/BookingTracker';
 import PaymentResult from './pages/PaymentResult';
 import UnifiedMembership from './pages/UnifiedMembership';
 
-import { AdminAuthProvider } from './contexts/AdminAuthContext';
+import { AdminAuthProvider, useAdminAuth } from './contexts/AdminAuthContext';
 import { MemberAuthProvider } from './contexts/MemberAuthContext';
 import { ContentProvider } from './contexts/ContentContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { SiteSettingsProvider } from './contexts/SiteSettingsContext';
 import AdminLogin from './pages/admin/AdminLogin';
+import AccessDenied from './pages/admin/AccessDenied';
 import ProtectedRoute from './components/admin/ProtectedRoute';
+import RequireAdminPermission from './components/admin/RequireAdminPermission';
 import ProtectedMemberRoute from './components/member/ProtectedMemberRoute';
 import MemberLogin from './pages/member/MemberLogin';
 import MemberSignup from './pages/member/MemberSignup';
@@ -70,7 +72,6 @@ import FeedbackManagement from './pages/admin/FeedbackManagement';
 import TranslationsManagement from './pages/admin/TranslationsManagement';
 import LegalRequestsManagement from './pages/admin/LegalRequestsManagement';
 import BusinessSupportersManagement from './pages/admin/BusinessSupportersManagement';
-import PartnershipsCollaborationsManagement from './pages/admin/PartnershipsCollaborationsManagement';
 import FormQuestionsManagement from './pages/admin/FormQuestionsManagement';
 import JobPostingsManagement from './pages/admin/JobPostingsManagement';
 import WakalaApplicationsManagement from './pages/admin/WakalaApplicationsManagement';
@@ -79,6 +80,11 @@ function TranslationRedirect() {
   const { getSetting } = useSiteSettings();
   const enabled = getSetting('translation_enabled', 'false') === 'true';
   return <Navigate to={enabled ? '/book?service=translation' : '/book'} replace />;
+}
+
+function AdminIndexRedirect() {
+  const { getDefaultRoute } = useAdminAuth();
+  return <Navigate to={getDefaultRoute()} replace />;
 }
 
 function App() {
@@ -107,37 +113,255 @@ function App() {
               <ProtectedRoute>
                 <AdminLayout>
                   <Routes>
-                    <Route path="dashboard" element={<Dashboard />} />
-                    <Route path="news" element={<NewsManagement />} />
-                    <Route path="events" element={<EventsManagement />} />
-                    <Route path="event-galleries" element={<EventGalleriesManagement />} />
-                    <Route path="registrations" element={<RegistrationsManagement />} />
-                    <Route path="memberships" element={<MembershipsManagement />} />
-                    <Route path="membership-expiry" element={<MembershipExpiryMonitoring />} />
-                    <Route path="volunteers" element={<VolunteersManagement />} />
-                    <Route path="partnerships" element={<PartnershipsManagement />} />
-                    <Route path="contacts" element={<ContactsManagement />} />
-                    <Route path="donations" element={<DonationsManagement />} />
-                    <Route path="subscribers" element={<SubscribersManagement />} />
-                    <Route path="hero" element={<HeroManagement />} />
-                    <Route path="team" element={<TeamManagement />} />
-                    <Route path="services" element={<ServicesManagement />} />
-                    <Route path="programmes" element={<ProgrammesManagement />} />
-                    <Route path="resources" element={<ResourcesManagement />} />
-                    <Route path="content" element={<ContentManagement />} />
-                    <Route path="page-images" element={<PageImagesManagement />} />
-                    <Route path="availability" element={<AvailabilityManagement />} />
-                    <Route path="admins" element={<AdminManagement />} />
-                    <Route path="complaints" element={<ComplaintsManagement />} />
-                    <Route path="feedback" element={<FeedbackManagement />} />
-                    <Route path="wakala-applications" element={<WakalaApplicationsManagement />} />
-                    <Route path="translations" element={<TranslationsManagement />} />
-                    <Route path="legal-requests" element={<LegalRequestsManagement />} />
-                    <Route path="business-supporters" element={<BusinessSupportersManagement />} />
-                    <Route path="partnerships-collaborations" element={<PartnershipsCollaborationsManagement />} />
-                    <Route path="form-questions" element={<FormQuestionsManagement />} />
-                    <Route path="job-postings" element={<JobPostingsManagement />} />
-                    <Route path="settings" element={<Settings />} />
+                    <Route index element={<AdminIndexRedirect />} />
+                    <Route path="access-denied" element={<AccessDenied />} />
+
+                    <Route
+                      path="dashboard"
+                      element={
+                        <RequireAdminPermission permission="dashboard.view">
+                          <Dashboard />
+                        </RequireAdminPermission>
+                      }
+                    />
+
+                    <Route
+                      path="news"
+                      element={
+                        <RequireAdminPermission permission="news_events.manage">
+                          <NewsManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+                    <Route
+                      path="events"
+                      element={
+                        <RequireAdminPermission permission="news_events.manage">
+                          <EventsManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+                    <Route
+                      path="event-galleries"
+                      element={
+                        <RequireAdminPermission permission="news_events.manage">
+                          <EventGalleriesManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+
+                    <Route
+                      path="registrations"
+                      element={
+                        <RequireAdminPermission permission="submissions.view">
+                          <RegistrationsManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+                    <Route
+                      path="memberships"
+                      element={
+                        <RequireAdminPermission permission="submissions.view">
+                          <MembershipsManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+                    <Route
+                      path="membership-expiry"
+                      element={
+                        <RequireAdminPermission permission="submissions.view">
+                          <MembershipExpiryMonitoring />
+                        </RequireAdminPermission>
+                      }
+                    />
+                    <Route
+                      path="volunteers"
+                      element={
+                        <RequireAdminPermission permission="submissions.view">
+                          <VolunteersManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+                    <Route
+                      path="partnerships"
+                      element={
+                        <RequireAdminPermission permission="submissions.view">
+                          <PartnershipsManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+                    <Route
+                      path="contacts"
+                      element={
+                        <RequireAdminPermission permission="submissions.view">
+                          <ContactsManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+                    <Route
+                      path="donations"
+                      element={
+                        <RequireAdminPermission permission="submissions.view">
+                          <DonationsManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+                    <Route
+                      path="subscribers"
+                      element={
+                        <RequireAdminPermission permission="submissions.view">
+                          <SubscribersManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+                    <Route
+                      path="complaints"
+                      element={
+                        <RequireAdminPermission permission="submissions.view">
+                          <ComplaintsManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+                    <Route
+                      path="feedback"
+                      element={
+                        <RequireAdminPermission permission="submissions.view">
+                          <FeedbackManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+                    <Route
+                      path="business-supporters"
+                      element={
+                        <RequireAdminPermission permission="submissions.view">
+                          <BusinessSupportersManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+
+                    <Route
+                      path="hero"
+                      element={
+                        <RequireAdminPermission permission="content.manage">
+                          <HeroManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+                    <Route
+                      path="team"
+                      element={
+                        <RequireAdminPermission permission="content.manage">
+                          <TeamManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+                    <Route
+                      path="services"
+                      element={
+                        <RequireAdminPermission permission="content.manage">
+                          <ServicesManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+                    <Route
+                      path="programmes"
+                      element={
+                        <RequireAdminPermission permission="content.manage">
+                          <ProgrammesManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+                    <Route
+                      path="resources"
+                      element={
+                        <RequireAdminPermission permission="content.manage">
+                          <ResourcesManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+                    <Route
+                      path="content"
+                      element={
+                        <RequireAdminPermission permission="content.manage">
+                          <ContentManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+                    <Route
+                      path="page-images"
+                      element={
+                        <RequireAdminPermission permission="content.manage">
+                          <PageImagesManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+
+                    <Route
+                      path="availability"
+                      element={
+                        <RequireAdminPermission permission="availability.manage">
+                          <AvailabilityManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+                    <Route
+                      path="wakala-applications"
+                      element={
+                        <RequireAdminPermission permission="wakala.manage">
+                          <WakalaApplicationsManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+                    <Route
+                      path="translations"
+                      element={
+                        <RequireAdminPermission permission="legal.manage">
+                          <TranslationsManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+                    <Route
+                      path="legal-requests"
+                      element={
+                        <RequireAdminPermission permission="legal.manage">
+                          <LegalRequestsManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+
+                    <Route
+                      path="admins"
+                      element={
+                        <RequireAdminPermission permission="admin.manage">
+                          <AdminManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+
+                    <Route
+                      path="form-questions"
+                      element={
+                        <RequireAdminPermission permission="settings.manage">
+                          <FormQuestionsManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+                    <Route
+                      path="job-postings"
+                      element={
+                        <RequireAdminPermission permission="content.manage">
+                          <JobPostingsManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+                    <Route
+                      path="settings"
+                      element={
+                        <RequireAdminPermission permission="settings.manage">
+                          <Settings />
+                        </RequireAdminPermission>
+                      }
+                    />
                   </Routes>
                 </AdminLayout>
               </ProtectedRoute>

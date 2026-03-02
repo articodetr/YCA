@@ -7,7 +7,6 @@ export type CoreProgramme = {
 // Fixed Programme tabs (as requested). These tabs are shown even if the related
 // programme record is missing or inactive (a fallback message will be shown).
 export const CORE_PROGRAMMES: CoreProgramme[] = [
-  { slug: 'women', title_en: "Women's Programme", title_ar: 'برنامج النساء' },
   { slug: 'women-children', title_en: "Women and Children’s Programme", title_ar: 'برنامج النساء والأطفال' },
   { slug: 'elderly', title_en: "Elderly's Programme", title_ar: 'برنامج كبار السن' },
   { slug: 'youth', title_en: 'Youth Programme', title_ar: 'برنامج الشباب' },

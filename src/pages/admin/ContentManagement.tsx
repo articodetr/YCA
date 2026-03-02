@@ -87,19 +87,34 @@ export default function ContentManagement() {
       let sections = contentRes.data || [];
 
       const allPages = ['home', 'services', 'contact', 'footer', 'about_mission', 'about_history', 'about_team', 'about_partners', 'about_reports', 'donate', 'volunteer', 'membership', 'jobs', 'partnerships', 'events', 'news', 'resources', 'programmes'];
-      const seededPages = new Set(sections.map((s: ContentSection) => s.page));
-      const missingPages = allPages.filter(p => !seededPages.has(p) && hasDefaults(p));
 
-      if (missingPages.length > 0) {
-        const rows = missingPages.flatMap(page =>
-          getPageDefaults(page).map(d => ({
-            page,
-            section_key: d.section_key,
-            content: { text_en: d.text_en, text_ar: d.text_ar, text: d.text_en },
-            is_active: true,
-          }))
-        );
-        const { data: inserted } = await supabase.from('content_sections').upsert(rows, { onConflict: 'page,section_key' }).select('*');
+      // Seed missing default sections for pages that have defaults.
+      // This ensures the admin can always edit the full page content without needing to add rows manually.
+      const existingByPage = new Map<string, Set<string>>();
+      sections.forEach((s: ContentSection) => {
+        if (!existingByPage.has(s.page)) existingByPage.set(s.page, new Set());
+        existingByPage.get(s.page)!.add(s.section_key);
+      });
+
+      const rowsToSeed = allPages
+        .filter((p) => hasDefaults(p))
+        .flatMap((page) => {
+          const existingKeys = existingByPage.get(page) || new Set<string>();
+          return getPageDefaults(page)
+            .filter((d) => !existingKeys.has(d.section_key))
+            .map((d) => ({
+              page,
+              section_key: d.section_key,
+              content: { text_en: d.text_en, text_ar: d.text_ar, text: d.text_en },
+              is_active: true,
+            }));
+        });
+
+      if (rowsToSeed.length > 0) {
+        const { data: inserted } = await supabase
+          .from('content_sections')
+          .upsert(rowsToSeed, { onConflict: 'page,section_key' })
+          .select('*');
         if (inserted) {
           sections = [...sections, ...inserted];
         }
@@ -111,7 +126,7 @@ export default function ContentManagement() {
       const enMap: Record<string, string> = {};
       const arMap: Record<string, string> = {};
       const imageMap: Record<string, string> = {};
-      contentRes.data?.forEach((section) => {
+      sections?.forEach((section) => {
         const c = section.content;
         enMap[section.id] = c?.text_en || c?.text || '';
         arMap[section.id] = c?.text_ar || '';

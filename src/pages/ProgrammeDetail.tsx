@@ -19,6 +19,8 @@ import {
   ChevronRight,
   X,
   Images,
+  Calendar,
+  FileText,
 } from 'lucide-react';
 import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../lib/animations';
 import { supabase } from '../lib/supabase';
@@ -40,6 +42,18 @@ interface Programme {
   icon: string;
   is_active: boolean;
   order_number: number;
+}
+
+interface ProgrammeNewsItem {
+  id: string;
+  title: string;
+  title_ar?: string;
+  excerpt: string;
+  description_ar?: string;
+  category: string;
+  author: string;
+  published_at: string;
+  image_url: string | null;
 }
 
 const ICON_MAP: Record<string, React.ComponentType<any>> = {
@@ -98,6 +112,8 @@ export default function ProgrammeDetail() {
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [programmeNews, setProgrammeNews] = useState<ProgrammeNewsItem[]>([]);
+  const [newsLoading, setNewsLoading] = useState(false);
 
   const allImages = programme
     ? [
@@ -137,6 +153,35 @@ export default function ProgrammeDetail() {
   useEffect(() => {
     if (id) fetchProgramme();
   }, [id]);
+
+  useEffect(() => {
+    if (!programme?.id) {
+      setProgrammeNews([]);
+      return;
+    }
+
+    const fetchProgrammeNews = async () => {
+      try {
+        setNewsLoading(true);
+        const { data, error } = await supabase
+          .from('news')
+          .select('id,title,title_ar,excerpt,description_ar,category,author,published_at,image_url')
+          .eq('programme_id', programme.id)
+          .order('published_at', { ascending: false })
+          .limit(6);
+
+        if (error) throw error;
+        setProgrammeNews(data || []);
+      } catch (err) {
+        console.error('Error fetching programme news:', err);
+        setProgrammeNews([]);
+      } finally {
+        setNewsLoading(false);
+      }
+    };
+
+    fetchProgrammeNews();
+  }, [programme?.id]);
 
   const fetchProgramme = async () => {
     const key = (id ?? '').trim();
@@ -299,6 +344,9 @@ export default function ProgrammeDetail() {
   const programmeContent = getContent(programme);
   const programmeDescription = getDescription(programme);
   const catColor = getCategoryColor(programme.category);
+  const getNewsTitle = (n: ProgrammeNewsItem) => (isRTL && n.title_ar ? n.title_ar : n.title);
+  const getNewsExcerpt = (n: ProgrammeNewsItem) => (isRTL && n.description_ar ? n.description_ar : n.excerpt);
+  const fallbackNewsImg = 'https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=1200';
 
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'}>
@@ -448,6 +496,59 @@ export default function ProgrammeDetail() {
                 </div>
               </div>
             )}
+
+            <div className="mt-12 pt-8 border-t border-gray-100">
+              <div className="flex items-center gap-3 mb-6">
+                <FileText size={24} className="text-primary" />
+                <h3 className="text-2xl font-bold text-primary">{isRTL ? 'أخبار البرنامج' : 'Programme News'}</h3>
+              </div>
+
+              {newsLoading ? (
+                <div className="flex items-center justify-center py-10">
+                  <Loader2 size={32} className="text-primary animate-spin" />
+                </div>
+              ) : programmeNews.length === 0 ? (
+                <p className="text-muted">
+                  {isRTL ? 'لا توجد أخبار لهذا البرنامج حالياً.' : 'No news for this programme yet.'}
+                </p>
+              ) : (
+                <motion.div
+                  className="grid md:grid-cols-2 gap-6"
+                  variants={staggerContainer}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                >
+                  {programmeNews.map((n) => (
+                    <motion.article
+                      key={n.id}
+                      className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition-all"
+                      variants={staggerItem}
+                      whileHover={{ y: -4 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Link to={`/news/${n.id}`} className="block">
+                        <div className="relative overflow-hidden">
+                          <img
+                            src={n.image_url || fallbackNewsImg}
+                            alt={getNewsTitle(n)}
+                            className="w-full h-44 object-cover"
+                          />
+                        </div>
+                        <div className="p-5">
+                          <div className="flex items-center gap-2 text-sm text-muted mb-2">
+                            <Calendar size={16} />
+                            <span>{new Date(n.published_at).toLocaleDateString()}</span>
+                          </div>
+                          <h4 className="text-lg font-bold text-primary mb-2 line-clamp-2">{getNewsTitle(n)}</h4>
+                          <p className="text-muted line-clamp-2">{getNewsExcerpt(n)}</p>
+                        </div>
+                      </Link>
+                    </motion.article>
+                  ))}
+                </motion.div>
+              )}
+            </div>
           </motion.div>
         </div>
       </article>

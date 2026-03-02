@@ -788,7 +788,7 @@ export default function Home() {
               <p className="text-muted mb-6 leading-relaxed">
                 {getContent('home', 'service_programmes_description', 'Dedicated programmes for women, elderly, youth, children, and men focusing on social bonds, wellbeing, and cultural heritage.')}
               </p>
-              <Link to="/programmes/women" className="text-blue-600 font-semibold hover:text-blue-700 transition-colors inline-flex items-center gap-2">
+              <Link to="/programmes?tab=women" className="text-blue-600 font-semibold hover:text-blue-700 transition-colors inline-flex items-center gap-2">
                 Explore Programmes <ArrowRight size={18} />
               </Link>
             </motion.div>

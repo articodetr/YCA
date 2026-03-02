@@ -41,17 +41,11 @@ export const volunteerQuestions: FallbackQuestion[] = [
   },
   {
     id: 'v6', form_type: 'volunteer', question_text_en: 'Areas of Interest', question_text_ar: 'مجالات الاهتمام',
-    question_type: 'checkbox', options: [
-      { value: 'community_events', label_en: 'Community Events', label_ar: 'فعاليات مجتمعية' },
-      { value: 'youth_programs', label_en: 'Youth Programs', label_ar: 'برامج الشباب' },
-      { value: 'elderly_support', label_en: 'Elderly Support', label_ar: 'دعم كبار السن' },
-      { value: 'admin_office', label_en: 'Admin & Office', label_ar: 'إدارة ومكتب' },
-      { value: 'fundraising', label_en: 'Fundraising', label_ar: 'جمع التبرعات' },
-      { value: 'teaching', label_en: 'Teaching & Tutoring', label_ar: 'تعليم ودروس' },
-      { value: 'translation', label_en: 'Translation Services', label_ar: 'خدمات الترجمة' },
-      { value: 'other', label_en: 'Other', label_ar: 'أخرى' },
-    ],
-    placeholder_en: '', placeholder_ar: '',
+    // Free text (instead of fixed checkboxes) so volunteers can describe interests in their own words.
+    question_type: 'textarea',
+    options: [],
+    placeholder_en: 'Write the areas you would like to volunteer in (e.g., education programme, youth support, events, fundraising…)',
+    placeholder_ar: 'اكتب مجالات التطوع التي ترغب بها (مثال: التعليم، دعم الشباب، الفعاليات، جمع التبرعات…)',
     is_required: true, validation_rules: {}, order_index: 6, section: 'interests',
   },
   {

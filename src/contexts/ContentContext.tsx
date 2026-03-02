@@ -52,8 +52,11 @@ export function ContentProvider({ children }: { children: ReactNode }) {
         const key = `${item.page}.${item.section_key}`;
         const contentObj = item.content as { text_en?: string; text_ar?: string; text?: string; image?: string };
 
-        const textEn = contentObj?.text_en || contentObj?.text || '';
-        const textAr = contentObj?.text_ar || '';
+        // Use nullish coalescing so empty strings remain valid values.
+        // This allows admins to intentionally clear content (set it to "") without the UI
+        // falling back to defaults.
+        const textEn = (contentObj?.text_en ?? contentObj?.text ?? '') as string;
+        const textAr = (contentObj?.text_ar ?? '') as string;
 
         contentMap[key] = { en: textEn, ar: textAr };
 
@@ -112,7 +115,11 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     const currentLang = languageContext.language;
     const text = bilingualContent[currentLang];
 
-    return text || bilingualContent.en || fallback;
+    // IMPORTANT: Do not treat empty string as "missing".
+    // If admin intentionally cleared the text (""), we should return "".
+    if (text !== undefined && text !== null) return text;
+    if (bilingualContent.en !== undefined && bilingualContent.en !== null) return bilingualContent.en;
+    return fallback;
   };
 
   const getImage = (page: string, key: string, fallback: string = '') => {

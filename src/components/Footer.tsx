@@ -121,7 +121,7 @@ export default function Footer() {
             <h3 className="text-xl font-bold mb-4 text-accent">{t('nav.programmes')}</h3>
             <ul className="space-y-2">
               {[
-                { en: "Women's Programme", ar: 'برنامج النساء' },
+                
                 { en: "Women and Children’s Programme", ar: 'برنامج النساء والأطفال' },
                 { en: "Elderly's Programme", ar: 'برنامج كبار السن' },
                 { en: 'Youth Programme', ar: 'برنامج الشباب' },

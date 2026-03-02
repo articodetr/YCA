@@ -38,10 +38,32 @@ const aboutTeamDefaults: ContentDefault[] = [
   { section_key: 'join_desc', text_en: 'We are always looking for passionate individuals to join our mission.', text_ar: 'نحن دائماً نبحث عن أفراد شغوفين للانضمام إلى مهمتنا.' },
 ];
 
+const programmesDefaults: ContentDefault[] = [
+  { section_key: 'page_title', text_en: 'Programmes', text_ar: 'البرامج' },
+  { section_key: 'page_description', text_en: 'Community programmes that support and connect our community', text_ar: 'برامج مجتمعية تدعم وتربط أفراد الجالية' },
+
+  { section_key: 'intro_title', text_en: 'Our Programmes', text_ar: 'برامجنا' },
+  { section_key: 'intro_p1', text_en: 'We run a range of programmes designed to support different groups in our community.', text_ar: 'نقدم مجموعة من البرامج المصممة لدعم فئات مختلفة في مجتمعنا.' },
+  { section_key: 'intro_p2', text_en: 'Choose a programme below to see its description, photos, and related news.', text_ar: 'اختر برنامجًا أدناه لعرض وصفه وصوره وأخباره المرتبطة.' },
+
+  { section_key: 'programmes_title', text_en: 'Explore Our Programmes', text_ar: 'استكشف برامجنا' },
+  { section_key: 'programmes_intro', text_en: 'Tabs below are fixed. Programme details are managed from Programmes Management, while this page text is managed from Page Content → Programmes.', text_ar: 'التبويبات أدناه ثابتة. تفاصيل كل برنامج تُدار من إدارة البرامج، أما نص هذه الصفحة فيُدار من Page Content → Programmes.' },
+
+  { section_key: 'gallery_title', text_en: 'Programme Photos', text_ar: 'صور البرنامج' },
+  { section_key: 'news_title', text_en: 'Programme News', text_ar: 'أخبار البرنامج' },
+  { section_key: 'news_empty', text_en: 'There are no news items linked to this programme yet.', text_ar: 'لا توجد أخبار مرتبطة بهذا البرنامج حاليًا.' },
+
+  { section_key: 'cta_title', text_en: 'Join Our Programmes', text_ar: 'انضم إلى برامجنا' },
+  { section_key: 'cta_desc', text_en: "Whether you're looking to participate, volunteer, or support our initiatives, there's a place for you in our community programmes.", text_ar: 'سواء كنت تبحث عن المشاركة أو التطوع أو دعم مبادراتنا، فهناك مكان لك في برامج مجتمعنا.' },
+  { section_key: 'cta_btn_member', text_en: 'Become a Member', text_ar: 'كن عضواً' },
+  { section_key: 'cta_btn_contact', text_en: 'Contact Us', text_ar: 'تواصل معنا' },
+];
+
 const defaultsMap: Record<string, ContentDefault[]> = {
   footer: footerDefaults,
   donate: donateDefaults,
   about_team: aboutTeamDefaults,
+  programmes: programmesDefaults,
 };
 
 export function getPageDefaults(page: string): ContentDefault[] {

@@ -1,9 +1,10 @@
-import { useMemo, useEffect, useState } from 'react';
-import { ArrowLeft, ArrowRight, Calendar, FileText, Loader2 } from 'lucide-react';
+import { useMemo, useEffect, useState, useCallback } from 'react';
+import { Calendar, FileText, Images, Loader2, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import PageHeader from '../components/PageHeader';
+import RichText from '../components/RichText';
 import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../lib/animations';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
@@ -18,6 +19,7 @@ type Programme = {
   content?: string;
   content_ar?: string;
   image_url?: string;
+  gallery_images?: string[];
   slug?: string;
   category: string;
   is_active: boolean;
@@ -42,7 +44,6 @@ const FALLBACK_IMAGE =
 export default function Programmes() {
   const { t, language } = useLanguage();
   const isRTL = language === 'ar';
-  const Arrow = isRTL ? ArrowLeft : ArrowRight;
 
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -52,6 +53,9 @@ export default function Programmes() {
   const [selectedSlug, setSelectedSlug] = useState<string>(CORE_PROGRAMME_TABS[0]?.slug || 'women');
   const [newsLoading, setNewsLoading] = useState(false);
   const [programmeNews, setProgrammeNews] = useState<ProgrammeNewsItem[]>([]);
+
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   const programmeBySlug = useMemo(() => {
     const m = new Map<string, Programme>();
@@ -69,6 +73,39 @@ export default function Programmes() {
   const getProgrammeContent = (p: Programme) => (isRTL && p.content_ar ? p.content_ar : (p.content || ''));
   const getNewsTitle = (n: ProgrammeNewsItem) => (isRTL && n.title_ar ? n.title_ar : n.title);
   const getNewsExcerpt = (n: ProgrammeNewsItem) => (isRTL && n.description_ar ? n.description_ar : n.excerpt);
+
+  const allImages = useMemo(() => {
+    if (!selectedProgramme) return [];
+    const cover = selectedProgramme.image_url || FALLBACK_IMAGE;
+    const gallery = Array.isArray(selectedProgramme.gallery_images) ? selectedProgramme.gallery_images : [];
+    return [cover, ...gallery].filter(Boolean);
+  }, [selectedProgramme]);
+
+  const openLightbox = useCallback((index: number) => {
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  }, []);
+
+  const closeLightbox = useCallback(() => setLightboxOpen(false), []);
+
+  const goNext = useCallback(() => {
+    setLightboxIndex((prev) => (prev + 1) % allImages.length);
+  }, [allImages.length]);
+
+  const goPrev = useCallback(() => {
+    setLightboxIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+  }, [allImages.length]);
+
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowRight') goNext();
+      if (e.key === 'ArrowLeft') goPrev();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [lightboxOpen, closeLightbox, goNext, goPrev]);
 
   const syncSlugToUrl = (slug: string) => {
     setSearchParams((prev) => {
@@ -249,25 +286,50 @@ export default function Programmes() {
                           <p className="text-white/85 max-w-3xl leading-relaxed">
                             {getProgrammeDescription(selectedProgramme)}
                           </p>
-                          <div className="mt-6">
-                            <Link
-                              to={`/programmes/${selectedProgramme.slug || selectedProgramme.id}`}
-                              className="inline-flex items-center gap-2 bg-accent text-primary px-6 py-3 rounded-lg font-semibold hover:bg-hover transition-colors"
-                            >
-                              {isRTL ? 'عرض صفحة البرنامج' : 'Open Programme Page'} <Arrow size={18} />
-                            </Link>
-                          </div>
                         </div>
                       </div>
 
                       <div className="p-6 md:p-10">
-                        {getProgrammeContent(selectedProgramme) ? (
-                          <div className="text-muted leading-relaxed space-y-5 text-base md:text-lg">
-                            {getProgrammeContent(selectedProgramme)
-                              .split('\n')
-                              .map((p, idx) => (p.trim() ? <p key={idx}>{p}</p> : null))}
+                        <div className="prose prose-lg max-w-none">
+                          <RichText
+                            text={getProgrammeContent(selectedProgramme) || getProgrammeDescription(selectedProgramme)}
+                            mode="paragraphs"
+                            className="text-muted leading-relaxed space-y-6 text-lg"
+                            paragraphClassName="mb-4"
+                          />
+                        </div>
+
+                        {allImages.length > 1 && (
+                          <div className="mt-12 pt-8 border-t border-gray-100">
+                            <div className="flex items-center gap-3 mb-6">
+                              <Images size={24} className="text-primary" />
+                              <h3 className="text-2xl font-bold text-primary">
+                                {isRTL ? 'معرض الصور' : 'Photo Gallery'}
+                              </h3>
+                              <span className="text-sm text-muted bg-sand px-3 py-1 rounded-full">
+                                {allImages.length} {isRTL ? 'صور' : 'photos'}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                              {allImages.map((img, idx) => (
+                                <motion.button
+                                  key={idx}
+                                  onClick={() => openLightbox(idx)}
+                                  className="relative group overflow-hidden rounded-xl aspect-[4/3]"
+                                  whileHover={{ scale: 1.02 }}
+                                  transition={{ duration: 0.2 }}
+                                >
+                                  <img
+                                    src={img}
+                                    alt={`${getProgrammeTitle(selectedProgramme)} - ${idx + 1}`}
+                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                  />
+                                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300" />
+                                </motion.button>
+                              ))}
+                            </div>
                           </div>
-                        ) : null}
+                        )}
 
                         <div className="mt-10 pt-8 border-t border-gray-100">
                           <div className="flex items-center gap-3 mb-6">
@@ -332,6 +394,85 @@ export default function Programmes() {
             )}
           </div>
         </section>
+
+        <AnimatePresence>
+          {lightboxOpen && allImages.length > 0 && (
+            <motion.div
+              className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={closeLightbox}
+            >
+              <button
+                onClick={closeLightbox}
+                className="absolute top-6 right-6 text-white/70 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors z-10"
+              >
+                <X size={28} />
+              </button>
+
+              <div className="absolute top-6 left-1/2 -translate-x-1/2 text-white/60 text-sm font-medium">
+                {lightboxIndex + 1} / {allImages.length}
+              </div>
+
+              {allImages.length > 1 && (
+                <>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      goPrev();
+                    }}
+                    className="absolute left-4 md:left-8 text-white/70 hover:text-white p-3 rounded-full hover:bg-white/10 transition-colors z-10"
+                  >
+                    <ChevronLeft size={36} />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      goNext();
+                    }}
+                    className="absolute right-4 md:right-8 text-white/70 hover:text-white p-3 rounded-full hover:bg-white/10 transition-colors z-10"
+                  >
+                    <ChevronRight size={36} />
+                  </button>
+                </>
+              )}
+
+              <motion.img
+                key={lightboxIndex}
+                src={allImages[lightboxIndex]}
+                alt={`${selectedProgramme ? getProgrammeTitle(selectedProgramme) : 'Programme'} - ${lightboxIndex + 1}`}
+                className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.2 }}
+                onClick={(e) => e.stopPropagation()}
+              />
+
+              {allImages.length > 1 && (
+                <div
+                  className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {allImages.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setLightboxIndex(idx)}
+                      className={`w-12 h-9 rounded overflow-hidden border-2 transition-all ${
+                        idx === lightboxIndex
+                          ? 'border-white scale-110'
+                          : 'border-transparent opacity-50 hover:opacity-80'
+                      }`}
+                    >
+                      <img src={img} alt="" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <section className="py-16 bg-sand">
           <div className="container mx-auto px-4">

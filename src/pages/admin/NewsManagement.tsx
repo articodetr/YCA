@@ -14,6 +14,14 @@ interface Article {
   published_at: string;
   image_url: string | null;
   gallery_images: string[];
+  programme_id?: string | null;
+}
+
+interface ProgrammeOption {
+  id: string;
+  title: string;
+  title_ar?: string;
+  slug?: string;
 }
 
 export default function NewsManagement() {
@@ -22,6 +30,7 @@ export default function NewsManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
+  const [programmeOptions, setProgrammeOptions] = useState<ProgrammeOption[]>([]);
   const [formData, setFormData] = useState({
     title: '',
     title_ar: '',
@@ -33,12 +42,30 @@ export default function NewsManagement() {
     author: 'YCA Birmingham',
     image_url: '',
     gallery_images: [] as string[],
+    programme_id: '',
   });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchArticles();
+    fetchProgrammes();
   }, []);
+
+  const fetchProgrammes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('programmes_items')
+        .select('id,title,title_ar,slug')
+        .eq('is_active', true)
+        .order('order_number', { ascending: true });
+
+      if (error) throw error;
+      setProgrammeOptions(data || []);
+    } catch (error) {
+      console.error('Error fetching programmes:', error);
+      setProgrammeOptions([]);
+    }
+  };
 
   const fetchArticles = async () => {
     try {
@@ -71,6 +98,7 @@ export default function NewsManagement() {
         author: article.author,
         image_url: article.image_url || '',
         gallery_images: Array.isArray(article.gallery_images) ? article.gallery_images : [],
+        programme_id: (article as any).programme_id || '',
       });
     } else {
       setEditingArticle(null);
@@ -85,6 +113,7 @@ export default function NewsManagement() {
         author: 'YCA Birmingham',
         image_url: '',
         gallery_images: [],
+        programme_id: '',
       });
     }
     setShowModal(true);
@@ -111,6 +140,7 @@ export default function NewsManagement() {
         author: formData.author,
         image_url: formData.image_url || null,
         gallery_images: formData.gallery_images,
+        programme_id: formData.programme_id ? formData.programme_id : null,
         published_at: editingArticle?.published_at || new Date().toISOString(),
       };
 
@@ -160,6 +190,12 @@ export default function NewsManagement() {
       article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       article.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const getProgrammeLabel = (p: ProgrammeOption) => {
+    const en = (p.title || '').trim();
+    const ar = (p.title_ar || '').trim();
+    return ar ? `${en} — ${ar}` : en;
+  };
 
   return (
     <div className="space-y-6">
@@ -323,6 +359,23 @@ export default function NewsManagement() {
                   <option value="Civic Engagement">Civic Engagement</option>
                   <option value="Announcements">Announcements</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Programme (optional)</label>
+                <select
+                  value={formData.programme_id}
+                  onChange={(e) => setFormData({ ...formData, programme_id: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                >
+                  <option value="">-- None --</option>
+                  {programmeOptions.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {getProgrammeLabel(p)}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">If selected, this article will appear under that programme.</p>
               </div>
 
               <div>

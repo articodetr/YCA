@@ -125,9 +125,7 @@ export default function Footer() {
                 { en: "Women and Children’s Programme", ar: 'برنامج النساء والأطفال' },
                 { en: "Elderly's Programme", ar: 'برنامج كبار السن' },
                 { en: 'Youth Programme', ar: 'برنامج الشباب' },
-                { en: "Children's Programme", ar: 'برنامج الأطفال' },
                 { en: 'Education Programme', ar: 'برنامج التعليم' },
-                { en: "Men's Programme", ar: 'برنامج الرجال' },
                 { en: 'Activities and Sports Programme', ar: 'برنامج الأنشطة والرياضة' },
                 { en: 'The Journey Within', ar: 'رحلة الذات' },
               ].map((p) => (

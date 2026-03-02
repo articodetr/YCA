@@ -281,7 +281,7 @@ export default function ProgrammesManagement() {
             </div>
 
             <div className="border-t pt-4">
-              <h3 className="text-base font-bold text-primary mb-3">Full Content (shown on detail page)</h3>
+              <h3 className="text-base font-bold text-primary mb-3">Full Content (shown on the Programmes page)</h3>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-primary mb-2">Full Content (English)</label>
@@ -338,7 +338,7 @@ export default function ProgrammesManagement() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                   placeholder="e.g. women, youth, journey-within"
                 />
-                <p className="text-xs text-gray-400 mt-1">Used in URL: /programmes/<strong>{formData.slug || 'slug'}</strong></p>
+                <p className="text-xs text-gray-400 mt-1">Used for the tab deep-link: /programmes?tab=<strong>{formData.slug || 'slug'}</strong></p>
               </div>
 
               <div>
@@ -470,7 +470,7 @@ export default function ProgrammesManagement() {
               </div>
               <p className="text-sm text-muted mb-3 line-clamp-2">{programme.description}</p>
               {programme.slug && (
-                <p className="text-xs text-gray-400 mb-2">/programmes/{programme.slug}</p>
+                <p className="text-xs text-gray-400 mb-2">/programmes?tab={programme.slug}</p>
               )}
               <div className="flex items-center gap-2 mb-3">
                 <span

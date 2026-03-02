@@ -1,16 +1,15 @@
-import { useMemo, useEffect, useState, useCallback } from 'react';
-import { Calendar, FileText, Images, Loader2, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Calendar, Loader2 } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-
+import { motion } from 'framer-motion';
 import PageHeader from '../components/PageHeader';
-import RichText from '../components/RichText';
 import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../lib/animations';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useContent } from '../contexts/ContentContext';
 import { supabase } from '../lib/supabase';
-import { CORE_PROGRAMME_SLUGS, CORE_PROGRAMME_TABS } from '../lib/coreProgrammes';
+import { CORE_PROGRAMMES, isCoreProgrammeSlug } from '../lib/coreProgrammes';
 
-type Programme = {
+interface Programme {
   id: string;
   title: string;
   title_ar?: string;
@@ -18,536 +17,437 @@ type Programme = {
   description_ar?: string;
   content?: string;
   content_ar?: string;
-  image_url?: string;
-  gallery_images?: string[];
-  slug?: string;
-  category: string;
+  image_url?: string | null;
+  gallery_images?: string[] | null;
+  slug?: string | null;
+  category?: string | null;
   is_active: boolean;
   order_number: number;
-};
+}
 
-type ProgrammeNewsItem = {
+interface Article {
   id: string;
   title: string;
-  title_ar?: string;
   excerpt: string;
-  description_ar?: string;
   category: string;
   author: string;
   published_at: string;
   image_url: string | null;
+}
+
+const FALLBACK_IMAGES_BY_SLUG: Record<string, string> = {
+  women: 'https://images.pexels.com/photos/3184434/pexels-photo-3184434.jpeg?auto=compress&cs=tinysrgb&w=1920',
+  'women-children': 'https://images.pexels.com/photos/3184434/pexels-photo-3184434.jpeg?auto=compress&cs=tinysrgb&w=1920',
+  elderly: 'https://images.pexels.com/photos/7551613/pexels-photo-7551613.jpeg?auto=compress&cs=tinysrgb&w=1920',
+  youth: 'https://images.pexels.com/photos/1516440/pexels-photo-1516440.jpeg?auto=compress&cs=tinysrgb&w=1920',
+  children: 'https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg?auto=compress&cs=tinysrgb&w=1920',
+  education: 'https://images.pexels.com/photos/301926/pexels-photo-301926.jpeg?auto=compress&cs=tinysrgb&w=1920',
+  men: 'https://images.pexels.com/photos/3184611/pexels-photo-3184611.jpeg?auto=compress&cs=tinysrgb&w=1920',
+  'activities-sports': 'https://images.pexels.com/photos/1752757/pexels-photo-1752757.jpeg?auto=compress&cs=tinysrgb&w=1920',
+  'journey-within': 'https://images.pexels.com/photos/3810792/pexels-photo-3810792.jpeg?auto=compress&cs=tinysrgb&w=1920',
 };
 
-const FALLBACK_IMAGE =
-  'https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=1400';
+function splitParagraphs(text: string): string[] {
+  return text
+    .split(/\r?\n/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
 
 export default function Programmes() {
-  const { t, language } = useLanguage();
+  const { language, t } = useLanguage();
+  const { getContent } = useContent();
   const isRTL = language === 'ar';
+  const c = (key: string, fallback: string) => getContent('programmes', key, fallback);
 
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const initialTab = (searchParams.get('tab') || '').trim();
+  const [activeSlug, setActiveSlug] = useState<string>(
+    isCoreProgrammeSlug(initialTab) ? initialTab : CORE_PROGRAMMES[0].slug
+  );
+
   const [programmes, setProgrammes] = useState<Programme[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const [selectedSlug, setSelectedSlug] = useState<string>(CORE_PROGRAMME_TABS[0]?.slug || 'women');
-  const [newsLoading, setNewsLoading] = useState(false);
-  const [programmeNews, setProgrammeNews] = useState<ProgrammeNewsItem[]>([]);
-
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxIndex, setLightboxIndex] = useState(0);
-
-  const programmeBySlug = useMemo(() => {
-    const m = new Map<string, Programme>();
-    (programmes || []).forEach((p) => {
-      if (p.slug) m.set(p.slug, p);
-    });
-    return m;
-  }, [programmes]);
-
-  const selectedProgramme = programmeBySlug.get(selectedSlug);
-
-  const getProgrammeTitle = (p: Programme) => (isRTL && p.title_ar ? p.title_ar : p.title);
-  const getProgrammeDescription = (p: Programme) =>
-    isRTL && p.description_ar ? p.description_ar : p.description;
-  const getProgrammeContent = (p: Programme) => (isRTL && p.content_ar ? p.content_ar : (p.content || ''));
-  const getNewsTitle = (n: ProgrammeNewsItem) => (isRTL && n.title_ar ? n.title_ar : n.title);
-  const getNewsExcerpt = (n: ProgrammeNewsItem) => (isRTL && n.description_ar ? n.description_ar : n.excerpt);
-
-  const allImages = useMemo(() => {
-    if (!selectedProgramme) return [];
-    const cover = selectedProgramme.image_url || FALLBACK_IMAGE;
-    const gallery = Array.isArray(selectedProgramme.gallery_images) ? selectedProgramme.gallery_images : [];
-    return [cover, ...gallery].filter(Boolean);
-  }, [selectedProgramme]);
-
-  const openLightbox = useCallback((index: number) => {
-    setLightboxIndex(index);
-    setLightboxOpen(true);
-  }, []);
-
-  const closeLightbox = useCallback(() => setLightboxOpen(false), []);
-
-  const goNext = useCallback(() => {
-    setLightboxIndex((prev) => (prev + 1) % allImages.length);
-  }, [allImages.length]);
-
-  const goPrev = useCallback(() => {
-    setLightboxIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
-  }, [allImages.length]);
-
-  useEffect(() => {
-    if (!lightboxOpen) return;
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closeLightbox();
-      if (e.key === 'ArrowRight') goNext();
-      if (e.key === 'ArrowLeft') goPrev();
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [lightboxOpen, closeLightbox, goNext, goPrev]);
-
-  const syncSlugToUrl = (slug: string) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set('tab', slug);
-      return next;
-    });
-  };
+  const [loadingProgrammes, setLoadingProgrammes] = useState(true);
+  const [activeNews, setActiveNews] = useState<Article[]>([]);
+  const [loadingNews, setLoadingNews] = useState(false);
 
   useEffect(() => {
     const tab = (searchParams.get('tab') || '').trim();
-    if (tab && CORE_PROGRAMME_SLUGS.includes(tab)) {
-      setSelectedSlug(tab);
+    if (tab && isCoreProgrammeSlug(tab) && tab !== activeSlug) {
+      setActiveSlug(tab);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
-    const fetchProgrammes = async () => {
-      try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('programmes_items')
-          .select('*')
-          .eq('is_active', true)
-          .in('slug', CORE_PROGRAMME_SLUGS)
-          .order('order_number', { ascending: true });
-
-        if (error) throw error;
-        setProgrammes(data || []);
-      } catch (err) {
-        console.error('Error fetching programmes:', err);
-        setProgrammes([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchProgrammes();
   }, []);
 
-  // If the selected programme is missing (not configured), fall back to the first configured one.
-  useEffect(() => {
-    if (loading) return;
-    if (selectedProgramme) return;
+  const programmeBySlug = useMemo(() => {
+    const map = new Map<string, Programme>();
+    programmes.forEach((p) => {
+      const slug = (p.slug || '').trim();
+      if (slug) map.set(slug, p);
+    });
+    return map;
+  }, [programmes]);
 
-    const first = programmeBySlug.get(CORE_PROGRAMME_TABS[0]?.slug || 'women') || programmes.find((p) => p.slug);
-    if (first?.slug) {
-      setSelectedSlug(first.slug);
-      syncSlugToUrl(first.slug);
-    }
+  const activeProgramme = programmeBySlug.get(activeSlug) || null;
+
+  useEffect(() => {
+    void fetchProgrammeNews(activeProgramme?.id || null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, programmeBySlug]);
+  }, [activeProgramme?.id]);
 
-  useEffect(() => {
-    if (!selectedProgramme?.id) {
-      setProgrammeNews([]);
+  const fetchProgrammes = async () => {
+    try {
+      setLoadingProgrammes(true);
+      const { data, error } = await supabase
+        .from('programmes_items')
+        .select('*')
+        .eq('is_active', true)
+        .order('order_number', { ascending: true });
+      if (error) throw error;
+      setProgrammes(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error fetching programmes:', err);
+      setProgrammes([]);
+    } finally {
+      setLoadingProgrammes(false);
+    }
+  };
+
+  const fetchProgrammeNews = async (programmeId: string | null) => {
+    if (!programmeId) {
+      setActiveNews([]);
       return;
     }
 
-    const fetchProgrammeNews = async () => {
-      try {
-        setNewsLoading(true);
-        const { data, error } = await supabase
-          .from('news')
-          .select('id,title,title_ar,excerpt,description_ar,category,author,published_at,image_url')
-          .eq('programme_id', selectedProgramme.id)
-          .order('published_at', { ascending: false })
-          .limit(6);
+    try {
+      setLoadingNews(true);
+      const { data, error } = await supabase
+        .from('news')
+        .select('id,title,excerpt,category,author,published_at,image_url')
+        .eq('programme_id', programmeId)
+        .order('published_at', { ascending: false })
+        .limit(6);
 
-        if (error) throw error;
-        setProgrammeNews(data || []);
-      } catch (err) {
-        console.error('Error fetching programme news:', err);
-        setProgrammeNews([]);
-      } finally {
-        setNewsLoading(false);
+      if (error) {
+        // If the column doesn't exist (older DB), don't break the page.
+        console.warn('Programme news query failed:', error);
+        setActiveNews([]);
+        return;
       }
-    };
 
-    fetchProgrammeNews();
-  }, [selectedProgramme?.id]);
+      setActiveNews(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error fetching programme news:', err);
+      setActiveNews([]);
+    } finally {
+      setLoadingNews(false);
+    }
+  };
+
+  const onTabClick = (slug: string) => {
+    setActiveSlug(slug);
+    setSearchParams({ tab: slug }, { replace: true });
+  };
+
+  const getProgrammeTitle = (slug: string) => {
+    const p = programmeBySlug.get(slug);
+    if (p) return isRTL && p.title_ar ? p.title_ar : p.title;
+    const fallback = CORE_PROGRAMMES.find((x) => x.slug === slug);
+    return isRTL ? fallback?.title_ar || slug : fallback?.title_en || slug;
+  };
+
+  const getProgrammeDescription = (p: Programme) => (isRTL && p.description_ar ? p.description_ar : p.description);
+  const getProgrammeContent = (p: Programme) => (isRTL && p.content_ar ? p.content_ar : (p.content || ''));
+  const getProgrammeHero = (p: Programme | null) => {
+    if (!p) return FALLBACK_IMAGES_BY_SLUG[activeSlug];
+    return p.image_url || FALLBACK_IMAGES_BY_SLUG[p.slug || activeSlug] || FALLBACK_IMAGES_BY_SLUG[CORE_PROGRAMMES[0].slug];
+  };
 
   return (
     <div dir={isRTL ? 'rtl' : 'ltr'}>
       <PageHeader
-        title={t('nav.programmes')}
-        description=""
-        breadcrumbs={[{ label: t('nav.programmes') }]}
+        title={c('page_title', t('nav.programmes'))}
+        description={c('page_description', '')}
+        breadcrumbs={[{ label: c('page_title', t('nav.programmes')) }]}
         pageKey="programmes"
       />
 
       <div className="pt-20">
-        <section className="py-14 bg-white">
+        {/* Intro (fully editable from Page Content -> Programmes) */}
+        <section className="py-20 bg-white">
           <div className="container mx-auto px-4">
-            {loading ? (
-              <div className="flex items-center justify-center h-64">
-                <Loader2 size={48} className="text-primary animate-spin" />
-              </div>
-            ) : (
-              <>
-                <motion.div
-                  className="mb-10"
-                  variants={fadeInUp}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true }}
-                >
-                  <div className="flex flex-wrap gap-3 justify-center">
-                    {CORE_PROGRAMME_TABS.map((tab, index) => {
-                      const isSelected = tab.slug === selectedSlug;
-                      const colors = [
-                        { bg: 'bg-emerald-600', border: 'border-emerald-600' },
-                        { bg: 'bg-teal-600', border: 'border-teal-600' },
-                        { bg: 'bg-rose-600', border: 'border-rose-600' },
-                        { bg: 'bg-amber-600', border: 'border-amber-600' },
-                        { bg: 'bg-blue-600', border: 'border-blue-600' },
-                        { bg: 'bg-green-600', border: 'border-green-600' },
-                        { bg: 'bg-slate-700', border: 'border-slate-700' },
-                        { bg: 'bg-purple-600', border: 'border-purple-600' },
-                        { bg: 'bg-orange-600', border: 'border-orange-600' },
-                      ];
-                      const color = colors[index % colors.length];
-                      const label = isRTL ? tab.title_ar : tab.title;
-
-                      return (
-                        <motion.button
-                          key={tab.slug}
-                          onClick={() => {
-                            setSelectedSlug(tab.slug);
-                            syncSlugToUrl(tab.slug);
-                          }}
-                          className={`px-5 py-3 rounded-2xl font-semibold transition-all shadow-md border-2 ${
-                            isSelected
-                              ? `${color.bg} text-white ${color.border}`
-                              : `bg-white text-primary border-transparent hover:${color.border}`
-                          }`}
-                          whileHover={{ scale: 1.04 }}
-                          whileTap={{ scale: 0.96 }}
-                        >
-                          {label}
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                </motion.div>
-
-                {!selectedProgramme ? (
-                  <div className="text-center py-20 max-w-2xl mx-auto">
-                    <p className="text-lg text-muted">
-                      {isRTL
-                        ? 'هذا البرنامج غير مُعد بعد في لوحة الإدارة. يرجى إضافة/تحديث بياناته من Admin > Programmes.'
-                        : 'This programme is not configured yet. Please update it from Admin > Programmes.'}
-                    </p>
-                  </div>
-                ) : (
-                  <motion.div
-                    className="max-w-5xl mx-auto"
-                    variants={staggerContainer}
-                    initial="hidden"
-                    animate="visible"
-                  >
-                    <motion.div
-                      className="bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100"
-                      variants={staggerItem}
-                    >
-                      <div className="relative">
-                        <img
-                          src={selectedProgramme.image_url || FALLBACK_IMAGE}
-                          alt={getProgrammeTitle(selectedProgramme)}
-                          className="w-full h-72 md:h-[420px] object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/25 to-black/60" />
-                        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
-                          <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
-                            {getProgrammeTitle(selectedProgramme)}
-                          </h2>
-                          <p className="text-white/85 max-w-3xl leading-relaxed">
-                            {getProgrammeDescription(selectedProgramme)}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="p-6 md:p-10">
-                        <div className="prose prose-lg max-w-none">
-                          <RichText
-                            text={getProgrammeContent(selectedProgramme) || getProgrammeDescription(selectedProgramme)}
-                            mode="paragraphs"
-                            className="text-muted leading-relaxed space-y-6 text-lg"
-                            paragraphClassName="mb-4"
-                          />
-                        </div>
-
-                        {allImages.length > 1 && (
-                          <div className="mt-12 pt-8 border-t border-gray-100">
-                            <div className="flex items-center gap-3 mb-6">
-                              <Images size={24} className="text-primary" />
-                              <h3 className="text-2xl font-bold text-primary">
-                                {isRTL ? 'معرض الصور' : 'Photo Gallery'}
-                              </h3>
-                              <span className="text-sm text-muted bg-sand px-3 py-1 rounded-full">
-                                {allImages.length} {isRTL ? 'صور' : 'photos'}
-                              </span>
-                            </div>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                              {allImages.map((img, idx) => (
-                                <motion.button
-                                  key={idx}
-                                  onClick={() => openLightbox(idx)}
-                                  className="relative group overflow-hidden rounded-xl aspect-[4/3]"
-                                  whileHover={{ scale: 1.02 }}
-                                  transition={{ duration: 0.2 }}
-                                >
-                                  <img
-                                    src={img}
-                                    alt={`${getProgrammeTitle(selectedProgramme)} - ${idx + 1}`}
-                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                  />
-                                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300" />
-                                </motion.button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="mt-10 pt-8 border-t border-gray-100">
-                          <div className="flex items-center gap-3 mb-6">
-                            <FileText className="text-primary" size={22} />
-                            <h3 className="text-2xl font-bold text-primary">
-                              {isRTL ? 'أخبار البرنامج' : 'Programme News'}
-                            </h3>
-                          </div>
-
-                          {newsLoading ? (
-                            <div className="flex items-center justify-center py-10">
-                              <Loader2 size={32} className="text-primary animate-spin" />
-                            </div>
-                          ) : programmeNews.length === 0 ? (
-                            <p className="text-muted">
-                              {isRTL ? 'لا توجد أخبار لهذا البرنامج حالياً.' : 'No news for this programme yet.'}
-                            </p>
-                          ) : (
-                            <motion.div
-                              className="grid md:grid-cols-2 gap-6"
-                              variants={staggerContainer}
-                              initial="hidden"
-                              animate="visible"
-                            >
-                              {programmeNews.map((n) => (
-                                <motion.article
-                                  key={n.id}
-                                  className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition-all"
-                                  variants={staggerItem}
-                                  whileHover={{ y: -4 }}
-                                  transition={{ duration: 0.2 }}
-                                >
-                                  <Link to={`/news/${n.id}`} className="block">
-                                    <div className="relative overflow-hidden">
-                                      <img
-                                        src={n.image_url || FALLBACK_IMAGE}
-                                        alt={getNewsTitle(n)}
-                                        className="w-full h-44 object-cover"
-                                      />
-                                    </div>
-                                    <div className="p-5">
-                                      <div className="flex items-center gap-2 text-sm text-muted mb-2">
-                                        <Calendar size={16} />
-                                        <span>{new Date(n.published_at).toLocaleDateString()}</span>
-                                      </div>
-                                      <h4 className="text-lg font-bold text-primary mb-2 line-clamp-2">
-                                        {getNewsTitle(n)}
-                                      </h4>
-                                      <p className="text-muted line-clamp-2">{getNewsExcerpt(n)}</p>
-                                    </div>
-                                  </Link>
-                                </motion.article>
-                              ))}
-                            </motion.div>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  </motion.div>
-                )}
-              </>
-            )}
+            <div className="max-w-5xl mx-auto">
+              <motion.div
+                className="bg-sand p-10 rounded-lg"
+                variants={fadeInUp}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+              >
+                <h2 className="text-3xl md:text-4xl font-bold text-primary mb-6">
+                  {c('intro_title', isRTL ? 'برامجنا' : 'Our Programmes')}
+                </h2>
+                <p className="text-lg text-muted leading-relaxed mb-4">
+                  {c(
+                    'intro_p1',
+                    isRTL
+                      ? 'نقدم مجموعة من البرامج المجتمعية التي تدعم مختلف الفئات العمرية وتساعد على بناء مجتمع قوي ومترابط.'
+                      : 'We run a range of community programmes that support different age groups and help build a strong, connected community.'
+                  )}
+                </p>
+                <p className="text-lg text-muted leading-relaxed">
+                  {c(
+                    'intro_p2',
+                    isRTL
+                      ? 'اختر برنامجًا من التبويبات أدناه لتعرف المزيد عن أهدافه وأنشطته وأحدث أخباره.'
+                      : 'Select a programme from the tabs below to learn more about its aims, activities, and latest news.'
+                  )}
+                </p>
+              </motion.div>
+            </div>
           </div>
         </section>
 
-        <AnimatePresence>
-          {lightboxOpen && allImages.length > 0 && (
-            <motion.div
-              className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={closeLightbox}
-            >
-              <button
-                onClick={closeLightbox}
-                className="absolute top-6 right-6 text-white/70 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors z-10"
+        {/* Programmes (single page, no navigation) */}
+        <section className="py-20 bg-sand">
+          <div className="container mx-auto px-4">
+            <div className="max-w-6xl mx-auto">
+              <motion.div
+                className="text-center mb-10"
+                variants={fadeInUp}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
               >
-                <X size={28} />
-              </button>
+                <h2 className="text-4xl font-bold text-primary mb-4">
+                  {c('programmes_title', isRTL ? 'استكشف برامجنا' : 'Explore Our Programmes')}
+                </h2>
+                <motion.div
+                  className="w-24 h-1 bg-accent mx-auto mb-6"
+                  variants={scaleIn}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true }}
+                />
+                <p className="text-lg text-muted max-w-3xl mx-auto">
+                  {c(
+                    'programmes_intro',
+                    isRTL
+                      ? 'كل برنامج مصمم لدعم المجتمع عبر أنشطة وخدمات مناسبة. يمكن تعديل محتوى الصفحة من لوحة الأدمن (Page Content → Programmes).'
+                      : 'Each programme is designed to support the community through relevant activities and services. You can edit this page from Admin (Page Content → Programmes).'
+                  )}
+                </p>
+              </motion.div>
 
-              <div className="absolute top-6 left-1/2 -translate-x-1/2 text-white/60 text-sm font-medium">
-                {lightboxIndex + 1} / {allImages.length}
-              </div>
-
-              {allImages.length > 1 && (
-                <>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      goPrev();
-                    }}
-                    className="absolute left-4 md:left-8 text-white/70 hover:text-white p-3 rounded-full hover:bg-white/10 transition-colors z-10"
-                  >
-                    <ChevronLeft size={36} />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      goNext();
-                    }}
-                    className="absolute right-4 md:right-8 text-white/70 hover:text-white p-3 rounded-full hover:bg-white/10 transition-colors z-10"
-                  >
-                    <ChevronRight size={36} />
-                  </button>
-                </>
-              )}
-
-              <motion.img
-                key={lightboxIndex}
-                src={allImages[lightboxIndex]}
-                alt={`${selectedProgramme ? getProgrammeTitle(selectedProgramme) : 'Programme'} - ${lightboxIndex + 1}`}
-                className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.2 }}
-                onClick={(e) => e.stopPropagation()}
-              />
-
-              {allImages.length > 1 && (
-                <div
-                  className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {allImages.map((img, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setLightboxIndex(idx)}
-                      className={`w-12 h-9 rounded overflow-hidden border-2 transition-all ${
-                        idx === lightboxIndex
-                          ? 'border-white scale-110'
-                          : 'border-transparent opacity-50 hover:opacity-80'
-                      }`}
-                    >
-                      <img src={img} alt="" className="w-full h-full object-cover" />
-                    </button>
-                  ))}
+              {/* Tabs */}
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                <div className="border-b border-gray-100 bg-white">
+                  <div className="flex flex-wrap gap-2 p-4 justify-center">
+                    {CORE_PROGRAMMES.map((tab) => {
+                      const isActive = tab.slug === activeSlug;
+                      return (
+                        <button
+                          key={tab.slug}
+                          onClick={() => onTabClick(tab.slug)}
+                          className={`px-5 py-2.5 rounded-xl font-semibold transition-all border-2 ${
+                            isActive
+                              ? 'bg-primary text-white border-primary'
+                              : 'bg-white text-primary border-transparent hover:border-primary/30'
+                          }`}
+                        >
+                          {getProgrammeTitle(tab.slug)}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
 
-        <section className="py-16 bg-sand">
+                {/* Tab body */}
+                <div className="p-6 md:p-10">
+                  {loadingProgrammes ? (
+                    <div className="flex items-center justify-center py-16">
+                      <Loader2 size={44} className="text-primary animate-spin" />
+                    </div>
+                  ) : (
+                    <motion.div
+                      variants={fadeInUp}
+                      initial="hidden"
+                      animate="visible"
+                      key={activeSlug}
+                      className="space-y-10"
+                    >
+                      {/* Hero */}
+                      <div className="grid md:grid-cols-2 gap-8 items-start">
+                        <div className="relative overflow-hidden rounded-2xl border border-gray-100">
+                          <img
+                            src={getProgrammeHero(activeProgramme)}
+                            alt={getProgrammeTitle(activeSlug)}
+                            className="w-full h-72 md:h-96 object-cover"
+                            loading="lazy"
+                          />
+                        </div>
+                        <div>
+                          <h3 className="text-3xl font-bold text-primary mb-4">
+                            {getProgrammeTitle(activeSlug)}
+                          </h3>
+
+                          {activeProgramme ? (
+                            <>
+                              <p className="text-lg text-muted leading-relaxed mb-5">
+                                {getProgrammeDescription(activeProgramme)}
+                              </p>
+
+                              {getProgrammeContent(activeProgramme) ? (
+                                <div className="space-y-4">
+                                  {splitParagraphs(getProgrammeContent(activeProgramme)).map((p, idx) => (
+                                    <p key={idx} className="text-muted leading-relaxed">
+                                      {p}
+                                    </p>
+                                  ))}
+                                </div>
+                              ) : null}
+                            </>
+                          ) : (
+                            <p className="text-lg text-muted leading-relaxed">
+                              {isRTL
+                                ? 'سيتم إضافة تفاصيل هذا البرنامج قريبًا.'
+                                : 'Programme details will be available soon.'}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Gallery */}
+                      {activeProgramme && Array.isArray(activeProgramme.gallery_images) && activeProgramme.gallery_images.length > 0 ? (
+                        <div>
+                          <h4 className="text-2xl font-bold text-primary mb-4">
+                            {c('gallery_title', isRTL ? 'صور البرنامج' : 'Programme Photos')}
+                          </h4>
+                          <motion.div
+                            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                            variants={staggerContainer}
+                            initial="hidden"
+                            whileInView="visible"
+                            viewport={{ once: true }}
+                          >
+                            {activeProgramme.gallery_images.map((url, idx) => (
+                              <motion.div key={idx} variants={staggerItem} className="overflow-hidden rounded-xl border border-gray-100">
+                                <img src={url} alt="" className="w-full h-48 object-cover hover:scale-105 transition-transform duration-500" loading="lazy" />
+                              </motion.div>
+                            ))}
+                          </motion.div>
+                        </div>
+                      ) : null}
+
+                      {/* Programme news */}
+                      <div>
+                        <h4 className="text-2xl font-bold text-primary mb-4">
+                          {c('news_title', isRTL ? 'أخبار البرنامج' : 'Programme News')}
+                        </h4>
+
+                        {loadingNews ? (
+                          <div className="flex items-center justify-center py-10">
+                            <Loader2 size={32} className="text-primary animate-spin" />
+                          </div>
+                        ) : activeNews.length === 0 ? (
+                          <div className="bg-sand/50 border border-gray-100 rounded-xl p-6">
+                            <p className="text-muted">
+                              {c('news_empty', isRTL ? 'لا توجد أخبار مرتبطة بهذا البرنامج حاليًا.' : 'There are no news items linked to this programme yet.')}
+                            </p>
+                          </div>
+                        ) : (
+                          <motion.div
+                            className="grid md:grid-cols-2 gap-6"
+                            variants={staggerContainer}
+                            initial="hidden"
+                            whileInView="visible"
+                            viewport={{ once: true }}
+                          >
+                            {activeNews.map((a) => (
+                              <motion.article
+                                key={a.id}
+                                variants={staggerItem}
+                                className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+                              >
+                                <div className="relative overflow-hidden">
+                                  <img
+                                    src={a.image_url || 'https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=800'}
+                                    alt={a.title}
+                                    className="w-full h-44 object-cover"
+                                    loading="lazy"
+                                  />
+                                </div>
+                                <div className="p-5">
+                                  <div className="flex items-center gap-3 text-sm text-muted mb-2">
+                                    <span className="inline-flex items-center gap-2">
+                                      <Calendar size={16} />
+                                      {new Date(a.published_at).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' })}
+                                    </span>
+                                  </div>
+                                  <h5 className="text-lg font-bold text-primary mb-2 line-clamp-2">{a.title}</h5>
+                                  <p className="text-muted leading-relaxed line-clamp-3 mb-4">{a.excerpt}</p>
+                                  <Link
+                                    to={`/news/${a.id}`}
+                                    className="text-primary font-semibold hover:text-accent transition-colors"
+                                  >
+                                    {isRTL ? 'اقرأ المزيد' : 'Read More'}
+                                  </Link>
+                                </div>
+                              </motion.article>
+                            ))}
+                          </motion.div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA (editable from Page Content -> Programmes) */}
+        <section className="py-16 bg-white">
           <div className="container mx-auto px-4">
             <motion.div
-              className="max-w-4xl mx-auto bg-white p-10 rounded-lg shadow-lg text-center"
+              className="max-w-5xl mx-auto bg-primary text-white p-10 rounded-2xl"
               variants={scaleIn}
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
             >
-              <h2 className="text-3xl font-bold text-primary mb-4">
-                {isRTL ? 'انضم إلى برامجنا' : 'Join Our Programmes'}
+              <h2 className="text-3xl font-bold mb-4">
+                {c('cta_title', isRTL ? 'انضم إلى برامجنا' : 'Join Our Programmes')}
               </h2>
-              <p className="text-lg text-muted mb-6">
-                {isRTL
-                  ? 'سواء كنت تبحث عن المشاركة أو التطوع أو دعم مبادراتنا، فهناك مكان لك في برامج مجتمعنا.'
-                  : "Whether you're looking to participate, volunteer, or support our initiatives, there's a place for you in our community programmes."}
+              <p className="text-lg text-gray-200 mb-8 leading-relaxed">
+                {c(
+                  'cta_desc',
+                  isRTL
+                    ? 'سواء كنت تبحث عن المشاركة أو التطوع أو دعم مبادراتنا، فهناك مكان لك في برامج مجتمعنا.'
+                    : "Whether you're looking to participate, volunteer, or support our initiatives, there's a place for you in our community programmes."
+                )}
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Link
-                    to="/membership"
-                    className="bg-primary text-white px-8 py-3 rounded-lg hover:bg-secondary transition-colors font-semibold inline-block"
-                  >
-                    {isRTL ? 'كن عضواً' : 'Become a Member'}
-                  </Link>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Link
-                    to="/contact"
-                    className="bg-transparent border-2 border-primary text-primary px-8 py-3 rounded-lg hover:bg-primary hover:text-white transition-colors font-semibold inline-block"
-                  >
-                    {t('button.contactUs')}
-                  </Link>
-                </motion.div>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link
+                  to="/membership"
+                  className="bg-accent text-primary px-8 py-3 rounded-lg hover:bg-hover transition-colors font-semibold text-center"
+                >
+                  {c('cta_btn_member', isRTL ? 'كن عضواً' : 'Become a Member')}
+                </Link>
+                <Link
+                  to="/contact"
+                  className="bg-transparent border-2 border-white text-white px-8 py-3 rounded-lg hover:bg-white hover:text-primary transition-colors font-semibold text-center"
+                >
+                  {c('cta_btn_contact', t('button.contactUs'))}
+                </Link>
               </div>
             </motion.div>
           </div>
-        </section>
-
-        <section className="py-16 bg-primary text-white">
-          <motion.div
-            className="container mx-auto px-4 text-center"
-            variants={fadeInUp}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-          >
-            <h2 className="text-3xl font-bold mb-4">
-              {isRTL ? 'أحدث فرقاً' : 'Make a Difference'}
-            </h2>
-            <p className="text-xl text-gray-300 mb-6 max-w-2xl mx-auto">
-              {isRTL
-                ? 'دعمك يساعدنا على الاستمرار في تقديم الخدمات الحيوية لأعضاء مجتمعنا'
-                : 'Your support helps us continue providing vital services to our community members'}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link
-                  to="/get-involved/donate"
-                  className="bg-accent text-primary px-8 py-4 rounded-lg hover:bg-hover transition-colors font-semibold inline-block"
-                >
-                  {isRTL ? 'ادعم عملنا' : 'Support Our Work'}
-                </Link>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link
-                  to="/get-involved/volunteer"
-                  className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg hover:bg-white hover:text-primary transition-colors font-semibold inline-block"
-                >
-                  {isRTL ? 'تطوع معنا' : 'Volunteer With Us'}
-                </Link>
-              </motion.div>
-            </div>
-          </motion.div>
         </section>
       </div>
     </div>

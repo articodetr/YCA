@@ -86,7 +86,13 @@ export default function DynamicFormModal({
   };
 
   const validateField = (question: FormQuestion, value: any): string | null => {
-    if (question.is_required && !value) {
+    const isEmpty =
+      value === undefined ||
+      value === null ||
+      (typeof value === 'string' && value.trim() === '') ||
+      (Array.isArray(value) && value.length === 0);
+
+    if (question.is_required && isEmpty) {
       return language === 'ar' ? 'هذا الحقل مطلوب' : 'This field is required';
     }
 
@@ -152,15 +158,32 @@ export default function DynamicFormModal({
     const value = formData[question.id] || '';
     const error = errors[question.id];
 
+    // Volunteer form: "Areas of Interest" should be free text (no fixed checkboxes).
+    // We enforce this on the front-end so even if the DB question is still configured as checkboxes,
+    // users will type their interests instead of picking a limited list.
+    const normalizedEn = (question.question_text_en || '').trim().toLowerCase();
+    const isVolunteerAreasOfInterest =
+      formType === 'volunteer' &&
+      (question.id === 'v6' || normalizedEn === 'areas of interest');
+
+    const effectiveType = isVolunteerAreasOfInterest ? 'textarea' : question.question_type;
+    const effectivePlaceholder =
+      placeholder ||
+      (isVolunteerAreasOfInterest
+        ? language === 'ar'
+          ? 'اكتب مجالات التطوع التي ترغب بها (مثال: التعليم، دعم الشباب، الفعاليات، جمع التبرعات…)'
+          : 'Write the areas you would like to volunteer in (e.g., education programme, youth support, events, fundraising…)'
+        : undefined);
+
     const commonClasses = `w-full px-4 py-3 border ${error ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all`;
 
-    switch (question.question_type) {
+    switch (effectiveType) {
       case 'textarea':
         return (
           <textarea
             value={value}
             onChange={(e) => setFormData(prev => ({ ...prev, [question.id]: e.target.value }))}
-            placeholder={placeholder}
+            placeholder={effectivePlaceholder}
             className={`${commonClasses} min-h-[120px] resize-y`}
             rows={4}
           />

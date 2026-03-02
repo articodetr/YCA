@@ -14,17 +14,9 @@ interface Programme {
   content_ar?: string;
   image_url: string;
   gallery_images?: string[];
-  category:
-    | 'journey'
-    | 'women'
-    | 'women_children'
-    | 'elderly'
-    | 'youth'
-    | 'children'
-    | 'education'
-    | 'men'
-    | 'activities_sports'
-    | 'other';
+  // Category is kept for organisation/filtering in admin. The DB no longer enforces
+  // a strict CHECK constraint (see latest migration).
+  category: string;
   slug?: string;
   link: string;
   color: string;
@@ -42,7 +34,7 @@ const defaultForm = {
   content_ar: '',
   image_url: '',
   gallery_images: [] as string[],
-  category: 'youth' as Programme['category'],
+  category: 'youth' as string,
   slug: '',
   link: '',
   color: '#10B981',
@@ -50,6 +42,18 @@ const defaultForm = {
   is_active: true,
   order_number: 0,
 };
+
+const CATEGORY_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: 'women', label: 'Women' },
+  { value: 'women_children', label: 'Women & Children' },
+  { value: 'elderly', label: 'Elderly' },
+  { value: 'youth', label: 'Youth' },
+  { value: 'children', label: 'Children' },
+  { value: 'education', label: 'Education' },
+  { value: 'men', label: 'Men' },
+  { value: 'activities_sports', label: 'Activities & Sports' },
+  { value: 'journey', label: 'Journey Within' },
+];
 
 export default function ProgrammesManagement() {
   const [programmes, setProgrammes] = useState<Programme[]>([]);
@@ -281,7 +285,7 @@ export default function ProgrammesManagement() {
             </div>
 
             <div className="border-t pt-4">
-              <h3 className="text-base font-bold text-primary mb-3">Full Content (shown on the Programmes page)</h3>
+              <h3 className="text-base font-bold text-primary mb-3">Full Content (shown on detail page)</h3>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-primary mb-2">Full Content (English)</label>
@@ -337,28 +341,24 @@ export default function ProgrammesManagement() {
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                   placeholder="e.g. women, youth, journey-within"
+                  required
                 />
-                <p className="text-xs text-gray-400 mt-1">Used for the tab deep-link: /programmes?tab=<strong>{formData.slug || 'slug'}</strong></p>
+                <p className="text-xs text-gray-400 mt-1">Used in URL: /programmes/<strong>{formData.slug || 'slug'}</strong></p>
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-primary mb-2">Category *</label>
                 <select
                   value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value as Programme['category'] })}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                   required
                 >
-                  <option value="women">Women</option>
-                  <option value="women_children">Women & Children</option>
-                  <option value="men">Men</option>
-                  <option value="youth">Youth</option>
-                  <option value="children">Children</option>
-                  <option value="elderly">Elderly</option>
-                  <option value="education">Education</option>
-                  <option value="activities_sports">Activities & Sports</option>
-                  <option value="journey">Journey</option>
-                  <option value="other">Other</option>
+                  {CATEGORY_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -428,7 +428,7 @@ export default function ProgrammesManagement() {
       )}
 
       <div className="mb-6 flex flex-wrap gap-2">
-        {['all', 'women', 'women_children', 'men', 'youth', 'children', 'elderly', 'education', 'activities_sports', 'journey', 'other'].map((cat) => (
+        {['all', ...CATEGORY_OPTIONS.map((o) => o.value)].map((cat) => (
           <button
             key={cat}
             onClick={() => setFilterCategory(cat)}
@@ -440,10 +440,7 @@ export default function ProgrammesManagement() {
           >
             {cat === 'all'
               ? 'All'
-              : cat
-                  .split('_')
-                  .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-                  .join(' ')}
+              : (CATEGORY_OPTIONS.find((o) => o.value === cat)?.label || cat)}
           </button>
         ))}
       </div>
@@ -470,7 +467,7 @@ export default function ProgrammesManagement() {
               </div>
               <p className="text-sm text-muted mb-3 line-clamp-2">{programme.description}</p>
               {programme.slug && (
-                <p className="text-xs text-gray-400 mb-2">/programmes?tab={programme.slug}</p>
+                <p className="text-xs text-gray-400 mb-2">/programmes/{programme.slug}</p>
               )}
               <div className="flex items-center gap-2 mb-3">
                 <span

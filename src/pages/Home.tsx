@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import { useContent } from '../contexts/ContentContext';
 import { useSiteSettings } from '../contexts/SiteSettingsContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import RichText from '../components/RichText';
 import MembershipApplicationModal from '../components/modals/MembershipApplicationModal';
 import VolunteerApplicationModal from '../components/modals/VolunteerApplicationModal';
 import DonationModal from '../components/modals/DonationModal';
@@ -888,9 +889,12 @@ export default function Home() {
                     </h3>
 
                     {/* Description */}
-                    <p className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-3 min-h-[4rem]">
-                      {event.description}
-                    </p>
+                    <RichText
+                      text={language === 'ar' && (event as any).description_ar ? (event as any).description_ar : event.description}
+                      mode="inline"
+                      as="p"
+                      className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-3 min-h-[4rem]"
+                    />
 
                     {/* Read More Link */}
                     <Link

@@ -134,6 +134,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         { icon: UserCheck, label: 'Memberships', path: '/admin/memberships' },
         { icon: HandHeart, label: 'Volunteers', path: '/admin/volunteers' },
         { icon: Briefcase, label: 'Partnerships', path: '/admin/partnerships' },
+        { icon: Layers, label: 'Partners & Collaborations', path: '/admin/partnerships-collaborations' },
         { icon: MessageSquare, label: 'Messages', path: '/admin/contacts' },
         { icon: Heart, label: 'Donations', path: '/admin/donations' },
         { icon: Mail, label: 'Subscribers', path: '/admin/subscribers' },

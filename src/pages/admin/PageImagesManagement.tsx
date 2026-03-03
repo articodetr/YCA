@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Plus, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import ImageUploader from '../../components/admin/ImageUploader';
 import MultiImageUploader from '../../components/admin/MultiImageUploader';
+import { CORE_PROGRAMMES } from '../../lib/coreProgrammes';
 
 interface Programme {
   id: string;
@@ -14,14 +15,13 @@ interface Programme {
   content_ar?: string;
   image_url: string;
   gallery_images?: string[];
-  // Category is kept for organisation/filtering in admin. The DB no longer enforces
-  // a strict CHECK constraint (see latest migration).
   category: string;
   slug?: string;
   link: string;
   color: string;
   icon: string;
   is_active: boolean;
+  is_core?: boolean;
   order_number: number;
 }
 
@@ -34,7 +34,7 @@ const defaultForm = {
   content_ar: '',
   image_url: '',
   gallery_images: [] as string[],
-  category: 'youth' as string,
+  category: 'youth',
   slug: '',
   link: '',
   color: '#10B981',
@@ -43,17 +43,18 @@ const defaultForm = {
   order_number: 0,
 };
 
-const CATEGORY_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: 'women', label: 'Women' },
-  { value: 'women_children', label: 'Women & Children' },
-  { value: 'elderly', label: 'Elderly' },
-  { value: 'youth', label: 'Youth' },
-  { value: 'children', label: 'Children' },
-  { value: 'education', label: 'Education' },
-  { value: 'men', label: 'Men' },
-  { value: 'activities_sports', label: 'Activities & Sports' },
-  { value: 'journey', label: 'Journey Within' },
+const APPROVED_CATEGORIES: Array<{ value: string; label: string }> = [
+  { value: 'women_children', label: "Women and Children’s Programme" },
+  { value: 'elderly', label: "Elderly's Programme" },
+  { value: 'youth', label: 'Youth Programme' },
+  { value: 'children', label: "Children's Programme" },
+  { value: 'education', label: 'Education Programme' },
+  { value: 'men', label: "Men's Programme" },
+  { value: 'activities_sports', label: 'Activities and Sports Programme' },
+  { value: 'journey_within', label: 'The Journey Within' },
 ];
+
+const CORE_SLUGS = new Set(CORE_PROGRAMMES.map((p) => p.slug));
 
 export default function ProgrammesManagement() {
   const [programmes, setProgrammes] = useState<Programme[]>([]);
@@ -62,6 +63,8 @@ export default function ProgrammesManagement() {
   const [editingProgramme, setEditingProgramme] = useState<Programme | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [formData, setFormData] = useState(defaultForm);
+  const [customCategory, setCustomCategory] = useState('');
+  const [categoryMode, setCategoryMode] = useState<'approved' | 'custom'>('approved');
 
   useEffect(() => {
     fetchProgrammes();
@@ -89,7 +92,11 @@ export default function ProgrammesManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.title || !formData.description) {
+    const effectiveCategory = categoryMode === 'custom'
+      ? (customCategory || '').trim()
+      : (formData.category || '').trim();
+
+    if (!formData.title || !formData.description || !effectiveCategory) {
       alert('Please fill in all required fields');
       return;
     }
@@ -104,7 +111,7 @@ export default function ProgrammesManagement() {
         content_ar: formData.content_ar,
         image_url: formData.image_url,
         gallery_images: formData.gallery_images,
-        category: formData.category,
+        category: effectiveCategory,
         slug: formData.slug || null,
         link: formData.link,
         color: formData.color,
@@ -140,6 +147,12 @@ export default function ProgrammesManagement() {
   };
 
   const handleDelete = async (id: string) => {
+    const programme = programmes.find((p) => p.id === id);
+    const isCore = Boolean(programme?.is_core) || (programme?.slug ? CORE_SLUGS.has(programme.slug) : false);
+    if (isCore) {
+      alert('Core programme tabs cannot be deleted. You can hide it by turning off Active (visible on website).');
+      return;
+    }
     if (!confirm('Are you sure you want to delete this programme?')) return;
 
     try {
@@ -176,6 +189,8 @@ export default function ProgrammesManagement() {
     setFormData(defaultForm);
     setEditingProgramme(null);
     setShowForm(false);
+    setCustomCategory('');
+    setCategoryMode('approved');
   };
 
   const startEdit = (programme: Programme) => {
@@ -197,13 +212,39 @@ export default function ProgrammesManagement() {
       is_active: programme.is_active,
       order_number: programme.order_number,
     });
+    const isApproved = APPROVED_CATEGORIES.some((c) => c.value === programme.category);
+    setCategoryMode(isApproved ? 'approved' : 'custom');
+    setCustomCategory(isApproved ? '' : (programme.category || ''));
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const categoryOptions = useMemo(() => {
+    // In addition to approved categories, show any existing categories to avoid "missing" values.
+    const existing = Array.from(new Set(programmes.map((p) => (p.category || '').trim()).filter(Boolean)))
+      .filter((v) => !APPROVED_CATEGORIES.some((c) => c.value === v))
+      .sort((a, b) => a.localeCompare(b));
+    return [...APPROVED_CATEGORIES, ...existing.map((v) => ({ value: v, label: v }))];
+  }, [programmes]);
+
+  const filterButtons = useMemo(() => {
+    const existing = Array.from(new Set(programmes.map((p) => (p.category || '').trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+    // Prefer approved categories order first, then any others.
+    const approvedOrdered = APPROVED_CATEGORIES.map((c) => c.value).filter((v) => existing.includes(v));
+    const remaining = existing.filter((v) => !approvedOrdered.includes(v));
+    return ['all', ...approvedOrdered, ...remaining];
+  }, [programmes]);
+
   const filteredProgrammes = filterCategory === 'all'
     ? programmes
-    : programmes.filter(p => p.category === filterCategory);
+    : programmes.filter(p => (p.category || '').trim() === filterCategory);
+
+  const getCategoryLabel = (value: string) => {
+    const approved = APPROVED_CATEGORIES.find((c) => c.value === value);
+    return approved?.label || value;
+  };
+
+  const isProgrammeCore = (p: Programme) => Boolean(p.is_core) || (p.slug ? CORE_SLUGS.has(p.slug) : false);
 
   if (loading) {
     return (
@@ -341,25 +382,54 @@ export default function ProgrammesManagement() {
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                   placeholder="e.g. women, youth, journey-within"
-                  required
                 />
                 <p className="text-xs text-gray-400 mt-1">Used in URL: /programmes/<strong>{formData.slug || 'slug'}</strong></p>
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-primary mb-2">Category *</label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  required
-                >
-                  {CATEGORY_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-4 mb-2">
+                  <label className="inline-flex items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      name="category_mode"
+                      checked={categoryMode === 'approved'}
+                      onChange={() => setCategoryMode('approved')}
+                    />
+                    Approved
+                  </label>
+                  <label className="inline-flex items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      name="category_mode"
+                      checked={categoryMode === 'custom'}
+                      onChange={() => setCategoryMode('custom')}
+                    />
+                    Custom
+                  </label>
+                </div>
+
+                {categoryMode === 'approved' ? (
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    required
+                  >
+                    {categoryOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={customCategory}
+                    onChange={(e) => setCustomCategory(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    placeholder="Enter category name"
+                    required
+                  />
+                )}
               </div>
             </div>
 
@@ -428,7 +498,7 @@ export default function ProgrammesManagement() {
       )}
 
       <div className="mb-6 flex flex-wrap gap-2">
-        {['all', ...CATEGORY_OPTIONS.map((o) => o.value)].map((cat) => (
+        {filterButtons.map((cat) => (
           <button
             key={cat}
             onClick={() => setFilterCategory(cat)}
@@ -438,9 +508,7 @@ export default function ProgrammesManagement() {
                 : 'bg-gray-200 text-primary hover:bg-gray-300'
             }`}
           >
-            {cat === 'all'
-              ? 'All'
-              : (CATEGORY_OPTIONS.find((o) => o.value === cat)?.label || cat)}
+            {cat === 'all' ? 'All' : getCategoryLabel(cat)}
           </button>
         ))}
       </div>
@@ -474,7 +542,7 @@ export default function ProgrammesManagement() {
                   className="px-3 py-1 rounded-full text-sm font-semibold text-white"
                   style={{ backgroundColor: programme.color }}
                 >
-                  {programme.category}
+                  {getCategoryLabel(programme.category)}
                 </span>
               </div>
               <div className="flex gap-2">
@@ -487,7 +555,13 @@ export default function ProgrammesManagement() {
                 </button>
                 <button
                   onClick={() => handleDelete(programme.id)}
-                  className="flex-1 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
+                  disabled={isProgrammeCore(programme)}
+                  title={isProgrammeCore(programme) ? 'Core tabs cannot be deleted. Use Active toggle to hide.' : 'Delete programme'}
+                  className={`flex-1 bg-red-500 text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 ${
+                    isProgrammeCore(programme)
+                      ? 'opacity-50 cursor-not-allowed'
+                      : 'hover:bg-red-600'
+                  }`}
                 >
                   <Trash2 size={16} />
                   Delete

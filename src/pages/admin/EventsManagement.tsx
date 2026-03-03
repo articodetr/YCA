@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search, Loader2, X, Ticket } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import ImageUploader from '../../components/admin/ImageUploader';
+import RichText from '../../components/RichText';
 
 interface Event {
   id: string;
@@ -66,6 +67,12 @@ export default function EventsManagement() {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [formData, setFormData] = useState<FormState>(defaultForm);
   const [saving, setSaving] = useState(false);
+  const [linkHelper, setLinkHelper] = useState({
+    textEn: '',
+    urlEn: '',
+    textAr: '',
+    urlAr: '',
+  });
 
   useEffect(() => {
     fetchEvents();
@@ -89,6 +96,8 @@ export default function EventsManagement() {
   };
 
   const handleOpenModal = (event?: Event) => {
+    // Reset link helper fields whenever the modal opens
+    setLinkHelper({ textEn: '', urlEn: '', textAr: '', urlAr: '' });
     if (event) {
       setEditingEvent(event);
       const ev = event as any;
@@ -120,6 +129,33 @@ export default function EventsManagement() {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingEvent(null);
+    setLinkHelper({ textEn: '', urlEn: '', textAr: '', urlAr: '' });
+  };
+
+  const insertMarkdownLink = (field: 'description' | 'description_ar') => {
+    const isArabic = field === 'description_ar';
+    const label = (isArabic ? linkHelper.textAr : linkHelper.textEn).trim();
+    const url = (isArabic ? linkHelper.urlAr : linkHelper.urlEn).trim();
+
+    if (!label || !url) {
+      alert(isArabic ? 'أدخل نص الرابط والرابط (URL) أولاً' : 'Please enter both the link text and URL first');
+      return;
+    }
+
+    const markdown = `[${label}](${url})`;
+    const current = (formData as any)[field] || '';
+    const spacer = current && !current.endsWith('\n') ? '\n' : '';
+
+    setFormData({
+      ...formData,
+      [field]: `${current}${spacer}${markdown}`,
+    } as any);
+
+    setLinkHelper((prev) =>
+      isArabic
+        ? { ...prev, textAr: '', urlAr: '' }
+        : { ...prev, textEn: '', urlEn: '' }
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -259,7 +295,12 @@ export default function EventsManagement() {
                   <tr key={event.id} className="hover:bg-gray-50">
                     <td className="px-3 py-3 sm:py-4">
                       <p className="font-medium text-gray-900">{event.title}</p>
-                      <p className="text-gray-500 line-clamp-1 hidden sm:block">{event.description}</p>
+                      <RichText
+                        text={event.description}
+                        mode="inline"
+                        as="p"
+                        className="text-gray-500 line-clamp-1 hidden sm:block"
+                      />
                     </td>
                     <td className="px-3 py-3 sm:py-4 text-gray-600">{event.category}</td>
                     <td className="px-3 py-3 sm:py-4 text-gray-600 whitespace-nowrap">
@@ -519,6 +560,33 @@ export default function EventsManagement() {
                   className={inputCls}
                   required
                 />
+                <div className="mt-3 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                  <p className="text-xs text-gray-600 mb-2 font-medium">Insert a clickable link</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <input
+                      value={linkHelper.textEn}
+                      onChange={(e) => setLinkHelper({ ...linkHelper, textEn: e.target.value })}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      placeholder="Link text (e.g., Register here)"
+                    />
+                    <input
+                      value={linkHelper.urlEn}
+                      onChange={(e) => setLinkHelper({ ...linkHelper, urlEn: e.target.value })}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      placeholder="https://..."
+                    />
+                    <button
+                      type="button"
+                      onClick={() => insertMarkdownLink('description')}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold px-3 py-2"
+                    >
+                      Add link
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Links are stored as <span className="font-mono bg-white px-1.5 py-0.5 rounded border">[text](https://...)</span> and will appear clickable for users.
+                  </p>
+                </div>
                 <p className="text-xs text-gray-500 mt-2">
                   Links are supported. Use{' '}
                   <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">[link text](https://example.com)</span>
@@ -536,6 +604,34 @@ export default function EventsManagement() {
                   dir="rtl"
                   placeholder="أدخل الوصف بالعربية"
                 />
+                <div className="mt-3 bg-gray-50 border border-gray-200 rounded-lg p-3" dir="rtl">
+                  <p className="text-xs text-gray-600 mb-2 font-medium">إضافة رابط قابل للنقر</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2" dir="rtl">
+                    <input
+                      value={linkHelper.textAr}
+                      onChange={(e) => setLinkHelper({ ...linkHelper, textAr: e.target.value })}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      placeholder="نص الرابط (مثلاً: اضغط هنا للتسجيل)"
+                    />
+                    <input
+                      value={linkHelper.urlAr}
+                      onChange={(e) => setLinkHelper({ ...linkHelper, urlAr: e.target.value })}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      placeholder="https://..."
+                      dir="ltr"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => insertMarkdownLink('description_ar')}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold px-3 py-2"
+                    >
+                      إضافة الرابط
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2" dir="rtl">
+                    سيُحفظ الرابط بصيغة <span className="font-mono bg-white px-1.5 py-0.5 rounded border" dir="ltr">[نص الرابط](https://...)</span> وسيظهر قابلًا للضغط عند المستخدم.
+                  </p>
+                </div>
                 <p className="text-xs text-gray-500 mt-2" dir="rtl">
                   يمكنك إضافة روابط داخل النص. استخدم الصيغة:
                   {' '}

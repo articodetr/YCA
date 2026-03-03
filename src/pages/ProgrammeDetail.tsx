@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { CORE_PROGRAMMES, isCoreProgrammeSlug } from '../lib/coreProgrammes';
 
 const isUuid = (value: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
@@ -24,7 +23,9 @@ export default function ProgrammeDetail() {
       }
 
       // If the URL already has a core slug, redirect directly.
-      if (isCoreProgrammeSlug(key)) {
+      // If the URL is a slug (old links), redirect directly.
+      // The Programmes page will validate the tab and fall back if needed.
+      if (!isUuid(key)) {
         navigate(`/programmes?tab=${encodeURIComponent(key)}`, { replace: true });
         return;
       }
@@ -39,7 +40,7 @@ export default function ProgrammeDetail() {
             .maybeSingle();
 
           const slug = (data?.slug || '').trim();
-          if (slug && isCoreProgrammeSlug(slug)) {
+          if (slug) {
             navigate(`/programmes?tab=${encodeURIComponent(slug)}`, { replace: true });
             return;
           }
@@ -48,8 +49,8 @@ export default function ProgrammeDetail() {
         }
       }
 
-      // Unknown/legacy: fallback to first tab.
-      navigate(`/programmes?tab=${encodeURIComponent(CORE_PROGRAMMES[0].slug)}`, { replace: true });
+      // Unknown/legacy: fallback to Programmes page.
+      navigate('/programmes', { replace: true });
     };
 
     void go();

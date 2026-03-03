@@ -23,11 +23,11 @@ END $$;
 
 -- 2) Ensure approved core tabs exist (insert-only)
 INSERT INTO public.programmes_items (title, description, category, slug, is_active, order_number, is_core)
-SELECT 'Women and Children\'s Programme', 'Programme description (edit from Admin).', 'women_children', 'women-children', true, 1, true
+SELECT 'Women and Children''s Programme', 'Programme description (edit from Admin).', 'women_children', 'women-children', true, 1, true
 WHERE NOT EXISTS (SELECT 1 FROM public.programmes_items WHERE slug = 'women-children');
 
 INSERT INTO public.programmes_items (title, description, category, slug, is_active, order_number, is_core)
-SELECT 'Elderly\'s Programme', 'Programme description (edit from Admin).', 'elderly', 'elderly', true, 2, true
+SELECT 'Elderly''s Programme', 'Programme description (edit from Admin).', 'elderly', 'elderly', true, 2, true
 WHERE NOT EXISTS (SELECT 1 FROM public.programmes_items WHERE slug = 'elderly');
 
 INSERT INTO public.programmes_items (title, description, category, slug, is_active, order_number, is_core)
@@ -35,7 +35,7 @@ SELECT 'Youth Programme', 'Programme description (edit from Admin).', 'youth', '
 WHERE NOT EXISTS (SELECT 1 FROM public.programmes_items WHERE slug = 'youth');
 
 INSERT INTO public.programmes_items (title, description, category, slug, is_active, order_number, is_core)
-SELECT 'Children\'s Programme', 'Programme description (edit from Admin).', 'children', 'children', true, 4, true
+SELECT 'Children''s Programme', 'Programme description (edit from Admin).', 'children', 'children', true, 4, true
 WHERE NOT EXISTS (SELECT 1 FROM public.programmes_items WHERE slug = 'children');
 
 INSERT INTO public.programmes_items (title, description, category, slug, is_active, order_number, is_core)
@@ -43,7 +43,7 @@ SELECT 'Education Programme', 'Programme description (edit from Admin).', 'educa
 WHERE NOT EXISTS (SELECT 1 FROM public.programmes_items WHERE slug = 'education');
 
 INSERT INTO public.programmes_items (title, description, category, slug, is_active, order_number, is_core)
-SELECT 'Men\'s Programme', 'Programme description (edit from Admin).', 'men', 'men', true, 6, true
+SELECT 'Men''s Programme', 'Programme description (edit from Admin).', 'men', 'men', true, 6, true
 WHERE NOT EXISTS (SELECT 1 FROM public.programmes_items WHERE slug = 'men');
 
 INSERT INTO public.programmes_items (title, description, category, slug, is_active, order_number, is_core)

@@ -216,7 +216,13 @@ export default function TranslationBookingForm({ onComplete }: TranslationBookin
         setMemberDaysSinceJoin(diffDays);
       } else { setMembershipStatus('none'); setMemberDaysSinceJoin(0); }
 
-      const { count: wCount } = await supabase.from('wakala_applications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).in('status', ['submitted', 'in_progress', 'completed', 'approved']);
+      const { count: wCount } = await supabase
+        .from('wakala_applications')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        // Advisory Office bookings live in the same table; exclude them here.
+        .not('wakala_type', 'is', null)
+        .in('status', ['submitted', 'in_progress', 'completed', 'approved']);
       const { count: tCount } = await supabase.from('translation_requests').select('id', { count: 'exact', head: true }).eq('user_id', user.id);
       const { count: oCount } = await supabase.from('other_legal_requests').select('id', { count: 'exact', head: true }).eq('user_id', user.id);
       setPreviousRequestCount((wCount || 0) + (tCount || 0) + (oCount || 0));

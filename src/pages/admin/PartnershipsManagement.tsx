@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Search, Loader2, Download, Eye, X, CheckCircle, XCircle, Trash2, Pencil, Save, MessageSquare } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Search, Loader2, Download, Eye, X, CheckCircle, XCircle, Trash2, Pencil, Save, MessageSquare, Plus, Upload, ExternalLink } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface Partnership {
@@ -41,6 +41,19 @@ export default function PartnershipsManagement() {
   const [editData, setEditData] = useState<Record<string, any>>({});
   const [editResponses, setEditResponses] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [approveAdminId, setApproveAdminId] = useState<string>('');
+  const [approveSaving, setApproveSaving] = useState(false);
+  const [approveUploading, setApproveUploading] = useState(false);
+  const approveLogoInputRef = useRef<HTMLInputElement>(null);
+  const [approveData, setApproveData] = useState({
+    name: '',
+    website_url: '',
+    logo_url: '',
+    is_active: true,
+    sort_order: 0,
+  });
 
   useEffect(() => { fetchData(); }, []);
   useEffect(() => {
@@ -92,6 +105,125 @@ export default function PartnershipsManagement() {
     setSelected(p);
     setEditing(false);
     await fetchFormResponses(p.id);
+  };
+
+  const openApprove = async () => {
+    if (!selected) return;
+    setApproveData({
+      name: selected.organization_name || '',
+      website_url: '',
+      logo_url: '',
+      is_active: true,
+      sort_order: 0,
+    });
+    setShowApproveModal(true);
+
+    // Get admin session (needed for logo uploads)
+    try {
+      const { data } = await supabase.auth.getUser();
+      setApproveAdminId(data.user?.id || '');
+    } catch {
+      setApproveAdminId('');
+    }
+  };
+
+  const closeApprove = () => {
+    setShowApproveModal(false);
+    setApproveUploading(false);
+    setApproveSaving(false);
+    setApproveData({ name: '', website_url: '', logo_url: '', is_active: true, sort_order: 0 });
+  };
+
+  const uploadApproveLogo = async (file: File) => {
+    if (!approveAdminId) {
+      setToast({ message: 'Unable to upload: admin session not found', type: 'error' });
+      return;
+    }
+
+    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowed.includes(file.type)) {
+      setToast({ message: 'Unsupported file type (JPG/PNG/WebP only)', type: 'error' });
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setToast({ message: 'File is too large (max 2MB)', type: 'error' });
+      return;
+    }
+
+    try {
+      setApproveUploading(true);
+      const ext = file.name.split('.').pop() || 'png';
+      const path = `${approveAdminId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('partnerships-logos')
+        .upload(path, file, { cacheControl: '3600', upsert: false });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from('partnerships-logos').getPublicUrl(path);
+      setApproveData((prev) => ({ ...prev, logo_url: `${urlData.publicUrl}?t=${Date.now()}` }));
+      setToast({ message: 'Logo uploaded successfully', type: 'success' });
+    } catch (err: any) {
+      console.error('Logo upload error:', err);
+      setToast({ message: err?.message || 'Failed to upload logo', type: 'error' });
+    } finally {
+      setApproveUploading(false);
+    }
+  };
+
+  const approveAndAddToHome = async () => {
+    if (!selected) return;
+    const name = approveData.name.trim();
+    if (!name) {
+      setToast({ message: 'Partner name is required', type: 'error' });
+      return;
+    }
+
+    try {
+      setApproveSaving(true);
+
+      // Avoid duplicates
+      const { data: existing, error: existingError } = await supabase
+        .from('partnerships_collaborations')
+        .select('id')
+        .eq('name', name)
+        .limit(1);
+      if (existingError) throw existingError;
+      if (existing && existing.length > 0) {
+        setToast({ message: 'This partner already exists in the home page list', type: 'error' });
+        return;
+      }
+
+      const payload = {
+        name,
+        logo_url: approveData.logo_url.trim() || null,
+        website_url: approveData.website_url.trim() || null,
+        is_active: approveData.is_active,
+        sort_order: Number.isFinite(approveData.sort_order) ? approveData.sort_order : 0,
+      };
+
+      const { error: insertError } = await supabase
+        .from('partnerships_collaborations')
+        .insert([payload]);
+      if (insertError) throw insertError;
+
+      // Mark inquiry as completed (approved)
+      const { error: updateError } = await supabase
+        .from('partnership_inquiries')
+        .update({ status: 'completed', updated_at: new Date().toISOString() })
+        .eq('id', selected.id);
+      if (updateError) throw updateError;
+
+      setToast({ message: 'Approved and added to home page successfully', type: 'success' });
+      closeApprove();
+      await fetchData();
+      setSelected((prev) => (prev ? { ...prev, status: 'completed' } : null));
+    } catch (err) {
+      console.error('Approve error:', err);
+      setToast({ message: 'Failed to approve and add to home page', type: 'error' });
+    } finally {
+      setApproveSaving(false);
+    }
   };
 
   const startEditing = () => {
@@ -365,6 +497,19 @@ export default function PartnershipsManagement() {
               )}
 
               <div className="border-t border-gray-200 pt-4">
+                <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-2">Home Page Display</h3>
+                <p className="text-sm text-gray-600 mb-3">
+                  To show this partner on the home page (Partnerships &amp; Collaborations), you must approve it and add it to the list.
+                </p>
+                <button
+                  onClick={openApprove}
+                  className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <Plus className="w-4 h-4" /> Approve &amp; Add to Home Page
+                </button>
+              </div>
+
+              <div className="border-t border-gray-200 pt-4">
                 <label className="text-xs font-medium text-gray-500 uppercase mb-2 block">Update Status</label>
                 <div className="flex gap-2 flex-wrap">
                   {STATUS_OPTIONS.map(s => (
@@ -384,6 +529,124 @@ export default function PartnershipsManagement() {
         <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-lg shadow-xl flex items-center gap-2.5 ${toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'}`}>
           {toast.type === 'success' ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
           <span className="text-sm font-medium">{toast.message}</span>
+        </div>
+      )}
+
+      {showApproveModal && selected && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[60]">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Add to Partnerships &amp; Collaborations</h3>
+                <p className="text-sm text-gray-600 mt-1">This will control what appears on the home page.</p>
+              </div>
+              <button onClick={closeApprove} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-medium text-gray-500 uppercase">Official Name</label>
+                <input
+                  type="text"
+                  value={approveData.name}
+                  onChange={(e) => setApproveData((p) => ({ ...p, name: e.target.value }))}
+                  className="w-full mt-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-500 uppercase">Website URL</label>
+                <div className="relative">
+                  <ExternalLink className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="https://example.com"
+                    value={approveData.website_url}
+                    onChange={(e) => setApproveData((p) => ({ ...p, website_url: e.target.value }))}
+                    className="w-full mt-1 pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-500 uppercase">Logo</label>
+                <div className="flex items-center gap-3 mt-1">
+                  <button
+                    type="button"
+                    onClick={() => approveLogoInputRef.current?.click()}
+                    disabled={approveUploading}
+                    className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {approveUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                    Upload logo
+                  </button>
+                  <input
+                    ref={approveLogoInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) uploadApproveLogo(file);
+                      // reset input so same file can be re-selected
+                      if (e.target) e.target.value = '';
+                    }}
+                  />
+
+                  <input
+                    type="text"
+                    placeholder="Or paste logo URL"
+                    value={approveData.logo_url}
+                    onChange={(e) => setApproveData((p) => ({ ...p, logo_url: e.target.value }))}
+                    className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-gray-500 uppercase">Sort Order</label>
+                  <input
+                    type="number"
+                    value={approveData.sort_order}
+                    onChange={(e) => setApproveData((p) => ({ ...p, sort_order: Number(e.target.value) }))}
+                    className="w-full mt-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <label className="flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={approveData.is_active}
+                      onChange={(e) => setApproveData((p) => ({ ...p, is_active: e.target.checked }))}
+                      className="w-4 h-4"
+                    />
+                    Show on home page
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                type="button"
+                onClick={closeApprove}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={approveAndAddToHome}
+                disabled={approveSaving}
+                className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {approveSaving ? <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Saving...</span> : 'Approve & Add'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -7,7 +7,7 @@ import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../lib/animati
 import { useLanguage } from '../contexts/LanguageContext';
 import { useContent } from '../contexts/ContentContext';
 import { supabase } from '../lib/supabase';
-import { CORE_PROGRAMMES, isCoreProgrammeSlug } from '../lib/coreProgrammes';
+import { CORE_PROGRAMMES } from '../lib/coreProgrammes';
 
 interface Programme {
   id: string;
@@ -62,23 +62,36 @@ export default function Programmes() {
 
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const initialTab = (searchParams.get('tab') || '').trim();
-  const [activeSlug, setActiveSlug] = useState<string>(
-    isCoreProgrammeSlug(initialTab) ? initialTab : CORE_PROGRAMMES[0].slug
-  );
+  // Tabs are fully driven by DB rows in programmes_items (admin can add/hide/edit).
+  // We keep CORE_PROGRAMMES only for i18n fallbacks and image fallbacks.
+  const [activeSlug, setActiveSlug] = useState<string>('');
 
   const [programmes, setProgrammes] = useState<Programme[]>([]);
   const [loadingProgrammes, setLoadingProgrammes] = useState(true);
   const [activeNews, setActiveNews] = useState<Article[]>([]);
   const [loadingNews, setLoadingNews] = useState(false);
 
+  const activeProgrammeSlugs = useMemo(() => {
+    const slugs = programmes
+      .map((p) => (p.slug || '').trim())
+      .filter(Boolean);
+    return slugs.length > 0 ? slugs : CORE_PROGRAMMES.map((p) => p.slug);
+  }, [programmes]);
+
+  const tabSlugs = useMemo(() => {
+    const slugs = programmes
+      .map((p) => (p.slug || '').trim())
+      .filter(Boolean);
+    return slugs.length > 0 ? slugs : CORE_PROGRAMMES.map((p) => p.slug);
+  }, [programmes]);
+
   useEffect(() => {
     const tab = (searchParams.get('tab') || '').trim();
-    if (tab && isCoreProgrammeSlug(tab) && tab !== activeSlug) {
+    if (tab && activeProgrammeSlugs.includes(tab) && tab !== activeSlug) {
       setActiveSlug(tab);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, [searchParams, activeProgrammeSlugs]);
 
   useEffect(() => {
     fetchProgrammes();
@@ -117,6 +130,24 @@ export default function Programmes() {
       setLoadingProgrammes(false);
     }
   };
+
+  // After programmes load: choose an active tab.
+  useEffect(() => {
+    if (loadingProgrammes) return;
+    if (activeProgrammeSlugs.length === 0) return;
+
+    const tab = (searchParams.get('tab') || '').trim();
+    if (tab && activeProgrammeSlugs.includes(tab)) {
+      setActiveSlug(tab);
+      return;
+    }
+
+    if (!activeSlug || !activeProgrammeSlugs.includes(activeSlug)) {
+      setActiveSlug(activeProgrammeSlugs[0]);
+      setSearchParams({ tab: activeProgrammeSlugs[0] }, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingProgrammes, activeProgrammeSlugs.join('|')]);
 
   const fetchProgrammeNews = async (programmeId: string | null) => {
     if (!programmeId) {
@@ -164,8 +195,9 @@ export default function Programmes() {
   const getProgrammeDescription = (p: Programme) => (isRTL && p.description_ar ? p.description_ar : p.description);
   const getProgrammeContent = (p: Programme) => (isRTL && p.content_ar ? p.content_ar : (p.content || ''));
   const getProgrammeHero = (p: Programme | null) => {
-    if (!p) return FALLBACK_IMAGES_BY_SLUG[activeSlug];
-    return p.image_url || FALLBACK_IMAGES_BY_SLUG[p.slug || activeSlug] || FALLBACK_IMAGES_BY_SLUG[CORE_PROGRAMMES[0].slug];
+    const fallbackSlug = activeSlug || CORE_PROGRAMMES[0].slug;
+    if (!p) return FALLBACK_IMAGES_BY_SLUG[fallbackSlug] || FALLBACK_IMAGES_BY_SLUG[CORE_PROGRAMMES[0].slug];
+    return p.image_url || FALLBACK_IMAGES_BY_SLUG[p.slug || fallbackSlug] || FALLBACK_IMAGES_BY_SLUG[CORE_PROGRAMMES[0].slug];
   };
 
   return (
@@ -248,19 +280,19 @@ export default function Programmes() {
               <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
                 <div className="border-b border-gray-100 bg-white">
                   <div className="flex flex-wrap gap-2 p-4 justify-center">
-                    {CORE_PROGRAMMES.map((tab) => {
-                      const isActive = tab.slug === activeSlug;
+                    {tabSlugs.map((slug) => {
+                      const isActive = slug === activeSlug;
                       return (
                         <button
-                          key={tab.slug}
-                          onClick={() => onTabClick(tab.slug)}
+                          key={slug}
+                          onClick={() => onTabClick(slug)}
                           className={`px-5 py-2.5 rounded-xl font-semibold transition-all border-2 ${
                             isActive
                               ? 'bg-primary text-white border-primary'
                               : 'bg-white text-primary border-transparent hover:border-primary/30'
                           }`}
                         >
-                          {getProgrammeTitle(tab.slug)}
+                          {getProgrammeTitle(slug)}
                         </button>
                       );
                     })}

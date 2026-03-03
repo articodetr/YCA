@@ -11,6 +11,8 @@ import {
   MessageSquare,
   Clock,
   TrendingUp,
+  Building2,
+  FileText,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Link } from 'react-router-dom';
@@ -31,6 +33,28 @@ interface Stats {
   expiringMembers: any[];
   expiredMembers: number;
   urgentExpiry: number;
+}
+
+type ServiceSeriesPoint = { date: string; count: number };
+
+interface ServiceStatsPayload {
+  range: { start: string; end: string; days: number };
+  advisory: {
+    total_range: number;
+    upcoming: number;
+    completed_range: number;
+    cancelled_range: number;
+    no_show_range: number;
+    series: ServiceSeriesPoint[];
+  };
+  wakala: {
+    paid_total_range: number;
+    open_paid: number;
+    completed_paid_range: number;
+    rejected_paid_range: number;
+    revenue_range: number;
+    series: ServiceSeriesPoint[];
+  };
 }
 
 const quickActions = [
@@ -61,9 +85,46 @@ export default function Dashboard() {
   });
   const [loading, setLoading] = useState(true);
 
+  const [serviceDays, setServiceDays] = useState<7 | 30 | 90>(30);
+  const [serviceStats, setServiceStats] = useState<ServiceStatsPayload | null>(null);
+  const [serviceStatsLoading, setServiceStatsLoading] = useState(false);
+
   useEffect(() => {
     fetchStats();
   }, []);
+
+  useEffect(() => {
+    fetchServiceStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serviceDays]);
+
+  const toLocalISODate = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  const fetchServiceStats = async () => {
+    try {
+      setServiceStatsLoading(true);
+      const end = new Date();
+      const start = new Date();
+      start.setDate(start.getDate() - (serviceDays - 1));
+
+      const { data, error } = await supabase.rpc('get_admin_service_stats', {
+        start_date: toLocalISODate(start),
+        end_date: toLocalISODate(end),
+      });
+      if (error) throw error;
+      setServiceStats((data as any) || null);
+    } catch (err) {
+      console.error('Error fetching service stats:', err);
+      setServiceStats(null);
+    } finally {
+      setServiceStatsLoading(false);
+    }
+  };
 
   const fetchStats = async () => {
     try {
@@ -141,6 +202,23 @@ export default function Dashboard() {
     const days = Math.floor(hours / 24);
     if (days < 7) return `${days}d ago`;
     return new Date(dateStr).toLocaleDateString();
+  };
+
+  const renderMiniBars = (series: ServiceSeriesPoint[]) => {
+    const points = (series || []).slice(-14);
+    const max = Math.max(1, ...points.map((p) => p.count || 0));
+    return (
+      <div className="flex items-end gap-1 h-10">
+        {points.map((p) => (
+          <div
+            key={p.date}
+            className="flex-1 rounded-sm bg-slate-200"
+            title={`${p.date}: ${p.count}`}
+            style={{ height: `${Math.round((p.count / max) * 100)}%` }}
+          />
+        ))}
+      </div>
+    );
   };
 
   if (loading) {
@@ -280,6 +358,135 @@ export default function Dashboard() {
               </Link>
             );
           })}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl border border-slate-200/80 overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-slate-900">Service Statistics</h2>
+              <p className="text-xs text-slate-500">Paid Wakala only • Last {serviceDays} days</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {[7, 30, 90].map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setServiceDays(d as 7 | 30 | 90)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                  serviceDays === d
+                    ? 'bg-emerald-600 text-white border-emerald-600'
+                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                {d}d
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="p-5">
+          {serviceStatsLoading ? (
+            <div className="flex items-center gap-2 text-sm text-slate-500">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Loading service statistics...
+            </div>
+          ) : !serviceStats ? (
+            <div className="text-sm text-slate-500">
+              Service statistics are not available yet. Make sure the database migration for <span className="font-mono">get_admin_service_stats</span> is applied.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <Link
+                to="/admin/availability"
+                className="block rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-sm transition-all p-4"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center">
+                      <Building2 className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">Advisory Office</p>
+                      <p className="text-[11px] text-slate-500">{serviceStats.range.start} → {serviceStats.range.end}</p>
+                    </div>
+                  </div>
+                  <ArrowUpRight className="w-4 h-4 text-slate-300" />
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                  <div>
+                    <p className="text-xs text-slate-500">Total</p>
+                    <p className="text-lg font-bold text-slate-900">{serviceStats.advisory.total_range}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Upcoming</p>
+                    <p className="text-lg font-bold text-slate-900">{serviceStats.advisory.upcoming}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Completed</p>
+                    <p className="text-lg font-bold text-slate-900">{serviceStats.advisory.completed_range}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Cancelled/No-show</p>
+                    <p className="text-lg font-bold text-slate-900">{serviceStats.advisory.cancelled_range + serviceStats.advisory.no_show_range}</p>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 rounded-lg p-3">
+                  <p className="text-[11px] text-slate-500 mb-2">Last 14 days trend</p>
+                  {renderMiniBars(serviceStats.advisory.series)}
+                </div>
+              </Link>
+
+              <Link
+                to="/admin/wakala-applications"
+                className="block rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-sm transition-all p-4"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">Wakala Services</p>
+                      <p className="text-[11px] text-slate-500">Paid only • {serviceStats.range.start} → {serviceStats.range.end}</p>
+                    </div>
+                  </div>
+                  <ArrowUpRight className="w-4 h-4 text-slate-300" />
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                  <div>
+                    <p className="text-xs text-slate-500">Paid apps</p>
+                    <p className="text-lg font-bold text-slate-900">{serviceStats.wakala.paid_total_range}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Open</p>
+                    <p className="text-lg font-bold text-slate-900">{serviceStats.wakala.open_paid}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Completed</p>
+                    <p className="text-lg font-bold text-slate-900">{serviceStats.wakala.completed_paid_range}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Revenue</p>
+                    <p className="text-lg font-bold text-slate-900">\u00A3{Number(serviceStats.wakala.revenue_range || 0).toLocaleString()}</p>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 rounded-lg p-3">
+                  <p className="text-[11px] text-slate-500 mb-2">Last 14 days trend</p>
+                  {renderMiniBars(serviceStats.wakala.series)}
+                </div>
+              </Link>
+            </div>
+          )}
         </div>
       </div>
 

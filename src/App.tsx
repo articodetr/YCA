@@ -75,6 +75,7 @@ import BusinessSupportersManagement from './pages/admin/BusinessSupportersManage
 import FormQuestionsManagement from './pages/admin/FormQuestionsManagement';
 import JobPostingsManagement from './pages/admin/JobPostingsManagement';
 import WakalaApplicationsManagement from './pages/admin/WakalaApplicationsManagement';
+import PartnershipsCollaborationsManagement from './pages/admin/PartnershipsCollaborationsManagement';
 
 function TranslationRedirect() {
   const { getSetting } = useSiteSettings();
@@ -187,6 +188,15 @@ function App() {
                       element={
                         <RequireAdminPermission permission="submissions.view">
                           <PartnershipsManagement />
+                        </RequireAdminPermission>
+                      }
+                    />
+
+                    <Route
+                      path="partnerships-collaborations"
+                      element={
+                        <RequireAdminPermission permission="submissions.view">
+                          <PartnershipsCollaborationsManagement />
                         </RequireAdminPermission>
                       }
                     />

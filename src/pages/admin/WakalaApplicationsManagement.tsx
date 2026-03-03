@@ -87,7 +87,13 @@ export default function WakalaApplicationsManagement() {
       setLoading(true);
       const { data, error } = await supabase
         .from('wakala_applications')
+        // IMPORTANT: Advisory Office bookings are also stored in `wakala_applications`.
+        // Only load real Wakala applications here.
         .select('*')
+        .not('wakala_type', 'is', null)
+        // Only show paid/valid applications (free is allowed for member benefit)
+        .in('payment_status', ['paid', 'completed', 'free'])
+        .neq('status', 'deleted_by_admin')
         .order('created_at', { ascending: false });
 
       if (error) throw error;

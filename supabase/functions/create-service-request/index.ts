@@ -93,6 +93,8 @@ async function countPriorLegalRequests(adminClient: any, userId: string): Promis
       .from("wakala_applications")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
+      // Advisory Office bookings are stored in the same table. Exclude them from legal-request counting.
+      .not("wakala_type", "is", null)
       // Do not count rejected/pending_payment as completed usage
       .not("status", "in", "(rejected,pending_payment)"),
     adminClient

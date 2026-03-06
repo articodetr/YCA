@@ -71,19 +71,16 @@ export default function Programmes() {
   const [activeNews, setActiveNews] = useState<Article[]>([]);
   const [loadingNews, setLoadingNews] = useState(false);
 
+  const allowedProgrammeSlugs = useMemo(() => CORE_PROGRAMMES.map((p) => p.slug), []);
+
   const activeProgrammeSlugs = useMemo(() => {
     const slugs = programmes
       .map((p) => (p.slug || '').trim())
-      .filter(Boolean);
-    return slugs.length > 0 ? slugs : CORE_PROGRAMMES.map((p) => p.slug);
-  }, [programmes]);
+      .filter((slug) => Boolean(slug) && allowedProgrammeSlugs.includes(slug));
+    return slugs.length > 0 ? slugs : allowedProgrammeSlugs;
+  }, [programmes, allowedProgrammeSlugs]);
 
-  const tabSlugs = useMemo(() => {
-    const slugs = programmes
-      .map((p) => (p.slug || '').trim())
-      .filter(Boolean);
-    return slugs.length > 0 ? slugs : CORE_PROGRAMMES.map((p) => p.slug);
-  }, [programmes]);
+  const tabSlugs = useMemo(() => allowedProgrammeSlugs, [allowedProgrammeSlugs]);
 
   useEffect(() => {
     const tab = (searchParams.get('tab') || '').trim();

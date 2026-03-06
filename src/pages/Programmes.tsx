@@ -40,9 +40,7 @@ const FALLBACK_IMAGES_BY_SLUG: Record<string, string> = {
   'women-children': 'https://images.pexels.com/photos/3184434/pexels-photo-3184434.jpeg?auto=compress&cs=tinysrgb&w=1920',
   elderly: 'https://images.pexels.com/photos/7551613/pexels-photo-7551613.jpeg?auto=compress&cs=tinysrgb&w=1920',
   youth: 'https://images.pexels.com/photos/1516440/pexels-photo-1516440.jpeg?auto=compress&cs=tinysrgb&w=1920',
-  children: 'https://images.pexels.com/photos/8613089/pexels-photo-8613089.jpeg?auto=compress&cs=tinysrgb&w=1920',
   education: 'https://images.pexels.com/photos/301926/pexels-photo-301926.jpeg?auto=compress&cs=tinysrgb&w=1920',
-  men: 'https://images.pexels.com/photos/3184611/pexels-photo-3184611.jpeg?auto=compress&cs=tinysrgb&w=1920',
   'activities-sports': 'https://images.pexels.com/photos/1752757/pexels-photo-1752757.jpeg?auto=compress&cs=tinysrgb&w=1920',
   'journey-within': 'https://images.pexels.com/photos/3810792/pexels-photo-3810792.jpeg?auto=compress&cs=tinysrgb&w=1920',
 };
@@ -61,34 +59,25 @@ export default function Programmes() {
   const c = (key: string, fallback: string) => getContent('programmes', key, fallback);
 
   const [searchParams, setSearchParams] = useSearchParams();
-
-  // Tabs are fully driven by DB rows in programmes_items (admin can add/hide/edit).
-  // We keep CORE_PROGRAMMES only for i18n fallbacks and image fallbacks.
   const [activeSlug, setActiveSlug] = useState<string>('');
-
   const [programmes, setProgrammes] = useState<Programme[]>([]);
   const [loadingProgrammes, setLoadingProgrammes] = useState(true);
   const [activeNews, setActiveNews] = useState<Article[]>([]);
   const [loadingNews, setLoadingNews] = useState(false);
 
-  const allowedProgrammeSlugs = useMemo(() => CORE_PROGRAMMES.map((p) => p.slug), []);
-
-  const activeProgrammeSlugs = useMemo(() => {
-    const slugs = programmes
+  const tabSlugs = useMemo(() => {
+    return programmes
       .map((p) => (p.slug || '').trim())
-      .filter((slug) => Boolean(slug) && allowedProgrammeSlugs.includes(slug));
-    return slugs.length > 0 ? slugs : allowedProgrammeSlugs;
-  }, [programmes, allowedProgrammeSlugs]);
-
-  const tabSlugs = useMemo(() => allowedProgrammeSlugs, [allowedProgrammeSlugs]);
+      .filter(Boolean);
+  }, [programmes]);
 
   useEffect(() => {
     const tab = (searchParams.get('tab') || '').trim();
-    if (tab && activeProgrammeSlugs.includes(tab) && tab !== activeSlug) {
+    if (tab && tabSlugs.includes(tab) && tab !== activeSlug) {
       setActiveSlug(tab);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, activeProgrammeSlugs]);
+  }, [searchParams, tabSlugs.join('|')]);
 
   useEffect(() => {
     fetchProgrammes();
@@ -117,7 +106,8 @@ export default function Programmes() {
         .from('programmes_items')
         .select('*')
         .eq('is_active', true)
-        .order('order_number', { ascending: true });
+        .order('order_number', { ascending: true })
+        .order('created_at', { ascending: true });
       if (error) throw error;
       setProgrammes(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -128,23 +118,29 @@ export default function Programmes() {
     }
   };
 
-  // After programmes load: choose an active tab.
   useEffect(() => {
     if (loadingProgrammes) return;
-    if (activeProgrammeSlugs.length === 0) return;
+
+    if (tabSlugs.length === 0) {
+      setActiveSlug('');
+      if (searchParams.get('tab')) {
+        setSearchParams({}, { replace: true });
+      }
+      return;
+    }
 
     const tab = (searchParams.get('tab') || '').trim();
-    if (tab && activeProgrammeSlugs.includes(tab)) {
+    if (tab && tabSlugs.includes(tab)) {
       setActiveSlug(tab);
       return;
     }
 
-    if (!activeSlug || !activeProgrammeSlugs.includes(activeSlug)) {
-      setActiveSlug(activeProgrammeSlugs[0]);
-      setSearchParams({ tab: activeProgrammeSlugs[0] }, { replace: true });
+    if (!activeSlug || !tabSlugs.includes(activeSlug)) {
+      setActiveSlug(tabSlugs[0]);
+      setSearchParams({ tab: tabSlugs[0] }, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadingProgrammes, activeProgrammeSlugs.join('|')]);
+  }, [loadingProgrammes, tabSlugs.join('|')]);
 
   const fetchProgrammeNews = async (programmeId: string | null) => {
     if (!programmeId) {
@@ -162,7 +158,6 @@ export default function Programmes() {
         .limit(6);
 
       if (error) {
-        // If the column doesn't exist (older DB), don't break the page.
         console.warn('Programme news query failed:', error);
         setActiveNews([]);
         return;
@@ -192,9 +187,9 @@ export default function Programmes() {
   const getProgrammeDescription = (p: Programme) => (isRTL && p.description_ar ? p.description_ar : p.description);
   const getProgrammeContent = (p: Programme) => (isRTL && p.content_ar ? p.content_ar : (p.content || ''));
   const getProgrammeHero = (p: Programme | null) => {
-    const fallbackSlug = activeSlug || CORE_PROGRAMMES[0].slug;
-    if (!p) return FALLBACK_IMAGES_BY_SLUG[fallbackSlug] || FALLBACK_IMAGES_BY_SLUG[CORE_PROGRAMMES[0].slug];
-    return p.image_url || FALLBACK_IMAGES_BY_SLUG[p.slug || fallbackSlug] || FALLBACK_IMAGES_BY_SLUG[CORE_PROGRAMMES[0].slug];
+    const fallbackSlug = activeSlug || CORE_PROGRAMMES[0]?.slug || 'women-children';
+    if (!p) return FALLBACK_IMAGES_BY_SLUG[fallbackSlug] || FALLBACK_IMAGES_BY_SLUG['women-children'];
+    return p.image_url || FALLBACK_IMAGES_BY_SLUG[p.slug || fallbackSlug] || FALLBACK_IMAGES_BY_SLUG['women-children'];
   };
 
   return (
@@ -207,7 +202,6 @@ export default function Programmes() {
       />
 
       <div className="pt-20">
-        {/* Intro (fully editable from Page Content -> Programmes) */}
         <section className="py-20 bg-white">
           <div className="container mx-auto px-4">
             <div className="max-w-5xl mx-auto">
@@ -242,7 +236,6 @@ export default function Programmes() {
           </div>
         </section>
 
-        {/* Programmes (single page, no navigation) */}
         <section className="py-20 bg-sand">
           <div className="container mx-auto px-4">
             <div className="max-w-6xl mx-auto">
@@ -273,7 +266,6 @@ export default function Programmes() {
                 </p>
               </motion.div>
 
-              {/* Tabs */}
               <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
                 <div className="border-b border-gray-100 bg-white">
                   <div className="flex flex-wrap gap-2 p-4 justify-center">
@@ -296,11 +288,18 @@ export default function Programmes() {
                   </div>
                 </div>
 
-                {/* Tab body */}
                 <div className="p-6 md:p-10">
                   {loadingProgrammes ? (
                     <div className="flex items-center justify-center py-16">
                       <Loader2 size={44} className="text-primary animate-spin" />
+                    </div>
+                  ) : tabSlugs.length === 0 ? (
+                    <div className="bg-sand/50 border border-gray-100 rounded-xl p-8 text-center">
+                      <p className="text-lg text-muted">
+                        {isRTL
+                          ? 'لا توجد برامج ظاهرة حاليًا.'
+                          : 'There are no visible programmes right now.'}
+                      </p>
                     </div>
                   ) : (
                     <motion.div
@@ -310,7 +309,6 @@ export default function Programmes() {
                       key={activeSlug}
                       className="space-y-10"
                     >
-                      {/* Hero */}
                       <div className="grid md:grid-cols-2 gap-8 items-start">
                         <div className="relative overflow-hidden rounded-2xl border border-gray-100">
                           <img
@@ -351,7 +349,6 @@ export default function Programmes() {
                         </div>
                       </div>
 
-                      {/* Gallery */}
                       {activeProgramme && Array.isArray(activeProgramme.gallery_images) && activeProgramme.gallery_images.length > 0 ? (
                         <div>
                           <h4 className="text-2xl font-bold text-primary mb-4">
@@ -373,7 +370,6 @@ export default function Programmes() {
                         </div>
                       ) : null}
 
-                      {/* Programme news */}
                       <div>
                         <h4 className="text-2xl font-bold text-primary mb-4">
                           {c('news_title', isRTL ? 'أخبار البرنامج' : 'Programme News')}
@@ -440,7 +436,6 @@ export default function Programmes() {
           </div>
         </section>
 
-        {/* CTA (editable from Page Content -> Programmes) */}
         <section className="py-16 bg-white">
           <div className="container mx-auto px-4">
             <motion.div

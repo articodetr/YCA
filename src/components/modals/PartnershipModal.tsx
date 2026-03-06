@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import { supabase } from '../../lib/supabase';
+import { buildSimpleEmailHtml, sendTransactionalEmails } from '../../lib/notifications';
 
 interface Props {
   isOpen: boolean;
@@ -115,6 +116,26 @@ export default function PartnershipModal({ isOpen, onClose }: Props) {
       ]);
 
       if (error) throw error;
+
+      try {
+        await sendTransactionalEmails([{
+          to: formData.email,
+          subject: language === 'ar' ? 'تم استلام طلب الشراكة' : 'Partnership proposal received',
+          html: buildSimpleEmailHtml({
+            title: language === 'ar' ? 'تم استلام طلب الشراكة' : 'Partnership proposal received',
+            greeting: language === 'ar' ? `مرحباً ${formData.contact_person}` : `Dear ${formData.contact_person},`,
+            intro: language === 'ar' ? 'تم استلام طلب الشراكة بنجاح. سيقوم فريقنا بمراجعته والتواصل معك قريباً.' : 'We have received your partnership proposal successfully. Our team will review it and contact you soon.',
+            details: [
+                { label: language === 'ar' ? 'المؤسسة' : 'Organization', value: formData.organization_name },
+                { label: language === 'ar' ? 'الشخص المسؤول' : 'Contact person', value: formData.contact_person },
+                { label: language === 'ar' ? 'البريد الإلكتروني' : 'Email', value: formData.email }
+            ],
+            closing: language === 'ar' ? 'فريق YCA Birmingham' : 'YCA Birmingham',
+          }),
+        }]);
+      } catch (emailError) {
+        console.error('Submission confirmation email failed:', emailError);
+      }
 
       setSuccess(true);
       setTimeout(() => {

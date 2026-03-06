@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Plus, Edit, Trash2, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import ImageUploader from '../../components/admin/ImageUploader';
@@ -12,16 +12,30 @@ interface Programme {
   description_ar?: string;
   content?: string;
   content_ar?: string;
-  image_url: string;
+  image_url?: string | null;
   gallery_images?: string[];
-  category: 'women' | 'men' | 'youth' | 'children' | 'elderly' | 'journey';
-  slug?: string;
-  link: string;
-  color: string;
-  icon: string;
+  category?: string | null;
+  slug?: string | null;
+  link?: string | null;
+  color?: string | null;
+  icon?: string | null;
   is_active: boolean;
   order_number: number;
+  created_at?: string;
 }
+
+const slugify = (value: string) =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/['’]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+const buildCategoryValue = (title: string, slug: string, customCategory: string) => {
+  const source = customCategory.trim() || slug.trim() || slugify(title);
+  return source.replace(/-/g, '_');
+};
 
 const defaultForm = {
   title: '',
@@ -32,7 +46,7 @@ const defaultForm = {
   content_ar: '',
   image_url: '',
   gallery_images: [] as string[],
-  category: 'youth' as Programme['category'],
+  category: '',
   slug: '',
   link: '',
   color: '#10B981',
@@ -46,7 +60,7 @@ export default function ProgrammesManagement() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingProgramme, setEditingProgramme] = useState<Programme | null>(null);
-  const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterSlug, setFilterSlug] = useState<string>('all');
   const [formData, setFormData] = useState(defaultForm);
 
   useEffect(() => {
@@ -59,8 +73,8 @@ export default function ProgrammesManagement() {
       const { data, error } = await supabase
         .from('programmes_items')
         .select('*')
-        .order('category', { ascending: true })
-        .order('order_number', { ascending: true });
+        .order('order_number', { ascending: true })
+        .order('created_at', { ascending: true });
 
       if (error) throw error;
       setProgrammes(data || []);
@@ -75,28 +89,32 @@ export default function ProgrammesManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.title || !formData.description) {
-      alert('Please fill in all required fields');
+    const cleanTitle = formData.title.trim();
+    const cleanDescription = formData.description.trim();
+    const cleanSlug = slugify(formData.slug || formData.title);
+
+    if (!cleanTitle || !cleanDescription || !cleanSlug) {
+      alert('Please fill in title, description, and slug');
       return;
     }
 
     try {
       const payload = {
-        title: formData.title,
-        title_ar: formData.title_ar,
-        description: formData.description,
-        description_ar: formData.description_ar,
-        content: formData.content,
-        content_ar: formData.content_ar,
-        image_url: formData.image_url,
+        title: cleanTitle,
+        title_ar: formData.title_ar.trim(),
+        description: cleanDescription,
+        description_ar: formData.description_ar.trim(),
+        content: formData.content.trim(),
+        content_ar: formData.content_ar.trim(),
+        image_url: formData.image_url || null,
         gallery_images: formData.gallery_images,
-        category: formData.category,
-        slug: formData.slug || null,
-        link: formData.link,
+        category: buildCategoryValue(cleanTitle, cleanSlug, formData.category),
+        slug: cleanSlug,
+        link: formData.link.trim() || null,
         color: formData.color,
-        icon: formData.icon,
+        icon: formData.icon.trim() || 'Users',
         is_active: formData.is_active,
-        order_number: formData.order_number,
+        order_number: Number.isFinite(formData.order_number) ? formData.order_number : 0,
         updated_at: new Date().toISOString(),
       };
 
@@ -136,10 +154,13 @@ export default function ProgrammesManagement() {
 
       if (error) throw error;
       alert('Programme deleted successfully!');
+      if (editingProgramme?.id === id) {
+        resetForm();
+      }
       fetchProgrammes();
     } catch (error: any) {
       console.error('Error deleting programme:', error);
-      alert('Failed to delete programme');
+      alert('Failed to delete programme: ' + error.message);
     }
   };
 
@@ -147,7 +168,7 @@ export default function ProgrammesManagement() {
     try {
       const { error } = await supabase
         .from('programmes_items')
-        .update({ is_active: !programme.is_active })
+        .update({ is_active: !programme.is_active, updated_at: new Date().toISOString() })
         .eq('id', programme.id);
 
       if (error) throw error;
@@ -175,7 +196,7 @@ export default function ProgrammesManagement() {
       content_ar: programme.content_ar || '',
       image_url: programme.image_url || '',
       gallery_images: programme.gallery_images || [],
-      category: programme.category,
+      category: programme.category || '',
       slug: programme.slug || '',
       link: programme.link || '',
       color: programme.color || '#10B981',
@@ -187,9 +208,24 @@ export default function ProgrammesManagement() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const filteredProgrammes = filterCategory === 'all'
+  const filterOptions = useMemo(() => {
+    const seen = new Set<string>();
+    return programmes
+      .filter((programme) => {
+        const slug = (programme.slug || '').trim();
+        if (!slug || seen.has(slug)) return false;
+        seen.add(slug);
+        return true;
+      })
+      .map((programme) => ({
+        value: (programme.slug || '').trim(),
+        label: programme.title,
+      }));
+  }, [programmes]);
+
+  const filteredProgrammes = filterSlug === 'all'
     ? programmes
-    : programmes.filter(p => p.category === filterCategory);
+    : programmes.filter((programme) => (programme.slug || '').trim() === filterSlug);
 
   if (loading) {
     return (
@@ -221,14 +257,17 @@ export default function ProgrammesManagement() {
             {editingProgramme ? 'Edit Programme' : 'Add New Programme'}
           </h2>
           <form onSubmit={handleSubmit} className="space-y-6">
-
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-primary mb-2">Title (English) *</label>
                 <input
                   type="text"
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  onChange={(e) => {
+                    const nextTitle = e.target.value;
+                    const nextSlug = editingProgramme ? formData.slug : slugify(nextTitle);
+                    setFormData({ ...formData, title: nextTitle, slug: nextSlug });
+                  }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                   required
                 />
@@ -324,28 +363,23 @@ export default function ProgrammesManagement() {
                 <input
                   type="text"
                   value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
+                  onChange={(e) => setFormData({ ...formData, slug: slugify(e.target.value) })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="e.g. women, youth, journey-within"
+                  placeholder="e.g. women-children, youth, journey-within"
+                  required
                 />
                 <p className="text-xs text-gray-400 mt-1">Used in URL: /programmes/<strong>{formData.slug || 'slug'}</strong></p>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-primary mb-2">Category *</label>
-                <select
+                <label className="block text-sm font-semibold text-primary mb-2">Internal Category</label>
+                <input
+                  type="text"
                   value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value as Programme['category'] })}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  required
-                >
-                  <option value="women">Women</option>
-                  <option value="men">Men</option>
-                  <option value="youth">Youth</option>
-                  <option value="children">Children</option>
-                  <option value="elderly">Elderly</option>
-                  <option value="journey">Journey</option>
-                </select>
+                  placeholder="Optional. Auto-generated from slug if left empty"
+                />
               </div>
             </div>
 
@@ -376,7 +410,7 @@ export default function ProgrammesManagement() {
                 <input
                   type="number"
                   value={formData.order_number}
-                  onChange={(e) => setFormData({ ...formData, order_number: parseInt(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, order_number: Number(e.target.value) || 0 })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                   min="0"
                 />
@@ -414,17 +448,27 @@ export default function ProgrammesManagement() {
       )}
 
       <div className="mb-6 flex flex-wrap gap-2">
-        {['all', 'women', 'men', 'youth', 'children', 'elderly', 'journey'].map((cat) => (
+        <button
+          onClick={() => setFilterSlug('all')}
+          className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+            filterSlug === 'all'
+              ? 'bg-primary text-white'
+              : 'bg-gray-200 text-primary hover:bg-gray-300'
+          }`}
+        >
+          All
+        </button>
+        {filterOptions.map((option) => (
           <button
-            key={cat}
-            onClick={() => setFilterCategory(cat)}
+            key={option.value}
+            onClick={() => setFilterSlug(option.value)}
             className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-              filterCategory === cat
+              filterSlug === option.value
                 ? 'bg-primary text-white'
                 : 'bg-gray-200 text-primary hover:bg-gray-300'
             }`}
           >
-            {cat === 'all' ? 'All' : cat.charAt(0).toUpperCase() + cat.slice(1)}
+            {option.label}
           </button>
         ))}
       </div>
@@ -440,11 +484,12 @@ export default function ProgrammesManagement() {
               />
             )}
             <div className="p-4">
-              <div className="flex justify-between items-start mb-2">
+              <div className="flex justify-between items-start mb-2 gap-3">
                 <h3 className="font-bold text-primary text-lg">{programme.title}</h3>
                 <button
                   onClick={() => toggleActive(programme)}
-                  className={`p-1 rounded ${programme.is_active ? 'text-green-600' : 'text-gray-400'}`}
+                  className={`p-1 rounded shrink-0 ${programme.is_active ? 'text-green-600' : 'text-gray-400'}`}
+                  title={programme.is_active ? 'Hide programme from website' : 'Show programme on website'}
                 >
                   {programme.is_active ? <Eye size={20} /> : <EyeOff size={20} />}
                 </button>
@@ -453,13 +498,18 @@ export default function ProgrammesManagement() {
               {programme.slug && (
                 <p className="text-xs text-gray-400 mb-2">/programmes/{programme.slug}</p>
               )}
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
                 <span
                   className="px-3 py-1 rounded-full text-sm font-semibold text-white"
-                  style={{ backgroundColor: programme.color }}
+                  style={{ backgroundColor: programme.color || '#10B981' }}
                 >
-                  {programme.category}
+                  {programme.title}
                 </span>
+                {!programme.is_active && (
+                  <span className="px-3 py-1 rounded-full text-sm font-semibold bg-gray-200 text-gray-700">
+                    Hidden
+                  </span>
+                )}
               </div>
               <div className="flex gap-2">
                 <button

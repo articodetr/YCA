@@ -13,7 +13,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import Layout from '../../components/Layout';
 import PageHeader from '../../components/PageHeader';
-import { cancelBooking } from '../../lib/booking-utils';
+import { manageAdvisoryBooking, isWithinAdvisoryLockWindow } from '../../lib/booking-utils';
 import OverviewTab from './dashboard/OverviewTab';
 import ApplicationsTab from './dashboard/ApplicationsTab';
 import PaymentsTab from './dashboard/PaymentsTab';
@@ -451,19 +451,14 @@ export default function MemberDashboard() {
         showToast(language === 'ar' ? 'لا يمكن إلغاء موعد منتهي' : 'Cannot cancel a past appointment', 'error');
         return;
       }
+      if (isWithinAdvisoryLockWindow(app.booking_date, app.start_time)) {
+        showToast(language === 'ar' ? 'يمكن إلغاء الموعد قبل الموعد المحجوز بثلاث ساعات على الأقل' : 'Appointments can only be cancelled at least 3 hours before the booked time', 'error');
+        return;
+      }
     }
     if (!confirm(t.confirmCancel)) return;
-    if (!app.slot_id || !app.duration_minutes || !app.booking_date || !app.start_time) {
-      showToast(t.cancelError, 'error');
-      return;
-    }
-    const serviceId = app.availability_slots?.service_id;
-    if (!serviceId) {
-      showToast(t.cancelError, 'error');
-      return;
-    }
     try {
-      const result = await cancelBooking(app.id, app.slot_id, serviceId, app.duration_minutes, app.booking_date, app.start_time);
+      const result = await manageAdvisoryBooking('cancel', { applicationId: app.id });
       if (result.success) {
         showToast(t.cancelSuccess, 'success');
         fetchData();

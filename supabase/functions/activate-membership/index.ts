@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import Stripe from "npm:stripe@17.7.0";
+import { sendEmails, escapeHtml, formatDate } from "../_shared/email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,6 +23,53 @@ interface ActivationRequest {
   application_id: string;
   user_id?: string;
   payment_intent_id?: string;
+}
+
+
+function buildMembershipActivatedEmail(application: any, memberNumber: string, expiryDate: string) {
+  return `
+    <div style="font-family:Arial,Helvetica,sans-serif;max-width:640px;margin:0 auto;color:#111827;line-height:1.6;">
+      <div style="background:#065f46;color:#ffffff;padding:20px 24px;border-radius:12px 12px 0 0;">
+        <h2 style="margin:0;font-size:22px;">Membership activated / تم تفعيل العضوية</h2>
+      </div>
+      <div style="border:1px solid #e5e7eb;border-top:none;padding:24px;border-radius:0 0 12px 12px;">
+        <p>Dear ${escapeHtml(application.full_name || `${application.first_name || ''} ${application.last_name || ''}`.trim() || 'Member')},</p>
+        <p>Your membership has been activated successfully.</p>
+        <p>تم تفعيل عضويتك بنجاح.</p>
+        <table style="width:100%;border-collapse:collapse;margin:18px 0;">
+          <tr>
+            <td style="padding:8px 12px;border:1px solid #e5e7eb;font-weight:600;background:#f9fafb;">Membership type / نوع العضوية</td>
+            <td style="padding:8px 12px;border:1px solid #e5e7eb;">${escapeHtml(String(application.membership_type || '-'))}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 12px;border:1px solid #e5e7eb;font-weight:600;background:#f9fafb;">Member number / رقم العضوية</td>
+            <td style="padding:8px 12px;border:1px solid #e5e7eb;">${escapeHtml(memberNumber || '-')}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 12px;border:1px solid #e5e7eb;font-weight:600;background:#f9fafb;">Expiry date / تاريخ الانتهاء</td>
+            <td style="padding:8px 12px;border:1px solid #e5e7eb;">${escapeHtml(formatDate(expiryDate))}</td>
+          </tr>
+        </table>
+        <p style="margin-bottom:0;">YCA Birmingham</p>
+      </div>
+    </div>
+  `;
+}
+
+async function sendMembershipActivationEmail(application: any, member: any) {
+  const recipient = String(application?.email || member?.email || '').trim();
+  if (!recipient) return;
+
+  const html = buildMembershipActivatedEmail(application, member?.member_number || '', member?.expiry_date || '');
+  const result = await sendEmails([{
+    to: recipient,
+    subject: 'Membership activated / تم تفعيل العضوية',
+    html,
+  }]);
+
+  if (!result.success) {
+    console.error('Membership activation email failed:', result.failed);
+  }
 }
 
 function normalizeBusinessTier(input: any): "bronze" | "silver" | "gold" {
@@ -151,6 +199,8 @@ Deno.serve(async (req: Request) => {
       // Ensure Business Support signups are reflected in the supporters list (inactive by default)
       await upsertBusinessSupporterFromApplication(application_id, application);
 
+      await sendMembershipActivationEmail(application, existingMember);
+
       return Response.json(
         {
           success: true,
@@ -216,6 +266,8 @@ Deno.serve(async (req: Request) => {
 
     // Ensure Business Support signups are reflected in the supporters list (inactive by default)
     await upsertBusinessSupporterFromApplication(application_id, application);
+
+    await sendMembershipActivationEmail(application, newMember);
 
     return Response.json(
       {

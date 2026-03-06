@@ -8,6 +8,7 @@ import Layout from '../../components/Layout';
 import PageHeader from '../../components/PageHeader';
 import BusinessSupportSelector from '../../components/BusinessSupportSelector';
 import MembershipPaymentModal from '../../components/member/MembershipPaymentModal';
+import { buildSimpleEmailHtml, sendTransactionalEmails } from '../../lib/notifications';
 
 const translations = {
   en: {
@@ -213,7 +214,7 @@ export default function MembershipApplication() {
           ? 'لديك عضوية مفعلة بالفعل.'
           : 'You already have an active membership application.');
       }
-      return { application: existing, finalAmount };
+      return { application: existing, finalAmount, isNew: false };
     }
 
     const applicationData = {
@@ -262,7 +263,7 @@ export default function MembershipApplication() {
         .insert(familyMembersData);
     }
 
-    return { application, finalAmount };
+    return { application, finalAmount, isNew: true };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -293,7 +294,30 @@ export default function MembershipApplication() {
           updated_at: new Date().toISOString(),
         });
 
-        const { application, finalAmount } = await insertApplication(user.id);
+        const { application, finalAmount, isNew } = await insertApplication(user.id);
+        if (isNew) {
+          try {
+            await sendTransactionalEmails([{
+              to: isPreAuthenticated ? (user?.email || formData.email) : formData.email,
+              subject: language === 'ar' ? 'تم استلام طلب العضوية' : 'Membership application received',
+              html: buildSimpleEmailHtml({
+                title: language === 'ar' ? 'تم استلام طلب العضوية' : 'Membership application received',
+                greeting: language === 'ar' ? `مرحباً ${formData.firstName} ${formData.lastName}` : `Dear ${formData.firstName} ${formData.lastName},`,
+                intro: language === 'ar'
+                  ? 'تم استلام طلب العضوية بنجاح. سنراجع طلبك، وسيصلك إشعار آخر عند تفعيل العضوية أو الحاجة إلى أي معلومات إضافية.'
+                  : 'We have received your membership application successfully. We will review it and contact you again once it is activated or if we need anything else.',
+                details: [
+                  { label: language === 'ar' ? 'نوع العضوية' : 'Membership type', value: membershipType },
+                  { label: language === 'ar' ? 'البريد الإلكتروني' : 'Email', value: isPreAuthenticated ? (user?.email || formData.email) : formData.email },
+                  { label: language === 'ar' ? 'الهاتف' : 'Phone', value: formData.phone },
+                ],
+                closing: language === 'ar' ? 'فريق YCA Birmingham' : 'YCA Birmingham',
+              }),
+            }]);
+          } catch (emailError) {
+            console.error('Membership confirmation email failed:', emailError);
+          }
+        }
         await refreshMember();
         setSuccess(true);
         setTimeout(() => {
@@ -317,7 +341,30 @@ export default function MembershipApplication() {
         }
         if (!authData?.user) throw new Error('User creation failed');
 
-        const { application, finalAmount } = await insertApplication(authData.user.id);
+        const { application, finalAmount, isNew } = await insertApplication(authData.user.id);
+        if (isNew) {
+          try {
+            await sendTransactionalEmails([{
+              to: formData.email,
+              subject: language === 'ar' ? 'تم استلام طلب العضوية' : 'Membership application received',
+              html: buildSimpleEmailHtml({
+                title: language === 'ar' ? 'تم استلام طلب العضوية' : 'Membership application received',
+                greeting: language === 'ar' ? `مرحباً ${formData.firstName} ${formData.lastName}` : `Dear ${formData.firstName} ${formData.lastName},`,
+                intro: language === 'ar'
+                  ? 'تم استلام طلب العضوية بنجاح. سنراجع طلبك، وسيصلك إشعار آخر عند تفعيل العضوية أو الحاجة إلى أي معلومات إضافية.'
+                  : 'We have received your membership application successfully. We will review it and contact you again once it is activated or if we need anything else.',
+                details: [
+                  { label: language === 'ar' ? 'نوع العضوية' : 'Membership type', value: membershipType },
+                  { label: language === 'ar' ? 'البريد الإلكتروني' : 'Email', value: formData.email },
+                  { label: language === 'ar' ? 'الهاتف' : 'Phone', value: formData.phone },
+                ],
+                closing: language === 'ar' ? 'فريق YCA Birmingham' : 'YCA Birmingham',
+              }),
+            }]);
+          } catch (emailError) {
+            console.error('Membership confirmation email failed:', emailError);
+          }
+        }
         setSuccess(true);
         setTimeout(() => {
           setApplicationData({ id: application.id, amount: finalAmount });

@@ -333,6 +333,54 @@ export function addMinutesToTime(time: string, minutes: number): string {
   return `${String(newHours).padStart(2, '0')}:${String(newMins).padStart(2, '0')}:00`;
 }
 
+
+export function getHoursUntilBooking(date: string, startTime: string): number {
+  const parts = String(startTime).split(':');
+  const h = Number(parts[0] || 0);
+  const m = Number(parts[1] || 0);
+  const s = Number(parts[2] || 0);
+  const [yy, mm, dd] = date.split('-').map(n => Number(n));
+  const bookingDateTime = new Date(yy, (mm || 1) - 1, dd || 1, h, m, s, 0);
+  return (bookingDateTime.getTime() - Date.now()) / (1000 * 60 * 60);
+}
+
+export function isWithinAdvisoryLockWindow(date: string, startTime: string): boolean {
+  return getHoursUntilBooking(date, startTime) < 3;
+}
+
+export async function manageAdvisoryBooking(
+  action: 'cancel' | 'reschedule',
+  payload: Record<string, unknown>
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-advisory-booking`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ action, ...payload }),
+    });
+
+    const raw = await response.text();
+    let parsed: any = {};
+    try { parsed = raw ? JSON.parse(raw) : {}; } catch { parsed = {}; }
+
+    if (!response.ok) {
+      return { success: false, error: parsed?.error || raw || 'Operation failed' };
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error(`Error during advisory booking ${action}:`, error);
+    return { success: false, error: error?.message || 'Operation failed' };
+  }
+}
+
 export function isSlotInPast(date: string, startTime: string): boolean {
   // Treat `date` + `startTime` as local time. `startTime` comes from Postgres `time`.
   const parts = String(startTime).split(':');

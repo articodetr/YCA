@@ -5,13 +5,12 @@ import { supabase } from '../../lib/supabase';
 import BookingCalendar from '../booking/Calendar';
 import TimeSlotGrid from '../booking/TimeSlotGrid';
 import {
-  cancelBooking,
   checkSlotStillAvailable,
   getAvailableSlotsForDuration,
   getEffectiveWorkingHours,
-  releaseSlots,
-  reserveSlots,
   formatTimeRange,
+  manageAdvisoryBooking,
+  isWithinAdvisoryLockWindow,
 } from '../../lib/booking-utils';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -331,15 +330,8 @@ export default function ApplicationDetailsModal({ isOpen, onClose, application, 
     setSaveSuccess(false);
 
     try {
-      if (isAdvisoryApp && application.slot_id && application.booking_date && application.start_time && application.duration_minutes && application.availability_slots?.service_id) {
-        const result = await cancelBooking(
-          application.id,
-          application.slot_id,
-          application.availability_slots.service_id,
-          application.duration_minutes,
-          application.booking_date,
-          application.start_time
-        );
+      if (isAdvisoryApp && application.booking_date && application.start_time) {
+        const result = await manageAdvisoryBooking('cancel', { applicationId: application.id });
         if (!result.success) throw new Error(result.error || 'Failed to cancel booking');
       } else {
         const { error } = await supabase
@@ -393,7 +385,6 @@ export default function ApplicationDetailsModal({ isOpen, onClose, application, 
     };
 
     const newDateStr = toLocalDateString(rescheduleDate);
-    const serviceId = application.availability_slots.service_id as string;
 
     try {
       const stillAvailable = await checkSlotStillAvailable(rescheduleSlot.id);
@@ -401,49 +392,17 @@ export default function ApplicationDetailsModal({ isOpen, onClose, application, 
         throw new Error(language === 'ar' ? 'هذا الوقت لم يعد متاحاً. جرّب وقتاً آخر.' : 'This time is no longer available. Please choose another slot.');
       }
 
-      const reserveResult = await reserveSlots({
-        slot_id: rescheduleSlot.id,
-        service_id: serviceId,
-        booking_date: newDateStr,
-        start_time: rescheduleSlot.startTime,
-        end_time: rescheduleSlot.endTime,
-        duration_minutes: rescheduleDuration,
+      const result = await manageAdvisoryBooking('reschedule', {
+        applicationId: application.id,
+        newSlotId: rescheduleSlot.id,
+        newBookingDate: newDateStr,
+        newStartTime: rescheduleSlot.startTime,
+        newEndTime: rescheduleSlot.endTime,
+        newDurationMinutes: rescheduleDuration,
       });
 
-      if (!reserveResult.success) {
-        throw new Error(reserveResult.error || (language === 'ar' ? 'فشل في حجز الوقت الجديد' : 'Failed to reserve new slot'));
-      }
-
-      const releaseOld = await releaseSlots(
-        application.slot_id,
-        serviceId,
-        application.duration_minutes,
-        application.booking_date,
-        application.start_time
-      );
-
-      if (!releaseOld.success) {
-        // Try to release the new slot to avoid locking it forever
-        await releaseSlots(rescheduleSlot.id, serviceId, rescheduleDuration, newDateStr, rescheduleSlot.startTime);
-        throw new Error(releaseOld.error || (language === 'ar' ? 'فشل في تحرير الوقت القديم' : 'Failed to release old slot'));
-      }
-
-      const { error: updErr } = await supabase
-        .from('wakala_applications')
-        .update({
-          booking_date: newDateStr,
-          requested_date: newDateStr,
-          slot_id: rescheduleSlot.id,
-          start_time: rescheduleSlot.startTime,
-          end_time: rescheduleSlot.endTime,
-          duration_minutes: rescheduleDuration,
-        })
-        .eq('id', application.id);
-
-      if (updErr) {
-        // rollback new reservation best-effort
-        await releaseSlots(rescheduleSlot.id, serviceId, rescheduleDuration, newDateStr, rescheduleSlot.startTime);
-        throw updErr;
+      if (!result.success) {
+        throw new Error(result.error || (language === 'ar' ? 'فشل في إعادة الجدولة' : 'Failed to reschedule'));
       }
 
       setSaveSuccess(true);
@@ -486,8 +445,9 @@ export default function ApplicationDetailsModal({ isOpen, onClose, application, 
     }
     return appointmentDate < new Date();
   })();
+  const isLockedByThreeHourRule = !!(isAdvisoryApp && application.booking_date && application.start_time && isWithinAdvisoryLockWindow(application.booking_date, application.start_time));
   const canEdit = !isCancelled && application.status !== 'completed' && !isAppointmentPast;
-  const canCancel = canEdit && application.status !== 'in_progress' && application.status !== 'approved';
+  const canCancel = canEdit && application.status !== 'in_progress' && application.status !== 'approved' && (!isAdvisoryApp || !isLockedByThreeHourRule);
   const canReschedule = canCancel && isAdvisoryApp;
 
   return (
@@ -748,6 +708,11 @@ export default function ApplicationDetailsModal({ isOpen, onClose, application, 
                     {isAppointmentPast && !isCancelled && application.status !== 'completed' && (
                       <span className="text-xs px-3 py-1.5 bg-gray-100 text-gray-500 rounded-lg">
                         {language === 'ar' ? 'انتهى الموعد' : 'Appointment passed'}
+                      </span>
+                    )}
+                    {isAdvisoryApp && isLockedByThreeHourRule && !isCancelled && !isAppointmentPast && (
+                      <span className="text-xs px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg">
+                        {language === 'ar' ? 'التعديل أو الإلغاء متاح قبل الموعد بـ3 ساعات فقط' : 'Changes/cancellation close 3 hours before the appointment'}
                       </span>
                     )}
                   </h3>

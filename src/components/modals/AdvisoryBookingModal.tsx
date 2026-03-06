@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Loader2, CheckCircle, AlertCircle, X, User, Phone, Mail } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { buildSimpleEmailHtml, sendTransactionalEmails } from '../../lib/notifications';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import Calendar from '../booking/Calendar';
 import TimeSlotGrid from '../booking/TimeSlotGrid';
@@ -475,7 +476,7 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
       const contactPhone = isMember ? memberData?.phone : formData.phone;
       const contactEmail = isMember ? memberData?.email : formData.email;
 
-      const { error: insertError } = await supabase.from('wakala_applications').insert([{
+      const { data: inserted, error: insertError } = await supabase.from('wakala_applications').insert([{
         user_id: user?.id || null,
         full_name: contactName,
         phone: contactPhone,
@@ -491,9 +492,33 @@ export default function AdvisoryBookingModal({ isOpen, onClose, onSuccess }: Adv
         fee_amount: 0,
         payment_status: 'paid',
         status: 'submitted',
-      }]);
+      }]).select('booking_reference').maybeSingle();
 
       if (insertError) throw insertError;
+
+      try {
+        await sendTransactionalEmails([{
+          to: contactEmail || '',
+          subject: language === 'ar' ? 'تم استلام الموعد الاستشاري' : 'Advisory appointment received',
+          html: buildSimpleEmailHtml({
+            title: language === 'ar' ? 'تم استلام الموعد الاستشاري' : 'Advisory appointment received',
+            greeting: language === 'ar' ? `مرحباً ${contactName}` : `Dear ${contactName},`,
+            intro: language === 'ar'
+              ? 'تم استلام حجزك للمكتب الاستشاري. يمكنك تعديل أو إلغاء الموعد حتى 3 ساعات قبل الموعد المحجوز.'
+              : 'We have received your advisory office booking. You can reschedule or cancel it up to 3 hours before the booked time.',
+            details: [
+              { label: language === 'ar' ? 'المرجع' : 'Reference', value: inserted?.booking_reference || '' },
+              { label: language === 'ar' ? 'التاريخ' : 'Date', value: dateStr },
+              { label: language === 'ar' ? 'الوقت' : 'Time', value: `${selectedSlot.startTime} - ${selectedSlot.endTime}` },
+              { label: language === 'ar' ? 'البريد الإلكتروني' : 'Email', value: contactEmail || '' },
+            ],
+            closing: language === 'ar' ? 'فريق YCA Birmingham' : 'YCA Birmingham',
+          }),
+        }]);
+      } catch (emailError) {
+        console.error('Advisory confirmation email failed:', emailError);
+      }
+
       cleanupRealtimeAndPolling();
       setStep('success');
     } catch (err: any) {

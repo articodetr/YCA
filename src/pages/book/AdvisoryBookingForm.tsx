@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { buildSimpleEmailHtml, sendTransactionalEmails } from '../../lib/notifications';
 import { useMemberAuth } from '../../contexts/MemberAuthContext';
 import Calendar from '../../components/booking/Calendar';
 import TimeSlotGrid from '../../components/booking/TimeSlotGrid';
@@ -386,6 +387,30 @@ export default function AdvisoryBookingForm({ onComplete }: AdvisoryBookingFormP
       }]).select('booking_reference').maybeSingle();
 
       if (insertError) throw insertError;
+
+      try {
+        await sendTransactionalEmails([{
+          to: contactEmail,
+          subject: language === 'ar' ? 'تم استلام الموعد الاستشاري' : 'Advisory appointment received',
+          html: buildSimpleEmailHtml({
+            title: language === 'ar' ? 'تم استلام الموعد الاستشاري' : 'Advisory appointment received',
+            greeting: language === 'ar' ? `مرحباً ${contactName}` : `Dear ${contactName},`,
+            intro: language === 'ar'
+              ? 'تم تأكيد استلام حجزك للمكتب الاستشاري. يمكنك تعديل أو إلغاء الموعد حتى 3 ساعات قبل الموعد المحجوز.'
+              : 'We have received your advisory office booking. You can reschedule or cancel it up to 3 hours before the booked time.',
+            details: [
+              { label: language === 'ar' ? 'المرجع' : 'Reference', value: inserted?.booking_reference || '' },
+              { label: language === 'ar' ? 'التاريخ' : 'Date', value: dateStr },
+              { label: language === 'ar' ? 'الوقت' : 'Time', value: `${selectedSlot.startTime} - ${selectedSlot.endTime}` },
+              { label: language === 'ar' ? 'البريد الإلكتروني' : 'Email', value: contactEmail || '' },
+            ],
+            closing: language === 'ar' ? 'فريق YCA Birmingham' : 'YCA Birmingham',
+          }),
+        }]);
+      } catch (emailError) {
+        console.error('Advisory confirmation email failed:', emailError);
+      }
+
       cleanupRealtimeAndPolling();
 
       onComplete({

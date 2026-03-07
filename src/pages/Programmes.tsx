@@ -3,6 +3,7 @@ import { Calendar, Loader2 } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PageHeader from '../components/PageHeader';
+import RichText from '../components/RichText';
 import { fadeInUp, staggerContainer, staggerItem, scaleIn } from '../lib/animations';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useContent } from '../contexts/ContentContext';
@@ -45,12 +46,6 @@ const FALLBACK_IMAGES_BY_SLUG: Record<string, string> = {
   'journey-within': 'https://images.pexels.com/photos/3810792/pexels-photo-3810792.jpeg?auto=compress&cs=tinysrgb&w=1920',
 };
 
-function splitParagraphs(text: string): string[] {
-  return text
-    .split(/\r?\n/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
 
 export default function Programmes() {
   const { language, t } = useLanguage();
@@ -325,18 +320,20 @@ export default function Programmes() {
 
                           {activeProgramme ? (
                             <>
-                              <p className="text-lg text-muted leading-relaxed mb-5">
-                                {getProgrammeDescription(activeProgramme)}
-                              </p>
+                              <RichText
+                                text={getProgrammeDescription(activeProgramme)}
+                                mode="inline"
+                                as="p"
+                                className="text-lg text-muted leading-relaxed mb-5"
+                              />
 
                               {getProgrammeContent(activeProgramme) ? (
-                                <div className="space-y-4">
-                                  {splitParagraphs(getProgrammeContent(activeProgramme)).map((p, idx) => (
-                                    <p key={idx} className="text-muted leading-relaxed">
-                                      {p}
-                                    </p>
-                                  ))}
-                                </div>
+                                <RichText
+                                  text={getProgrammeContent(activeProgramme)}
+                                  mode="paragraphs"
+                                  className="space-y-4"
+                                  paragraphClassName="text-muted leading-relaxed"
+                                />
                               ) : null}
                             </>
                           ) : (

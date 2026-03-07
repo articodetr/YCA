@@ -391,9 +391,12 @@ export default function Events() {
                         <Calendar size={16} />
                         <span className="text-sm font-semibold">{new Date(featuredEvent.date).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                       </div>
-                      <p className="text-muted text-sm mb-4 leading-relaxed">
-                        {featuredEvent.description}
-                      </p>
+                      <RichText
+                        text={featuredEvent.description}
+                        mode="inline"
+                        as="p"
+                        className="text-muted text-sm mb-4 leading-relaxed"
+                      />
                       <motion.button
                         onClick={() => openRegistrationModal(featuredEvent)}
                         className="w-full bg-primary text-white px-6 py-3 rounded-lg hover:bg-secondary transition-colors font-semibold"

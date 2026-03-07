@@ -4,6 +4,9 @@ import { supabase } from '../../lib/supabase';
 import ImageUploader from '../../components/admin/ImageUploader';
 import MultiImageUploader from '../../components/admin/MultiImageUploader';
 
+const markdownHintEn = '[link text](https://example.com)';
+const markdownHintAr = '[نص الرابط](https://example.com)';
+
 interface Programme {
   id: string;
   title: string;
@@ -62,6 +65,16 @@ export default function ProgrammesManagement() {
   const [editingProgramme, setEditingProgramme] = useState<Programme | null>(null);
   const [filterSlug, setFilterSlug] = useState<string>('all');
   const [formData, setFormData] = useState(defaultForm);
+  const [linkHelper, setLinkHelper] = useState({
+    descriptionTextEn: '',
+    descriptionUrlEn: '',
+    descriptionTextAr: '',
+    descriptionUrlAr: '',
+    contentTextEn: '',
+    contentUrlEn: '',
+    contentTextAr: '',
+    contentUrlAr: '',
+  });
 
   useEffect(() => {
     fetchProgrammes();
@@ -179,13 +192,62 @@ export default function ProgrammesManagement() {
     }
   };
 
+  const resetLinkHelper = () => {
+    setLinkHelper({
+      descriptionTextEn: '',
+      descriptionUrlEn: '',
+      descriptionTextAr: '',
+      descriptionUrlAr: '',
+      contentTextEn: '',
+      contentUrlEn: '',
+      contentTextAr: '',
+      contentUrlAr: '',
+    });
+  };
+
+  const insertMarkdownLink = (field: 'description' | 'description_ar' | 'content' | 'content_ar') => {
+    const isArabic = field === 'description_ar' || field === 'content_ar';
+    const isContent = field === 'content' || field === 'content_ar';
+    const textKey = isContent
+      ? (isArabic ? 'contentTextAr' : 'contentTextEn')
+      : (isArabic ? 'descriptionTextAr' : 'descriptionTextEn');
+    const urlKey = isContent
+      ? (isArabic ? 'contentUrlAr' : 'contentUrlEn')
+      : (isArabic ? 'descriptionUrlAr' : 'descriptionUrlEn');
+
+    const label = (linkHelper as any)[textKey].trim();
+    const url = (linkHelper as any)[urlKey].trim();
+
+    if (!label || !url) {
+      alert(isArabic ? 'أدخل نص الرابط والرابط (URL) أولاً' : 'Please enter both the link text and URL first');
+      return;
+    }
+
+    const markdown = `[${label}](${url})`;
+    const current = (formData as any)[field] || '';
+    const spacer = current && !current.endsWith('\n') ? '\n' : '';
+
+    setFormData({
+      ...formData,
+      [field]: `${current}${spacer}${markdown}`,
+    } as any);
+
+    setLinkHelper((prev) => ({
+      ...prev,
+      [textKey]: '',
+      [urlKey]: '',
+    }));
+  };
+
   const resetForm = () => {
     setFormData(defaultForm);
     setEditingProgramme(null);
     setShowForm(false);
+    resetLinkHelper();
   };
 
   const startEdit = (programme: Programme) => {
+    resetLinkHelper();
     setEditingProgramme(programme);
     setFormData({
       title: programme.title,
@@ -295,6 +357,33 @@ export default function ProgrammesManagement() {
                   rows={3}
                   required
                 />
+                <div className="mt-3 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                  <p className="text-xs text-gray-600 mb-2 font-medium">Insert a clickable link</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <input
+                      value={linkHelper.descriptionTextEn}
+                      onChange={(e) => setLinkHelper({ ...linkHelper, descriptionTextEn: e.target.value })}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      placeholder="Link text"
+                    />
+                    <input
+                      value={linkHelper.descriptionUrlEn}
+                      onChange={(e) => setLinkHelper({ ...linkHelper, descriptionUrlEn: e.target.value })}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      placeholder="https://..."
+                    />
+                    <button
+                      type="button"
+                      onClick={() => insertMarkdownLink('description')}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold px-3 py-2"
+                    >
+                      Add link
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Use <span className="font-mono bg-white px-1.5 py-0.5 rounded border">{markdownHintEn}</span> or paste a full URL.
+                  </p>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-semibold text-primary mb-2">Short Description (Arabic) <span className="text-gray-400">الوصف المختصر</span></label>
@@ -306,6 +395,34 @@ export default function ProgrammesManagement() {
                   dir="rtl"
                   placeholder="أدخل الوصف المختصر"
                 />
+                <div className="mt-3 bg-gray-50 border border-gray-200 rounded-lg p-3" dir="rtl">
+                  <p className="text-xs text-gray-600 mb-2 font-medium">إضافة رابط قابل للنقر</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2" dir="rtl">
+                    <input
+                      value={linkHelper.descriptionTextAr}
+                      onChange={(e) => setLinkHelper({ ...linkHelper, descriptionTextAr: e.target.value })}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      placeholder="نص الرابط"
+                    />
+                    <input
+                      value={linkHelper.descriptionUrlAr}
+                      onChange={(e) => setLinkHelper({ ...linkHelper, descriptionUrlAr: e.target.value })}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      placeholder="https://..."
+                      dir="ltr"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => insertMarkdownLink('description_ar')}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold px-3 py-2"
+                    >
+                      إضافة الرابط
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2" dir="rtl">
+                    استخدم <span className="font-mono bg-white px-1.5 py-0.5 rounded border" dir="ltr">{markdownHintAr}</span> أو ألصق رابطًا مباشرًا.
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -321,6 +438,33 @@ export default function ProgrammesManagement() {
                     rows={8}
                     placeholder="Enter full programme details, activities, eligibility, etc."
                   />
+                  <div className="mt-3 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <p className="text-xs text-gray-600 mb-2 font-medium">Insert a clickable link inside the full content</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <input
+                        value={linkHelper.contentTextEn}
+                        onChange={(e) => setLinkHelper({ ...linkHelper, contentTextEn: e.target.value })}
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        placeholder="Link text"
+                      />
+                      <input
+                        value={linkHelper.contentUrlEn}
+                        onChange={(e) => setLinkHelper({ ...linkHelper, contentUrlEn: e.target.value })}
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        placeholder="https://..."
+                      />
+                      <button
+                        type="button"
+                        onClick={() => insertMarkdownLink('content')}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold px-3 py-2"
+                      >
+                        Add link
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Links in the full content will appear clickable on the programme page.
+                    </p>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-primary mb-2">Full Content (Arabic) <span className="text-gray-400">المحتوى الكامل</span></label>
@@ -332,6 +476,34 @@ export default function ProgrammesManagement() {
                     dir="rtl"
                     placeholder="أدخل تفاصيل البرنامج الكاملة"
                   />
+                  <div className="mt-3 bg-gray-50 border border-gray-200 rounded-lg p-3" dir="rtl">
+                    <p className="text-xs text-gray-600 mb-2 font-medium">إضافة رابط قابل للنقر داخل المحتوى الكامل</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2" dir="rtl">
+                      <input
+                        value={linkHelper.contentTextAr}
+                        onChange={(e) => setLinkHelper({ ...linkHelper, contentTextAr: e.target.value })}
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        placeholder="نص الرابط"
+                      />
+                      <input
+                        value={linkHelper.contentUrlAr}
+                        onChange={(e) => setLinkHelper({ ...linkHelper, contentUrlAr: e.target.value })}
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        placeholder="https://..."
+                        dir="ltr"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => insertMarkdownLink('content_ar')}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold px-3 py-2"
+                      >
+                        إضافة الرابط
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2" dir="rtl">
+                      الروابط داخل المحتوى الكامل ستظهر قابلة للنقر في صفحة البرنامج.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

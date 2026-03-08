@@ -11,17 +11,28 @@ import {
   RefreshCw,
   Loader2,
   ExternalLink,
+  Trash2,
+  Image as ImageIcon,
 } from 'lucide-react';
 
 interface LegalRequest {
   id: string;
   user_id: string | null;
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
   service_needed: string | null;
-  description: string;
+  description: string | null;
+  notes: string | null;
   file_url: string | null;
   urgency: string;
   status: string;
   amount: number | null;
+  amount_due: number | null;
+  payment_status: string | null;
+  payment_intent_id: string | null;
+  booking_reference: string | null;
+  consent_given: boolean | null;
   is_member: boolean;
   is_first_request: boolean;
   admin_notes: string | null;
@@ -41,7 +52,59 @@ const URGENCY_COLORS: Record<string, string> = {
   low: 'bg-slate-100 text-slate-700',
   medium: 'bg-amber-100 text-amber-700',
   high: 'bg-red-100 text-red-700',
+  standard: 'bg-slate-100 text-slate-700',
+  urgent: 'bg-orange-100 text-orange-700',
+  express: 'bg-red-100 text-red-700',
 };
+
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'avif'];
+
+function isImageUrl(url?: string | null) {
+  if (!url) return false;
+  try {
+    const cleanUrl = url.split('?')[0].split('#')[0].toLowerCase();
+    return IMAGE_EXTENSIONS.some((ext) => cleanUrl.endsWith(`.${ext}`));
+  } catch {
+    return false;
+  }
+}
+
+function DocumentPreviewCard({ url, label }: { url: string; label: string }) {
+  const image = isImageUrl(url);
+
+  return (
+    <div className="rounded-xl border border-blue-200 bg-white p-3 space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-medium text-gray-900">{label}</p>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-700 hover:text-blue-900"
+        >
+          <ExternalLink className="w-3.5 h-3.5" />
+          Open
+        </a>
+      </div>
+
+      {image ? (
+        <a href={url} target="_blank" rel="noopener noreferrer" className="block">
+          <img
+            src={url}
+            alt={label}
+            className="w-full h-44 object-cover rounded-lg border border-gray-200 bg-gray-50"
+            loading="lazy"
+          />
+        </a>
+      ) : (
+        <div className="flex items-center gap-2 rounded-lg border border-dashed border-blue-200 bg-blue-50 px-3 py-4 text-sm text-gray-600">
+          <ImageIcon className="w-4 h-4 text-blue-700" />
+          Preview not available for this file type
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function LegalRequestsManagement() {
   const { hasPermission } = useAdminAuth();
@@ -133,13 +196,56 @@ export default function LegalRequestsManagement() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this legal request?')) return;
+
+    if (selected?.id === id) setSelected(null);
+
+    try {
+      const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (sessionErr || !token) {
+        throw new Error('Admin session missing/expired. Please sign in again.');
+      }
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-admin`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({ action: 'delete_record', table: 'other_legal_requests', record_id: id }),
+        }
+      );
+
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(result?.error || 'Delete failed');
+      }
+      if (result && result.success !== true) {
+        throw new Error(result?.error || 'Delete failed');
+      }
+
+      await fetchRequests();
+    } catch (error: any) {
+      console.error('Error deleting legal request:', error);
+      alert(`Failed to delete: ${error.message || 'An unexpected error occurred'}`);
+    }
+  };
+
   const serviceOptions = Array.from(new Set(requests.map((r) => r.service_needed || ''))).filter(Boolean).sort();
 
   const filtered = requests.filter((r) => {
     const sn = r.service_needed || '';
+    const requester = `${r.full_name || ''} ${r.email || ''} ${r.phone || ''}`.toLowerCase();
+    const description = (r.description || r.notes || '').toLowerCase();
     const matchesSearch =
       sn.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      description.includes(searchTerm.toLowerCase()) ||
+      requester.includes(searchTerm.toLowerCase()) ||
       (r.user_id && r.user_id.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesStatus = filterStatus === 'all' || r.status === filterStatus;
     const matchesService = filterService === 'all' || sn === filterService;
@@ -150,13 +256,21 @@ export default function LegalRequestsManagement() {
     const headers = [
       'ID',
       'Service Needed',
+      'Full Name',
+      'Email',
+      'Phone',
+      'Booking Reference',
       'Description',
+      'Notes',
       'User ID',
       'Amount',
+      'Amount Due',
+      'Payment Status',
       'Status',
       'Urgency',
       'Member',
       'First Request',
+      'Consent Given',
       'File URL',
       'Admin Notes',
       'Date',
@@ -164,13 +278,21 @@ export default function LegalRequestsManagement() {
     const rows = filtered.map((r) => [
       r.id,
       `"${(r.service_needed || '').replace(/"/g, '""')}"`,
-      `"${r.description.replace(/"/g, '""')}"`,
+      `"${(r.full_name || '').replace(/"/g, '""')}"`,
+      r.email || '',
+      r.phone || '',
+      r.booking_reference || '',
+      `"${(r.description || '').replace(/"/g, '""')}"`,
+      `"${(r.notes || '').replace(/"/g, '""')}"`,
       r.user_id || '',
       r.amount != null ? r.amount : '',
+      r.amount_due != null ? r.amount_due : '',
+      r.payment_status || '',
       r.status,
       r.urgency,
       r.is_member ? 'Yes' : 'No',
       r.is_first_request ? 'Yes' : 'No',
+      r.consent_given ? 'Yes' : 'No',
       r.file_url || '',
       `"${(r.admin_notes || '').replace(/"/g, '""')}"`,
       new Date(r.created_at).toLocaleDateString(),
@@ -277,7 +399,7 @@ export default function LegalRequestsManagement() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search requests..."
+              placeholder="Search by name, email, phone, service..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
@@ -326,6 +448,9 @@ export default function LegalRequestsManagement() {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Requester
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Service Needed
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -358,15 +483,19 @@ export default function LegalRequestsManagement() {
                     className="hover:bg-gray-50 transition-colors cursor-pointer"
                     onClick={() => openModal(r)}
                   >
+                    <td className="px-4 py-3.5">
+                      <div className="text-sm font-medium text-gray-900">{r.full_name || '-'}</div>
+                      <div className="text-xs text-gray-500">{r.email || r.phone || '-'}</div>
+                    </td>
                     <td className="px-4 py-3.5 text-sm font-medium text-gray-900">
                       {r.service_needed}
                     </td>
                     <td className="px-4 py-3.5 text-sm text-gray-600 max-w-[200px] truncate">
-                      {r.description}
+                      {r.description || r.notes || '-'}
                     </td>
                     <td className="px-4 py-3.5">{getMemberBadge(r.is_member)}</td>
                     <td className="px-4 py-3.5 text-sm font-semibold text-gray-900">
-                      {r.amount != null ? `\u00a3${Number(r.amount).toLocaleString()}` : '-'}
+                      {(r.amount_due ?? r.amount) != null ? `\u00a3${Number(r.amount_due ?? r.amount).toLocaleString()}` : '-'}
                     </td>
                     <td className="px-4 py-3.5">{getStatusBadge(r.status)}</td>
                     <td className="px-4 py-3.5">{getUrgencyBadge(r.urgency)}</td>
@@ -374,16 +503,28 @@ export default function LegalRequestsManagement() {
                       {new Date(r.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-3.5 text-right">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openModal(r);
-                        }}
-                        className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="View Details"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openModal(r);
+                          }}
+                          className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+                          title="View Details"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(r.id);
+                          }}
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -418,12 +559,35 @@ export default function LegalRequestsManagement() {
                 {getStatusBadge(selected.status)}
                 {getUrgencyBadge(selected.urgency)}
                 {getMemberBadge(selected.is_member)}
+                {selected.payment_status && (
+                  <span className="inline-block px-2.5 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-700 capitalize">
+                    Payment: {selected.payment_status}
+                  </span>
+                )}
                 <span className="text-sm text-gray-500">
                   {new Date(selected.created_at).toLocaleString()}
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <h4 className="text-xs font-semibold text-gray-500 uppercase mb-3">Requester Details</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-gray-500">Full Name</label>
+                    <p className="text-sm text-gray-900 mt-0.5">{selected.full_name || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500">Phone</label>
+                    <p className="text-sm text-gray-900 mt-0.5">{selected.phone || '-'}</p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-xs font-medium text-gray-500">Email</label>
+                    <p className="text-sm text-gray-900 mt-0.5 break-all">{selected.email || '-'}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-medium text-gray-500 uppercase">
                     Service Needed
@@ -433,8 +597,8 @@ export default function LegalRequestsManagement() {
                 <div>
                   <label className="text-xs font-medium text-gray-500 uppercase">Amount</label>
                   <p className="text-sm font-semibold text-gray-900 mt-0.5">
-                    {selected.amount != null
-                      ? `\u00a3${Number(selected.amount).toLocaleString()}`
+                    {(selected.amount_due ?? selected.amount) != null
+                      ? `\u00a3${Number(selected.amount_due ?? selected.amount).toLocaleString()}`
                       : '-'}
                   </p>
                 </div>
@@ -447,6 +611,10 @@ export default function LegalRequestsManagement() {
                   <p className="text-sm text-gray-900 mt-0.5">
                     {selected.is_member ? 'Yes' : 'No'}
                   </p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 uppercase">Booking Reference</label>
+                  <p className="text-sm text-gray-900 mt-0.5 font-mono break-all">{selected.booking_reference || '-'}</p>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-500 uppercase">
@@ -462,6 +630,14 @@ export default function LegalRequestsManagement() {
                     {selected.user_id || '-'}
                   </p>
                 </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 uppercase">Consent Given</label>
+                  <p className="text-sm text-gray-900 mt-0.5">{selected.consent_given ? 'Yes' : 'No'}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 uppercase">Payment Intent ID</label>
+                  <p className="text-sm text-gray-900 mt-0.5 font-mono break-all">{selected.payment_intent_id || '-'}</p>
+                </div>
               </div>
 
               <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
@@ -469,26 +645,39 @@ export default function LegalRequestsManagement() {
                   Description
                 </label>
                 <p className="text-sm text-gray-900 whitespace-pre-wrap leading-relaxed">
-                  {selected.description}
+                  {selected.description || selected.notes || '-'}
                 </p>
               </div>
+
+              {selected.notes && selected.notes !== selected.description && (
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <label className="text-xs font-medium text-gray-500 uppercase mb-2 block">
+                    Notes
+                  </label>
+                  <p className="text-sm text-gray-900 whitespace-pre-wrap leading-relaxed">
+                    {selected.notes}
+                  </p>
+                </div>
+              )}
 
               {selected.file_url && (
                 <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
                   <label className="text-xs font-medium text-gray-500 uppercase mb-2 block">
                     Uploaded File
                   </label>
-                  <a
-                    href={selected.file_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-blue-50 text-blue-700 rounded-lg text-sm font-medium transition-colors border border-blue-200"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    View / Download File
-                  </a>
+                  <DocumentPreviewCard url={selected.file_url} label="Uploaded File" />
                 </div>
               )}
+
+              <div className="border-t border-gray-200 pt-4">
+                <button
+                  onClick={() => handleDelete(selected.id)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition-colors text-sm font-medium"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete Request
+                </button>
+              </div>
 
               <div className="border-t border-gray-200 pt-4">
                 <label className="text-xs font-medium text-gray-500 uppercase mb-2 block">

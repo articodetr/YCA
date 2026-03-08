@@ -144,12 +144,9 @@ Deno.serve(async (req: Request) => {
       }
 
       const now = new Date().toISOString();
-      const startDate = new Date().toISOString().split("T")[0];
-      const expiryDate = new Date(
-        new Date().setFullYear(new Date().getFullYear() + 1)
-      )
-        .toISOString()
-        .split("T")[0];
+      const today = new Date();
+      const startDate = today.toISOString().split("T")[0];
+      const expiryDate = `${today.getFullYear()}-12-31`;
 
       const { error: appError } = await adminClient
         .from("membership_applications")

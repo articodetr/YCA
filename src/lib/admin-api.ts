@@ -32,12 +32,17 @@ export async function adminDeleteRecord(
       return { success: true };
     }
 
-    const { error } = await supabase
-      .from(table)
-      .delete()
-      .eq('id', id);
+    const { data, error } = await supabase.functions.invoke('manage-admin', {
+      body: {
+        action: 'delete_record',
+        table,
+        record_id: id,
+      },
+    });
 
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(error.message || 'Failed to delete record');
+    if (!data?.success) throw new Error(data?.error || 'Failed to delete record');
+
     return { success: true };
   } catch (err: any) {
     console.error(`Admin delete failed for ${table}/${id}:`, err);
@@ -65,12 +70,19 @@ export async function adminBulkDelete(
       return { success: true };
     }
 
-    const { error } = await supabase
-      .from(table)
-      .delete()
-      .in('id', ids);
+    for (const id of ids) {
+      const { data, error } = await supabase.functions.invoke('manage-admin', {
+        body: {
+          action: 'delete_record',
+          table,
+          record_id: id,
+        },
+      });
 
-    if (error) throw new Error(error.message);
+      if (error) throw new Error(error.message || 'Failed to delete record');
+      if (!data?.success) throw new Error(data?.error || 'Failed to delete record');
+    }
+
     return { success: true };
   } catch (err: any) {
     console.error(`Admin bulk delete failed for ${table}:`, err);

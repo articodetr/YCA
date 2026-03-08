@@ -11,6 +11,8 @@ import {
   Type,
   Settings,
   Lock,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
@@ -174,6 +176,7 @@ export default function AdminManagement() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<AdminUser | null>(null);
+  const [deletingAdmin, setDeletingAdmin] = useState<AdminUser | null>(null);
   const [showPermissions, setShowPermissions] = useState<string | null>(null);
   const { adminData } = useAdminAuth();
 
@@ -219,6 +222,19 @@ export default function AdminManagement() {
       setPermissions(data || []);
     } catch (error) {
       console.error('Error toggling permission:', error);
+    }
+  };
+
+  const handleDeleteAdmin = async (admin: AdminUser) => {
+    try {
+      await callManageAdmin({
+        action: 'delete',
+        admin_id: admin.id,
+      });
+      await fetchAdmins();
+      setDeletingAdmin(null);
+    } catch (error) {
+      throw error;
     }
   };
 
@@ -324,6 +340,15 @@ export default function AdminManagement() {
                           >
                             <Users className="w-4 h-4" />
                           </button>
+                          {adminData?.role === 'super_admin' && admin.id !== adminData?.id && (
+                            <button
+                              onClick={() => setDeletingAdmin(admin)}
+                              className="p-2 hover:bg-red-50 rounded-lg text-red-500 hover:text-red-700 transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -362,6 +387,84 @@ export default function AdminManagement() {
           onUpdated={fetchAdmins}
         />
       )}
+
+      {deletingAdmin && (
+        <DeleteAdminModal
+          admin={deletingAdmin}
+          onClose={() => setDeletingAdmin(null)}
+          onConfirm={handleDeleteAdmin}
+        />
+      )}
+    </div>
+  );
+}
+
+function DeleteAdminModal({
+  admin,
+  onClose,
+  onConfirm,
+}: {
+  admin: AdminUser;
+  onClose: () => void;
+  onConfirm: (admin: AdminUser) => Promise<void>;
+}) {
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    setError('');
+    try {
+      await onConfirm(admin);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to delete admin');
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+        <div className="flex items-start gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+            <AlertTriangle className="w-5 h-5 text-red-600" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">Delete Admin</h3>
+            <p className="text-sm text-gray-600 mt-1">
+              This will permanently remove <span className="font-medium text-gray-900">{admin.full_name}</span> and their admin login.
+            </p>
+          </div>
+        </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 mb-5 text-sm text-amber-800">
+          This action cannot be undone.
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            disabled={deleting}
+            className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+            {deleting ? 'Deleting...' : 'Delete Admin'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

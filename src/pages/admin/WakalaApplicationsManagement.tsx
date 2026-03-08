@@ -12,6 +12,7 @@ import {
   Loader2,
   ExternalLink,
   Trash2,
+  Image as ImageIcon,
 } from 'lucide-react';
 
 interface WakalaApplication {
@@ -67,6 +68,68 @@ const FORMAT_LABELS: Record<string, string> = {
   notarized: 'Notarized',
   apostilled: 'Apostilled',
 };
+
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'avif'];
+
+function isImageUrl(url?: string | null) {
+  if (!url) return false;
+  try {
+    const cleanUrl = url.split('?')[0].split('#')[0].toLowerCase();
+    return IMAGE_EXTENSIONS.some((ext) => cleanUrl.endsWith(`.${ext}`));
+  } catch {
+    return false;
+  }
+}
+
+function parseDocumentUrls(value?: string | null): string[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    if (Array.isArray(parsed)) {
+      return parsed.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+    }
+  } catch {
+    // ignore non-JSON and fall back below
+  }
+  return [value].filter(Boolean);
+}
+
+function DocumentPreviewCard({ url, label }: { url: string; label: string }) {
+  const image = isImageUrl(url);
+
+  return (
+    <div className="rounded-xl border border-blue-200 bg-white p-3 space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-medium text-gray-900">{label}</p>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-700 hover:text-blue-900"
+        >
+          <ExternalLink className="w-3.5 h-3.5" />
+          Open
+        </a>
+      </div>
+
+      {image ? (
+        <a href={url} target="_blank" rel="noopener noreferrer" className="block">
+          <img
+            src={url}
+            alt={label}
+            className="w-full h-44 object-cover rounded-lg border border-gray-200 bg-gray-50"
+            loading="lazy"
+          />
+        </a>
+      ) : (
+        <div className="flex items-center gap-2 rounded-lg border border-dashed border-blue-200 bg-blue-50 px-3 py-4 text-sm text-gray-600">
+          <ImageIcon className="w-4 h-4 text-blue-700" />
+          Preview not available for this file type
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function WakalaApplicationsManagement() {
   const { hasPermission } = useAdminAuth();
@@ -543,63 +606,23 @@ export default function WakalaApplicationsManagement() {
                 </div>
               )}
 
-              {(selected.agent_passport_url || selected.principal_passport_url || selected.witnesses_passports_url) && (
+              {(selected.agent_passport_url || selected.principal_passport_url || selected.witnesses_passports_url || selected.file_url) && (
                 <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 space-y-3">
                   <label className="text-xs font-semibold text-gray-500 uppercase block">Documents</label>
-                  {selected.agent_passport_url && (
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">Agent Passport</p>
-                      <a href={selected.agent_passport_url} target="_blank" rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-white hover:bg-blue-50 text-blue-700 rounded-lg text-sm font-medium transition-colors border border-blue-200">
-                        <ExternalLink className="w-3.5 h-3.5" /> View
-                      </a>
-                    </div>
-                  )}
-                  {selected.principal_passport_url && (
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">Principal Passport</p>
-                      <a href={selected.principal_passport_url} target="_blank" rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-white hover:bg-blue-50 text-blue-700 rounded-lg text-sm font-medium transition-colors border border-blue-200">
-                        <ExternalLink className="w-3.5 h-3.5" /> View
-                      </a>
-                    </div>
-                  )}
-                  {selected.witnesses_passports_url && (() => {
-                    let urls: string[] = [];
-                    try { urls = JSON.parse(selected.witnesses_passports_url); } catch { urls = [selected.witnesses_passports_url]; }
-                    return (
-                      <div>
-                        <p className="text-xs text-gray-500 mb-1">Witnesses Passports ({urls.length} file{urls.length !== 1 ? 's' : ''})</p>
-                        <div className="flex flex-wrap gap-2">
-                          {urls.map((url, i) => (
-                            <a key={i} href={url} target="_blank" rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 px-3 py-1.5 bg-white hover:bg-blue-50 text-blue-700 rounded-lg text-sm font-medium transition-colors border border-blue-200">
-                              <ExternalLink className="w-3.5 h-3.5" /> Witness {i + 1}
-                            </a>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })()}
-                  {selected.file_url && (
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">Other Document</p>
-                      <a href={selected.file_url} target="_blank" rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-white hover:bg-blue-50 text-blue-700 rounded-lg text-sm font-medium transition-colors border border-blue-200">
-                        <ExternalLink className="w-3.5 h-3.5" /> View / Download
-                      </a>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {!selected.agent_passport_url && !selected.principal_passport_url && !selected.witnesses_passports_url && selected.file_url && (
-                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                  <label className="text-xs font-medium text-gray-500 uppercase mb-2 block">Uploaded Document</label>
-                  <a href={selected.file_url} target="_blank" rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-blue-50 text-blue-700 rounded-lg text-sm font-medium transition-colors border border-blue-200">
-                    <ExternalLink className="w-4 h-4" /> View / Download File
-                  </a>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {selected.agent_passport_url && (
+                      <DocumentPreviewCard url={selected.agent_passport_url} label="Agent Passport" />
+                    )}
+                    {selected.principal_passport_url && (
+                      <DocumentPreviewCard url={selected.principal_passport_url} label="Principal Passport" />
+                    )}
+                    {parseDocumentUrls(selected.witnesses_passports_url).map((url, i) => (
+                      <DocumentPreviewCard key={`${url}-${i}`} url={url} label={`Witness Passport ${i + 1}`} />
+                    ))}
+                    {selected.file_url && (
+                      <DocumentPreviewCard url={selected.file_url} label="Other Document" />
+                    )}
+                  </div>
                 </div>
               )}
 
